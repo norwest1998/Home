@@ -248,47 +248,6 @@
   }
   .cond-pill .value.accent{ color:var(--signal); }
 
-  .binnacle-wrap{ display:flex; justify-content:center; }
-  .binnacle{
-    width:min(320px, 75vw); aspect-ratio:1;
-    border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    position:relative;
-  }
-  .binnacle::after{ border-radius:50%; }
-
-  .binnacle-face{
-    width:82%; height:82%; border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.10), rgba(0,0,0,0.18) 70%);
-    border:1px solid var(--glass-border);
-    position:relative;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .binnacle-label{
-    position:absolute; font-family:var(--font-data); font-size:11px;
-    color:var(--foam-dim); letter-spacing:0.08em;
-  }
-  .binnacle-needle{
-    position:absolute; width:3px; height:36%; bottom:50%; left:calc(50% - 1.5px);
-    background:linear-gradient(180deg, var(--signal), transparent);
-    border-radius:3px; transform-origin:bottom center;
-    animation:swing 8s ease-in-out infinite;
-  }
-  @keyframes swing{
-    0%,100%{ transform:rotate(-24deg); }
-    50%{ transform:rotate(31deg); }
-  }
-  .binnacle-hub{
-    width:14px; height:14px; border-radius:50%;
-    background:var(--foam); box-shadow:0 0 12px rgba(234,246,246,0.6);
-    position:absolute;
-  }
-  .binnacle-readout{
-    position:absolute; bottom:24%; text-align:center;
-  }
-  .binnacle-readout .n{ font-family:var(--font-data); font-size:22px; color:var(--foam); }
-  .binnacle-readout .u{ font-family:var(--font-data); font-size:10px; color:var(--glow); letter-spacing:0.1em; }
-
   /* =========================================================
      SECTION HEADERS & CONTAINERS
      ========================================================= */
@@ -549,11 +508,11 @@
     <section class="hero">
       <div class="hero-content">
         <div class="eyebrow">
-          <span class="dot"></span> Radio Control Sailing Sydney Harbour
+          <span class="dot"></span>Sailing@Norwest
         </div>
-        <h1>Precision Scale Sailing & <em>Competitive Racing</em></h1>
+        <h1>Radio Controlled Sailing & <em>Competitive Racing</em></h1>
         <p class="lede">
-          Home of Australia's premier remote control yacht racing, scale maritime modeling, and radio sailing regattas.
+          Home of Australia's premier radio control model yacht racing.
         </p>
         <div class="hero-actions">
           <a href="#next-event" class="btn btn-primary">Next Weekend Race</a>
@@ -566,29 +525,12 @@
             <span class="value accent">14 kts ENE</span>
           </div>
           <div class="cond-pill glass">
-            <span class="label">Harbour Water</span>
+            <span class="label">Ambient Temp</span>
             <span class="value">19.5°C</span>
           </div>
           <div class="cond-pill glass">
-            <span class="label">Tide</span>
-            <span class="value">High 14:22</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="binnacle-wrap">
-        <div class="binnacle glass">
-          <div class="binnacle-face">
-            <span class="binnacle-label" style="top:10px;">N</span>
-            <span class="binnacle-label" style="right:12px;">E</span>
-            <span class="binnacle-label" style="bottom:10px;">S</span>
-            <span class="binnacle-label" style="left:12px;">W</span>
-            <div class="binnacle-needle"></div>
-            <div class="binnacle-hub"></div>
-            <div class="binnacle-readout">
-              <div class="n">068°</div>
-              <div class="u">WIND DIR</div>
-            </div>
+            <span class="label">UV Index</span>
+            <span class="value">6</span>
           </div>
         </div>
       </div>
