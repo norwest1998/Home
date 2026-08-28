@@ -1237,9 +1237,34 @@
     }
   }
 
+    async function loadWeather(){
+    const container = document.querySelector('.weather-week');
+    const weatherApiUrl = "https://script.google.com/macros/s/AKfycbw-zhqJvY9ifG0vrPrbtJRVO_a0N2wu9MCnPTvASJUt-iW3xl0omayb81T2gtuwVrx4/exec?action=data";
+    
+    try {
+      const res = await fetch(weatherApiUrl);
+      const data = await res.json();
+      
+      if (data && data.forecast && Array.isArray(data.forecast)) {
+        container.innerHTML = data.forecast.map(day => `
+          <div class="day-pill">
+            <span class="d-name">${esc(day.day)}</span>
+            <span class="d-icon">${esc(day.icon)}</span>
+            <span class="d-temp">${esc(day.temp)}°C</span>
+            <span class="d-wind">${esc(day.wind)} kts ${esc(day.windDir)}</span>
+          </div>
+        `).join('');
+      }
+    } catch (err) {
+      console.error('Weather data failed:', err);
+      container.innerHTML = '<p style="padding:20px; color:var(--foam-dim);">Weather forecast temporarily unavailable</p>';
+    }
+  }
+
   (async function initHomeData(){
-    await Promise.all([loadLatestResults(), loadMembershipStats()]);
+    await Promise.all([loadLatestResults(), loadMembershipStats(), loadWeather()]);
   })();
+
 
   </script>
 </body>
