@@ -1239,38 +1239,50 @@
   }
 
         async function loadWeather(){
-    const container = document.querySelector('.weather-week');
-    const weatherApiUrl = "https://script.google.com/macros/s/AKfycbw-zhqJvY9ifG0vrPrbtJRVO_a0N2wu9MCnPTvASJUt-iW3xl0omayb81T2gtuwVrx4/exec?action=data";
+        const container = document.querySelector('.weather-week');
+        const weatherApiUrl = "https://script.google.com/macros/s/AKfycbw-zhqJvY9ifG0vrPrbtJRVO_a0N2wu9MCnPTvASJUt-iW3xl0omayb81T2gtuwVrx4/exec?action=data";
     
-    try {
-      const res = await fetch(weatherApiUrl);
-      const data = await res.json();
+        try {
+          const res = await fetch(weatherApiUrl);
+          if (!res.ok) throw new Error('Network response was not ok');
+          const data = await res.json();
       
-      // The API might return the array directly or wrapped in an object
-      const forecast = Array.isArray(data) ? data : (data.forecast || []);
+          const forecast = (data && data.forecast) ? data.forecast : (Array.isArray(data) ? data : []);
       
-      if (forecast.length > 0) {
-        // Update Hero Conditions with Today's data (first row)
-        const today = forecast[0];
-        document.getElementById('hero-wind').textContent = today.wind + (today.wind.includes('kts') ? '' : ' kts');
-        document.getElementById('hero-temp').textContent = today.max + '°C';
-        document.getElementById('hero-uv').textContent = today.uvIndex.replace('UV ', '');
+          if (forecast && forecast.length > 0) {
+            // 1. Update Hero Conditions with Today's data
+            const today = forecast[0];
+        
+            // Wind: API returns "14 ↗" or similar
+            const windVal = document.getElementById('hero-wind');
+            if (windVal) windVal.textContent = today.wind + (today.wind.match(/\d/) ? ' kts' : '');
+        
+            // Temp: API returns number
+            const tempVal = document.getElementById('hero-temp');
+            if (tempVal) tempVal.textContent = today.max + '°C';
+        
+            // UV: API returns "UV 6" -> extract 6
+            const uvVal = document.getElementById('hero-uv');
+            if (uvVal) uvVal.textContent = String(today.uvIndex).replace('UV ', '');
 
-        // Update 7-Day Forecast Grid
-        container.innerHTML = forecast.map(day => `
-          <div class="day-pill">
-            <span class="d-name">${esc(day.day.substring(0, 3))}</span>
-            <span class="d-icon">${esc(day.icon)}</span>
-            <span class="d-temp">${esc(day.max)}°C</span>
-            <span class="d-wind">${esc(day.wind)}</span>
-          </div>
-        `).join('');
-      }
-    } catch (err) {
-      console.error('Weather data failed:', err);
-      container.innerHTML = '<p style="padding:20px; color:var(--foam-dim);">Weather forecast temporarily unavailable</p>';
-    }
+            // 2. Update 7-Day Forecast Grid
+            container.innerHTML = forecast.map(day => `
+              <div class="day-pill">
+                <span class="d-name">${esc(day.day.substring(0, 3))}</span>
+                <span class="d-icon">${esc(day.icon)}</span>
+                <span class="d-temp">${esc(day.max)}°C</span>
+                <span class="d-wind">${esc(day.wind)}</span>
+              </div>
+            `).join('');
+          } else {
+            throw new Error('No forecast data found in response');
+          }
+        } catch (err) {
+          console.error('Weather error:', err);
+          container.innerHTML = `<p style="padding:20px; color:var(--foam-dim); font-size:11px;">Forecast currently unavailable</p>`;
+        }
   }
+
 
 
   (async function initHomeData(){
