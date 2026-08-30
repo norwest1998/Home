@@ -1258,7 +1258,7 @@
       document.getElementById('hero-uv').textContent = String(today.uvIndex).replace('UV ', '');
 
       container.innerHTML = forecast.map(day => `
-        <div class="day-pill">
+        <div class="day-pill" style="background-image:url('${esc(day.bg)}'); background-size:cover; background-position:center;">
           <span class="d-name">${esc(day.day.substring(0, 3))}</span>
           <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
           <span class="d-temp">${esc(day.max)}°C</span>
