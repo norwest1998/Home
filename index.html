@@ -976,7 +976,7 @@
     </div>
     <div style="display:flex; gap:16px;">
       <a href="#members-list">Members Portal</a>
-      <a href="#annual-calendar">Calendar</a>
+      <a href="#annual-calendar"> </a>
       <a href="#race-results">Results Hub</a>
     </div>
   </footer>
@@ -1238,30 +1238,28 @@
     }
   }
 
-        async function loadWeather(){
+                async function loadWeather(){
         const container = document.querySelector('.weather-week');
         const weatherApiUrl = "https://script.google.com/macros/s/AKfycbw-zhqJvY9ifG0vrPrbtJRVO_a0N2wu9MCnPTvASJUt-iW3xl0omayb81T2gtuwVrx4/exec?action=data";
     
         try {
           const res = await fetch(weatherApiUrl);
-          if (!res.ok) throw new Error('Network response was not ok');
+          if (!res.ok) throw new Error('Network error');
           const data = await res.json();
       
-          const forecast = (data && data.forecast) ? data.forecast : (Array.isArray(data) ? data : []);
+          // Check for the 'forecast' property in the returned JSON
+          const forecast = data.forecast;
       
-          if (forecast && forecast.length > 0) {
+          if (forecast && Array.isArray(forecast) && forecast.length > 0) {
             // 1. Update Hero Conditions with Today's data
             const today = forecast[0];
         
-            // Wind: API returns "14 ↗" or similar
             const windVal = document.getElementById('hero-wind');
-            if (windVal) windVal.textContent = today.wind + (today.wind.match(/\d/) ? ' kts' : '');
+            if (windVal) windVal.textContent = today.wind + (String(today.wind).match(/\d$/) ? ' kts' : '');
         
-            // Temp: API returns number
             const tempVal = document.getElementById('hero-temp');
             if (tempVal) tempVal.textContent = today.max + '°C';
         
-            // UV: API returns "UV 6" -> extract 6
             const uvVal = document.getElementById('hero-uv');
             if (uvVal) uvVal.textContent = String(today.uvIndex).replace('UV ', '');
 
@@ -1269,19 +1267,20 @@
             container.innerHTML = forecast.map(day => `
               <div class="day-pill">
                 <span class="d-name">${esc(day.day.substring(0, 3))}</span>
-                <span class="d-icon">${esc(day.icon)}</span>
+                <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
                 <span class="d-temp">${esc(day.max)}°C</span>
-                <span class="d-wind">${esc(day.wind)}</span>
+                <span class="d-wind" style="font-size:10px;">${esc(day.wind)}</span>
               </div>
             `).join('');
           } else {
-            throw new Error('No forecast data found in response');
+            throw new Error('No forecast array found');
           }
         } catch (err) {
           console.error('Weather error:', err);
-          container.innerHTML = `<p style="padding:20px; color:var(--foam-dim); font-size:11px;">Forecast currently unavailable</p>`;
+          container.innerHTML = `<p style="padding:10px; color:var(--foam-dim); font-size:11px;">Weather service syncing...</p>`;
         }
   }
+
 
 
 
