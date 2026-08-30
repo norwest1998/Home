@@ -446,7 +446,22 @@
     display:grid; grid-template-columns:repeat(7, 1fr); gap:8px; margin-top:16px;
   }
   @media (max-width:680px){ .weather-week{ overflow-x:auto; display:flex; padding-bottom:6px; } }
-
+  .day-pill {
+    position: relative;
+    color: white;
+  }
+  .day-pill::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    border-radius: inherit;
+    z-index: 0;
+  }
+  .day-pill > * {
+    position: relative;
+    z-index: 1;
+  }
   .day-pill{
     background:var(--glass-fill); border:1px solid var(--glass-border);
     border-radius:12px; padding:12px 8px; text-align:center;
