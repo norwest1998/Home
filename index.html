@@ -1238,55 +1238,41 @@
     }
   }
 
-    async function loadWeather(){
+  function loadWeather() {
     const container = document.querySelector('.weather-week');
-    const weatherApiUrl = "https://script.google.com/macros/s/AKfycbw-zhqJvY9ifG0vrPrbtJRVO_a0N2wu9MCnPTvASJUt-iW3xl0omayb81T2gtuwVrx4/exec?action=data";
-    
-    try {
-      // Redirect to a proxy or use a method that avoids CORS if the Web App doesn't set headers
-      // However, Google Apps Script TextOutput usually allows CORS if configured correctly.
-      const res = await fetch(weatherApiUrl, {
-        method: 'GET',
-        redirect: 'follow'
-      });
-      
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      
-      const data = await res.json();
-      const forecast = data.forecast;
-      
-      if (forecast && Array.isArray(forecast) && forecast.length > 0) {
-        // 1. Update Hero Conditions
-        const today = forecast[0];
-        document.getElementById('hero-wind').textContent = today.wind + (String(today.wind).match(/\d$/) ? ' kts' : '');
-        document.getElementById('hero-temp').textContent = today.max + '°C';
-        document.getElementById('hero-uv').textContent = String(today.uvIndex).replace('UV ', '');
-
-        // 2. Update 7-Day Forecast Grid
-        container.innerHTML = forecast.map(day => `
-          <div class="day-pill">
-            <span class="d-name">${esc(day.day.substring(0, 3))}</span>
-            <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
-            <span class="d-temp">${esc(day.max)}°C</span>
-            <span class="d-wind" style="font-size:10px;">${esc(day.wind)}</span>
-          </div>
-        `).join('');
-      }
-    } catch (err) {
-      console.error('Weather error:', err);
+    const script = document.createElement('script');
+    script.src = `https://script.google.com/macros/s/AKfycbw-zhqJvY9ifG0vrPrbtJRVO_a0N2wu9MCnPTvASJUt-iW3xl0omayb81T2gtuwVrx4/exec?action=data&callback=renderWeather`;
+    script.onerror = () => {
       container.innerHTML = `<p style="padding:10px; color:var(--foam-dim); font-size:11px;">Weather data temporarily unavailable (Syncing...)</p>`;
-    }
+    };
+    document.body.appendChild(script);
   }
+  window.renderWeather = function(data) {
+    const container = document.querySelector('.weather-week');
+    const forecast = data.forecast;
 
+    if (forecast && Array.isArray(forecast) && forecast.length > 0) {
+      const today = forecast[0];
+      document.getElementById('hero-wind').textContent = today.wind + (String(today.wind).match(/\d$/) ? ' kts' : '');
+      document.getElementById('hero-temp').textContent = today.max + '°C';
+      document.getElementById('hero-uv').textContent = String(today.uvIndex).replace('UV ', '');
 
+      container.innerHTML = forecast.map(day => `
+        <div class="day-pill">
+          <span class="d-name">${esc(day.day.substring(0, 3))}</span>
+          <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
+          <span class="d-temp">${esc(day.max)}°C</span>
+          <span class="d-wind" style="font-size:10px;">${esc(day.wind)}</span>
+        </div>
+      `).join('');
+    }
+  };
 
-
-
+  loadWeather();
 
   (async function initHomeData(){
     await Promise.all([loadLatestResults(), loadMembershipStats(), loadWeather()]);
   })();
-
 
   </script>
 </body>
