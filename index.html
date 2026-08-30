@@ -1238,48 +1238,59 @@
     }
   }
 
-                async function loadWeather(){
-        const container = document.querySelector('.weather-week');
-        const weatherApiUrl = "https://script.google.com/macros/s/AKfycbw-zhqJvY9ifG0vrPrbtJRVO_a0N2wu9MCnPTvASJUt-iW3xl0omayb81T2gtuwVrx4/exec?action=data";
+  async function loadWeather(){
+  const container = document.querySelector('.weather-week');
+  // Add a timestamp to prevent caching issues
+  const weatherApiUrl = "https://script.google.com/macros/s/AKfycbw-zhqJvY9ifG0vrPrbtJRVO_a0N2wu9MCnPTvASJUt-iW3xl0omayb81T2gtuwVrx4/exec?action=data&t=" + Date.now();
     
-        try {
-          const res = await fetch(weatherApiUrl);
-          if (!res.ok) throw new Error('Network error');
-          const data = await res.json();
+  try {
+    const res = await fetch(weatherApiUrl);
+          
+    // Check if we actually got a response
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          
+    const text = await res.text();
+    let data;
+          
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("Received non-JSON response:", text.substring(0, 100));
+      throw new Error("Web App returned HTML instead of JSON. Check your doGet logic.");
+    }
       
-          // Check for the 'forecast' property in the returned JSON
-          const forecast = data.forecast;
+    const forecast = data.forecast;
       
-          if (forecast && Array.isArray(forecast) && forecast.length > 0) {
-            // 1. Update Hero Conditions with Today's data
-            const today = forecast[0];
-        
-            const windVal = document.getElementById('hero-wind');
-            if (windVal) windVal.textContent = today.wind + (String(today.wind).match(/\d$/) ? ' kts' : '');
-        
-            const tempVal = document.getElementById('hero-temp');
-            if (tempVal) tempVal.textContent = today.max + '°C';
-        
-            const uvVal = document.getElementById('hero-uv');
-            if (uvVal) uvVal.textContent = String(today.uvIndex).replace('UV ', '');
+    if (forecast && Array.isArray(forecast) && forecast.length > 0) {
+      // 1. Update Hero Conditions
+      const today = forecast[0];
+      const windVal = document.getElementById('hero-wind');
+      if (windVal) windVal.textContent = today.wind + (String(today.wind).match(/\d$/) ? ' kts' : '');
+            
+      const tempVal = document.getElementById('hero-temp');
+      if (tempVal) tempVal.textContent = today.max + '°C';
+            
+      const uvVal = document.getElementById('hero-uv');
+      if (uvVal) uvVal.textContent = String(today.uvIndex).replace('UV ', '');
 
-            // 2. Update 7-Day Forecast Grid
-            container.innerHTML = forecast.map(day => `
-              <div class="day-pill">
-                <span class="d-name">${esc(day.day.substring(0, 3))}</span>
-                <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
-                <span class="d-temp">${esc(day.max)}°C</span>
-                <span class="d-wind" style="font-size:10px;">${esc(day.wind)}</span>
-              </div>
-            `).join('');
-          } else {
-            throw new Error('No forecast array found');
-          }
-        } catch (err) {
-          console.error('Weather error:', err);
-          container.innerHTML = `<p style="padding:10px; color:var(--foam-dim); font-size:11px;">Weather service syncing...</p>`;
-        }
+      // 2. Update 7-Day Forecast Grid
+      container.innerHTML = forecast.map(day => `
+        <div class="day-pill">
+          <span class="d-name">${esc(day.day.substring(0, 3))}</span>
+          <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
+          <span class="d-temp">${esc(day.max)}°C</span>
+          <span class="d-wind" style="font-size:10px;">${esc(day.wind)}</span>
+        </div>
+      `).join('');
+    } else {
+      throw new Error('Forecast data is empty or invalid format');
+    }
+  } catch (err) {
+    console.error('Weather error:', err);
+    container.innerHTML = `<p style="padding:10px; color:var(--foam-dim); font-size:11px;">Weather data currently syncing...</p>`;
   }
+  }
+
 
 
 
