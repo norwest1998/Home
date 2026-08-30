@@ -1241,7 +1241,7 @@
   function loadWeather() {
     const container = document.querySelector('.weather-week');
     const script = document.createElement('script');
-    script.src = `https://script.google.com/macros/s/AKfycbw-zhqJvY9ifG0vrPrbtJRVO_a0N2wu9MCnPTvASJUt-iW3xl0omayb81T2gtuwVrx4/exec?action=data&callback=renderWeather`;
+    script.src = `https://script.google.com/macros/s/AKfycbworw_FnbKehShRIfhbXTuxlAa36jJt8d7MLCvjzAWUfp-_xXORa2ZzC_0m20msa1oj/exec?action=data&callback=renderWeather`;
     script.onerror = () => {
       container.innerHTML = `<p style="padding:10px; color:var(--foam-dim); font-size:11px;">Weather data temporarily unavailable (Syncing...)</p>`;
     };
