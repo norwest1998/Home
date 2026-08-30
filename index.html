@@ -1225,8 +1225,13 @@
 
     const topic = membershipData.topics[selectedTopic];
     const el = document.getElementById('statusBreakdown');
+    const baseTitle = TOPIC_META[selectedTopic].breakdownTitle;
+    const titleWithTotal = selectedTopic === 'applications'
+      ? `${baseTitle} (${topic.total} total)`
+      : baseTitle;
+
     el.innerHTML =
-      `<div class="breakdown-title">${TOPIC_META[selectedTopic].breakdownTitle}</div>` +
+      `<div class="breakdown-title">${esc(titleWithTotal)}</div>` +
       topic.breakdown.map((b, i) =>
         `<div class="status-item ${BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.length]}">
           <span class="s-name">${esc(b.name)}</span>
