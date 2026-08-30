@@ -1259,7 +1259,7 @@
 
       container.innerHTML = forecast.map(day => `
         <div class="day-pill" style="background-image:url('${esc(day.bg)}'); background-size:cover; background-position:center;">
-          <span class="d-name">${esc(day.day.substring(0, 3))}</span>
+          <span class="event-badge">${esc(day.day.substring(0, 3))}</span>
           <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
           <span class="d-temp">${esc(day.max)}°C</span>
           <span class="d-wind" style="font-size:10px;">${esc(day.wind)}</span>
