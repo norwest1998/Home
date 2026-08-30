@@ -776,9 +776,9 @@
         <div id="weather" class="weather-card glass">
           <div class="feed-head">
             <div class="feed-title">
-              <h3>7-Day Harbour Weather Forecast</h3>
+              <h3>7-Day SMMC Weather Forecast</h3>
             </div>
-            <span class="feed-meta">Sydney Waterway Conditions</span>
+            <span class="feed-meta">Lakeside Conditions</span>
           </div>
 
           <div class="weather-week">
@@ -1241,7 +1241,7 @@
   async function loadWeather(){
   const container = document.querySelector('.weather-week');
   // Add a timestamp to prevent caching issues
-  const weatherApiUrl = "https://script.google.com/macros/s/AKfycbw-zhqJvY9ifG0vrPrbtJRVO_a0N2wu9MCnPTvASJUt-iW3xl0omayb81T2gtuwVrx4/exec?action=data&t=" + Date.now();
+  const weatherApiUrl = "https://script.google.com/macros/s/AKfycbw-zhqJvY9ifG0vrPrbtJRVO_a0N2wu9MCnPTvASJUt-iW3xl0omayb81T2gtuwVrx4/exec?action=data";
     
   try {
     const res = await fetch(weatherApiUrl);
