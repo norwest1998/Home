@@ -446,27 +446,38 @@
     display:grid; grid-template-columns:repeat(7, 1fr); gap:8px; margin-top:16px;
   }
   @media (max-width:680px){ .weather-week{ overflow-x:auto; display:flex; padding-bottom:6px; } }
+
   .day-pill {
     position: relative;
     color: white;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 70px;
+    background-size: cover;
+    background-position: center;
+    overflow: hidden; /* keeps the bg image inside the rounded corners */
   }
+
   .day-pill::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.35);
+    background: rgba(0, 0, 0, 0.35);
     border-radius: inherit;
     z-index: 0;
   }
+
   .day-pill > * {
     position: relative;
     z-index: 1;
-  }
-  .day-pill{
-    background:var(--glass-fill); border:1px solid var(--glass-border);
-    border-radius:12px; padding:12px 8px; text-align:center;
-    display:flex; flex-direction:column; align-items:center; gap:6px;
-    flex:1; min-width:70px;
   }
   .day-pill .d-name{ font-family:var(--font-data); font-size:11px; color:var(--glow); text-transform:uppercase; }
   .day-pill .d-icon{ font-size:18px; margin:2px 0; }
