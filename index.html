@@ -1301,9 +1301,71 @@
 
   loadWeather();
 
-  (async function initHomeData(){
-    await Promise.all([loadLatestResults(), loadMembershipStats(), loadWeather()]);
-  })();
+  // ============================================================
+  // ANNUAL CALENDAR — fetch and render
+  // Add this script to your index.html, or include as a .js file.
+  // Requires the #annual-calendar section with .calendar-grid inside.
+  // ============================================================
+
+  const CALENDAR_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec?type=calendar';
+
+  async function loadAnnualCalendar() {
+    const grid = document.querySelector('#annual-calendar .calendar-grid');
+    if (!grid) return;
+
+    // Show a loading state while fetching
+    grid.innerHTML = '<p class="cal-loading">Loading calendar…</p>';
+
+    try {
+      const response = await fetch(CALENDAR_URL);
+      if (!response.ok) throw new Error('Network response was not ok');
+
+      const data = await response.json();
+
+      if (!data.months || data.months.length === 0) {
+        grid.innerHTML = '<p class="cal-empty">No events scheduled for the next 3 months.</p>';
+        return;
+      }
+
+      grid.innerHTML = data.months.map(month => buildMonthHTML(month)).join('');
+
+    } catch (err) {
+      console.error('Calendar fetch failed:', err);
+      grid.innerHTML = '<p class="cal-error">Unable to load calendar. Please try again later.</p>';
+    }
+  }
+
+  function buildMonthHTML(month) {
+    const eventsHTML = month.events.map(ev => {
+      // Date label: "SAT 22 AUG • 09:30"
+      const dateStr = ev.dateLabel + ' • ' + ev.startTime;
+
+      // Optional class image — renders as a small inline img if the URL is present
+      const imageHTML = ev.classImage
+        ? `<img class="cal-class-img" src="${ev.classImage}" alt="${ev.boatClass}" title="${ev.boatClass}">`
+        : '';
+
+      return `
+        <div class="cal-event-item">
+          ${imageHTML}
+          <span class="date">${dateStr}</span>
+          <span class="name">${ev.eventName}</span>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="cal-month">
+        <h4>${month.monthLabel}</h4>
+        ${eventsHTML}
+      </div>`;
+  }
+
+  // Run on DOM ready
+  document.addEventListener('DOMContentLoaded', loadAnnualCalendar);
+
+  //(async function initHomeData(){
+  //  await Promise.all([loadLatestResults(), loadMembershipStats(), loadWeather()]);
+  //})();
 
   </script>
 </body>
