@@ -880,9 +880,15 @@
         </div>
 
         <!-- Next Event Card -->
+
         <div id="next-event" class="next-event-card glass">
+          <!-- Dynamic content from WebApp will load here -->
           <div id="event-display-container">Loading event details...</div>
-          <!-- <span class="event-badge">Upcoming Weekend</span>
+        </div>
+
+        <!-- <div id="next-event" class="next-event-card glass">
+          //<div id="event-display-container">Loading event details...</div>
+          //<span class="event-badge">Upcoming Weekend</span>
           //<h3 class="event-title" style="margin-top:8px;">DragonFlite 95 Sprint Series</h3>
           //
           //<div class="event-details">
@@ -893,13 +899,12 @@
           //    <li><i data-lucide="boat" color="#257fb6"></i> <strong>Class:</strong> DF95 (Handicap & Scratch)</li>
           //    <li><i data-lucide="user" color="#257fb6"></i> <strong>Officer of Day:</strong> R. Henderson</li>
           //  </ul>
-
           //  <div style="display:flex; gap:10px; margin-top:8px;">
           //    <a href="#apps-script-hub" class="btn btn-primary" style="flex:1; justify-content:center;">Register Entry</a>
           //    <a href="#reschedule-event" class="btn btn-ghost">Reschedule</a>
           //  </div>
-          //</div> -->
-        </div>
+          //</div> 
+        </div> -->
 
       </div>
     </section>
@@ -1337,7 +1342,7 @@
 
   async function loadEventDisplay() {
     try {
-      const response = await fetch(`${WEB_APP_URL}?type=display`);
+      const response = await fetch(`${WEB_APP_URL}?type=display&load=next`);
       const htmlSnippet = await response.text();
 
       // Replace container innerHTML
