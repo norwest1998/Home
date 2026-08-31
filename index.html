@@ -625,6 +625,77 @@
     display: flex;
     flex-direction: column;
   }
+
+  /* =========================================================
+      next event card 
+    ========================================================= */
+  /* Card Container */
+  .race-card {
+    position: relative;
+    width: 100%;
+    max-width: 360px;
+    height: 260px;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    font-family: system-ui, -apple-system, sans-serif;
+    box-sizing: border-box;
+  }
+
+  /* Background Image Layer */
+  .race-card img.race-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+  }
+
+  /* Foreground Content Overlay */
+  .race-card .card-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  /* Card Header (Title & Time) */
+  .race-card .heading h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  .race-card .race-time {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #ffd000; /* Bright yellow time matching reference image */
+    margin-top: 4px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Frosted Glass Weather Panel at Bottom */
+  .race-card .weather-cards-row,
+  .race-card .weather-mini-card {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: #ffffff;
+    text-align: left;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
   /* =========================================================
      FOOTER
      ========================================================= */
