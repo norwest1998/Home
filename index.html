@@ -882,7 +882,7 @@
         <!-- Next Event Card -->
         <div id="next-event" class="next-event-card glass">
           <div id="event-display-container">Loading event details...</div>
-          // <span class="event-badge">Upcoming Weekend</span>
+          <!-- <span class="event-badge">Upcoming Weekend</span>
           //<h3 class="event-title" style="margin-top:8px;">DragonFlite 95 Sprint Series</h3>
           //
           //<div class="event-details">
@@ -898,7 +898,7 @@
           //    <a href="#apps-script-hub" class="btn btn-primary" style="flex:1; justify-content:center;">Register Entry</a>
           //    <a href="#reschedule-event" class="btn btn-ghost">Reschedule</a>
           //  </div>
-          //</div>
+          //</div> -->
         </div>
 
       </div>
@@ -1123,7 +1123,7 @@
     });
   }
   
-    function renderClassTabs(){
+  function renderClassTabs(){
     const container = document.getElementById('classTabs');
     container.className = 'class-select-wrap';
     container.innerHTML = `
@@ -1299,6 +1299,7 @@
     }
   }
 
+  /* --------------------- Weather Data  ------------------------- */
   function loadWeather() {
     const container = document.querySelector('.weather-week');
     const script = document.createElement('script');
@@ -1331,6 +1332,7 @@
 
   loadWeather();
 
+  /* --------------------- Next Event ------------------------- */
   const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec';
 
   async function loadEventDisplay() {
@@ -1339,8 +1341,8 @@
       const htmlSnippet = await response.text();
 
       // Replace container innerHTML
-      const nextcontainer = document.getElementById('event-display-container');
-      nextcontainer.innerHTML = htmlSnippet;
+      const container = document.getElementById('event-display-container');
+      container.innerHTML = htmlSnippet;
 
       // Render Lucide icons in the newly injected HTML
       if (window.lucide) {
