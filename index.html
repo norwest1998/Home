@@ -598,7 +598,31 @@
   table.standings tbody tr:nth-child(3) td:first-child{ color:var(--signal); font-weight:700; }
   .table-scroll{ overflow-x:auto; max-height:480px; overflow-y:auto; border-radius:12px; }
 
-  
+    /* Calendar event item — icon left, text right */
+  .cal-event-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cal-class-img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 4px;
+  }
+
+  .cal-class-img--placeholder {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .cal-event-text {
+    display: flex;
+    flex-direction: column;
+  }
   /* =========================================================
      FOOTER
      ========================================================= */
@@ -1337,22 +1361,22 @@
 
   function buildMonthHTML(month) {
     const eventsHTML = month.events.map(ev => {
-      // Date label: "SAT 22 AUG • 09:30"
       const dateStr = ev.dateLabel + ' • ' + ev.startTime;
-
-      // Optional class image — renders as a small inline img if the URL is present
+  
       const imageHTML = ev.classImage
         ? `<img class="cal-class-img" src="${ev.classImage}" alt="${ev.boatClass}" title="${ev.boatClass}">`
-        : '';
-
+        : '<div class="cal-class-img cal-class-img--placeholder"></div>';
+  
       return `
         <div class="cal-event-item">
           ${imageHTML}
-          <span class="date">${dateStr}</span>
-          <span class="name">${ev.eventName}</span>
+          <div class="cal-event-text">
+            <span class="date">${dateStr}</span>
+            <span class="name">${ev.eventName}</span>
+          </div>
         </div>`;
     }).join('');
-
+  
     return `
       <div class="cal-month">
         <h4>${month.monthLabel}</h4>
