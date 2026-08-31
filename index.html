@@ -6,6 +6,7 @@
 <title>Sydney Maritime Modellers Club</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
 <style> 
 
   /* =========================================================
@@ -642,7 +643,7 @@
 </style>
 </head>
 <body>
-
+  <i data-lucide="calendar-days" color="#257fb6"></i>
   <!-- =========================================================
        NAVIGATION HEADER
        ========================================================= -->
@@ -884,11 +885,11 @@
           
           <div class="event-details">
             <ul class="event-info-list">
-              <li>📅 <strong>Date:</strong> Saturday, 22 August 2026</li>
-              <li>⏰ <strong>First Briefing:</strong> 09:30 AM</li>
-              <li>📍 <strong>Location:</strong> Rodd Point, Iron Cove Bay</li>
-              <li>⛵ <strong>Class:</strong> DF95 (Handicap & Scratch)</li>
-              <li>⚓ <strong>Officer of Day:</strong> R. Henderson</li>
+              <li><i data-lucide="calendar-days" color="#257fb6"></i> <strong>Date:</strong> Saturday, 22 August 2026</li>
+              <li><i data-lucide="clock" color="#257fb6"></i> <strong>First Briefing:</strong> 09:30 AM</li>
+              <li><i data-lucide="map-pin" color="#257fb6"></i> <strong>Location:</strong> Rodd Point, Iron Cove Bay</li>
+              <li><i data-lucide="boat" color="#257fb6"></i> <strong>Class:</strong> DF95 (Handicap & Scratch)</li>
+              <li><i data-lucide="user" color="#257fb6"></i> <strong>Officer of Day:</strong> R. Henderson</li>
             </ul>
 
             <div style="display:flex; gap:10px; margin-top:8px;">
@@ -1042,7 +1043,10 @@
     df65:  { label: 'DF65 Scratch',  spreadsheetId: '1T5zgrZpJDmQKmkMlnOmnAb_ext18zx733mMuvh4akvg'  },
   
   };
-  
+  <!-- Initialize Lucide icons -->
+
+  lucide.createIcons();
+
   const sheetListCache = {}; // classKey -> [{name, gid}, ...], fetched once per session
   
   async function getSheetsForClass(classKey){
