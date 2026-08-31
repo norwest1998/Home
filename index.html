@@ -1387,9 +1387,9 @@
   // Run on DOM ready
   document.addEventListener('DOMContentLoaded', loadAnnualCalendar);
 
-  //(async function initHomeData(){
-  //  await Promise.all([loadLatestResults(), loadMembershipStats(), loadWeather()]);
-  //})();
+  (async function initHomeData(){
+    await Promise.all([loadLatestResults(), loadMembershipStats(), loadWeather()]);
+  })();
 
   </script>
 </body>
