@@ -640,6 +640,7 @@
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     font-family: system-ui, -apple-system, sans-serif;
     box-sizing: border-box;
+    margin-bottom: 20px; /* Adjust spacing as needed */
   }
 
   /* Background Image Layer */
@@ -681,6 +682,10 @@
     color: #ffd000; /* Bright yellow time matching reference image */
     margin-top: 4px;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  .race-card:last-child {
+    margin-bottom: 0;
   }
 
   /* Frosted Glass Weather Panel at Bottom */
@@ -953,6 +958,7 @@
         <!-- Next Event Card -->
 
         <div id="next-event" class="next-event-card glass">
+          <span class="event-badge">Upcoming Weekend</span>
           <!-- Dynamic content from WebApp will load here -->
           <div id="event-display-container">Loading event details...</div>
         </div>
