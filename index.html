@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -45,15 +45,6 @@
       linear-gradient(180deg, var(--ocean-deep) 0%, var(--ocean-mid) 55%, var(--sea-teal) 100%);
     overflow-x:hidden;
     position:relative;
-  }
-
-  /* Lucide Icon Alignment Helper */
-  [data-lucide], .lucide {
-    width: 1em;
-    height: 1em;
-    display: inline-block;
-    vertical-align: middle;
-    stroke-width: 2px;
   }
 
   /* Subtle moving caustic light — water without a hero photo */
@@ -162,7 +153,7 @@
     font-family:var(--font-body); font-size:13px; font-weight:500;
     color:var(--foam-dim); text-decoration:none;
     padding:8px 12px; border-radius:8px;
-    display:flex; align-items:center; gap:8px;
+    display:block;
     transition:background 0.15s ease, color 0.15s ease;
   }
   .dropdown-menu a:hover{
@@ -170,7 +161,7 @@
   }
 
   /* Mobile menu toggle button */
-  .nav-toggle{ display:none; background:none; border:none; color:var(--foam); cursor:pointer; font-size:24px; }
+  .nav-toggle{ display:none; background:none; border:none; color:var(--foam); cursor:pointer; }
 
   @media (max-width:860px){
     .nav-links{ display:none; }
@@ -257,10 +248,7 @@
   @media (max-width:900px){ .conditions{ justify-content:center; } }
   .cond-pill{
     padding:9px 14px; border-radius:12px;
-    display:flex; flex-direction:column; gap:4px; min-width:88px;
-  }
-  .cond-pill .label-wrap{
-    display:flex; align-items:center; gap:4px;
+    display:flex; flex-direction:column; gap:2px; min-width:88px;
   }
   .cond-pill .label{
     font-family:var(--font-data); font-size:9.5px; letter-spacing:0.1em;
@@ -300,7 +288,7 @@
     box-shadow:0 0 8px var(--signal);
     animation:pulse 2.4s ease-in-out infinite;
   }
-  .feed-title h3{ font-family:var(--font-display); font-size:18px; font-weight:600; color:var(--foam); display:flex; align-items:center; gap:8px; }
+  .feed-title h3{ font-family:var(--font-display); font-size:18px; font-weight:600; color:var(--foam); }
   .feed-meta{
     font-family:var(--font-data); font-size:11px; letter-spacing:0.08em;
     color:var(--glow); text-transform:uppercase;
@@ -317,7 +305,7 @@
   .finish-chip {
     scroll-snap-align: start;
     flex: none;
-    width: 145px;
+    width: 165px;
     padding: 8px 10px;
     display: grid;
     grid-template-columns: auto 1fr;
@@ -336,6 +324,7 @@
     border-color: rgba(94, 234, 212, 0.35); 
   }
 
+  /* Top Left */
   .finish-chip .pos {
     grid-row: 1;
     grid-column: 1;
@@ -354,6 +343,7 @@
     font-weight: 400; 
   }
 
+  /* Top Right */
   .finish-chip .points {
     grid-row: 1;
     grid-column: 2;
@@ -373,6 +363,7 @@
     color: var(--foam-dim);
   }
 
+  /* Bottom Left */
   .finish-chip .sail-no {
     grid-row: 2;
     grid-column: 1;
@@ -381,6 +372,7 @@
     color: var(--glow);
   }
 
+  /* Bottom Right (Follows Sail No) */
   .finish-chip .sailor {
     grid-row: 3;
     grid-column: 1;
@@ -393,6 +385,7 @@
     text-overflow: ellipsis;
   }
 
+  /* Podium Styles */
   .finish-chip.p1 { border-color: rgba(255, 209, 102, 0.55); }
   .finish-chip.p1 .pos { color: #ffd166; }
   .finish-chip.p2 { border-color: rgba(200, 214, 224, 0.5); }
@@ -415,7 +408,6 @@
   .stat-card .label{
     font-family:var(--font-data); font-size:11px; letter-spacing:0.08em;
     text-transform:uppercase; color:var(--foam-dim);
-    display:flex; align-items:center; gap:6px;
   }
   .stat-card .val{
     font-family:var(--font-display); font-size:32px; font-weight:700; color:var(--foam);
@@ -438,6 +430,7 @@
   .status-item.awaiting{ border-left:3px solid var(--signal); }
   .status-item.processed{ border-left:3px solid var(--glow); }
 
+  /* ===== Topic selection (Membership Statistics) ===== */
   .stat-card{ cursor:pointer; transition:transform 0.15s ease, border-color 0.15s ease; }
   .stat-card:hover{ transform:translateY(-2px); border-color:rgba(94,234,212,0.35); }
   .stat-card.selected{ border-color:rgba(94,234,212,0.55); }
@@ -481,7 +474,7 @@
     min-width: 70px;
     background-size: cover;
     background-position: center;
-    overflow: hidden;
+    overflow: hidden; /* keeps the bg image inside the rounded corners */
   }
 
   .day-pill::before {
@@ -504,7 +497,7 @@
 
   .event-details{ display:flex; flex-direction:column; gap:14px; margin-top:16px; }
   .event-badge{
-    display:inline-flex; align-items:center; gap:4px; font-family:var(--font-data); font-size:10.5px; letter-spacing:0.1em;
+    display:inline-block; font-family:var(--font-data); font-size:10.5px; letter-spacing:0.1em;
     text-transform:uppercase; padding:4px 10px; border-radius:6px;
     background:rgba(255,106,61,0.2); border:1px solid var(--signal); color:var(--signal);
     width:fit-content;
@@ -513,7 +506,214 @@
   .event-info-list{ list-style:none; display:flex; flex-direction:column; gap:8px; font-size:13.5px; color:var(--foam-dim); }
   .event-info-list li{ display:flex; align-items:center; gap:8px; }
 
-  /* Footer */
+  /* =========================================================
+     ANNUAL CALENDAR GRID
+     ========================================================= */
+  .calendar-card{ padding:24px; }
+  .calendar-grid{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-top:16px;
+  }
+  @media (max-width:840px){ .calendar-grid{ grid-template-columns:repeat(2, 1fr); } }
+  @media (max-width:540px){ .calendar-grid{ grid-template-columns:1fr; } }
+
+  .cal-month{
+    background:var(--glass-fill); border:1px solid var(--glass-border);
+    border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px;
+  }
+  .cal-month h4{
+    font-family:var(--font-display); font-size:15px; color:var(--glow); border-bottom:1px solid var(--glass-border); padding-bottom:6px;
+  }
+  .cal-event-item{ font-size:12.5px; display:flex; flex-direction:column; gap:2px; }
+  .cal-event-item .date{ font-family:var(--font-data); font-size:11px; color:var(--signal); }
+  .cal-event-item .name{ color:var(--foam); font-weight:500; }
+
+  /* =========================================================
+     APPS SCRIPT & SHEETS PLACEHOLDERS
+     ========================================================= */
+  .app-placeholder{
+    border:2px dashed var(--glass-border); border-radius:16px;
+    padding:32px 20px; text-align:center;
+    background:rgba(7,27,44,0.3);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    margin-top:16px;
+  }
+  .app-placeholder code{
+    font-family:var(--font-data); font-size:12px; color:var(--glow);
+    background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:6px;
+  }
+  
+    /* ===== Results module-specific styles ===== */
+  .class-select-wrap {
+    display: inline-block;
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .class-select {
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 10px 40px 10px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--glow), #38bfa1);
+    color: var(--ocean-deep);
+    border: none;
+    outline: none;
+    box-shadow: 0 8px 24px rgba(94,234,212,0.25);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .class-select:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(94,234,212,0.35); }
+  .class-select-wrap::after {
+    content: "▾";
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ocean-deep);
+    pointer-events: none;
+    font-size: 16px;
+  }
+  .class-select option { background: var(--ocean-mid); color: #fff; }
+
+
+  .round-tabs{ display:flex; gap:6px; margin-bottom:16px; }
+  .round-tab{
+    font-family:var(--font-data); font-size:11.5px; letter-spacing:.04em;
+    padding:6px 12px; border-radius:8px; cursor:pointer;
+    background:transparent; border:1px solid var(--glass-border); color:var(--foam-dim);
+  }
+  .round-tab.active{ background:var(--glass-fill-hi); color:var(--glow); border-color:var(--glow); }
+
+  .sheet-meta{
+    font-family:var(--font-data); font-size:12px; color:var(--foam-dim);
+    margin-bottom:12px; padding:10px 14px;
+    background:var(--glass-fill); border:1px solid var(--glass-border); border-radius:10px;
+  }
+
+
+  .standings-status{ font-family:var(--font-data); font-size:11.5px; color:var(--foam-dim); margin-bottom:10px; min-height:16px; }
+
+  table.standings{ width:100%; border-collapse:collapse; font-size:13px; }
+  table.standings th{
+    font-family:var(--font-data); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--glow); text-align:left; padding:10px 12px; border-bottom:1px solid var(--glass-border);
+    position:sticky; top:0; background:rgba(15,53,80,0.85);
+  }
+  table.standings th.col-center, table.standings td.col-center{ text-align:center; }
+  table.standings td{ padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); color:var(--foam); }
+  table.standings tbody tr:hover{ background:var(--glass-fill); }
+  table.standings tbody tr:nth-child(1) td:first-child{ color:#ffd166; font-weight:700; }
+  table.standings tbody tr:nth-child(2) td:first-child{ color:#dbe6ea; font-weight:700; }
+  table.standings tbody tr:nth-child(3) td:first-child{ color:var(--signal); font-weight:700; }
+  
+  .table-scroll{ overflow-x:auto; max-height:480px; overflow-y:auto; border-radius:12px; }
+
+    /* Calendar event item — icon left, text right */
+  .cal-event-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cal-class-img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 4px;
+  }
+
+  .cal-class-img--placeholder {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .cal-event-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* =========================================================
+      next event card 
+    ========================================================= */
+  /* Card Container */
+  .race-card {
+    position: relative;
+    width: 100%;
+    max-width: 360px;
+    height: 260px;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    font-family: system-ui, -apple-system, sans-serif;
+    box-sizing: border-box;
+    margin-bottom: 20px; /* Adjust spacing as needed */
+  }
+
+  /* Background Image Layer */
+  .race-card img.race-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+  }
+
+  /* Foreground Content Overlay */
+  .race-card .card-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  /* Card Header (Title & Time) */
+  .race-card .heading h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  .race-card .race-time {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #ffd000; /* Bright yellow time matching reference image */
+    margin-top: 4px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  .race-card:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Frosted Glass Weather Panel at Bottom */
+  .race-card .weather-cards-row,
+  .race-card .weather-mini-card {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: #ffffff;
+    text-align: left;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  /* =========================================================
+     FOOTER
+     ========================================================= */
   footer{
     border-top:1px solid var(--glass-border);
     padding:28px; margin-top:70px;
@@ -524,7 +724,7 @@
   footer a{ color:var(--glow); text-decoration:none; }
 
   @media (prefers-reduced-motion: reduce){
-    body::before, .eyebrow .dot{ animation:none !important; }
+    body::before, .eyebrow .dot, .binnacle-needle{ animation:none !important; }
     html{ scroll-behavior:auto; }
   }
 </style>
@@ -544,45 +744,43 @@
 
     <ul class="nav-links">
       <li class="nav-item">
-        <span class="nav-link">Members <i data-lucide="chevron-down"></i></span>
+        <span class="nav-link">Members ▾</span>
         <ul class="dropdown-menu glass">
-          <li><a href="#members-list"><i data-lucide="users"></i> Members List</a></li>
-          <li><a href="#member-details"><i data-lucide="user-check"></i> Member Details</a></li>
-          <li><a href="#applications"><i data-lucide="file-text"></i> Applications</a></li>
-          <li><a href="#boat-register"><i data-lucide="anchor"></i> Boat Register</a></li>
+          <li><a href="#members-list">Members List</a></li>
+          <li><a href="#member-details">Member Details</a></li>
+          <li><a href="#applications">Applications</a></li>
+          <li><a href="#boat-register">Boat Register</a></li>
         </ul>
       </li>
 
       <li class="nav-item">
-        <span class="nav-link">Calendar <i data-lucide="chevron-down"></i></span>
+        <span class="nav-link">Calendar ▾</span>
         <ul class="dropdown-menu glass">
-          <li><a href="#annual-calendar"><i data-lucide="calendar"></i> Annual Calendar</a></li>
-          <li><a href="#next-event"><i data-lucide="flag"></i> Next Event</a></li>
-          <li><a href="#reschedule-event"><i data-lucide="clock"></i> Reschedule Event</a></li>
+          <li><a href="#annual-calendar">Annual Calendar</a></li>
+          <li><a href="#next-event">Next Event</a></li>
+          <li><a href="#reschedule-event">Reschedule Event</a></li>
         </ul>
       </li>
 
       <li class="nav-item">
-        <span class="nav-link">Race Results <i data-lucide="chevron-down"></i></span>
+        <span class="nav-link">Race Results ▾</span>
         <ul class="dropdown-menu glass">
-          <li><a href="#add-result"><i data-lucide="plus-circle"></i> Add Race Result</a></li>
-          <li><a href="#iom"><i data-lucide="trophy"></i> IOM Standings</a></li>
-          <li><a href="#df95"><i data-lucide="trophy"></i> DF95 Standings</a></li>
-          <li><a href="#df65"><i data-lucide="trophy"></i> DF65 Standings</a></li>
-          <li><a href="#soling"><i data-lucide="trophy"></i> Soling Standings</a></li>
-          <li><a href="#gh"><i data-lucide="trophy"></i> GH Standings</a></li>
+          <li><a href="#add-result">Add Race Result</a></li>
+          <li><a href="#iom">IOM Standings</a></li>
+          <li><a href="#df95">DF95 Standings</a></li>
+          <li><a href="#df65">DF65 Standings</a></li>
+          <li><a href="#soling">Soling Standings</a></li>
+          <li><a href="#gh">GH Standings</a></li>
         </ul>
       </li>
       
       <li class="nav-item">
-        <a href="#apps-script-hub" class="btn btn-primary" style="padding:6px 14px; font-size:12.5px;">
-          <i data-lucide="layout-grid"></i> Portal Apps
-        </a>
+        <a href="#apps-script-hub" class="btn btn-primary" style="padding:6px 14px; font-size:12.5px;">Portal Apps</a>
       </li>
     </ul>
 
     <button class="nav-toggle" aria-label="Toggle Navigation">
-      <i data-lucide="menu"></i>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
     </button>
   </header>
 
@@ -600,30 +798,21 @@
           Home of Australia's premier radio controlled yacht racing venue
         </p>
         <div class="hero-actions">
-          <a href="#next-event" class="btn btn-primary"><i data-lucide="calendar"></i> Next Weekend Race</a>
-          <a href="#race-results" class="btn btn-ghost"><i data-lucide="trophy"></i> View Latest Results</a>
+          <a href="#next-event" class="btn btn-primary">Next Weekend Race</a>
+          <a href="#race-results" class="btn btn-ghost">View Latest Results</a>
         </div>
 
         <div class="conditions">
           <div class="cond-pill glass">
-            <div class="label-wrap">
-              <i data-lucide="wind" style="color:var(--glow)"></i>
-              <span class="label">Course Wind</span>
-            </div>
+            <span class="label">Course Wind</span>
             <span class="value accent" id="hero-wind">—</span>
           </div>
           <div class="cond-pill glass">
-            <div class="label-wrap">
-              <i data-lucide="thermometer" style="color:var(--glow)"></i>
-              <span class="label">Ambient Temp</span>
-            </div>
+            <span class="label">Ambient Temp</span>
             <span class="value" id="hero-temp">—</span>
           </div>
           <div class="cond-pill glass">
-            <div class="label-wrap">
-              <i data-lucide="sun" style="color:var(--glow)"></i>
-              <span class="label">UV Index</span>
-            </div>
+            <span class="label">UV Index</span>
             <span class="value" id="hero-uv">—</span>
           </div>
         </div>
@@ -639,18 +828,19 @@
     </section>
 
     <!-- =========================================================
-         LATEST RACE RESULTS FEED
+          LATEST RACE RESULTS FEED
          ========================================================= -->
     <section id="race-results" class="container">
       <div class="feed-card glass">
         <div class="feed-head">
           <div class="feed-title">
             <span class="dot"></span>
-            <h3><i data-lucide="award"></i> Latest Race Results</h3>
+            <h3>Latest Race Results</h3>
           </div>
           <span class="feed-meta" id="latestResultsMeta">Loading latest round…</span>
         </div>
 
+        <!-- Populated by loadLatestResults() via the HomePage Data API -->
         <div class="ribbon" id="resultsRibbon">
           <div class="finish-chip glass">
             <div class="pos">–</div>
@@ -666,11 +856,11 @@
         <div class="feed-head">
           <div class="feed-title">
             <span class="dot"></span>
-            <h3><i data-lucide="trophy"></i> Championship Standings</h3>
+            <h3>Championship Standings</h3>
           </div>
         </div>
     
-        <div id="classTabs"></div>
+                <div id="classTabs"></div>
 
         <div class="round-tabs" id="roundTabs"></div>
         <div class="standings-status" id="statusLine"></div>
@@ -689,33 +879,34 @@
          ========================================================= -->
     <section id="membership-stats" class="container">
       <div class="section-head">
-        <h2><i data-lucide="users"></i> Membership Statistics</h2>
+        <h2>Membership Statistics</h2>
         <p>Live stats integrated from Club Registry Sheets</p>
       </div>
 
       <div class="stats-grid" id="statsGrid">
         <div class="stat-card glass selected" data-topic="members" role="button" tabindex="0">
-          <span class="label"><i data-lucide="user"></i> Total Members</span>
+          <span class="label">Total Members</span>
           <span class="val" id="stat-val-members">—</span>
           <span class="sub" id="stat-sub-members">Loading…</span>
         </div>
         <div class="stat-card glass" data-topic="applications" role="button" tabindex="0">
-          <span class="label"><i data-lucide="file-input"></i> Online Applications</span>
+          <span class="label">Online Applications</span>
           <span class="val" id="stat-val-applications">—</span>
           <span class="sub" id="stat-sub-applications">Loading…</span>
         </div>
         <div class="stat-card glass" data-topic="boats" role="button" tabindex="0">
-          <span class="label"><i data-lucide="anchor"></i> Registered Boats</span>
+          <span class="label">Registered Boats</span>
           <span class="val" id="stat-val-boats">—</span>
           <span class="sub" id="stat-sub-boats">Loading…</span>
         </div>
         <div class="stat-card glass" data-topic="financial" role="button" tabindex="0">
-          <span class="label"><i data-lucide="credit-card"></i> Financial Status</span>
+          <span class="label">Financial Status</span>
           <span class="val" id="stat-val-financial">—</span>
           <span class="sub" id="stat-sub-financial">Loading…</span>
         </div>
       </div>
 
+      <!-- Status Breakdown for the selected topic (rendered by renderBreakdown()) -->
       <div class="status-breakdown glass" id="statusBreakdown"></div>
     </section>
 
@@ -729,33 +920,614 @@
         <div id="weather" class="weather-card glass">
           <div class="feed-head">
             <div class="feed-title">
-              <h3><i data-lucide="cloud-sun"></i> Weather Forecast</h3>
+              <h3>7-Day SMMC Weather Forecast</h3>
+            </div>
+            <span class="feed-meta">Lakeside Conditions</span>
+          </div>
+
+          <div class="weather-week">
+            <div class="day-pill">
+              <span class="d-name">Sat</span>
+              <span class="d-icon">☀️</span>
+              <span class="d-temp">22°C</span>
+              <span class="d-wind">12 kts E</span>
+            </div>
+            <div class="day-pill">
+              <span class="d-name">Sun</span>
+              <span class="d-icon">🌤️</span>
+              <span class="d-temp">21°C</span>
+              <span class="d-wind">15 kts NE</span>
+            </div>
+            <div class="day-pill">
+              <span class="d-name">Mon</span>
+              <span class="d-icon">🌧️</span>
+              <span class="d-temp">18°C</span>
+              <span class="d-wind">18 kts S</span>
+            </div>
+            <div class="day-pill">
+              <span class="d-name">Tue</span>
+              <span class="d-icon">⛅</span>
+              <span class="d-temp">19°C</span>
+              <span class="d-wind">10 kts SE</span>
+            </div>
+            <div class="day-pill">
+              <span class="d-name">Wed</span>
+              <span class="d-icon">☀️</span>
+              <span class="d-temp">23°C</span>
+              <span class="d-wind">8 kts E</span>
+            </div>
+            <div class="day-pill">
+              <span class="d-name">Thu</span>
+              <span class="d-icon">☀️</span>
+              <span class="d-temp">24°C</span>
+              <span class="d-wind">11 kts NE</span>
+            </div>
+            <div class="day-pill">
+              <span class="d-name">Fri</span>
+              <span class="d-icon">🌤️</span>
+              <span class="d-temp">22°C</span>
+              <span class="d-wind">14 kts E</span>
             </div>
           </div>
-          <div class="weather-week" id="weatherWeek"></div>
         </div>
 
         <!-- Next Event Card -->
+
         <div id="next-event" class="next-event-card glass">
-          <div class="event-badge"><i data-lucide="calendar"></i> Upcoming Regatta</div>
-          <h3 class="event-title" style="margin-top:12px;">Weekend Club Championship</h3>
-          <ul class="event-info-list" style="margin-top:12px;">
-            <li><i data-lucide="clock"></i> Sunday 10:00 AM</li>
-            <li><i data-lucide="map-pin"></i> Norwest Lake Venue</li>
-          </ul>
+          <div class="feed-head">
+            <div class="feed-title">
+              <h3>Upcoming Weekend</h3>
+            </div>
+            <span class="feed-meta">Event Conditions</span>
+          </div>
+          <!-- Dynamic content from WebApp will load here -->
+          <div id="event-display-container">Loading event details...</div>
+        </div>
+
+        <!-- <div id="next-event" class="next-event-card glass">
+          //<div id="event-display-container">Loading event details...</div>
+          //<span class="event-badge">Upcoming Weekend</span>
+          //<h3 class="event-title" style="margin-top:8px;">DragonFlite 95 Sprint Series</h3>
+          //
+          //<div class="event-details">
+          //  <ul class="event-info-list">
+          //    <li><i data-lucide="calendar-days" color="#257fb6"></i> <strong>Date:</strong> Saturday, 22 August 2026</li>
+          //    <li><i data-lucide="clock" color="#257fb6"></i> <strong>First Briefing:</strong> 09:30 AM</li>
+          //    <li><i data-lucide="map-pin" color="#257fb6"></i> <strong>Location:</strong> Rodd Point, Iron Cove Bay</li>
+          //    <li><i data-lucide="boat" color="#257fb6"></i> <strong>Class:</strong> DF95 (Handicap & Scratch)</li>
+          //    <li><i data-lucide="user" color="#257fb6"></i> <strong>Officer of Day:</strong> R. Henderson</li>
+          //  </ul>
+          //  <div style="display:flex; gap:10px; margin-top:8px;">
+          //    <a href="#apps-script-hub" class="btn btn-primary" style="flex:1; justify-content:center;">Register Entry</a>
+          //    <a href="#reschedule-event" class="btn btn-ghost">Reschedule</a>
+          //  </div>
+          //</div> 
+        </div> -->
+
+      </div>
+    </section>
+
+    <!-- =========================================================
+         ANNUAL CALENDAR
+         ========================================================= -->
+    <section id="annual-calendar" class="container">
+      <div class="section-head">
+        <h2>Annual Event Calendar</h2>
+        <p>2026 Regattas & Championship Schedule</p>
+      </div>
+
+      <div class="calendar-card glass">
+        <div class="calendar-grid">
+          
+          <div class="cal-month">
+            <h4>August 2026</h4>
+            <div class="cal-event-item">
+              <span class="date">SAT 22 AUG • 09:30</span>
+              <span class="name">DF95 Sprint Series Rd 5</span>
+            </div>
+            <div class="cal-event-item">
+              <span class="date">SUN 30 AUG • 10:00</span>
+              <span class="name">IOM Club Championship Rd 8</span>
+            </div>
+          </div>
+
+          <div class="cal-month">
+            <h4>September 2026</h4>
+            <div class="cal-event-item">
+              <span class="date">SAT 12 SEP • 10:00</span>
+              <span class="name">Soling 50 Regatta</span>
+            </div>
+            <div class="cal-event-item">
+              <span class="date">SAT 26 SEP • 09:00</span>
+              <span class="name">DF65 Spring Cup</span>
+            </div>
+          </div>
+
+          <div class="cal-month">
+            <h4>October 2026</h4>
+            <div class="cal-event-item">
+              <span class="date">SAT 10 OCT • 09:30</span>
+              <span class="name">State IOM Invitational</span>
+            </div>
+            <div class="cal-event-item">
+              <span class="date">SUN 25 OCT • 10:00</span>
+              <span class="name">Gaff Rig & Scale Wooden Boat Day</span>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
+
+    <!-- =========================================================
+         APPS SCRIPT & GOOGLE SHEETS EMBED PLACEHOLDERS
+         ========================================================= -->
+    <section id="apps-script-hub" class="container">
+      <div class="section-head">
+        <h2>Club Apps & Sheets Integration Hub</h2>
+        <p>Dynamic AppSheet, Apps Script Web Apps & Google Sheets Placeholders</p>
+      </div>
+
+      <div class="tile-grid">
+        
+        <!-- Placeholder 1: Member Register App -->
+        <div id="members-list" class="tile glass">
+          <div class="tile-icon">👥</div>
+          <h3>Members Management</h3>
+          <p>Access member list, details, and membership applications processing.</p>
+          <div class="app-placeholder">
+            <code>Apps Script: Members Web App</code>
+            <span style="font-size:11px; color:var(--foam-dim);">[Embed Google Apps Script / AppSheet IFRAME Here]</span>
+          </div>
+          <span class="tag">Members Module</span>
+        </div>
+
+        <!-- Placeholder 2: Boat Register App -->
+        <div id="boat-register" class="tile glass">
+          <div class="tile-icon">⛵</div>
+          <h3>Boat Register</h3>
+          <p>Class certificates, sail numbers, and club hull registrations.</p>
+          <div class="app-placeholder">
+            <code>Sheets: Boat Registry</code>
+            <span style="font-size:11px; color:var(--foam-dim);">[Embed Google Sheet / Web Form Here]</span>
+          </div>
+          <span class="tag">Registry Module</span>
+        </div>
+
+        <!-- Placeholder 3: Add Race Result App -->
+        <div id="add-result" class="tile glass">
+          <div class="tile-icon">⏱️</div>
+          <h3>Race Scoring App</h3>
+          <p>OOD score entry for IOM, DF95, DF65, Soling, and GH classes.</p>
+          <div class="app-placeholder">
+            <code>Apps Script: Race Scoring Form</code>
+            <span style="font-size:11px; color:var(--foam-dim);">[Embed Scoring App Script Here]</span>
+          </div>
+          <span class="tag">Scoring Module</span>
+        </div>
+
+        <!-- Placeholder 4: Reschedule Event App -->
+        <div id="reschedule-event" class="tile glass">
+          <div class="tile-icon">📅</div>
+          <h3>Calendar & Reschedule</h3>
+          <p>Event management, weather delays, and date rescheduling portal.</p>
+          <div class="app-placeholder">
+            <code>Apps Script: Calendar Editor</code>
+            <span style="font-size:11px; color:var(--foam-dim);">[Embed Calendar Management Web App Here]</span>
+          </div>
+          <span class="tag">Calendar Module</span>
+        </div>
+
+      </div>
+    </section>
+
   </main>
 
+  <!-- =========================================================
+       FOOTER
+       ========================================================= -->
   <footer>
-    <span>&copy; Sydney Maritime Modellers Club</span>
-    <span><a href="#"><i data-lucide="arrow-up"></i> Back to top</a></span>
+    <div>
+      © 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> All rights reserved.
+    </div>
+    <div style="display:flex; gap:16px;">
+      <a href="#members-list">Members Portal</a>
+      <a href="#annual-calendar"> </a>
+      <a href="#race-results">Results Hub</a>
+    </div>
   </footer>
-
   <script>
-    // Initialize Lucide icons
-    lucide.createIcons();
+  // Find Overall and Round sheets per Championship
+  const DISCOVERY_URL = "https://script.google.com/macros/s/AKfycbxaLDa75WGJ8yqzEnAoLQbvfIyxT9ZDG-YJLP2qSQFtDTEvnbgbjZpsX_7aFcOu0sdl/exec"; 
+  const RESULTS_CONFIG = {
+    df95: { label: 'DF95 Scratch', spreadsheetId: '1J8CUk1VCDeOYAXfI00acv9YBScgGvH_BrirOBOIfW90' },
+    df95h: { label: 'DF95 Handicap', spreadsheetId: '1a2cU8sU0I7oTDjo8MTmQRlUxasG-5sjNFnTWpJcJsVg' },
+    iom:  { label: 'IOM Racing',  spreadsheetId: '1k3Oe4SBZEMLlrSc1jRaPQkSN6R7RA4OHUtcDn4OZLeQ'  },
+    soling:  { label: 'Soling Scratch',  spreadsheetId: '1WTLfz4EHShQ6G5VFZ8jJwDiTn-4oHK-pk-hYfBIMn38'  },
+    gh:  { label: 'General Handicap',  spreadsheetId: '1xMKT7HapmqEIuqhQQxH1pfPkRWam5x88Pxaah1xayog'  },
+    df65:  { label: 'DF65 Scratch',  spreadsheetId: '1T5zgrZpJDmQKmkMlnOmnAb_ext18zx733mMuvh4akvg'  },
+  
+  };
+  <!-- Initialize Lucide icons -->
+
+  lucide.createIcons();
+
+  const sheetListCache = {}; // classKey -> [{name, gid}, ...], fetched once per session
+  
+  async function getSheetsForClass(classKey){
+    if (sheetListCache[classKey]) return sheetListCache[classKey];
+  
+    const cls = RESULTS_CONFIG[classKey];
+    const res = await fetch(`${DISCOVERY_URL}?ss=${cls.spreadsheetId}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    sheetListCache[classKey] = data.sheets; // [{name:'Overall', gid:0}, {name:'Round 1', gid:123}, ...]
+    return sheetListCache[classKey];
+  }
+
+  
+  /* =========================================================================
+     Engine — no need to edit below this line
+     ========================================================================= */
+  async function fetchSheet(spreadsheetId, sheetName){
+    const url = `${DISCOVERY_URL}?ss=${spreadsheetId}&sheet=${encodeURIComponent(sheetName)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return { meta: data.meta, headers: data.headers, rows: data.rows };
+  }
+  
+  function renderTable(meta, headers, rows){
+    document.getElementById('sheetMeta').textContent = meta.join(' • ');
+  
+    const CENTER_HEADERS = /^(R\d+|Round\s*\d+|Pos|Result|Sail\s*#|Total|Drop|W|T3|T5|Rank|Discard)$/i;
+    const centerCols = headers.map(h => CENTER_HEADERS.test(String(h).trim()));
+  
+    document.getElementById('tableHead').innerHTML =
+      '<tr>' + headers.map((h, i) => `<th class="${centerCols[i] ? 'col-center' : ''}">${h}</th>`).join('') + '</tr>';
+  
+    document.getElementById('tableBody').innerHTML =
+      rows.map(r => '<tr>' + r.map((c, i) => `<td class="${centerCols[i] ? 'col-center' : ''}">${c}</td>`).join('') + '</tr>').join('');
+  }
+  
+  let activeClass = Object.keys(RESULTS_CONFIG)[0];
+  let activeSheetIndex = 0; // index into the discovered sheet list for the active class
+  
+  async function loadActiveSheet(){
+    const statusEl = document.getElementById('statusLine');
+    statusEl.textContent = 'Loading…';
+    const cls = RESULTS_CONFIG[activeClass];
+    const sheets = await getSheetsForClass(activeClass);
+    const sheet = sheets[activeSheetIndex];
+    if (!sheet){ statusEl.textContent = 'No sheets found.'; return; }
+
+   try{
+      const { meta, headers, rows } = await fetchSheet(cls.spreadsheetId, sheet.name);
+      renderTable(meta, headers, rows);
+      statusEl.textContent = `${cls.label} • ${sheet.name} • live from Google Sheets`;
+    }catch(err){
+      document.getElementById('tableHead').innerHTML = '';
+      document.getElementById('tableBody').innerHTML = '';
+      statusEl.textContent = `Couldn't load results: ${err.message}`;
+    }
+  }
+  
+  async function renderRoundTabs(){
+    const sheets = await getSheetsForClass(activeClass);
+    document.getElementById('roundTabs').innerHTML = sheets.map((s, i) =>
+      `<button class="round-tab ${i===activeSheetIndex?'active':''}" data-index="${i}">${s.name}</button>`
+    ).join('');
+    document.querySelectorAll('.round-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeSheetIndex = parseInt(btn.dataset.index);
+        renderRoundTabs();
+        loadActiveSheet();
+      });
+    });
+  }
+  
+  function renderClassTabs(){
+    const container = document.getElementById('classTabs');
+    container.className = 'class-select-wrap';
+    container.innerHTML = `
+      <select class="class-select" id="classSelector">
+        ${Object.entries(RESULTS_CONFIG).map(([key, cls]) => 
+          `<option value="${key}" ${key === activeClass ? 'selected' : ''}>${cls.label}</option>`
+        ).join('')}
+      </select>
+    `;
+    
+    document.getElementById('classSelector').addEventListener('change', async (e) => {
+      activeClass = e.target.value;
+      activeSheetIndex = 0;
+      await renderRoundTabs();
+      loadActiveSheet();
+    });
+  }
+
+  
+  (async function init(){
+    renderClassTabs();
+    await renderRoundTabs();
+    loadActiveSheet();
+  })();
+
+  /* =========================================================================
+     LATEST RESULTS + MEMBERSHIP STATISTICS
+     These two sections are served by the "HomePage Data API" Apps Script web
+     app (standalone Apps Script project: "HomePage Data API/").
+
+     >>> REQUIRED: paste the Data API's /exec deployment URL below. <<<
+     Unlike the Championship Standings module, they do NOT fall back to
+     DISCOVERY_URL - the old discovery app does not implement these actions.
+     ========================================================================= */
+  const HOME_DATA_API = "https://script.google.com/macros/s/AKfycbzGgNMh8KNWYquGuOoGvmrasDR5npiPoNXTouuzVeY9sRwrhDo29BVDbWGrh_FfgoieXQ/exec";
+  const DATA_API_BASE = HOME_DATA_API;
+
+  function apiConfigured(){
+    return typeof HOME_DATA_API === 'string' && HOME_DATA_API.trim() !== '';
+  }
+
+  async function apiGet(params){
+    const qs = new URLSearchParams(params).toString();
+    const res = await fetch(`${DATA_API_BASE}?${qs}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data;
+  }
+
+  function esc(s){
+    const d = document.createElement('div');
+    d.textContent = (s === null || s === undefined) ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  function ordinalSuffix(n){
+    n = Number(n);
+    if (!isFinite(n)) return 'th';
+    const s = ['th','st','nd','rd'], v = n % 100;
+    return s[(v - 20) % 10] || s[v] || s[0];
+  }
+
+  /* ------------------------ Latest Race Results ------------------------ */
+
+  function chipHTML(r, idx){
+    const placeClass = idx < 3 ? ` p${idx + 1}` : '';
+    return `<div class="finish-chip glass${placeClass}">
+      <div class="pos">${esc(r.pos)}<small>${ordinalSuffix(r.pos)}</small></div>
+      <div class="points">${esc(r.points)}</div>
+      <div class="sailor">${esc(r.sailor)}</div>
+      <div class="sail-no">${esc(r.sailNo || '&nbsp;')}</div>
+    </div>`;
+  }
+
+  async function loadLatestResults(){
+    const metaEl = document.getElementById('latestResultsMeta');
+    const ribbonEl = document.getElementById('resultsRibbon');
+    if (!apiConfigured()) {
+      metaEl.textContent = 'Not configured';
+      ribbonEl.innerHTML =
+        '<div class="finish-chip glass"><div class="pos">–</div>' +
+        '<div class="sailor">Set HOME_DATA_API to the deployed "HomePage Data API" URL</div>' +
+        '<div class="sail-no">&nbsp;</div></div>';
+      return;
+    }
+    try {
+      const data = await apiGet({ action: 'latestResults' });
+      metaEl.textContent =
+        `${data.event.roundLabel} • ${data.event.championship} (Raced ${data.event.racedOn})`;
+      ribbonEl.innerHTML = data.results.length
+        ? data.results.map(chipHTML).join('')
+        : `<div class="finish-chip glass"><div class="pos">–</div><div class="sailor">No results recorded</div><div class="sail-no">&nbsp;</div></div>`;
+    } catch (err) {
+      console.error('Latest results:', err);
+      metaEl.textContent = 'Latest results unavailable';
+      ribbonEl.innerHTML =
+        `<div class="finish-chip glass"><div class="pos">–</div><div class="sailor">${esc(err.message)}</div><div class="sail-no">&nbsp;</div></div>`;
+    }
+  }
+
+  /* --------------------- Membership Statistics ------------------------- */
+
+  const TOPIC_META = {
+    members:      { breakdownTitle: 'Status Breakdown — Total Members by Member Type' },
+    applications: { breakdownTitle: 'Status Breakdown — Online Applications by Status' },
+    boats:        { breakdownTitle: 'Status Breakdown — Registered Boats by Class' },
+    financial:    { breakdownTitle: 'Status Breakdown — Financial Status by Paid Up' }
+  };
+  const BREAKDOWN_COLORS = ['received', 'progress', 'awaiting', 'processed'];
+  let membershipData = null;
+  let selectedTopic = 'applications';
+
+  function setCard(topic, val, sub){
+    document.getElementById('stat-val-' + topic).textContent = val;
+    document.getElementById('stat-sub-' + topic).textContent = sub || '';
+  }
+
+  function renderStatCards(){
+    const t = membershipData.topics;
+    setCard('members',      t.members.total,      t.members.sub);
+    setCard('applications', t.applications.total, t.applications.sub);
+    setCard('boats',        t.boats.total,        t.boats.sub);
+    setCard('financial',    t.financial.total,    t.financial.sub);
+  }
+
+  function renderBreakdown(){
+    document.querySelectorAll('.stat-card[data-topic]').forEach(card =>
+      card.classList.toggle('selected', card.dataset.topic === selectedTopic));
+
+    const topic = membershipData.topics[selectedTopic];
+    const el = document.getElementById('statusBreakdown');
+    const baseTitle = TOPIC_META[selectedTopic].breakdownTitle;
+    const titleWithTotal = selectedTopic === 'applications'
+      ? `${baseTitle} (${topic.total} total)`
+      : baseTitle;
+
+    el.innerHTML =
+      `<div class="breakdown-title">${esc(titleWithTotal)}</div>` +
+      topic.breakdown.map((b, i) =>
+        `<div class="status-item ${BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.length]}">
+          <span class="s-name">${esc(b.name)}</span>
+          <span class="s-num">${b.count}</span>
+        </div>`).join('');
+  }
+
+  function wireTopicSelection(){
+    document.querySelectorAll('.stat-card[data-topic]').forEach(card => {
+      const select = () => { selectedTopic = card.dataset.topic; renderBreakdown(); };
+      card.addEventListener('click', select);
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); }
+      });
+    });
+  }
+
+  async function loadMembershipStats(){
+    if (!apiConfigured()) {
+      ['members', 'applications', 'boats', 'financial'].forEach(t => setCard(t, '—', 'Not configured'));
+      document.getElementById('statusBreakdown').innerHTML =
+        '<div class="breakdown-title">Set HOME_DATA_API to the deployed "HomePage Data API" URL</div>';
+      return;
+    }
+    try {
+      membershipData = await apiGet({ action: 'membershipStats' });
+      renderStatCards();
+      wireTopicSelection();
+      renderBreakdown();
+    } catch (err) {
+      console.error('Membership stats:', err);
+      ['members', 'applications', 'boats', 'financial'].forEach(t => setCard(t, '—', 'Unavailable'));
+      document.getElementById('statusBreakdown').innerHTML =
+        `<div class="breakdown-title">Statistics unavailable — ${esc(err.message)}</div>`;
+    }
+  }
+
+  /* --------------------- Weather Data  ------------------------- */
+  function loadWeather() {
+    const container = document.querySelector('.weather-week');
+    const script = document.createElement('script');
+    script.src = `https://script.google.com/macros/s/AKfycbworw_FnbKehShRIfhbXTuxlAa36jJt8d7MLCvjzAWUfp-_xXORa2ZzC_0m20msa1oj/exec?action=data&callback=renderWeather`;
+    script.onerror = () => {
+      container.innerHTML = `<p style="padding:10px; color:var(--foam-dim); font-size:11px;">Weather data temporarily unavailable (Syncing...)</p>`;
+    };
+    document.body.appendChild(script);
+  }
+  window.renderWeather = function(data) {
+    const container = document.querySelector('.weather-week');
+    const forecast = data.forecast;
+
+    if (forecast && Array.isArray(forecast) && forecast.length > 0) {
+      const today = forecast[0];
+      document.getElementById('hero-wind').textContent = today.wind + (String(today.wind).match(/\d$/) ? ' kts' : '');
+      document.getElementById('hero-temp').textContent = today.max + '°C';
+      document.getElementById('hero-uv').textContent = String(today.uvIndex).replace('UV ', '');
+
+      container.innerHTML = forecast.map(day => `
+        <div class="day-pill" style="background-image:url('${esc(day.bg)}'); background-size:cover; background-position:center;">
+          <span class="d-day">${esc(day.day.substring(0, 3))}</span>
+          <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
+          <span class="d-temp">${esc(day.max)}°C</span>
+          <span class="d-wind" style="font-size:10px;">${esc(day.wind)}</span>
+        </div>
+      `).join('');
+    }
+  };
+
+  loadWeather();
+
+  /* --------------------- Next Event ------------------------- */
+  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec';
+
+  async function loadEventDisplay() {
+    try {
+      const response = await fetch(`${WEB_APP_URL}?type=display&load=next`);
+      const htmlSnippet = await response.text();
+
+      // Replace container innerHTML
+      const container = document.getElementById('event-display-container');
+      container.innerHTML = htmlSnippet;
+
+      // Render Lucide icons in the newly injected HTML
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    } catch (err) {
+      console.error('Failed to load event display:', err);
+      document.getElementById('event-display-container').innerHTML = '<p>Unable to load event details.</p>';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadEventDisplay);
+
+  // ============================================================
+  // ANNUAL CALENDAR — fetch and render
+  // Add this script to your index.html, or include as a .js file.
+  // Requires the #annual-calendar section with .calendar-grid inside.
+  // ============================================================
+
+  const CALENDAR_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec?type=calendar';
+
+  async function loadAnnualCalendar() {
+    const grid = document.querySelector('#annual-calendar .calendar-grid');
+    if (!grid) return;
+
+    // Show a loading state while fetching
+    grid.innerHTML = '<p class="cal-loading">Loading calendar…</p>';
+
+    try {
+      const response = await fetch(CALENDAR_URL);
+      if (!response.ok) throw new Error('Network response was not ok');
+
+      const data = await response.json();
+
+      if (!data.months || data.months.length === 0) {
+        grid.innerHTML = '<p class="cal-empty">No events scheduled for the next 3 months.</p>';
+        return;
+      }
+
+      grid.innerHTML = data.months.map(month => buildMonthHTML(month)).join('');
+
+    } catch (err) {
+      console.error('Calendar fetch failed:', err);
+      grid.innerHTML = '<p class="cal-error">Unable to load calendar. Please try again later.</p>';
+    }
+  }
+
+  function buildMonthHTML(month) {
+    const eventsHTML = month.events.map(ev => {
+      const dateStr = ev.dateLabel + ' • ' + ev.startTime;
+  
+      const imageHTML = ev.classImage
+        ? `<img src="${ev.classImage}" alt="${ev.boatClass}" title="${ev.boatClass}"
+              style="width:40px;height:40px;object-fit:contain;flex-shrink:0;display:block;background:rgba(255,255,255,0.85);border-radius:6px;padding:3px;">`
+        : `<div style="width:40px;height:40px;flex-shrink:0;"></div>`;
+  
+      return `
+        <div class="cal-event-item"
+            style="display:flex;flex-direction:row;align-items:center;gap:12px;">
+          ${imageHTML}
+          <div style="display:flex;flex-direction:column;line-height:1.3;">
+            <span class="date">${dateStr}</span>
+            <span class="name">${ev.eventName}</span>
+          </div>
+        </div>`;
+    }).join('');
+  
+    return `
+      <div class="cal-month">
+        <h4>${month.monthLabel}</h4>
+        ${eventsHTML}
+      </div>`;
+  }
+
+  // Run on DOM ready
+  document.addEventListener('DOMContentLoaded', loadAnnualCalendar);
+
+  (async function initHomeData(){
+    await Promise.all([loadLatestResults(), loadMembershipStats(), loadWeather()]);
+  })();
+
   </script>
 </body>
 </html>
+
