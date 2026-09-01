@@ -2528,11 +2528,11 @@
   
     tbody.innerHTML = list.map((m, idx) => {
       const waCell = m.whatsapp
-        ? `<span class="committee-yes"><i data-lucide="check" color="#389f23"></span>`
+        ? `<span class="committee-yes"><i data-lucide="check" color="#389f23"></i></span>`
         : `<span style="color:var(--foam-dim); font-size:11px;">—</span>`;
-  
+
       const committeeCell = String(m.committee).toLowerCase() === 'yes'
-        ? `<span class="committee-yes"><i data-lucide="check" color="#389f23"></span>`
+        ? `<span class="committee-yes"><i data-lucide="check" color="#389f23"></i></span>`
         : `<span style="color:var(--foam-dim);font-size:12px;">—</span>`;
   
       return `<tr data-idx="${idx}">
@@ -2546,6 +2546,9 @@
     tbody.querySelectorAll('tr[data-idx]').forEach(row => {
       row.addEventListener('click', () => openMemberDrawer(list[parseInt(row.dataset.idx)]));
     });
+
+    // Re-initialise Lucide icons in the newly injected HTML
+    if (window.lucide) lucide.createIcons();
   }
   
   function openMemberDrawer(m) {
