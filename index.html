@@ -499,6 +499,8 @@
   .day-pill .d-icon{ font-size:18px; margin:2px 0; }
   .day-pill .d-temp{ font-family:var(--font-data); font-size:13px; font-weight:600; color:var(--glow); }
   .day-pill .d-wind{ font-family:var(--font-data); font-size:10px; color:var(--glow); }
+  .day-pill .d-rain{ font-family:var(--font-data); font-size:10px; color:var(--glow); }
+  .day-pill .d-uv{ font-family:var(--font-data); font-size:10px; color:var(--glow); }
 
   .event-details{ display:flex; flex-direction:column; gap:14px; margin-top:16px; }
   .event-badge{
@@ -2334,7 +2336,9 @@
           <span class="d-day">${esc(day.day.substring(0, 3))}</span>
           <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
           <span class="d-temp">${esc(day.max)}°C</span>
-          <span class="d-wind" style="font-size:10px;">${esc(day.wind)}</span>
+          <span class="d-wind" style="font-size:10px;">${esc(day.wind)} kts</span>
+          <span class="d-rain" style="font-size:10px;">${esc(day.rain)} mm</span>
+          <span class="d-uv" style="font-size:10px;">${esc(day.uvIndex)}</span>
         </div>
       `).join('');
     }
