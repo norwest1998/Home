@@ -448,10 +448,12 @@
   /* =========================================================
      WEATHER & NEXT EVENT DUO
      ========================================================= */
+  
   .duo-grid{
     display:grid; grid-template-columns:1.2fr 0.8fr; gap:20px;
   }
-  @media (max-width:960px){ .duo-grid{ grid-template-columns:1fr; } }
+  
+  @media (max-width: 960px) { .duo-grid { grid-template-columns: 1fr; } }
 
   .weather-card, .next-event-card{ padding:24px; }
 
@@ -501,6 +503,42 @@
   .day-pill .d-wind{ font-family:var(--font-data); font-size:10px; color:var(--glow); }
   .day-pill .d-rain{ font-family:var(--font-data); font-size:10px; color:var(--glow); }
   .day-pill .d-uv{ font-family:var(--font-data); font-size:10px; color:var(--glow); }
+
+  /* =========================================================
+    MOBILE — Weather & Next Event duo
+    ========================================================= */
+    @media (max-width: 600px) {
+
+    /* Duo grid already stacks at 960px, but cards need full width */
+    .weather-card,
+    .next-event-card {
+      padding: 16px;
+    }
+
+    /* Weather pills: switch from vertical grid to horizontal scroll */
+    .weather-week {
+      display: flex;
+      flex-direction: row;
+      overflow-x: auto;
+      gap: 8px;
+      padding-bottom: 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .day-pill {
+      min-width: 72px;
+      flex-shrink: 0;
+      flex-direction: column;
+      text-align: center;
+      padding: 10px 6px;
+    }
+
+    /* Race cards in next-event: full width, shorter height */
+    .race-card {
+      max-width: 100%;
+      height: 200px;
+    }
+  }
 
   .event-details{ display:flex; flex-direction:column; gap:14px; margin-top:16px; }
   .event-badge{
