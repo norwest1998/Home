@@ -2618,7 +2618,7 @@
   
   /* ══════════════════════════════════════════════════
     APPLICATION DETAIL DRAWER
-    Fetches from APP_DETAIL_API?hexCode=<rowId>&action=display
+    Fetches from APP_DETAIL_API?token=<rowId>&action=display
     and renders the appDetails object into your template,
     reskinned for the dark glass theme.
     ══════════════════════════════════════════════════ */
@@ -2641,7 +2641,7 @@
     document.getElementById('appDrawer').classList.add('open');
   
     try {
-      const url = `${APP_DETAIL_API}?hexCode=${encodeURIComponent(rowId)}&action=display`;
+      const url = `${APP_DETAIL_API}?token=${encodeURIComponent(rowId)}&action=display`;
       const res  = await fetch(url);
       const d    = await res.json();      // d = appDetails object from your script
   
