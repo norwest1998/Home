@@ -581,6 +581,7 @@
     background:rgba(7,27,44,0.3);
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
     margin-top:16px;
+    gap:16px;
   }
   .app-placeholder code{
     font-family:var(--font-data); font-size:12px; color:var(--glow);
@@ -2567,7 +2568,7 @@
       : '—';
 
     const committeeHTML = m.committee ? '<span class="committee-yes">Member</span>' : '—';
-    const activeHTML = m.active ? '<span class="committee-yes">Active</span>' : '—';  
+    const activeHTML    = m.active    ? '<span class="committee-yes">Active</span>' : '—';  
 
     body.innerHTML = `
       <div class="drawer-name-row">
