@@ -2613,6 +2613,7 @@
       const res  = await fetch(`${HOME_DATA_API}?action=membersList`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      console.log('First member:', data.members[0]);
       allMembers = data.members;
       renderMembers(allMembers);
     } catch (err) {
