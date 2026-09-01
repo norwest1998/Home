@@ -1744,11 +1744,7 @@
   
   async function loadMembers() {
     try {
-      const res = await fetch(`${HOME_DATA_API}?action=membersList`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      allMembers = data.members;
-  
+      allMembers = await apiGet({ action: 'membersList' });
       renderMembers(allMembers);
     } catch (err) {
       document.getElementById('memberTableBody').innerHTML =
