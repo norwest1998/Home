@@ -73,8 +73,8 @@
     background:linear-gradient(155deg, var(--glass-fill-hi), var(--glass-fill));
     border:1px solid var(--glass-border);
     border-radius:20px;
-    backdrop-filter:blur(var(--glass-blur)) saturate(140%);
     -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(140%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(140%);
     box-shadow:
       0 1px 0 rgba(255,255,255,0.25) inset,
       0 -1px 12px rgba(255,255,255,0.03) inset,
@@ -100,8 +100,8 @@
     margin:0;
     border-radius:0;
     border-left:none; border-right:none; border-top:none;
-    backdrop-filter:blur(20px) saturate(150%);
     -webkit-backdrop-filter:blur(20px) saturate(150%);
+    backdrop-filter:blur(20px) saturate(150%);
     background:rgba(7,27,44,0.75);
     border-bottom:1px solid var(--glass-border);
   }
@@ -1843,80 +1843,8 @@
           <div id="event-display-container">Loading event details...</div>
         </div>
 
-        <!-- <div id="next-event" class="next-event-card glass">
-          //<div id="event-display-container">Loading event details...</div>
-          //<span class="event-badge">Upcoming Weekend</span>
-          //<h3 class="event-title" style="margin-top:8px;">DragonFlite 95 Sprint Series</h3>
-          //
-          //<div class="event-details">
-          //  <ul class="event-info-list">
-          //    <li><i data-lucide="calendar-days" color="#257fb6"></i> <strong>Date:</strong> Saturday, 22 August 2026</li>
-          //    <li><i data-lucide="clock" color="#257fb6"></i> <strong>First Briefing:</strong> 09:30 AM</li>
-          //    <li><i data-lucide="map-pin" color="#257fb6"></i> <strong>Location:</strong> Rodd Point, Iron Cove Bay</li>
-          //    <li><i data-lucide="boat" color="#257fb6"></i> <strong>Class:</strong> DF95 (Handicap & Scratch)</li>
-          //    <li><i data-lucide="user" color="#257fb6"></i> <strong>Officer of Day:</strong> R. Henderson</li>
-          //  </ul>
-          //  <div style="display:flex; gap:10px; margin-top:8px;">
-          //    <a href="#apps-script-hub" class="btn btn-primary" style="flex:1; justify-content:center;">Register Entry</a>
-          //    <a href="#reschedule-event" class="btn btn-ghost">Reschedule</a>
-          //  </div>
-          //</div> 
-        </div> -->
-
       </div>
     </section>
-
-    <!-- =========================================================
-         ANNUAL CALENDAR
-         ========================================================= 
-    <section id="annual-calendar" class="container">
-      <div class="section-head">
-        <h2>Annual Event Calendar</h2>
-        <p>2026 Regattas & Championship Schedule</p>
-      </div>
-
-      <div class="calendar-card glass">
-        <div class="calendar-grid">
-          
-          <div class="cal-month">
-            <h4>August 2026</h4>
-            <div class="cal-event-item">
-              <span class="date">SAT 22 AUG • 09:30</span>
-              <span class="name">DF95 Sprint Series Rd 5</span>
-            </div>
-            <div class="cal-event-item">
-              <span class="date">SUN 30 AUG • 10:00</span>
-              <span class="name">IOM Club Championship Rd 8</span>
-            </div>
-          </div>
-
-          <div class="cal-month">
-            <h4>September 2026</h4>
-            <div class="cal-event-item">
-              <span class="date">SAT 12 SEP • 10:00</span>
-              <span class="name">Soling 50 Regatta</span>
-            </div>
-            <div class="cal-event-item">
-              <span class="date">SAT 26 SEP • 09:00</span>
-              <span class="name">DF65 Spring Cup</span>
-            </div>
-          </div>
-
-          <div class="cal-month">
-            <h4>October 2026</h4>
-            <div class="cal-event-item">
-              <span class="date">SAT 10 OCT • 09:30</span>
-              <span class="name">State IOM Invitational</span>
-            </div>
-            <div class="cal-event-item">
-              <span class="date">SUN 25 OCT • 10:00</span>
-              <span class="name">Gaff Rig & Scale Wooden Boat Day</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section> -->
 
     <!-- =========================================================
          APPS SCRIPT & GOOGLE SHEETS EMBED PLACEHOLDERS
@@ -2644,7 +2572,7 @@
       <div class="app-row" data-rowid="${esc(a.rowId)}">
         <div>
           <div class="app-name">${esc(a.firstName)} ${esc(a.surname)}</div>
-          <div class="app-meta">${esc(a.membershipType)} · Nominated by ${esc(a.nominator)} · Updated ${esc(a.lastUpdated)}</div>
+          <div class="app-meta">${esc(a.membershipType)} · Nominated by ${esc(a.nominator)} · Seconded by ${esc(a.secondedBy)} · Updated ${esc(a.lastUpdated)}</div>
         </div>
         <span class="app-status ${appStatusCSSClass(a.status)}">${esc(a.status)}</span>
         <span class="app-chevron">›</span>
@@ -2720,7 +2648,7 @@
         ? `<span class="urgent-note">⚠️ Requires attention — last updated: ${esc(d.lastUpdatedStr)}</span>`
         : '';
 
-      /* ══════════════════════════════════════════════════  
+      /* ================================= 
         <!-- Personal Information -->
           <div class="app-detail-section">
             <div class="app-detail-section-title">Personal Information</div>
@@ -2753,8 +2681,7 @@
               </div>
             </div>
           </div> 
-          ══════════════════════════════════════════════════ */
-
+        *//
 
       content.innerHTML = `
         <div class="drawer-body">
