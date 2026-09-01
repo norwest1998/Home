@@ -2531,15 +2531,15 @@
     tbody.innerHTML = list.map((m, idx) => {
       const waCell = m.whatsapp
         ? `<span><i data-lucide="check" color="#389f23"></i></span>`
-        : `<span style="color:var(--foam-dim); font-size:11px;">—</span>`;
+        : `<span style="color:var(--foam-dim); font-size:11px;">''</span>`;
 
       const activeCell = m.active
         ? `<span><i data-lucide="check" color="#389f23"></i></span>`
-        : `<span style="color:var(--foam-dim);font-size:12px;">—</span>`;
+        : `<span style="color:var(--foam-dim);font-size:12px;">''</span>`;
 
       const committeeCell = m.committee
         ? `<span><i data-lucide="check" color="#389f23"></i></span>`
-        : `<span style="color:var(--foam-dim);font-size:12px;">—</span>`;
+        : `<span style="color:var(--foam-dim);font-size:12px;">''</span>`;
 
       return `<tr data-idx="${idx}">
         <td><span class="member-name">${esc(m.name)}</span></td>
@@ -2561,9 +2561,9 @@
   function openMemberDrawer(m) {
     const body = document.getElementById('memberDrawerBody');
 
-    const waHTML = m.whatsapp ? '<span class="committee-yes">Active</span>' : '—';
-    const committeeHTML = m.committee ? '<span class="committee-yes">Member</span>' : '—';
-    const activeHTML    = m.active    ? '<span class="committee-yes">Active</span>' : '—';  
+    const waHTML = m.whatsapp ? '<span class="committee-yes">Active</span>' : '';
+    const committeeHTML = m.committee ? '<span class="committee-yes">Member</span>' : '';
+    const activeHTML    = m.active    ? '<span class="committee-yes">Active</span>' : '';  
 
     body.innerHTML = `
       <div class="drawer-name-row">
