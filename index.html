@@ -2731,10 +2731,10 @@
           <button class="cal-filter-btn ${boatFilters.class==='all'?'active':''}" data-class="all">
             <span class="cal-filter-icon--all">★</span><span>All</span>
           </button>
-          <button class="cal-filter-btn ${boatFilters.active?'active':''}" data-toggle="active">
+          <button class="member-filter-btn ${boatFilters.active?'active':''}" data-toggle="active">
             Active
           </button>
-          <button class="cal-filter-btn ${boatFilters.gh?'active':''}" data-toggle="gh">
+          <button class="member-filter-btn ${boatFilters.gh?'active':''}" data-toggle="gh">
             GH
           </button>
         </div>`;
@@ -2745,7 +2745,7 @@
         renderBoats();
       }));
       
-      wrap.querySelectorAll('.toggle-btn').forEach(btn => btn.addEventListener('click', () => {
+      wrap.querySelectorAll('.member-filter-btn').forEach(btn => btn.addEventListener('click', () => {
         const key = btn.dataset.toggle;
         boatFilters[key] = !boatFilters[key];
         renderBoatFilters();
