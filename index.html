@@ -1915,7 +1915,7 @@
       soling: { label: 'Soling Scratch',   className: 'Soling',  spreadsheetId: '1WTLfz4EHShQ6G5VFZ8jJwDiTn-4oHK-pk-hYfBIMn38', insignia: '/Home/images/classes/Soling.png' },
       gh:     { label: 'General Handicap', className: 'General', spreadsheetId: '1xMKT7HapmqEIuqhQQxH1pfPkRWam5x88Pxaah1xayog', insignia: '/Home/images/classes/smmc-logo.png' },
       df65:   { label: 'DF65 Scratch',     className: 'DF65',    spreadsheetId: '1T5zgrZpJDmQKmkMlnOmnAb_ext18zx733mMuvh4akvg', insignia: '/Home/images/classes/DF65.png' },
-      social:   { label: 'Social Sailing', className: 'Social',  spreadsheetId: '1T5zgrZpJDmQKmkMlnOmnAb_ext18zx733mMuvh4akvg', insignia: '/Home/images/classes/SmileyFace.png' },
+      social: { label: 'Social Sailing',   className: 'Social',  spreadsheetId: '', insignia: '/Home/images/classes/SmileyFace.png' },
     };
 
     const CLASS_IMAGE_MAP = Object.values(RESULTS_CONFIG).reduce((map, cls) => {
@@ -2705,10 +2705,10 @@
     function renderBoatFilters() {
       const wrap = document.getElementById('boatClassFilters');
       if (!wrap) return;
-      const classes = Object.keys(CLASS_IMAGE_MAP);
+      const classes = Object.keys(CLASS_IMAGE_MAP).filter(c => c !== 'Social');
       wrap.innerHTML = `
         <button class="cal-filter-btn ${boatFilters.class==='all'?'active':''}" data-class="all">
-          <span class="cal-filter-icon--all">★</span><span>All Classes</span>
+          <span class="cal-filter-icon--all">★</span><span>All</span>
         </button>
         ${classes.map(c => `
           <button class="cal-filter-btn ${boatFilters.class===c?'active':''}" data-class="${esc(c)}">
