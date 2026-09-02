@@ -2192,13 +2192,308 @@
       return `<div class="cal-month"><h4>${esc(month.monthLabel)}</h4>${eventsHTML}</div>`;
     }
 
+    /* ══════════════════════════════════════════════════
+    MEMBERS LIST
+    ══════════════════════════════════════════════════ */
+    let allMembers = [];
+
+    function membershipBadgeClass(type) {
+      const t = String(type).toLowerCase();
+      if (t.includes('full'))   return 'badge-full';
+      if (t.includes('social')) return 'badge-social';
+      if (t.includes('junior')) return 'badge-junior';
+      if (t.includes('life'))   return 'badge-life';
+      return 'badge-default';
+    }
+
+    function initials(name) {
+      return String(name).split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    }
+
+    function renderMembers(list) {
+      const tbody   = document.getElementById('memberTableBody');
+      const countEl = document.getElementById('memberCount');
+
+      if (!list.length) {
+        tbody.innerHTML = `<tr class="state-row"><td colspan="5">No members match your search.</td></tr>`;
+        countEl.innerHTML = '';
+        return;
+      }
+
+      countEl.innerHTML = `Showing <strong>${list.length}</strong> of <strong>${allMembers.length}</strong> members`;
+
+      tbody.innerHTML = list.map((m, idx) => {
+        const waCell       = m.whatsapp  ? `<span><i data-lucide="check" color="#389f23"></i></span>` : `<span>—</span>`;
+        const activeCell   = m.active    ? `<span><i data-lucide="check" color="#389f23"></i></span>` : `<span>—</span>`;
+        const committeeCell = m.committee ? `<span><i data-lucide="check" color="#389f23"></i></span>` : `<span>—</span>`;
+
+        return `<tr data-idx="${idx}">
+          <td><span class="member-name">${esc(m.name)}</span></td>
+          <td><span class="badge ${membershipBadgeClass(m.membership)}">${esc(m.membership)}</span></td>
+          <td>${activeCell}</td>
+          <td>${waCell}</td>
+          <td>${committeeCell}</td>
+        </tr>`;
+      }).join('');
+
+      tbody.querySelectorAll('tr[data-idx]').forEach(row => {
+        row.addEventListener('click', () => openMemberDrawer(list[parseInt(row.dataset.idx)]));
+      });
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function openMemberDrawer(m) {
+      const body = document.getElementById('memberDrawerBody');
+      body.innerHTML = `
+        <div class="drawer-name-row">
+          <div class="drawer-avatar">${esc(initials(m.name))}</div>
+          <div class="drawer-name-col">
+            <span class="drawer-name">${esc(m.name)}</span>
+            <span class="badge ${membershipBadgeClass(m.membership)}" style="width:fit-content">${esc(m.membership)}</span>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Active</span>
+            <span class="detail-value">${m.active ? '<span class="committee-yes">Active</span>' : '—'}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">WhatsApp</span>
+            <span class="detail-value">${m.whatsapp ? '<span class="committee-yes">Active</span>' : '—'}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Committee</span>
+            <span class="detail-value">${m.committee ? '<span class="committee-yes">Member</span>' : '—'}</span>
+          </div>
+        </div>`;
+      document.getElementById('memberDrawer').classList.add('open');
+    }
+
+    document.getElementById('closeMemDrawer').addEventListener('click', () =>
+      document.getElementById('memberDrawer').classList.remove('open'));
+    document.getElementById('memberDrawer').addEventListener('click', e => {
+      if (e.target === document.getElementById('memberDrawer'))
+        document.getElementById('memberDrawer').classList.remove('open');
+    });
+
+    document.getElementById('memberSearch').addEventListener('input', e => {
+      const q = e.target.value.trim().toLowerCase();
+      renderMembers(q ? allMembers.filter(m => m.name.toLowerCase().includes(q)) : allMembers);
+    });
+
+    async function loadMembers() {
+      showSpinner('memberTableBody');
+      try {
+        const res  = await fetch(`${HOME_DATA_API}?action=membersList`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        allMembers = data.members;
+        renderMembers(allMembers);
+      } catch (err) {
+        console.warn('Members API unavailable:', err.message);
+        showError('memberTableBody', 'Members list temporarily unavailable');
+        allMembers = [];
+        renderMembers(allMembers);
+      }
+    }
+
+    /* ══════════════════════════════════════════════════
+      APPLICATIONS LIST
+      ══════════════════════════════════════════════════ */
+    let allApplications = [];
+    let activeAppStatus = 'all';
+
+    function appStatusCSSClass(status) {
+      const s = String(status).toLowerCase();
+      if (s.includes('received'))  return 'status-received';
+      if (s.includes('progress'))  return 'status-progress';
+      if (s.includes('awaiting'))  return 'status-awaiting';
+      if (s.includes('processed')) return 'status-processed';
+      if (s.includes('urgent'))    return 'status-urgent';
+      return 'status-received';
+    }
+
+    function renderApplications() {
+      const list = activeAppStatus === 'all'
+        ? allApplications
+        : allApplications.filter(a => a.status === activeAppStatus);
+
+      document.getElementById('appCount').innerHTML =
+        `Showing <strong>${list.length}</strong> of <strong>${allApplications.length}</strong> applications`;
+
+      const container = document.getElementById('appList');
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state">No applications with status "${activeAppStatus}".</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(a => `
+        <div class="app-row" data-rowid="${esc(a.rowId)}">
+          <div>
+            <div class="app-name">${esc(a.firstName)} ${esc(a.surname)}</div>
+            <div class="app-meta">${esc(a.membershipType)} · Nominated by ${esc(a.nominator)} · Updated ${esc(a.lastUpdated)}</div>
+          </div>
+          <span class="app-status ${appStatusCSSClass(a.status)}">${esc(a.status)}</span>
+          <span class="app-chevron">›</span>
+        </div>`).join('');
+
+      container.querySelectorAll('.app-row').forEach(row => {
+        row.addEventListener('click', () => openAppDrawer(row.dataset.rowid));
+      });
+    }
+
+    document.querySelectorAll('.app-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.app-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeAppStatus = btn.dataset.status;
+        renderApplications();
+      });
+    });
+
+    async function loadApplications() {
+      showSpinner('appList');
+      try {
+        const res  = await fetch(`${HOME_DATA_API}?action=applicationsList`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        allApplications = data.applications;
+        renderApplications();
+      } catch (err) {
+        console.warn('Applications API unavailable:', err.message);
+        showError('appList', 'Applications list temporarily unavailable');
+        allApplications = [];
+        renderApplications();
+      }
+    }
+
+    /* ══════════════════════════════════════════════════
+      APPLICATION DETAIL DRAWER
+      ══════════════════════════════════════════════════ */
+    async function openAppDrawer(rowId) {
+      const app  = allApplications.find(a => a.rowId === rowId);
+      const name = app ? `${app.firstName} ${app.surname}` : 'Application';
+
+      document.getElementById('appDrawerName').textContent = name;
+      document.getElementById('appDrawerSub').textContent  = `Row ID: ${rowId}`;
+
+      const content = document.getElementById('appDrawerContent');
+      content.innerHTML = `
+        <div class="drawer-loading">
+          <div class="spinner"></div>
+          <span>Loading application details…</span>
+        </div>`;
+      document.getElementById('appDrawer').classList.add('open');
+
+      try {
+        const res = await fetch(`${APP_DETAIL_API}?token=${encodeURIComponent(rowId)}&action=display`);
+        const d   = await res.json();
+        if (d.error) throw new Error(d.error);
+
+        document.getElementById('appDrawerName').textContent = d.fullName || name;
+
+        const sCls      = appStatusCSSClass(d.statusClass || d.status || '');
+        const urgentNote = d.statusClass === 'status-urgent'
+          ? `<span class="urgent-note">⚠️ Requires attention — last updated: ${esc(d.lastUpdatedStr)}</span>`
+          : '';
+
+        content.innerHTML = `
+          <div class="drawer-body">
+
+            <div class="app-status-badge ${sCls}">
+              ${esc(d.status)}${urgentNote}
+            </div>
+
+            <!-- Club Details -->
+            <div class="app-detail-section">
+              <div class="app-detail-section-title">Club Details</div>
+              <div class="app-detail-grid">
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Membership Type</span>
+                  <span class="app-detail-value">
+                    <span class="badge ${membershipBadgeClass(d.type)}">${esc(d.type) || '—'}</span>
+                  </span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Current Club</span>
+                  <span class="app-detail-value">${esc(d.currentClub) || '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Governance & Votes -->
+            <div class="app-detail-section">
+              <div class="app-detail-section-title">Governance &amp; Votes</div>
+              <div class="app-detail-grid">
+                <div class="app-detail-item full-width">
+                  <span class="app-detail-label">Disclaimer Signed</span>
+                  <span class="app-detail-value">${esc(d.disclaimer) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Nominator</span>
+                  <span class="app-detail-value">${esc(d.nominator) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Seconder</span>
+                  <span class="app-detail-value">${esc(d.seconder) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Nominator Comment</span>
+                  <span class="app-detail-value">${esc(d.nominatorComment) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Seconder Comment</span>
+                  <span class="app-detail-value">${esc(d.seconderComment) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Votes For</span>
+                  <span class="app-detail-value votes-for">${esc(d.votesFor) ?? '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Votes Against</span>
+                  <span class="app-detail-value votes-against">${esc(d.votesAgainst) ?? '—'}</span>
+                </div>
+                ${d.rejectionReason ? `
+                <div class="app-detail-item full-width">
+                  <span class="app-detail-label">Rejection Reason</span>
+                  <span class="app-detail-value" style="color:var(--signal);">${esc(d.rejectionReason)}</span>
+                </div>` : ''}
+              </div>
+            </div>
+
+            <!-- Activity Log -->
+            ${d.log ? `
+            <div class="app-detail-section">
+              <div class="app-detail-section-title">Activity Log</div>
+              <div class="log-box">${esc(d.log)}</div>
+            </div>` : ''}
+
+          </div>`;
+
+      } catch (err) {
+        showError('appDrawerContent', `Could not load application details — ${err.message}`);
+      }
+    }
+
+    document.getElementById('closeAppDrawer').addEventListener('click', () =>
+      document.getElementById('appDrawer').classList.remove('open'));
+    document.getElementById('appDrawer').addEventListener('click', e => {
+      if (e.target === document.getElementById('appDrawer'))
+        document.getElementById('appDrawer').classList.remove('open');
+    });
+
+
     document.addEventListener('DOMContentLoaded', () => {
       loadLatestResults();
       loadMembershipStats();
       loadWeather();
       loadEventDisplay();
       loadAnnualCalendar();
+      loadMembers();    
+      loadApplications();
     });
+    
   </script>
 </body>
 </html>
