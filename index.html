@@ -913,6 +913,21 @@
     font-size: 13px;
   }
 
+  .member-filter-btn {
+    font-family: var(--font-data);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    color: var(--foam-dim);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+.member-filter-btn:hover { color: var(--foam); background: var(--glass-fill-hi); }
+.member-filter-btn.active { background: var(--glass-fill-hi); border-color: var(--glow); color: var(--glow); }
   .member-filter-select {
     font-family: var(--font-data);
     font-size: 11px;
@@ -1699,15 +1714,12 @@
                 <select class="member-filter-select" id="filterMembership">
                   <option value="">All Types</option>
                   <option value="full">Full</option>
-                  <option value="social">Social</option>
-                  <option value="junior">Junior</option>
-                  <option value="life">Life</option>
                   <option value="affiliate">Affiliate</option>
                   <option value="expired">Expired</option>
                 </select>
-                <button class="app-filter-btn" data-filter="active">Active</button>
-                <button class="app-filter-btn" data-filter="whatsapp">WhatsApp</button>
-                <button class="app-filter-btn" data-filter="committee">Committee</button>
+                <button class="member-filter-btn" data-filter="active">Active</button>
+                <button class="member-filter-btn" data-filter="whatsapp">WhatsApp</button>
+                <button class="member-filter-btn" data-filter="committee">Committee</button>
               </div>
 
               <div class="count-chip" id="memberCount"></div>
@@ -2334,7 +2346,7 @@
       renderMembers();
     });
 
-    document.querySelectorAll('#memberFilters .app-filter-btn[data-filter]').forEach(btn => {
+    document.querySelectorAll('#memberFilters .member-filter-btn[data-filter]').forEach(btn => {
       btn.addEventListener('click', () => {
         const key = btn.dataset.filter;
         memberFilters[key] = !memberFilters[key];
