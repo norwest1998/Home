@@ -962,9 +962,9 @@
   }
  
   .badge-full     { background: rgba(94,234,212,0.15);  border: 1px solid rgba(94,234,212,0.35);  color: var(--glow); }
-  .badge-social   { background: rgba(255,106,61,0.12);  border: 1px solid rgba(255,106,61,0.3);   color: var(--signal); }
-  .badge-junior   { background: rgba(96,165,250,0.12);  border: 1px solid rgba(96,165,250,0.3);   color: #93c5fd; }
-  .badge-life     { background: rgba(255,209,102,0.12); border: 1px solid rgba(255,209,102,0.3);  color: #ffd166; }
+  .badge-expired   { background: rgba(255,106,61,0.12);  border: 1px solid rgba(255,106,61,0.3);   color: var(--signal); }
+  .badge-affiliate   { background: rgba(96,165,250,0.12);  border: 1px solid rgba(96,165,250,0.3);   color: #93c5fd; }
+  .badge-admin     { background: rgba(90, 89, 88, 0.12); border: 1px solid rgba(255,209,102,0.3);  color: #63532d; }
   .badge-default  { background: var(--glass-fill);      border: 1px solid var(--glass-border);    color: var(--foam-dim); }
  
   /* Committee indicator */
@@ -2207,9 +2207,9 @@
     function membershipBadgeClass(type) {
       const t = String(type).toLowerCase();
       if (t.includes('full'))   return 'badge-full';
-      if (t.includes('social')) return 'badge-social';
-      if (t.includes('junior')) return 'badge-junior';
-      if (t.includes('life'))   return 'badge-life';
+      if (t.includes('expired')) return 'badge-expired';
+      if (t.includes('affiliate'))   return 'badge-affiliate';
+      if (t.includes('admin'))   return 'badge-admin';
       return 'badge-default';
     }
 
