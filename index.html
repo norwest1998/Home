@@ -2281,6 +2281,16 @@
       const q = e.target.value.trim().toLowerCase();
       renderMembers(q ? allMembers.filter(m => m.name.toLowerCase().includes(q)) : allMembers);
     });
+    
+    /* ── Tab switching ── */
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
 
     async function loadMembers() {
       showSpinner('memberTableBody');
@@ -2493,7 +2503,7 @@
       loadMembers();    
       loadApplications();
     });
-    
+
   </script>
 </body>
 </html>
