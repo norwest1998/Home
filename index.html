@@ -2711,10 +2711,10 @@
           <button class="cal-filter-btn ${boatFilters.class===c?'active':''}" data-class="${esc(c)}">
             <img class="cal-filter-icon" src="${esc(CLASS_IMAGE_MAP[c])}" alt="${esc(c)}">
             <span>${esc(c)}</span>
-          </button>`).join('')}`;
+          </button>`).join('')}
         <button class="cal-filter-btn ${boatFilters.class==='all'?'active':''}" data-class="all">
           <span class="cal-filter-icon--all">★</span><span>All</span>
-        </button>
+        </button>`;
       wrap.querySelectorAll('.cal-filter-btn').forEach(btn => btn.addEventListener('click', () => {
         boatFilters.class = btn.dataset.class;
         renderBoatFilters();
