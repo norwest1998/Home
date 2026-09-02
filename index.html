@@ -1856,10 +1856,10 @@
                 <input class="search-input" type="text" id="boatSearch" placeholder="Search by member, sail no, model…" autocomplete="off">
               </div>
               <div class="calendar-filters" id="boatClassFilters"></div>
-              <div class="app-filters">
+              <!-- <div class="app-filters">
                 <button class="member-filter-btn" data-boat-filter="active">Active</button>
                 <button class="member-filter-btn" data-boat-filter="gh">GH Eligible</button>
-              </div>
+              </div> -->
               <div class="count-chip" id="boatCount"></div>
               <div class="app-list" id="boatList">
                 <div class="empty-state"><div class="spinner"></div><div>Loading boats…</div></div>
@@ -2731,10 +2731,10 @@
           <button class="cal-filter-btn ${boatFilters.class==='all'?'active':''}" data-class="all">
             <span class="cal-filter-icon--all">★</span><span>All</span>
           </button>
-          <button class="toggle-btn ${boatFilters.active?'active':''}" data-toggle="active">
+          <button class="cal-filter-btn ${boatFilters.active?'active':''}" data-toggle="active">
             Active
           </button>
-          <button class="toggle-btn ${boatFilters.gh?'active':''}" data-toggle="gh">
+          <button class="cal-filter-btn ${boatFilters.gh?'active':''}" data-toggle="gh">
             GH
           </button>
         </div>`;
@@ -2745,12 +2745,12 @@
         renderBoats();
       }));
       
-      wrap.querySelectorAll('.toggle-btn').forEach(btn => btn.addEventListener('click', () => {
+      /* wrap.querySelectorAll('.toggle-btn').forEach(btn => btn.addEventListener('click', () => {
         const key = btn.dataset.toggle;
         boatFilters[key] = !boatFilters[key];
         renderBoatFilters();
         renderBoats();
-      }));
+      })); */
     }
 
     function applyBoatFilters() {
