@@ -1263,6 +1263,61 @@
     width: fit-content;
     margin-top: auto;
   }
+
+  /* ── Application detail sections ── */
+  .app-detail-section {
+    background: var(--glass-fill); border: 1px solid var(--glass-border);
+    border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  }
+ 
+  .app-detail-section-title {
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--glow); padding-bottom: 8px;
+    border-bottom: 1px solid var(--glass-border);
+  }
+ 
+  .app-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .app-detail-grid .full-width { grid-column: 1 / -1; }
+ 
+  .app-detail-item { display: flex; flex-direction: column; gap: 3px; }
+ 
+  .app-detail-label {
+    font-family: var(--font-data); font-size: 9.5px;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--foam-dim);
+  }
+ 
+  .app-detail-value { font-size: 13px; font-weight: 500; color: var(--foam); line-height: 1.4; }
+ 
+  .votes-for   { color: #4ade80; font-weight: 700; font-size: 15px; }
+  .votes-against { color: #f87171; font-weight: 700; font-size: 15px; }
+ 
+  .log-box {
+    font-family: var(--font-data); font-size: 12px;
+    color: var(--foam-dim); line-height: 1.7;
+    white-space: pre-wrap; word-break: break-word;
+    background: rgba(0,0,0,0.2); border-radius: 8px;
+    padding: 12px; max-height: 160px; overflow-y: auto;
+  }
+ 
+  /* Status badge variants for app detail */
+  .app-status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-data); font-size: 11px;
+    letter-spacing: 0.05em; padding: 5px 12px;
+    border-radius: 8px; white-space: nowrap; width: fit-content;
+  }
+ 
+  .app-status-badge.status-received  { background: rgba(96,165,250,0.15);  border: 1px solid rgba(96,165,250,0.35);  color: #93c5fd; }
+  .app-status-badge.status-progress  { background: rgba(245,158,11,0.15);  border: 1px solid rgba(245,158,11,0.35);  color: #fbbf24; }
+  .app-status-badge.status-awaiting  { background: rgba(255,106,61,0.15);  border: 1px solid rgba(255,106,61,0.35);  color: var(--signal); }
+  .app-status-badge.status-processed { background: rgba(94,234,212,0.15);  border: 1px solid rgba(94,234,212,0.35);  color: var(--glow); }
+  .app-status-badge.status-urgent    { background: rgba(255,50,50,0.15);   border: 1px solid rgba(255,50,50,0.4);    color: #ff6b6b; }
+ 
+  .urgent-note {
+    font-size: 10px; color: #ff6b6b; display: block; margin-top: 4px;
+  }
+ 
   
   /* ── Panel shell ── 
   .panel {
@@ -1274,7 +1329,8 @@
     box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 18px 40px rgba(2,10,18,0.35);
     overflow: hidden;
   }
- 
+
+
   .panel-header {
     padding: 20px 24px 0;
     border-bottom: 1px solid var(--glass-border);
@@ -1716,7 +1772,7 @@
       </div>
       <div class="binnacle-wrap">
         <img 
-          src="/Home/smmc-logo-transparent.png"
+          src="/Home/smmc-logo.png"
           alt="Sydney Maritime Modellers Club"
           style="width:100%;max-width:340px;height:auto;display:block;margin:0 auto;"
         >
