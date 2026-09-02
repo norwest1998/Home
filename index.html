@@ -2337,7 +2337,7 @@
       } catch (err) {
         console.error('Membership stats:', err);
         ['members', 'applications', 'boats', 'financial'].forEach(t => setCard(t, '—', 'Unavailable'));
-        showError('Membership-stats', `Statistics unavailable — ${esc(err.message)}`);
+        showError('statusBreakdown', `Statistics unavailable — ${esc(err.message)}`);
       }
     }
 
@@ -2347,7 +2347,7 @@
       const script = document.createElement('script');
       script.src = `https://script.google.com/macros/s/AKfycbworw_FnbKehShRIfhbXTuxlAa36jJt8d7MLCvjzAWUfp-_xXORa2ZzC_0m20msa1oj/exec?action=data&callback=renderWeather`;
       script.onerror = () => {
-        container.innerHTML = `<p style="padding:10px; color:var(--foam-dim); font-size:11px;">Weather data temporarily unavailable (Syncing...)</p>`;
+        showError('weatherContainer', 'Weather data temporarily unavailable (Syncing...)');
       };
       document.body.appendChild(script);
     }
@@ -2828,16 +2828,17 @@
     });
     
     /* ── Init ── */
+    async function initHomeData() {
+      await Promise.all([loadLatestResults(), loadMembershipStats()]);
+      loadWeather(); // JSONP — not a promise, keep separate
+    }
+
+    // Boot — all top-level calls in one place
     initHomeData();
     loadMembers();
     loadApplications();
-    loadWeather();
     loadEventDisplay();
     loadAnnualCalendar();
-
-    (async function initHomeData(){
-      await Promise.all([loadLatestResults(), loadMembershipStats()]);
-    })();
 
   </script>
 </body>
