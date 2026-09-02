@@ -1421,6 +1421,19 @@
     font-size: 10px; color: #ff6b6b; display: block; margin-top: 4px;
   }
 
+  #boatClassFilters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .filter-row--classes,
+  .filter-row--subfilters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
   /* =========================================================
     FOOTER
     ========================================================= */
@@ -2707,16 +2720,34 @@
       if (!wrap) return;
       const classes = Object.keys(CLASS_IMAGE_MAP).filter(c => c !== 'Social');
       wrap.innerHTML = `
-        ${classes.map(c => `
-          <button class="cal-filter-btn ${boatFilters.class===c?'active':''}" data-class="${esc(c)}">
-            <img class="cal-filter-icon" src="${esc(CLASS_IMAGE_MAP[c])}" alt="${esc(c)}">
-            <span>${esc(c)}</span>
-          </button>`).join('')}
-        <button class="cal-filter-btn ${boatFilters.class==='all'?'active':''}" data-class="all">
-          <span class="cal-filter-icon--all">★</span><span>All</span>
-        </button>`;
+        <div class="filter-row--classes">
+          ${classes.map(c => `
+            <button class="cal-filter-btn ${boatFilters.class===c?'active':''}" data-class="${esc(c)}">
+              <img class="cal-filter-icon" src="${esc(CLASS_IMAGE_MAP[c])}" alt="${esc(c)}">
+              <span>${esc(c)}</span>
+            </button>`).join('')}
+        </div>
+        <div class="filter-row--subfilters">
+          <button class="cal-filter-btn ${boatFilters.class==='all'?'active':''}" data-class="all">
+            <span class="cal-filter-icon--all">★</span><span>All</span>
+          </button>
+          <button class="toggle-btn ${boatFilters.active?'active':''}" data-toggle="active">
+            Active
+          </button>
+          <button class="toggle-btn ${boatFilters.gh?'active':''}" data-toggle="gh">
+            GH
+          </button>
+        </div>`;
+        
       wrap.querySelectorAll('.cal-filter-btn').forEach(btn => btn.addEventListener('click', () => {
         boatFilters.class = btn.dataset.class;
+        renderBoatFilters();
+        renderBoats();
+      }));
+      
+      wrap.querySelectorAll('.toggle-btn').forEach(btn => btn.addEventListener('click', () => {
+        const key = btn.dataset.toggle;
+        boatFilters[key] = !boatFilters[key];
         renderBoatFilters();
         renderBoats();
       }));
