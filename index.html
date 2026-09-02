@@ -2328,7 +2328,6 @@
         showError('statusBreakdown', 'Set HOME_DATA_API to the deployed "HomePage Data API" URL');
         return;
       }
-      showSpinner('membership-stats');
       try {
         membershipData = await apiGet({ action: 'membershipStats' });
         renderStatCards();
