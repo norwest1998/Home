@@ -912,6 +912,32 @@
     border-collapse: collapse;
     font-size: 13px;
   }
+
+  .member-filter-select {
+    font-family: var(--font-data);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    color: var(--foam-dim);
+    outline: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .member-filter-select:focus,
+  .member-filter-select.active {
+    background: var(--glass-fill-hi);
+    border-color: var(--glow);
+    color: var(--glow);
+  }
+  .member-filter-select option {
+    background: var(--ocean-mid);
+    color: var(--foam);
+  }
  
   table.members th {
     font-family: var(--font-data);
@@ -1667,24 +1693,26 @@
                 <input class="search-input" type="text" id="memberSearch"
                       placeholder="Search by name…" autocomplete="off">
               </div>
+
+              <!-- Filters -->
+              <div class="app-filters" id="memberFilters">
+                <select class="member-filter-select" id="filterMembership">
+                  <option value="">All Types</option>
+                  <option value="full">Full</option>
+                  <option value="social">Social</option>
+                  <option value="junior">Junior</option>
+                  <option value="life">Life</option>
+                  <option value="affiliate">Affiliate</option>
+                  <option value="expired">Expired</option>
+                </select>
+                <button class="app-filter-btn" data-filter="active">Active</button>
+                <button class="app-filter-btn" data-filter="whatsapp">WhatsApp</button>
+                <button class="app-filter-btn" data-filter="committee">Committee</button>
+              </div>
+
               <div class="count-chip" id="memberCount"></div>
-              <div class="members-table-wrap">
-                <table class="members">
-                  <thead>
-                    <tr>
-                      <th>Member</th>
-                      <th>Membership</th>
-                      <th>Active</th>
-                      <th>WhatsApp</th>
-                      <th>Committee</th>
-                    </tr>
-                  </thead>
-                  <tbody id="memberTableBody">
-                    <tr class="state-row">
-                      <td colspan="5"><div class="spinner"></div>Loading members…</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="app-list" id="memberList">
+                <div class="empty-state"><div class="spinner"></div><div>Loading members…</div></div>
               </div>
             </div>
           
@@ -2200,16 +2228,18 @@
     }
 
     /* ══════════════════════════════════════════════════
-    MEMBERS LIST
-    ══════════════════════════════════════════════════ */
+      MEMBERS LIST — card layout with filters
+      ══════════════════════════════════════════════════ */
     let allMembers = [];
+    let memberFilters = { membership: '', active: false, whatsapp: false, committee: false };
 
     function membershipBadgeClass(type) {
       const t = String(type).toLowerCase();
-      if (t.includes('full'))   return 'badge-full';
-      if (t.includes('expired')) return 'badge-expired';
-      if (t.includes('affiliate'))   return 'badge-affiliate';
-      if (t.includes('admin'))   return 'badge-admin';
+      if (t.includes('full'))      return 'badge-full';
+      if (t.includes('social'))    return 'badge-social';
+      if (t.includes('junior'))    return 'badge-junior';
+      if (t.includes('life'))      return 'badge-life';
+      if (t.includes('affiliate')) return 'badge-default';
       return 'badge-default';
     }
 
@@ -2217,40 +2247,57 @@
       return String(name).split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
     }
 
-    function renderMembers(list) {
-      const tbody   = document.getElementById('memberTableBody');
-      const countEl = document.getElementById('memberCount');
+    function applyMemberFilters() {
+      const q = (document.getElementById('memberSearch').value || '').trim().toLowerCase();
+      return allMembers.filter(m => {
+        if (q && !m.name.toLowerCase().includes(q)) return false;
+        if (memberFilters.membership && !String(m.membership).toLowerCase().includes(memberFilters.membership)) return false;
+        if (memberFilters.active    && !m.active)    return false;
+        if (memberFilters.whatsapp  && !m.whatsapp)  return false;
+        if (memberFilters.committee && !m.committee) return false;
+        return true;
+      });
+    }
 
-      if (!list.length) {
-        tbody.innerHTML = `<tr class="state-row"><td colspan="5">No members match your search.</td></tr>`;
-        countEl.innerHTML = '';
-        return;
-      }
+    function renderMembers() {
+      const list     = applyMemberFilters();
+      const container = document.getElementById('memberList');
+      const countEl  = document.getElementById('memberCount');
 
       countEl.innerHTML = `Showing <strong>${list.length}</strong> of <strong>${allMembers.length}</strong> members`;
 
-      tbody.innerHTML = list.map((m, idx) => {
-        const waCell       = m.whatsapp  ? `<span><i data-lucide="check" color="#389f23"></i></span>` : `<span>—</span>`;
-        const activeCell   = m.active    ? `<span><i data-lucide="check" color="#389f23"></i></span>` : `<span>—</span>`;
-        const committeeCell = m.committee ? `<span><i data-lucide="check" color="#389f23"></i></span>` : `<span>—</span>`;
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state">No members match the current filters.</div>`;
+        return;
+      }
 
-        return `<tr data-idx="${idx}">
-          <td><span class="member-name">${esc(m.name)}</span></td>
-          <td><span class="badge ${membershipBadgeClass(m.membership)}">${esc(m.membership)}</span></td>
-          <td>${activeCell}</td>
-          <td>${waCell}</td>
-          <td>${committeeCell}</td>
-        </tr>`;
+      container.innerHTML = list.map((m, idx) => {
+        const flags = [
+          m.active    ? `<span class="committee-yes">Active</span>`    : '',
+          m.whatsapp  ? `<span class="committee-yes">WhatsApp</span>`  : '',
+          m.committee ? `<span class="committee-yes">Committee</span>` : '',
+        ].filter(Boolean).join(' ');
+
+        return `
+          <div class="app-row" data-idx="${idx}" style="cursor:pointer;">
+            <div>
+              <div class="app-name">${esc(m.name)}</div>
+              <div class="app-meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;">
+                <span class="badge ${membershipBadgeClass(m.membership)}">${esc(m.membership)}</span>
+                ${flags}
+              </div>
+            </div>
+            <span class="app-chevron">›</span>
+          </div>`;
       }).join('');
 
-      tbody.querySelectorAll('tr[data-idx]').forEach(row => {
-        row.addEventListener('click', () => openMemberDrawer(list[parseInt(row.dataset.idx)]));
+      container.querySelectorAll('.app-row[data-idx]').forEach(row => {
+        row.addEventListener('click', () => openMemberDrawer(applyMemberFilters()[parseInt(row.dataset.idx)]));
       });
-
-      if (window.lucide) lucide.createIcons();
     }
 
     function openMemberDrawer(m) {
+      if (!m) return;
       const body = document.getElementById('memberDrawerBody');
       body.innerHTML = `
         <div class="drawer-name-row">
@@ -2263,19 +2310,38 @@
         <div class="detail-grid">
           <div class="detail-item">
             <span class="detail-label">Active</span>
-            <span class="detail-value">${m.active ? '<span class="committee-yes">Active</span>' : '—'}</span>
+            <span class="detail-value">${m.active    ? '<span class="committee-yes">Active</span>'  : '—'}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">WhatsApp</span>
-            <span class="detail-value">${m.whatsapp ? '<span class="committee-yes">Active</span>' : '—'}</span>
+            <span class="detail-value">${m.whatsapp  ? '<span class="committee-yes">Active</span>'  : '—'}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Committee</span>
-            <span class="detail-value">${m.committee ? '<span class="committee-yes">Member</span>' : '—'}</span>
+            <span class="detail-value">${m.committee ? '<span class="committee-yes">Member</span>'  : '—'}</span>
           </div>
         </div>`;
       document.getElementById('memberDrawer').classList.add('open');
     }
+
+    // Filter wiring
+    document.getElementById('memberSearch').addEventListener('input', renderMembers);
+
+    document.getElementById('filterMembership').addEventListener('change', e => {
+      memberFilters.membership = e.target.value;
+      const hasValue = !!e.target.value;
+      e.target.classList.toggle('active', hasValue);
+      renderMembers();
+    });
+
+    document.querySelectorAll('#memberFilters .app-filter-btn[data-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.filter;
+        memberFilters[key] = !memberFilters[key];
+        btn.classList.toggle('active', memberFilters[key]);
+        renderMembers();
+      });
+    });
 
     document.getElementById('closeMemDrawer').addEventListener('click', () =>
       document.getElementById('memberDrawer').classList.remove('open'));
@@ -2284,34 +2350,18 @@
         document.getElementById('memberDrawer').classList.remove('open');
     });
 
-    document.getElementById('memberSearch').addEventListener('input', e => {
-      const q = e.target.value.trim().toLowerCase();
-      renderMembers(q ? allMembers.filter(m => m.name.toLowerCase().includes(q)) : allMembers);
-    });
-    
-    /* ── Tab switching ── */
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-      });
-    });
-
     async function loadMembers() {
-      showSpinner('memberTableBody');
+      showSpinner('memberList');
       try {
         const res  = await fetch(`${HOME_DATA_API}?action=membersList`);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         allMembers = data.members;
-        renderMembers(allMembers);
+        renderMembers();
       } catch (err) {
         console.warn('Members API unavailable:', err.message);
-        showError('memberTableBody', 'Members list temporarily unavailable');
+        showError('memberList', 'Members list temporarily unavailable');
         allMembers = [];
-        renderMembers(allMembers);
       }
     }
 
