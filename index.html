@@ -1781,13 +1781,25 @@
     
     // Updated RESULTS_CONFIG with insignia image URLs per class
     const RESULTS_CONFIG = {
-      df95:   { label: 'DF95 Scratch',     spreadsheetId: '1J8CUk1VCDeOYAXfI00acv9YBScgGvH_BrirOBOIfW90', insignia: '/Home/images/classes/DF95.png' },
-      df95h:  { label: 'DF95 Handicap',    spreadsheetId: '1a2cU8sU0I7oTDjo8MTmQRlUxasG-5sjNFnTWpJcJsVg', insignia: '/Home/images/classes/DF95.png' },
-      iom:    { label: 'IOM Racing',       spreadsheetId: '1k3Oe4SBZEMLlrSc1jRaPQkSN6R7RA4OHUtcDn4OZLeQ', insignia: '/Home/images/classes/IOM.png' },
-      soling: { label: 'Soling Scratch',   spreadsheetId: '1WTLfz4EHShQ6G5VFZ8jJwDiTn-4oHK-pk-hYfBIMn38', insignia: '/Home/images/classes/Soling.png' },
-      gh:     { label: 'General Handicap', spreadsheetId: '1xMKT7HapmqEIuqhQQxH1pfPkRWam5x88Pxaah1xayog', insignia: '/Home/images/classes/smmc-logo.png' },
-      df65:   { label: 'DF65 Scratch',     spreadsheetId: '1T5zgrZpJDmQKmkMlnOmnAb_ext18zx733mMuvh4akvg', insignia: '/Home/images/classes/DF65.png' },
+      df95:   { label: 'DF95 Scratch',     className: 'DF95',    spreadsheetId: '1J8CUk1VCDeOYAXfI00acv9YBScgGvH_BrirOBOIfW90', insignia: '/Home/images/classes/df95.png' },
+      df95h:  { label: 'DF95 Handicap',    className: 'DF95',    spreadsheetId: '1a2cU8sU0I7oTDjo8MTmQRlUxasG-5sjNFnTWpJcJsVg', insignia: '/Home/images/classes/df95.png' },
+      iom:    { label: 'IOM Racing',        className: 'IOM',     spreadsheetId: '1k3Oe4SBZEMLlrSc1jRaPQkSN6R7RA4OHUtcDn4OZLeQ', insignia: '/Home/images/classes/iom.png' },
+      soling: { label: 'Soling Scratch',    className: 'Soling',  spreadsheetId: '1WTLfz4EHShQ6G5VFZ8jJwDiTn-4oHK-pk-hYfBIMn38', insignia: '/Home/images/classes/soling.png' },
+      gh:     { label: 'General Handicap',  className: 'General', spreadsheetId: '1xMKT7HapmqEIuqhQQxH1pfPkRWam5x88Pxaah1xayog', insignia: '/Home/images/classes/general.png' },
+      df65:   { label: 'DF65 Scratch',      className: 'DF65',    spreadsheetId: '1T5zgrZpJDmQKmkMlnOmnAb_ext18zx733mMuvh4akvg', insignia: '/Home/images/classes/df65.png' },
     };
+
+    const CLASS_IMAGE_MAP = Object.values(RESULTS_CONFIG).reduce((map, cls) => {
+      if (cls.className && cls.insignia && !map[cls.className]) {
+        map[cls.className] = cls.insignia;
+      }
+      return map;
+    }, {});
+
+    // Returns the insignia URL for a given class name string, or '' if not found.
+    function getClassImage(className) {
+      return CLASS_IMAGE_MAP[className] || CLASS_IMAGE_MAP['General'] || '';
+    }
 
     const sheetListCache = {}; // classKey -> [{name, gid}, ...], fetched once per session
 
@@ -2142,20 +2154,27 @@
     }
 
     function buildMonthHTML(month) {
-      return `
-        <div class="cal-month">
-          <h4>${esc(month.name)}</h4>
-          ${month.events && month.events.length ? month.events.map(e => `
-            <div class="cal-event-item">
-              ${e.img ? `<img src="${esc(e.img)}" alt="" class="cal-class-img">` : '<div class="cal-class-img--placeholder"></div>'}
-              <div class="cal-event-text">
-                <span class="date">${esc(e.date)}</span>
-                <span class="name">${esc(e.name)}</span>
-              </div>
-            </div>
-          `).join('') : '<div class="cal-event-item"><span class="name">No events scheduled</span></div>'}
-        </div>
-      `;
+      const eventsHTML = month.events && month.events.length
+        ? month.events.map(ev => {
+            const dateStr  = ev.dateLabel + ' • ' + ev.startTime;
+            const imgUrl   = getClassImage(ev.boatClass);  // ← shared function
+            const imageHTML = imgUrl
+              ? `<img src="${esc(imgUrl)}" alt="${esc(ev.boatClass)}" title="${esc(ev.boatClass)}"
+                    style="width:30px;height:30px;object-fit:contain;flex-shrink:0;display:block;background:rgba(255,255,255,0.85);border-radius:6px;padding:3px;">`
+              : `<div style="width:30px;height:30px;flex-shrink:0;"></div>`;
+
+            return `
+              <div class="cal-event-item" style="display:flex;flex-direction:row;align-items:center;gap:12px;">
+                ${imageHTML}
+                <div style="display:flex;flex-direction:column;line-height:1.3;">
+                  <span class="date">${esc(dateStr)}</span>
+                  <span class="name">${esc(ev.eventName)}</span>
+                </div>
+              </div>`;
+          }).join('')
+        : '<div class="cal-event-item"><span class="name">No events scheduled</span></div>';
+
+      return `<div class="cal-month"><h4>${esc(month.monthLabel)}</h4>${eventsHTML}</div>`;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
