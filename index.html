@@ -953,6 +953,11 @@
     cursor: pointer;
     transition: background 0.12s;
   }
+
+  table.members th:not(:first-child),
+  table.members td:not(:first-child) {
+    text-align: center;
+  }
  
   table.members tbody tr:hover { background: var(--glass-fill-hi); }
   table.members tbody tr:last-child td { border-bottom: none; }
