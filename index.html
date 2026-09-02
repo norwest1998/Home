@@ -480,7 +480,32 @@
     gap:8px; 
     margin-top:16px;
   }
-  @media (max-width:680px){ .weather-week{ overflow-x:auto; display:flex; padding-bottom:6px; } }
+  /* weather rules for @media (max-width:600px)*/
+  @media (max-width: 600px) {
+
+    .weather-card,
+    .next-event-card {
+      padding: 16px;
+    }
+
+    /* Keep vertical stack on mobile, just tighten the pills */
+    .weather-week {
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .day-pill {
+      flex-direction: row;   /* day name, icon, temp, wind all in a row */
+      align-items: center;
+      padding: 8px 12px;
+      gap: 10px;
+    }
+
+    .race-card {
+      max-width: 100%;
+      height: 200px;
+    }
+  }
 
   .day-pill {
     position: relative;
