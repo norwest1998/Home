@@ -1822,9 +1822,25 @@
           <div class="tile-icon"><i data-lucide="sailboat" color="#257fb6"></i></div>
           <h3>Boat Register</h3>
           <p>Class certificates, sail numbers, and club hull registrations.</p>
-          <div class="app-placeholder">
-            <code>Sheets: Boat Registry</code>
-            <span style="font-size:11px; color:var(--foam-dim);">[Embed Google Sheet / Web Form Here]</span>
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title"><span class="dot"></span><h3>Registered Boats</h3></div>
+            </div>
+            <div class="tab-content active">
+              <div class="search-wrap">
+                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input class="search-input" type="text" id="boatSearch" placeholder="Search by member, sail no, model…" autocomplete="off">
+              </div>
+              <div class="calendar-filters" id="boatClassFilters"></div>
+              <div class="app-filters">
+                <button class="member-filter-btn" data-boat-filter="active">Active</button>
+                <button class="member-filter-btn" data-boat-filter="gh">GH Eligible</button>
+              </div>
+              <div class="count-chip" id="boatCount"></div>
+              <div class="app-list" id="boatList">
+                <div class="empty-state"><div class="spinner"></div><div>Loading boats…</div></div>
+              </div>
+            </div>
           </div>
           <span class="tag">Registry Module</span>
         </div>
@@ -2665,6 +2681,87 @@
         document.getElementById('appDrawer').classList.remove('open');
     });
 
+    /* ══════════════════════════════════════════════════
+      APPLICATION DETAIL DRAWER
+      ══════════════════════════════════════════════════ */
+    let allBoats = [];
+    let boatFilters = { class: 'all', active: false, gh: false };
+
+    function renderBoatFilters() {
+      const wrap = document.getElementById('boatClassFilters');
+      if (!wrap) return;
+      const classes = Object.keys(CLASS_IMAGE_MAP);
+      wrap.innerHTML = `
+        <button class="cal-filter-btn ${boatFilters.class==='all'?'active':''}" data-class="all">
+          <span class="cal-filter-icon--all">★</span><span>All Classes</span>
+        </button>
+        ${classes.map(c => `
+          <button class="cal-filter-btn ${boatFilters.class===c?'active':''}" data-class="${esc(c)}">
+            <img class="cal-filter-icon" src="${esc(CLASS_IMAGE_MAP[c])}" alt="${esc(c)}">
+            <span>${esc(c)}</span>
+          </button>`).join('')}`;
+      wrap.querySelectorAll('.cal-filter-btn').forEach(btn => btn.addEventListener('click', () => {
+        boatFilters.class = btn.dataset.class;
+        renderBoatFilters();
+        renderBoats();
+      }));
+    }
+
+    function applyBoatFilters() {
+      const q = (document.getElementById('boatSearch').value || '').trim().toLowerCase();
+      return allBoats.filter(b => {
+        if (q && !`${b.member} ${b.sailNo} ${b.model}`.toLowerCase().includes(q)) return false;
+        if (boatFilters.class !== 'all' && b.class !== boatFilters.class) return false;
+        if (boatFilters.active && !b.active) return false;
+        if (boatFilters.gh && !b.gh) return false;
+        return true;
+      });
+    }
+
+    function renderBoats() {
+      const list = applyBoatFilters();
+      document.getElementById('boatCount').innerHTML =
+        `Showing <strong>${list.length}</strong> of <strong>${allBoats.length}</strong> boats`;
+      const container = document.getElementById('boatList');
+      container.innerHTML = list.length ? list.map(b => `
+        <div class="app-row">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <img src="${esc(getClassImage(b.class))}" alt="${esc(b.class)}"
+                style="width:28px;height:28px;object-fit:contain;background:rgba(255,255,255,0.85);border-radius:6px;padding:3px;flex-shrink:0;">
+            <div>
+              <div class="app-name">${esc(b.sailNo)} — ${esc(b.model)}</div>
+              <div class="app-meta">${esc(b.member)} · ${esc(b.class)}${b.gh ? ' · GH HCap ' + esc(b.ghHcap) : ''}</div>
+            </div>
+          </div>
+          <span class="badge ${b.active ? 'badge-full' : 'badge-expired'}">${b.active ? 'Active' : 'Inactive'}</span>
+        </div>`).join('') : `<div class="empty-state">No boats match the current filters.</div>`;
+    }
+
+    async function loadBoats() {
+      showSpinner('boatList');
+      try {
+        const res = await fetch(`${HOME_DATA_API}?action=boatsList`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        allBoats = data.boats;
+        renderBoatFilters();
+        renderBoats();
+      } catch (err) {
+        console.warn('Boats API unavailable:', err.message);
+        showError('boatList', 'Boat register temporarily unavailable');
+        allBoats = [];
+      }
+    }
+
+    document.getElementById('boatSearch').addEventListener('input', renderBoats);
+    document.querySelectorAll('#boat-register .member-filter-btn[data-boat-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.boatFilter;
+        boatFilters[key] = !boatFilters[key];
+        btn.classList.toggle('active', boatFilters[key]);
+        renderBoats();
+      });
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
       loadLatestResults();
@@ -2674,6 +2771,7 @@
       loadAnnualCalendar();
       loadMembers();    
       loadApplications();
+      loadBoats();
     });
 
   </script>
