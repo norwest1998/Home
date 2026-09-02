@@ -298,10 +298,14 @@
 
   /* Insignia Badge for Standings */
   .class-insignia {
-    height: 40px;
+    height: 56px;           /* tall enough to be visible alongside h3 */
     width: auto;
-    max-width: 70px;
+    max-width: 100px;
     object-fit: contain;
+    align-self: center;
+    background: rgba(255,255,255,0.85);
+    border-radius: 6px;
+    padding: 4px;
     filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
     transition: opacity 0.25s ease, transform 0.25s ease;
   }
@@ -1777,36 +1781,12 @@
     
     // Updated RESULTS_CONFIG with insignia image URLs per class
     const RESULTS_CONFIG = {
-      df95: { 
-        label: 'DF95 Scratch', 
-        spreadsheetId: '1J8CUk1VCDeOYAXfI00acv9YBScgGvH_BrirOBOIfW90',
-        insignia: 'https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0' 
-      },
-      df95h: { 
-        label: 'DF95 Handicap', 
-        spreadsheetId: '1a2cU8sU0I7oTDjo8MTmQRlUxasG-5sjNFnTWpJcJsVg',
-        insignia: 'https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0' 
-      },
-      iom:  { 
-        label: 'IOM Racing',  
-        spreadsheetId: '1k3Oe4SBZEMLlrSc1jRaPQkSN6R7RA4OHUtcDn4OZLeQ',
-        insignia: '' 
-      },
-      soling:  { 
-        label: 'Soling Scratch',  
-        spreadsheetId: '1WTLfz4EHShQ6G5VFZ8jJwDiTn-4oHK-pk-hYfBIMn38',
-        insignia: '' 
-      },
-      gh:  { 
-        label: 'General Handicap',  
-        spreadsheetId: '1xMKT7HapmqEIuqhQQxH1pfPkRWam5x88Pxaah1xayog',
-        insignia: '' 
-      },
-      df65:  { 
-        label: 'DF65 Scratch',  
-        spreadsheetId: '1T5zgrZpJDmQKmkMlnOmnAb_ext18zx733mMuvh4akvg',
-        insignia: '' 
-      },
+      df95:   { label: 'DF95 Scratch',     spreadsheetId: '1J8CUk1VCDeOYAXfI00acv9YBScgGvH_BrirOBOIfW90', insignia: '/Home/images/classes/df95.png' },
+      df95h:  { label: 'DF95 Handicap',    spreadsheetId: '1a2cU8sU0I7oTDjo8MTmQRlUxasG-5sjNFnTWpJcJsVg', insignia: '/Home/images/classes/df95.png' },
+      iom:    { label: 'IOM Racing',       spreadsheetId: '1k3Oe4SBZEMLlrSc1jRaPQkSN6R7RA4OHUtcDn4OZLeQ', insignia: '/Home/images/classes/iom.png' },
+      soling: { label: 'Soling Scratch',   spreadsheetId: '1WTLfz4EHShQ6G5VFZ8jJwDiTn-4oHK-pk-hYfBIMn38', insignia: '/Home/images/classes/soling.png' },
+      gh:     { label: 'General Handicap', spreadsheetId: '1xMKT7HapmqEIuqhQQxH1pfPkRWam5x88Pxaah1xayog', insignia: '/Home/images/classes/general.png' },
+      df65:   { label: 'DF65 Scratch',     spreadsheetId: '1T5zgrZpJDmQKmkMlnOmnAb_ext18zx733mMuvh4akvg', insignia: '/Home/images/classes/df65.png' },
     };
 
     const sheetListCache = {}; // classKey -> [{name, gid}, ...], fetched once per session
@@ -1848,7 +1828,7 @@
       const imgEl = document.getElementById('classInsignia');
       if (!imgEl) return;
       
-      const cls = RESULTS_CONFIG[classKey];
+        const cls = RESULTS_CONFIG[classKey];
       if (cls && cls.insignia) {
         imgEl.src = cls.insignia;
         imgEl.alt = `${cls.label} Insignia`;
