@@ -685,6 +685,29 @@
   .cal-event-item .date{ font-family:var(--font-data); font-size:11px; color:var(--signal); }
   .cal-event-item .name{ color:var(--foam); font-weight:500; }
 
+  /* Annual Calendar — class filter buttons (insignia) */
+  .calendar-filters{
+    display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px;
+  }
+  .cal-filter-btn{
+    display:flex; align-items:center; gap:7px;
+    font-family:var(--font-data); font-size:11.5px; letter-spacing:.02em;
+    padding:6px 12px 6px 6px; border-radius:10px; cursor:pointer;
+    background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam-dim);
+    transition:background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .cal-filter-btn:hover{ color:var(--foam); background:var(--glass-fill-hi); }
+  .cal-filter-btn.active{ background:var(--glass-fill-hi); border-color:var(--glow); color:var(--glow); }
+  .cal-filter-btn .cal-filter-icon{
+    width:22px; height:22px; object-fit:contain; border-radius:5px; flex-shrink:0;
+    background:rgba(255,255,255,0.85); padding:3px;
+  }
+  .cal-filter-btn .cal-filter-icon--all{
+    width:22px; height:22px; border-radius:5px; flex-shrink:0;
+    background:var(--glass-fill-hi); display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:inherit;
+  }
+
   /* =========================================================
   APPS SCRIPT & SHEETS PLACEHOLDERS
   ========================================================= */
@@ -1679,7 +1702,8 @@
         <p>2026 Regattas &amp; Championship Schedule</p>
       </div>
       <div class="calendar-card glass">
-        <div class="calendar-grid"></div>  <!-- populated by loadAnnualCalendar() -->
+        <div class="calendar-filters" id="calendarFilters"></div>  <!-- populated by renderCalendarFilters() -->
+        <div class="calendar-grid"></div>  <!-- populated by renderCalendarGrid() -->
       </div>
     </section>
     <!-- =========================================================
@@ -2201,7 +2225,9 @@
     }
 
     const CALENDAR_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec?type=calendar';
-
+    let annualCalendarMonths = [];   // cached months data from the last fetch
+    let activeCalendarClass  = 'all'; // 'all' or a className, e.g. 'IOM'
+    
     async function loadAnnualCalendar() {
       const grid = document.querySelector('#annual-calendar .calendar-grid');
       if (!grid) return;
@@ -2215,16 +2241,73 @@
         const data = await response.json();
 
         if (!data.months || data.months.length === 0) {
+          document.getElementById('calendarFilters').innerHTML = '';
           grid.innerHTML = '<p class="cal-empty">No events scheduled for the next 3 months.</p>';
           return;
         }
 
-        grid.innerHTML = data.months.map(month => buildMonthHTML(month)).join('');
+        annualCalendarMonths = data.months;
+        renderCalendarFilters();
+        renderCalendarGrid();
 
       } catch (err) {
         console.error('Calendar fetch failed:', err);
         showError(grid, 'Error fetching calendar: ' + err.message);
       }
+    }
+
+    /* Class filter buttons — built from whichever classes actually appear
+       in the fetched events, using the shared CLASS_IMAGE_MAP insignia. */
+    function renderCalendarFilters() {
+      const wrap = document.getElementById('calendarFilters');
+      if (!wrap) return;
+
+      const classesPresent = Array.from(new Set(
+        annualCalendarMonths.flatMap(m => (m.events || []).map(ev => ev.boatClass)).filter(Boolean)
+      ));
+
+      // Preserve RESULTS_CONFIG ordering where possible, then append any leftovers.
+      const orderedClasses = Object.keys(CLASS_IMAGE_MAP).filter(c => classesPresent.includes(c));
+      classesPresent.forEach(c => { if (!orderedClasses.includes(c)) orderedClasses.push(c); });
+
+      const allBtn = `
+        <button class="cal-filter-btn ${activeCalendarClass === 'all' ? 'active' : ''}" data-class="all">
+          <span class="cal-filter-icon--all">★</span>
+         <span>All Classes</span>
+        </button>`;
+
+      const classBtns = orderedClasses.map(cls => {
+        const imgUrl = getClassImage(cls);
+        return `
+          <button class="cal-filter-btn ${activeCalendarClass === cls ? 'active' : ''}" data-class="${esc(cls)}">
+            ${imgUrl ? `<img class="cal-filter-icon" src="${esc(imgUrl)}" alt="${esc(cls)}">` : ''}
+            <span>${esc(cls)}</span>
+          </button>`;
+      }).join('');
+
+      wrap.innerHTML = allBtn + classBtns;
+
+      wrap.querySelectorAll('.cal-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeCalendarClass = btn.dataset.class;
+          renderCalendarFilters();
+          renderCalendarGrid();
+        });
+      });
+    }
+
+    function renderCalendarGrid() {
+      const grid = document.querySelector('#annual-calendar .calendar-grid');
+      if (!grid) return;
+
+      const filteredMonths = annualCalendarMonths.map(month => ({
+        monthLabel: month.monthLabel,
+        events: activeCalendarClass === 'all'
+          ? month.events
+          : (month.events || []).filter(ev => ev.boatClass === activeCalendarClass)
+      }));
+
+      grid.innerHTML = filteredMonths.map(month => buildMonthHTML(month)).join('');
     }
 
     function buildMonthHTML(month) {
@@ -2246,7 +2329,7 @@
                 </div>
               </div>`;
           }).join('')
-        : '<div class="cal-event-item"><span class="name">No events scheduled</span></div>';
+        : `<div class="cal-event-item"><span class="name">${activeCalendarClass === 'all' ? 'No events scheduled' : 'No ' + esc(activeCalendarClass) + ' events this month'}</span></div>`;
 
       return `<div class="cal-month"><h4>${esc(month.monthLabel)}</h4>${eventsHTML}</div>`;
     }
