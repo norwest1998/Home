@@ -1332,13 +1332,19 @@
     margin-top: 16px;
   }
 
-  @media (max-width: 700px) { .tile-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 680px) { .tile-grid { grid-template-columns: 1fr; } }
 
   .tile {
     padding: 24px;
     display: flex;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .tile-title {
+    display: flex;
+    align-items: center; /* Vertically aligns icon and text center-to-center */
+    gap: 12px;           /* Controls horizontal space between icon and text */
   }
 
   .tile-icon {
@@ -1719,9 +1725,12 @@
         
         <!-- Placeholder 1: Member Register App -->
         <div id="members-list" class="tile glass">
-          <div class="tile-icon"><i data-lucide="users" color="#257fb6"></i></div>
-          <h3>Members Management</h3>
+          <div class="tile-title">
+            <i class="tile-icon" data-lucide="users" color="#257fb6"></i></div>
+            <h3>Members Management</h3>
+          </div>
           <p class="subh">Access member list, details, and membership applications processing.</p>
+            
           <div class="panel">
             <div class="panel-header">
               <div class="panel-title">
@@ -1819,9 +1828,11 @@
 
         <!-- Placeholder 2: Boat Register App -->
         <div id="boat-register" class="tile glass">
-          <div class="tile-icon"><i data-lucide="sailboat" color="#257fb6"></i></div>
-          <h3>Boat Register</h3>
-          <p>Class certificates, sail numbers, and club hull registrations.</p>
+          <div class="tile-title">
+            <i class="tile-icon" data-lucide="sailboat" color="#257fb6"></i>
+            <h3>Boat Register</h3>
+          </div>
+          <p class="subh">Class certificates, sail numbers, and club hull registrations.</p>
           <div class="panel">
             <div class="panel-header">
               <div class="panel-title"><span class="dot"></span><h3>Registered Boats</h3></div>
