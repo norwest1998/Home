@@ -115,6 +115,11 @@
     font-family:var(--font-data); font-size:10.5px; letter-spacing:0.14em;
     text-transform:uppercase; color:var(--glow);
   }
+  .badge-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 
   .nav-links{ display:flex; gap:8px; align-items:center; list-style:none; }
   .nav-item{ position:relative; }
