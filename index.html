@@ -896,7 +896,39 @@
     border-bottom-color: transparent;
     color: var(--glow);
   }
- 
+
+  .tab-row-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .add-app-pill {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-data);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    padding: 6px 14px;
+    margin-bottom: 8px;
+    border-radius: 999px;
+    cursor: pointer;
+    background: var(--glass-fill);
+    border: 1px solid var(--glow);
+    color: var(--glow);
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .add-app-pill.visible { display: inline-flex; }
+
+  .add-app-pill:hover {
+    background: var(--glow);
+    color: var(--ocean-deep);
+  }
+
   /* ── Tab content ── */
   .tab-content { display: none; padding: 20px 24px 24px; }
   .tab-content.active { display: block; }
@@ -1751,9 +1783,14 @@
                 <span class="dot"></span>
                 <h3>Members &amp; Applications</h3>
               </div>
-              <div class="tab-row">
-                <button class="tab active" data-tab="members">Members List</button>
-                <button class="tab" data-tab="applications">Applications</button>
+              <div class="tab-row-wrap">
+                <div class="tab-row">
+                  <button class="tab active" data-tab="members">Members List</button>
+                  <button class="tab" data-tab="applications">Applications</button>
+                </div>
+                <button class="add-app-pill" id="addApplicationPill" type="button" title="Add Application">
+                  <span>+</span> Add Application
+                </button>
               </div>
             </div>
           
@@ -2516,6 +2553,8 @@
     });
 
     /* ── Tab switching ── */
+    const ADD_APPLICATION_URL = 'https://script.google.com/macros/s/AKfycbxYlGnKzYSprv0xQWuE3jEVg8s_1HyEp3JWTWPq-I9Tm8k2S5hvk9_bX5DzFwBrCb57SA/exec';
+
     function selectMemberTab(key, scroll) {
       const tabBtn = document.querySelector('.tab[data-tab="' + key + '"]');
       const tabContent = document.getElementById('tab-' + key);
@@ -2526,6 +2565,9 @@
       tabBtn.classList.add('active');
       tabContent.classList.add('active');
 
+      const addAppPill = document.getElementById('addApplicationPill');
+      if (addAppPill) addAppPill.classList.toggle('visible', key === 'applications');
+
       if (scroll) {
         document.getElementById('members-list').scrollIntoView({ behavior: 'smooth' });
       }
@@ -2535,6 +2577,24 @@
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => selectMemberTab(tab.dataset.tab, false));
     });
+
+    /* ── Add Application pill ── */
+    const addApplicationPill = document.getElementById('addApplicationPill');
+    if (addApplicationPill) {
+      addApplicationPill.addEventListener('click', () => {
+        // Build a return URL pointing back to this page's Applications tab,
+        // in case the destination form supports a redirect/return param.
+        const returnUrl = window.location.origin + window.location.pathname + '#applications';
+        const separator = ADD_APPLICATION_URL.includes('?') ? '&' : '?';
+        window.location.href = ADD_APPLICATION_URL + separator + 'returnUrl=' + encodeURIComponent(returnUrl);
+      });
+    }
+
+    // If we've arrived back with #applications (e.g. after submitting the
+    // Add Application form), open straight to the Applications tab.
+    if (window.location.hash === '#applications') {
+      selectMemberTab('applications', true);
+    }
 
     async function loadMembers() {
       showSpinner('memberList');
