@@ -2269,7 +2269,9 @@
         showError('statusBreakdown', `Statistics unavailable — ${esc(err.message)}`);
       }
     }
-
+    /* =========================================================================
+      Weather Section
+      ========================================================================= */
     function loadWeather() {
       const script = document.createElement('script');
       script.src = `https://script.google.com/macros/s/AKfycbworw_FnbKehShRIfhbXTuxlAa36jJt8d7MLCvjzAWUfp-_xXORa2ZzC_0m20msa1oj/exec?action=data&callback=renderWeather`;
@@ -2294,14 +2296,16 @@
             <span class="d-day">${esc(day.day.substring(0, 3))}</span>
             <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
             <span class="d-temp">${esc(day.max)}°C</span>
-            <span class="d-wind" style="font-size:10px;">${esc(day.wind)} kts</span>
+            <span class="d-wind" style="font-size:10px;">${esc(day.wind)} kts ${esc(day.windScale)}</span>
             <span class="d-rain" style="font-size:10px;">${esc(day.rain)}</span>
             <span class="d-uv" style="font-size:10px;">${esc(day.uvIndex)}</span>
           </div>
         `).join('');
       }
     };
-
+    /* =========================================================================
+      Next Event Section
+      ========================================================================= */
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec';
 
     async function loadEventDisplay() {
@@ -2321,7 +2325,9 @@
         showError('event-display-container', 'Unable to load event details.');
       }
     }
-
+    /* =========================================================================
+      Annual Calendar Section
+      ========================================================================= */
     const CALENDAR_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec?type=calendar';
     let annualCalendarMonths = [];   // cached months data from the last fetch
     let activeCalendarClass  = 'all'; // 'all' or a className, e.g. 'IOM'
@@ -2354,8 +2360,6 @@
       }
     }
 
-    /* Class filter buttons — built from whichever classes actually appear
-       in the fetched events, using the shared CLASS_IMAGE_MAP insignia. */
     function renderCalendarFilters() {
       const wrap = document.getElementById('calendarFilters');
       if (!wrap) return;
