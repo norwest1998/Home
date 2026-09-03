@@ -1879,7 +1879,7 @@
           <p class="subh">OOD score entry for IOM, DF95, DF65, Soling, and GH classes.</p>
           <div class="app-placeholder">
             <code>Apps Script: Race Scoring Form</code>
-            <span style="font-size:11px; color:var(--foam-dim);">[Embed Scoring App Script Here]</span>
+            <!-- <span style="font-size:11px; color:var(--foam-dim);">[Embed Scoring App Script Here]</span> -->
           </div>
           <span class="tag">Scoring Module</span>
         </div>
@@ -1893,7 +1893,7 @@
           <p class="subh">Event management, weather delays, and date rescheduling portal.</p>
           <div class="app-placeholder">
             <code>Apps Script: Calendar Editor</code>
-            <span style="font-size:11px; color:var(--foam-dim);">[Embed Calendar Management Web App Here]</span>
+            <!-- <span style="font-size:11px; color:var(--foam-dim);">[Embed Calendar Management Web App Here]</span> -->
           </div>
           <span class="tag">Calendar Module</span>
         </div>
@@ -2034,7 +2034,7 @@
       try{
         const { meta, headers, rows } = await fetchSheet(cls.spreadsheetId, sheet.name);
         renderTable(meta, headers, rows);
-        statusEl.textContent = `${cls.label} • ${sheet.name} • live from Google Sheets`;
+        statusEl.textContent = `${cls.label} • ${sheet.name} • live from Results Sheets`;
       }catch(err){
         document.getElementById('tableHead').innerHTML = '';
         document.getElementById('tableBody').innerHTML = '';
