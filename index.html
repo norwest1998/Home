@@ -1471,9 +1471,9 @@
       <li class="nav-item">
         <span class="nav-link">Members ▾</span>
         <ul class="dropdown-menu glass">
-          <li><a href="#members-list">Members List</a></li>
-          <li><a href="#tab-members">Member Details</a></li>
-          <li><a href="#tab-applications">Applications</a></li>
+          <li><a href="#members-list" onclick="return selectMemberTab('members', true)">Members List</a></li>
+          <li><a href="#members-list" onclick="return selectMemberTab('members', true)">Member Details</a></li>
+          <li><a href="#members-list" onclick="return selectMemberTab('applications', true)">Applications</a></li>
           <li><a href="#boat-register">Boat Register</a></li>
         </ul>
       </li>
@@ -1759,7 +1759,7 @@
             </div>
           
             <!-- Members tab -->
-            <div class="tab-content active" id="tab-members">
+            <div id="tab-members" class="tab-content active">
               <div class="search-wrap">
                 <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1789,7 +1789,7 @@
             </div>
           
             <!-- Applications tab -->
-            <div class="tab-content" id="tab-applications">
+            <div id="tab-applications" class="tab-content">
               <div class="app-filters" id="appFilters">
                 <button class="app-filter-btn active" data-status="all">All</button>
                 <button class="app-filter-btn" data-status="Received">Received</button>
@@ -2517,13 +2517,24 @@
     });
 
     /* ── Tab switching ── */
+    function selectMemberTab(key, scroll) {
+      const tabBtn = document.querySelector('.tab[data-tab="' + key + '"]');
+      const tabContent = document.getElementById('tab-' + key);
+      if (!tabBtn || !tabContent) return true; // unknown key, let default nav happen
+
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      tabBtn.classList.add('active');
+      tabContent.classList.add('active');
+
+      if (scroll) {
+        document.getElementById('members-list').scrollIntoView({ behavior: 'smooth' });
+      }
+      return false; // prevent default jump so smooth scroll isn't fought
+    }
+
     document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-      });
+      tab.addEventListener('click', () => selectMemberTab(tab.dataset.tab, false));
     });
 
     async function loadMembers() {
