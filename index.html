@@ -137,8 +137,9 @@
   .dropdown-menu{
     position:absolute; top:100%; left:0;
     min-width:200px;
-    margin-top:6px;
     padding:8px;
+    padding-top:14px;   /* visual gap, still inside the hoverable box */
+    margin-top:-6px;    /* pulls the box up so it touches .nav-link, no dead zone */
     display:flex; flex-direction:column; gap:4px;
     list-style:none;
     opacity:0; transform:translateY(8px); pointer-events:none;
