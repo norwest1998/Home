@@ -210,19 +210,11 @@
     ========================================================= */
     const FUNCTIONS = [
     {
-        id: "sync-inventory",
-        icon: "🔄",
-        title: "Sync Inventory",
-        description: "Pull latest inventory counts into the sheet.",
-        options: [{ id: "dry-run", label: "Dry run" }, { id: "force", label: "Force" }],
-        run: async (opts, log) => {
-        log("Connecting to sheet...");
-        await wait(500);
-        log("Updating row 14, Stock Count...");
-        await wait(500);
-        AdminLog.add({ fn: "Sync Inventory", sheet: "Inventory", field: "Stock Count", before: "42", after: "37", status: "success", message: "Synced from source" });
-        log("Done.");
-        }
+        id: "Member-Applications",
+        icon: <i class="nav-icon" data-lucide="user-pen" color="#257fb6"></i>,
+        title: "Online Membership Applications",
+        description: "Manage the progress of applications through the process.",
+        options: [{ id: "view", label: "View" }, { id: "update", label: "Update" }],
     },
     {
         id: "recalc-prices",
