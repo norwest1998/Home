@@ -11,6 +11,21 @@
 <!-- Link Shared Theme -->
 <link rel="stylesheet" href="theme.css">
 <style>
+/* =========================================================
+     ADMIN LAYOUT & WORKSPACE STYLES
+     ========================================================= */
+  .admin-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
+  }
+  .admin-title-group { display: flex; flex-direction: column; gap: 4px; }
+  .admin-title-group h1 { font-family: var(--font-display); font-size: 28px; color: var(--foam); }
+  .admin-badge {
+    display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-data);
+    font-size: 11px; color: var(--signal); padding: 4px 10px; border-radius: 6px;
+    background: rgba(255,106,61,0.12); border: 1px solid rgba(255,106,61,0.3); width: fit-content;
+  }
+
   /* Page-specific layout only — tokens/primitives come from theme.css */
   .fn-grid{
     display:grid;
@@ -57,8 +72,23 @@
 </style>
 </head>
 <body>
+<!-- Shared Navigation Header -->
+<header class="nav-glass">
+<a href="index.html" class="brand">
+    <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+    <div class="brand-text">
+    <strong>Sydney Maritime Modellers Club</strong>
+    <span>APPLICATIONS PORTAL</span>
+    </div>
+</a>
+<ul class="nav-links">
+    <li class="nav-item"><a href="index.html" class="nav-link">← Public Site</a></li>
+    <li class="nav-item"><a href="#approvals" class="nav-link">Approvals Queue</a></li>
+    <li class="nav-item"><a href="#audit-log" class="nav-link">Committee Logs</a></li>
+</ul>
+</header>
 
-<div class="container">
+<main class="container">
 
   <div class="section-head">
     <h2>Admin Dashboard</h2>
@@ -99,7 +129,7 @@
     </div>
   </div>
 
-</div>
+</main>
 
 <script>
 /* =========================================================
