@@ -1491,11 +1491,12 @@
         <span class="nav-link">Race Results ▾</span>
         <ul class="dropdown-menu glass">
           <li><a href="#add-result">Add Race Result</a></li>
-          <li><a href="#iom">IOM Standings</a></li>
-          <li><a href="#df95">DF95 Standings</a></li>
-          <li><a href="#df65">DF65 Standings</a></li>
-          <li><a href="#soling">Soling Standings</a></li>
-          <li><a href="#gh">GH Standings</a></li>
+          <li><a href="#race-results-hub" onclick="return selectClass('iom')">IOM Standings</a></li>
+          <li><a href="#race-results-hub" onclick="return selectClass('df95')">DF95 S Standings</a></li>
+          <li><a href="#race-results-hub" onclick="return selectClass('df95h')">DF95 H Standings</a></li>
+          <li><a href="#race-results-hub" onclick="return selectClass('df65')">DF65 Standings</a></li>
+          <li><a href="#race-results-hub" onclick="return selectClass('soling')">Soling Standings</a></li>
+          <li><a href="#race-results-hub" onclick="return selectClass('gh')">GH Standings</a></li>
         </ul>
       </li>
       
@@ -2075,6 +2076,21 @@
         await renderRoundTabs();
         loadActiveSheet();
       });
+    }
+
+    function selectClass(classKey) {
+      if (!RESULTS_CONFIG[classKey]) return true; // unknown key, let default nav happen
+      activeClass = classKey;
+      activeSheetIndex = 0;
+
+      const selectEl = document.getElementById('classSelector');
+      if (selectEl) selectEl.value = classKey; // keep dropdown UI in sync
+
+      updateClassInsignia(activeClass);
+      renderRoundTabs().then(loadActiveSheet);
+
+      document.getElementById('race-results-hub').scrollIntoView({ behavior: 'smooth' });
+      return false; // prevent default jump so smooth scroll isn't fought
     }
 
     (async function init(){
