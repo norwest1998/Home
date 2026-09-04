@@ -239,7 +239,8 @@
 
                         const eventData = await fetchSheet(SHEETS.calWebAppUrl,"Event Data");
                         const classes = await fetchSheet(SHEETS.clbWebAppUrl,"Classes");
-                        const CURRENT_SEASON = new Date().getFullYear().toString();
+                        const now = new Date();
+                        const CURRENT_SEASON_START = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1; // adjust cutover month as needed
 
                         // --- METRICS ---------------------------------------------------------
 
@@ -297,8 +298,7 @@
                         // --- POPULATE EVENTS -------------------------------------------------
 
                         function populateEvents(className) {
-                            const filtered = eventData.filter(e =>
-                                e.Season === CURRENT_SEASON &&
+                            const filtered = eventData.filter(e => e.Season.startsWith(String(CURRENT_SEASON_START)) &&
                                 (!className || e.Class === className)
                             );
 
