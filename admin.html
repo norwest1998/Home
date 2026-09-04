@@ -1,330 +1,334 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Portal — Sydney Maritime Modellers Club</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Admin Portal — Sydney Maritime Modellers Club</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Link Shared Theme -->
-    <link rel="stylesheet" href="theme.css">
-    <style>
-    /* =========================================================
-        ADMIN LAYOUT & WORKSPACE STYLES
-        ========================================================= */
-    .admin-header {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
-    }
-    .admin-title-group { display: flex; flex-direction: column; gap: 4px; }
-    .admin-title-group h1 { font-family: var(--font-display); font-size: 28px; color: var(--foam); }
-    .admin-badge {
-        display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-data);
-        font-size: 11px; color: var(--signal); padding: 4px 10px; border-radius: 6px;
-        background: rgba(255,106,61,0.12); border: 1px solid rgba(255,106,61,0.3); width: fit-content;
-    }
+        <!-- Link Shared Theme -->
+        <link rel="stylesheet" href="theme.css">
+        <style>
+        /* =========================================================
+            ADMIN LAYOUT & WORKSPACE STYLES
+            ========================================================= */
+        .admin-header {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
+        }
+        .admin-title-group { display: flex; flex-direction: column; gap: 4px; }
+        .admin-title-group h1 { font-family: var(--font-display); font-size: 28px; color: var(--foam); }
+        .admin-badge {
+            display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-data);
+            font-size: 11px; color: var(--signal); padding: 4px 10px; border-radius: 6px;
+            background: rgba(255,106,61,0.12); border: 1px solid rgba(255,106,61,0.3); width: fit-content;
+        }
 
-    /* Page-specific layout only — tokens/primitives come from theme.css */
-    .fn-grid{
-        display:grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap:20px;
-    }
-    .fn-card{ padding:20px; display:flex; flex-direction:column; gap:12px; }
-    .fn-card.placeholder{ opacity:0.45; border-style:dashed; }
+        /* Page-specific layout only — tokens/primitives come from theme.css */
+        .fn-grid{
+            display:grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap:20px;
+        }
+        .fn-card{ padding:20px; display:flex; flex-direction:column; gap:12px; }
+        .fn-card.placeholder{ opacity:0.45; border-style:dashed; }
 
-    .fn-desc{ font-size:13px; color:var(--foam-dim); line-height:1.4; min-height:32px; }
+        .fn-desc{ font-size:13px; color:var(--foam-dim); line-height:1.4; min-height:32px; }
 
-    .fn-options{ display:flex; flex-wrap:wrap; gap:6px; }
+        .fn-options{ display:flex; flex-wrap:wrap; gap:6px; }
 
-    .fn-actions{ display:flex; align-items:center; gap:10px; margin-top:auto; }
-    .fn-actions .btn{ flex:1; padding:9px 14px; font-size:13px; }
-    .fn-actions .spinner{ display:none; margin:0; width:16px; height:16px; }
-    .fn-actions .spinner.active{ display:inline-block; }
+        .fn-actions{ display:flex; align-items:center; gap:10px; margin-top:auto; }
+        .fn-actions .btn{ flex:1; padding:9px 14px; font-size:13px; }
+        .fn-actions .spinner{ display:none; margin:0; width:16px; height:16px; }
+        .fn-actions .spinner.active{ display:inline-block; }
 
-    .fn-usage{ font-size:10.5px; color:var(--foam-dim); }
+        .fn-usage{ font-size:10.5px; color:var(--foam-dim); }
 
-    .fn-results.log-box{ display:none; }
-    .fn-results.log-box.visible{ display:block; }
+        .fn-results.log-box{ display:none; }
+        .fn-results.log-box.visible{ display:block; }
 
-    .fn-message{ font-size:12px; display:none; }
-    .fn-message.visible{ display:block; }
-    .fn-message.success{ color:var(--glow); }
-    .fn-message.error{ color:#ff6b6b; }
+        .fn-message{ font-size:12px; display:none; }
+        .fn-message.visible{ display:block; }
+        .fn-message.success{ color:var(--glow); }
+        .fn-message.error{ color:#ff6b6b; }
 
-    /* Admin log panel */
-    .log-toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
-    .log-toolbar .search-wrap{ flex:1; min-width:200px; margin-bottom:0; }
-    .log-table-wrap{ max-height:420px; overflow:auto; border-radius:10px; border:1px solid var(--glass-border); }
-    table.log-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
-    .log-table th{
-        position:sticky; top:0; background:var(--ocean-mid); text-align:left;
-        padding:8px 10px; font-family:var(--font-data); font-size:10px;
-        letter-spacing:0.06em; text-transform:uppercase; color:var(--foam-dim);
-        border-bottom:1px solid var(--glass-border);
-    }
-    .log-table td{ padding:8px 10px; border-bottom:1px solid var(--glass-border); color:var(--foam); vertical-align:top; }
-    .log-table tr:last-child td{ border-bottom:none; }
-    .log-table .diff-before{ color:#f87171; text-decoration:line-through; opacity:0.8; }
-    .log-table .diff-after{ color:#4ade80; }
-    </style>
-</head>
-<body>
-    <!-- Shared Navigation Header -->
-    <header class="nav-glass">
-    <a href="index.html" class="brand">
-        <i class="nav-icon" data-lucide="folder-key" color="#257fb6"></i>
-        <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
-        <div class="brand-text">
-            <strong>Sydney Maritime Modellers Club</strong>
-            <span>ADMINISTRATION PORTAL</span>
-        </div>
-    </a>
-    <ul class="nav-links">
-        <li class="nav-item"><a href="index.html" class="nav-link">← Public Site</a></li>
-        <li class="nav-item"><a href="#approvals" class="nav-link">Approvals Queue</a></li>
-        <li class="nav-item"><a href="#audit-log" class="nav-link">Committee Logs</a></li>
-    </ul>
-    </header>
+        /* Admin log panel */
+        .log-toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+        .log-toolbar .search-wrap{ flex:1; min-width:200px; margin-bottom:0; }
+        .log-table-wrap{ max-height:420px; overflow:auto; border-radius:10px; border:1px solid var(--glass-border); }
+        table.log-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+        .log-table th{
+            position:sticky; top:0; background:var(--ocean-mid); text-align:left;
+            padding:8px 10px; font-family:var(--font-data); font-size:10px;
+            letter-spacing:0.06em; text-transform:uppercase; color:var(--foam-dim);
+            border-bottom:1px solid var(--glass-border);
+        }
+        .log-table td{ padding:8px 10px; border-bottom:1px solid var(--glass-border); color:var(--foam); vertical-align:top; }
+        .log-table tr:last-child td{ border-bottom:none; }
+        .log-table .diff-before{ color:#f87171; text-decoration:line-through; opacity:0.8; }
+        .log-table .diff-after{ color:#4ade80; }
+        </style>
+    </head>
+    <body>
+        <!-- Shared Navigation Header -->
+        <header class="nav-glass">
+        <a href="index.html" class="brand">
+            <i class="nav-icon" data-lucide="folder-key" color="#257fb6"></i>
+            <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+            <div class="brand-text">
+                <strong>Sydney Maritime Modellers Club</strong>
+                <span>ADMINISTRATION PORTAL</span>
+            </div>
+        </a>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="index.html" class="nav-link">← Public Site</a></li>
+            <li class="nav-item"><a href="#approvals" class="nav-link">Approvals Queue</a></li>
+            <li class="nav-item"><a href="#audit-log" class="nav-link">Committee Logs</a></li>
+        </ul>
+        </header>
 
-    <main class="container">
+        <main class="container">
 
-        <div class="section-head">
-            <h2>Admin Dashboard</h2>
-            <p>Launch functions that update the Google Sheet backing index.html.</p>
-        </div>
+            <div class="section-head">
+                <h2>Admin Dashboard</h2>
+                <p>Launch functions that update the Google Sheet backing index.html.</p>
+            </div>
 
-        <section class="fn-grid" id="fnGrid"></section>
+            <section class="fn-grid" id="fnGrid"></section>
 
-        <div class="section-head">
-            <h2>Admin Log</h2>
-            <p>Every update performed by any function, in one place.</p>
-        </div>
+            <div class="section-head">
+                <h2>Admin Log</h2>
+                <p>Every update performed by any function, in one place.</p>
+            </div>
 
-        <div class="panel">
-            <div class="panel-header">
-            <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
-            <div class="log-toolbar">
-                <div class="search-wrap">
-                <span class="search-icon">🔍</span>
-                <input class="search-input" id="logSearch" placeholder="Search by function, sheet, or field…">
+            <div class="panel">
+                <div class="panel-header">
+                <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
+                <div class="log-toolbar">
+                    <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input class="search-input" id="logSearch" placeholder="Search by function, sheet, or field…">
+                    </div>
+                    <button type="button" class="app-filter-btn active" data-status="all">All</button>
+                    <button type="button" class="app-filter-btn" data-status="success">Success</button>
+                    <button type="button" class="app-filter-btn" data-status="error">Errors</button>
+                    <button type="button" class="btn btn-ghost" id="clearLogBtn" style="padding:5px 12px;font-size:11px;">Clear</button>
                 </div>
-                <button type="button" class="app-filter-btn active" data-status="all">All</button>
-                <button type="button" class="app-filter-btn" data-status="success">Success</button>
-                <button type="button" class="app-filter-btn" data-status="error">Errors</button>
-                <button type="button" class="btn btn-ghost" id="clearLogBtn" style="padding:5px 12px;font-size:11px;">Clear</button>
+                </div>
+                <div class="tab-content active">
+                <div class="log-table-wrap">
+                    <table class="log-table">
+                    <thead>
+                        <tr><th>Time</th><th>Function</th><th>Sheet</th><th>Field</th><th>Before</th><th>After</th><th>Status</th><th>Message</th></tr>
+                    </thead>
+                    <tbody id="logBody"></tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="logEmpty" style="display:none;">No activity yet.</div>
+                </div>
             </div>
-            </div>
-            <div class="tab-content active">
-            <div class="log-table-wrap">
-                <table class="log-table">
-                <thead>
-                    <tr><th>Time</th><th>Function</th><th>Sheet</th><th>Field</th><th>Before</th><th>After</th><th>Status</th><th>Message</th></tr>
-                </thead>
-                <tbody id="logBody"></tbody>
-                </table>
-            </div>
-            <div class="empty-state" id="logEmpty" style="display:none;">No activity yet.</div>
-            </div>
-        </div>
 
-    </main>
+        </main>
+        
+        <footer>
+            <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+        </footer>
 
-    <script>
-    /* =========================================================
-    ADMIN LOG — shared across all functions (and reusable by index.html)
-    Entry shape: { timestamp, fn, sheet, field, before, after, status, message }
-    ========================================================= */
-    const AdminLog = (() => {
-    const KEY = "admin_log_entries";
-    const load = () => { try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } };
-    const save = (entries) => localStorage.setItem(KEY, JSON.stringify(entries));
+        <script>
+        /* =========================================================
+        ADMIN LOG — shared across all functions (and reusable by index.html)
+        Entry shape: { timestamp, fn, sheet, field, before, after, status, message }
+        ========================================================= */
+        const AdminLog = (() => {
+        const KEY = "admin_log_entries";
+        const load = () => { try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } };
+        const save = (entries) => localStorage.setItem(KEY, JSON.stringify(entries));
 
-    function add({ fn, sheet = "", field = "", before = "", after = "", status = "success", message = "" }){
-        const entries = load();
-        entries.unshift({
-        timestamp: new Date().toISOString(),
-        fn, sheet, field, before, after, status, message
-        });
-        save(entries);
-        renderLog();
-    }
-    function clear(){ save([]); renderLog(); }
-    function all(){ return load(); }
-
-    return { add, clear, all };
-    })();
-
-    function fmtTime(iso){
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
-    }
-
-    let logStatusFilter = "all";
-    function renderLog(){
-    const body = document.getElementById("logBody");
-    const empty = document.getElementById("logEmpty");
-    const q = document.getElementById("logSearch").value.trim().toLowerCase();
-
-    let entries = AdminLog.all();
-    if (logStatusFilter !== "all") entries = entries.filter(e => e.status === logStatusFilter);
-    if (q) entries = entries.filter(e =>
-        (e.fn||"").toLowerCase().includes(q) ||
-        (e.sheet||"").toLowerCase().includes(q) ||
-        (e.field||"").toLowerCase().includes(q)
-    );
-
-    body.innerHTML = entries.map(e => `
-        <tr>
-        <td>${fmtTime(e.timestamp)}</td>
-        <td>${e.fn || ""}</td>
-        <td>${e.sheet || ""}</td>
-        <td>${e.field || ""}</td>
-        <td class="diff-before">${e.before ?? ""}</td>
-        <td class="diff-after">${e.after ?? ""}</td>
-        <td><span class="badge ${e.status === "error" ? "badge-expired" : "badge-full"}">${e.status}</span></td>
-        <td>${e.message || ""}</td>
-        </tr>
-    `).join("");
-
-    empty.style.display = entries.length ? "none" : "block";
-    }
-
-    document.getElementById("logSearch").addEventListener("input", renderLog);
-    document.getElementById("clearLogBtn").addEventListener("click", () => { if(confirm("Clear all log entries?")) AdminLog.clear(); });
-    document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        logStatusFilter = btn.dataset.status;
-        renderLog();
-    });
-    });
-
-    /* =========================================================
-    FUNCTION REGISTRY — add new functions here one at a time.
-    `run(opts, log)` does the real work; call AdminLog.add(...) for
-    every field-level change so it lands in the shared log.
-    ========================================================= */
-    const FUNCTIONS = [
-    {
-        id: "Member-Applications",
-        icon: '<i class="nav-icon" data-lucide="user-pen" color="#257fb6"></i>',
-        title: "Online Membership Applications",
-        description: "Manage online applications through the process.",
-        options: [{ id: "view", label: "View" }, { id: "update", label: "Update" }],
-    },
-    {
-        id: "recalc-prices",
-        icon: "💲",
-        title: "Recalculate Prices",
-        description: "Apply pricing rules across all product rows.",
-        options: [{ id: "preview", label: "Preview only" }],
-        run: async (opts, log) => {
-        log("Recalculating (placeholder)...");
-        await wait(600);
-        AdminLog.add({ fn: "Recalculate Prices", sheet: "Products", field: "Price", before: "$19.00", after: "$21.00", status: "success", message: "Rule: +10% markup" });
+        function add({ fn, sheet = "", field = "", before = "", after = "", status = "success", message = "" }){
+            const entries = load();
+            entries.unshift({
+            timestamp: new Date().toISOString(),
+            fn, sheet, field, before, after, status, message
+            });
+            save(entries);
+            renderLog();
         }
-    },
-    { id: "placeholder-1", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." },
-    { id: "placeholder-2", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
-    ];
+        function clear(){ save([]); renderLog(); }
+        function all(){ return load(); }
 
-    const wait = ms => new Promise(r => setTimeout(r, ms));
+        return { add, clear, all };
+        })();
 
-    const USAGE_KEY = "admin_fn_usage";
-    const getUsage = () => { try{ return JSON.parse(localStorage.getItem(USAGE_KEY)) || {}; }catch(e){ return {}; } };
-    const bumpUsage = (id) => { const u = getUsage(); u[id] = (u[id]||0)+1; localStorage.setItem(USAGE_KEY, JSON.stringify(u)); };
+        function fmtTime(iso){
+        const d = new Date(iso);
+        return d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+        }
 
-    const grid = document.getElementById("fnGrid");
+        let logStatusFilter = "all";
+        function renderLog(){
+        const body = document.getElementById("logBody");
+        const empty = document.getElementById("logEmpty");
+        const q = document.getElementById("logSearch").value.trim().toLowerCase();
 
-    function renderGrid(){
-    const usage = getUsage();
-    grid.innerHTML = "";
-    const sorted = [...FUNCTIONS].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
+        let entries = AdminLog.all();
+        if (logStatusFilter !== "all") entries = entries.filter(e => e.status === logStatusFilter);
+        if (q) entries = entries.filter(e =>
+            (e.fn||"").toLowerCase().includes(q) ||
+            (e.sheet||"").toLowerCase().includes(q) ||
+            (e.field||"").toLowerCase().includes(q)
+        );
 
-    sorted.forEach((fn, idx) => {
-        const card = document.createElement("div");
-        card.className = "glass fn-card" + (fn.placeholder ? " placeholder" : "");
-        card.style.order = idx;
+        body.innerHTML = entries.map(e => `
+            <tr>
+            <td>${fmtTime(e.timestamp)}</td>
+            <td>${e.fn || ""}</td>
+            <td>${e.sheet || ""}</td>
+            <td>${e.field || ""}</td>
+            <td class="diff-before">${e.before ?? ""}</td>
+            <td class="diff-after">${e.after ?? ""}</td>
+            <td><span class="badge ${e.status === "error" ? "badge-expired" : "badge-full"}">${e.status}</span></td>
+            <td>${e.message || ""}</td>
+            </tr>
+        `).join("");
 
-        const optionsHtml = (fn.options || []).map(o =>
-        `<button type="button" class="app-filter-btn" data-opt="${o.id}">${o.label}</button>`
-        ).join("");
+        empty.style.display = entries.length ? "none" : "block";
+        }
 
-        card.innerHTML = `
-        <div class="tile-title">
-            <div class="tile-icon">${fn.icon}</div>
-            <div>
-            <div style="font-weight:600;font-size:15px;">${fn.title}</div>
-            <div class="fn-usage">Used ${usage[fn.id] || 0}x</div>
-            </div>
-        </div>
-        <div class="fn-desc">${fn.description || ""}</div>
-        <div class="fn-options">${optionsHtml}</div>
-        <div class="fn-actions">
-            <button type="button" class="btn btn-primary fn-run" ${fn.placeholder ? "disabled" : ""}>Run</button>
-            <div class="spinner"></div>
-            <span class="badge badge-default fn-status">Idle</span>
-        </div>
-        <div class="fn-results log-box"></div>
-        <div class="fn-message"></div>
-        `;
+        document.getElementById("logSearch").addEventListener("input", renderLog);
+        document.getElementById("clearLogBtn").addEventListener("click", () => { if(confirm("Clear all log entries?")) AdminLog.clear(); });
+        document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            logStatusFilter = btn.dataset.status;
+            renderLog();
+        });
+        });
 
-        if (!fn.placeholder){
-        const selected = new Set();
-        card.querySelectorAll(".fn-options .app-filter-btn").forEach(b => b.addEventListener("click", () => {
-            b.classList.toggle("active");
-            selected.has(b.dataset.opt) ? selected.delete(b.dataset.opt) : selected.add(b.dataset.opt);
-        }));
-
-        const runBtn = card.querySelector(".fn-run");
-        const spinner = card.querySelector(".spinner");
-        const status = card.querySelector(".fn-status");
-        const results = card.querySelector(".fn-results");
-        const message = card.querySelector(".fn-message");
-
-        runBtn.addEventListener("click", async () => {
-            runBtn.disabled = true;
-            spinner.classList.add("active");
-            status.className = "badge badge-affiliate fn-status";
-            status.textContent = "Running";
-            results.classList.add("visible");
-            results.textContent = "";
-            message.className = "fn-message";
-
-            const logLine = (line) => { results.textContent += line + "\n"; results.scrollTop = results.scrollHeight; };
-
-            try{
-            await fn.run(Array.from(selected), logLine);
-            status.className = "badge badge-full fn-status";
-            status.textContent = "Success";
-            message.className = "fn-message success visible";
-            message.textContent = "Completed successfully.";
-            bumpUsage(fn.id);
-            renderGrid();
-            }catch(err){
-            status.className = "badge badge-expired fn-status";
-            status.textContent = "Error";
-            message.className = "fn-message error visible";
-            message.textContent = err.message || "Something went wrong.";
-            AdminLog.add({ fn: fn.title, status: "error", message: err.message || "Run failed" });
-            }finally{
-            spinner.classList.remove("active");
-            runBtn.disabled = false;
+        /* =========================================================
+        FUNCTION REGISTRY — add new functions here one at a time.
+        `run(opts, log)` does the real work; call AdminLog.add(...) for
+        every field-level change so it lands in the shared log.
+        ========================================================= */
+        const FUNCTIONS = [
+        {
+            id: "Member-Applications",
+            icon: '<i class="nav-icon" data-lucide="user-pen" color="#257fb6"></i>',
+            title: "Online Membership Applications",
+            description: "Manage online applications through the process.",
+            options: [{ id: "view", label: "View" }, { id: "update", label: "Update" }],
+        },
+        {
+            id: "recalc-prices",
+            icon: "💲",
+            title: "Recalculate Prices",
+            description: "Apply pricing rules across all product rows.",
+            options: [{ id: "preview", label: "Preview only" }],
+            run: async (opts, log) => {
+            log("Recalculating (placeholder)...");
+            await wait(600);
+            AdminLog.add({ fn: "Recalculate Prices", sheet: "Products", field: "Price", before: "$19.00", after: "$21.00", status: "success", message: "Rule: +10% markup" });
             }
+        },
+        { id: "placeholder-1", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." },
+        { id: "placeholder-2", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
+        ];
+
+        const wait = ms => new Promise(r => setTimeout(r, ms));
+
+        const USAGE_KEY = "admin_fn_usage";
+        const getUsage = () => { try{ return JSON.parse(localStorage.getItem(USAGE_KEY)) || {}; }catch(e){ return {}; } };
+        const bumpUsage = (id) => { const u = getUsage(); u[id] = (u[id]||0)+1; localStorage.setItem(USAGE_KEY, JSON.stringify(u)); };
+
+        const grid = document.getElementById("fnGrid");
+
+        function renderGrid(){
+        const usage = getUsage();
+        grid.innerHTML = "";
+        const sorted = [...FUNCTIONS].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
+
+        sorted.forEach((fn, idx) => {
+            const card = document.createElement("div");
+            card.className = "glass fn-card" + (fn.placeholder ? " placeholder" : "");
+            card.style.order = idx;
+
+            const optionsHtml = (fn.options || []).map(o =>
+            `<button type="button" class="app-filter-btn" data-opt="${o.id}">${o.label}</button>`
+            ).join("");
+
+            card.innerHTML = `
+            <div class="tile-title">
+                <div class="tile-icon">${fn.icon}</div>
+                <div>
+                <div style="font-weight:600;font-size:15px;">${fn.title}</div>
+                <div class="fn-usage">Used ${usage[fn.id] || 0}x</div>
+                </div>
+            </div>
+            <div class="fn-desc">${fn.description || ""}</div>
+            <div class="fn-options">${optionsHtml}</div>
+            <div class="fn-actions">
+                <button type="button" class="btn btn-primary fn-run" ${fn.placeholder ? "disabled" : ""}>Run</button>
+                <div class="spinner"></div>
+                <span class="badge badge-default fn-status">Idle</span>
+            </div>
+            <div class="fn-results log-box"></div>
+            <div class="fn-message"></div>
+            `;
+
+            if (!fn.placeholder){
+            const selected = new Set();
+            card.querySelectorAll(".fn-options .app-filter-btn").forEach(b => b.addEventListener("click", () => {
+                b.classList.toggle("active");
+                selected.has(b.dataset.opt) ? selected.delete(b.dataset.opt) : selected.add(b.dataset.opt);
+            }));
+
+            const runBtn = card.querySelector(".fn-run");
+            const spinner = card.querySelector(".spinner");
+            const status = card.querySelector(".fn-status");
+            const results = card.querySelector(".fn-results");
+            const message = card.querySelector(".fn-message");
+
+            runBtn.addEventListener("click", async () => {
+                runBtn.disabled = true;
+                spinner.classList.add("active");
+                status.className = "badge badge-affiliate fn-status";
+                status.textContent = "Running";
+                results.classList.add("visible");
+                results.textContent = "";
+                message.className = "fn-message";
+
+                const logLine = (line) => { results.textContent += line + "\n"; results.scrollTop = results.scrollHeight; };
+
+                try{
+                await fn.run(Array.from(selected), logLine);
+                status.className = "badge badge-full fn-status";
+                status.textContent = "Success";
+                message.className = "fn-message success visible";
+                message.textContent = "Completed successfully.";
+                bumpUsage(fn.id);
+                renderGrid();
+                }catch(err){
+                status.className = "badge badge-expired fn-status";
+                status.textContent = "Error";
+                message.className = "fn-message error visible";
+                message.textContent = err.message || "Something went wrong.";
+                AdminLog.add({ fn: fn.title, status: "error", message: err.message || "Run failed" });
+                }finally{
+                spinner.classList.remove("active");
+                runBtn.disabled = false;
+                }
+            });
+            }
+
+            grid.appendChild(card);
         });
         }
-
-        grid.appendChild(card);
-    });
-    }
-    if (window.lucide) lucide.createIcons();
-    
-    renderGrid();
-    renderLog();
-    </script>
-</body>
-</html>
+        if (window.lucide) lucide.createIcons();
+        
+        renderGrid();
+        renderLog();
+        </script>
+    </body>
+    </html>
