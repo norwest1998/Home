@@ -296,11 +296,11 @@
                         `;
                         const statusLine = resultsBox.querySelector(".reschedule-status");
                         const rlog = (msg) => { statusLine.textContent = msg; };
-                        const classFilter = document.getElementById("classFilter");
-                        const eventSelect = document.getElementById("eventSelect");
-                        const availableDates = document.getElementById("availableDates");
-                        const requestBtn = document.getElementById("requestRescheduleBtn");
-                        const approveBtn = document.getElementById("approveRescheduleBtn");
+                        const classFilter = resultsBox.querySelector("#classFilter");
+                        const eventSelect = resultsBox.querySelector("#eventSelect");
+                        const availableDates = resultsBox.querySelector("#availableDates");
+                        const requestBtn = resultsBox.querySelector("#requestRescheduleBtn");
+                        const approveBtn = resultsBox.querySelector("#approveRescheduleBtn");
 
                         // --- POPULATE EVENTS -------------------------------------------------
 
