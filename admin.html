@@ -84,6 +84,7 @@
             <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
             <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
         </a>
+        <a href="admin.html" class="btn btn-ghost" style="margin-right:auto;">← Back to Dashboard</a>
         <ul class="nav-links">
             <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
             <li class="nav-item"><a href="#approvals" class="nav-link">Approvals Queue</a></li>
@@ -221,13 +222,21 @@
                     icon: '<i data-lucide="user-pen" color="#257fb6"></i>',
                     title: "Online Membership Applications",
                     description: "Manage online applications through the process.",
-                    options: [{ id: "view", label: "View" }, { id: "update", label: "Update" }],
+                    href: "applications.html",
+                    // TODO: point at the actual sheet/tab holding applications + status column
+                    status: async () => {
+                        const apps = await fetchSheet(SHEETS.clbWebAppUrl, "Applications");
+                        return {
+                            pending: apps.filter(a => a.Status === "Awaiting Approval").length,
+                            inProgress: apps.filter(a => a.Status === "In Progress").length
+                        };
+                    }
                 },
                 // Event Rescueduler
                 {
-                    id: "Member-Applications",
-                    icon: '<i data-lucide="user-pen" color="#257fb6"></i>',
-                    title: "Online Membership Applications",
+                    id: "event-rescheduler",
+                    icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
+                    title: "Reschedule event",
                     description: "Manage online applications through the process.",
                     href: "applications.html",
                     // TODO: point at the actual sheet/tab holding applications + status column
@@ -394,7 +403,31 @@
 
             renderGrid();
             renderLog();
+
+            const AdminLog = {
+            add(entry) {
+                const KEY = "admin_log_entries";
+                const entries = JSON.parse(localStorage.getItem(KEY) || "[]");
+                entries.unshift({ timestamp: new Date().toISOString(), ...entry });
+                localStorage.setItem(KEY, JSON.stringify(entries));
+            }
+            };
+
+            document.querySelector(".btn-approve").addEventListener("click", () => {
+            // TODO: call updateSheet(...) to set Status = "Approved"
+            AdminLog.add({ fn: "Membership Applications", field: "Status", after: "Approved", status: "success", message: "James Robertson approved" });
+            location.href = "admin.html";
+            });
+            document.querySelector(".btn-hold").addEventListener("click", () => {
+            AdminLog.add({ fn: "Membership Applications", field: "Status", after: "Details Requested", status: "success", message: "James Robertson — details requested" });
+            location.href = "admin.html";
+            });
+            document.querySelector(".btn-reject").addEventListener("click", () => {
+            AdminLog.add({ fn: "Membership Applications", field: "Status", after: "Rejected", status: "success", message: "James Robertson rejected" });
+            location.href = "admin.html";
+            });            
             
         </script>
+        
     </body>
     </html>

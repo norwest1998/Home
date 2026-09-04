@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reschedule Event — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Link Shared Theme -->
+<link rel="stylesheet" href="theme.css">
+
+<style>
+  /* =========================================================
+     ADMIN LAYOUT & WORKSPACE STYLES (matches applications.html)
+     ========================================================= */
+  .admin-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
+  }
+  .admin-title-group { display: flex; flex-direction: column; gap: 4px; }
+  .admin-title-group h1 { font-family: var(--font-display); font-size: 28px; color: var(--foam); }
+  .admin-badge {
+    display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-data);
+    font-size: 9px; color: var(--signal); padding: 4px 10px; border-radius: 4px;
+    background: rgba(255,106,61,0.12); border: 1px solid rgba(255,106,61,0.3); width: fit-content;
+  }
+
+  /* Quick Stats Bar */
+  .admin-stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+  }
+  @media (max-width: 860px) { .admin-stats-row { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .admin-stats-row { grid-template-columns: 1fr; } }
+
+  .admin-stat-card { padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+  .admin-stat-card .num { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--foam); }
+  .admin-stat-card .lbl { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; color: var(--foam-dim); }
+
+  /* Events Table */
+  .admin-table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--glass-border); }
+  table.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.admin-table th {
+    font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--glow); text-align: left; padding: 12px 14px;
+    background: rgba(15,53,80,0.92); border-bottom: 1px solid var(--glass-border); white-space: nowrap;
+  }
+  table.admin-table td {
+    padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    color: var(--foam); vertical-align: middle;
+  }
+  table.admin-table tbody tr { transition: background 0.12s ease; cursor: pointer; }
+  table.admin-table tbody tr:hover { background: var(--glass-fill-hi); }
+  table.admin-table tbody tr.selected { background: var(--glass-fill-hi); }
+
+  /* Action Panel Grid */
+  .action-panel-grid {
+    display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; margin-top: 24px;
+  }
+  @media (max-width: 900px) { .action-panel-grid { grid-template-columns: 1fr; } }
+
+  .action-bar { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .btn-approve { background: rgba(74,222,128,0.18); color: #4ade80; border: 1px solid rgba(74,222,128,0.4); }
+  .btn-approve:hover { background: rgba(74,222,128,0.28); }
+  .btn-hold { background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
+  .btn-hold:hover { background: rgba(245,158,11,0.28); }
+
+  .tally-box {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-radius: 10px; background: rgba(0,0,0,0.25);
+    border: 1px solid var(--glass-border); margin-top: 10px;
+  }
+
+  /* Form fields inside the review panel */
+  .app-detail-grid label { font-family: var(--font-data); font-size: 10.5px; text-transform: uppercase; color: var(--foam-dim); display:block; margin-bottom:4px; }
+  .app-detail-grid select {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--glass-border);
+    background: rgba(0,0,0,0.25); color: var(--foam); font-size: 13px; margin-bottom: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header class="nav-glass">
+  <a href="admin.html" class="brand">
+    <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+    <div class="brand-text">
+      <strong>Sydney Maritime Modellers Club</strong>
+      <span>RESCHEDULE EVENT</span>
+    </div>
+    <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
+    <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
+  </a>
+  <ul class="nav-links">
+    <li class="nav-item"><a href="admin.html" class="nav-link">Dashboard</a></li>
+    <li class="nav-item"><a href="#queue" class="nav-link">Events Queue</a></li>
+    <li class="nav-item"><a href="#audit-log" class="nav-link">Reschedule Log</a></li>
+  </ul>
+</header>
+
+<main class="container">
+
+  <div class="admin-header">
+    <a href="admin.html" class="btn btn-ghost" style="margin-right:auto;">← Back to Dashboard</a>
+    <div class="admin-title-group">
+      <h1>Reschedule Event</h1>
+    </div>
+  </div>
+
+  <div class="admin-stats-row">
+    <div class="admin-stat-card glass">
+      <span class="lbl">Rescheduled</span>
+      <span class="num" style="color:var(--glow);" id="statRescheduled">–</span>
+    </div>
+    <div class="admin-stat-card glass">
+      <span class="lbl">Pending Approval</span>
+      <span class="num" style="color:var(--signal);" id="statPending">–</span>
+    </div>
+    <div class="admin-stat-card glass">
+      <span class="lbl">Season</span>
+      <span class="num" id="statSeason">–</span>
+    </div>
+    <div class="admin-stat-card glass">
+      <span class="lbl">Class Filter</span>
+      <span class="num" style="font-size:15px;">
+        <select id="classFilter" style="background:transparent;color:var(--foam);border:none;font-family:var(--font-display);font-size:15px;">
+          <option value="">All Classes</option>
+        </select>
+      </span>
+    </div>
+  </div>
+
+  <div class="panel" id="queue">
+    <div class="panel-header">
+      <div class="panel-title"><span class="dot"></span><h3>Season Events</h3></div>
+    </div>
+    <div class="tab-content active">
+      <div class="search-wrap">
+        <input class="search-input" type="text" id="eventSearch" placeholder="Filter events by class or name...">
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Class</th>
+              <th>Event</th>
+              <th>Reschedule Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="eventsBody">
+            <tr><td colspan="5" style="text-align:center;color:var(--foam-dim);">Loading events…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-panel-grid">
+
+    <!-- Selected Event Review Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><h3 id="reviewTitle">Select an Event</h3></div>
+      </div>
+      <div class="tab-content active">
+        <div class="app-detail-section">
+          <span class="app-detail-section-title">Reschedule Details</span>
+          <div class="app-detail-grid">
+            <div class="app-detail-item full-width">
+              <label>Available Dates (Saturdays, no conflicting competition)</label>
+              <select id="availableDates"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-bar">
+          <button class="btn btn-approve" id="requestRescheduleBtn"><i data-lucide="calendar-plus" color="#257fb6"></i> Request Reschedule</button>
+          <button class="btn btn-hold" id="approveRescheduleBtn"><i data-lucide="check-circle" color="#257fb6"></i> Approve Reschedule</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reschedule Audit Log -->
+    <div class="panel" id="audit-log">
+      <div class="panel-header">
+        <div class="panel-title"><h3>Reschedule Audit</h3></div>
+      </div>
+      <div class="tab-content active">
+        <div class="tally-box">
+          <span class="app-detail-label">Last Action</span>
+          <span class="votes-for" id="lastActionLabel">—</span>
+        </div>
+        <div style="margin-top:14px;">
+          <span class="app-detail-label">Audit Trail</span>
+          <div class="log-box" id="auditTrail" style="margin-top:6px;">No actions yet this session.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+</footer>
+
+<script>
+/* =========================================================
+   SHARED ADMIN LOG (same localStorage key as admin.html)
+   ========================================================= */
+const AdminLog = {
+  add({ fn = "Reschedule Event", sheet = "", field = "", before = "", after = "", status = "success", message = "" }) {
+    const KEY = "admin_log_entries";
+    const entries = JSON.parse(localStorage.getItem(KEY) || "[]");
+    entries.unshift({ timestamp: new Date().toISOString(), fn, sheet, field, before, after, status, message });
+    localStorage.setItem(KEY, JSON.stringify(entries));
+  }
+};
+
+/* =========================================================
+   GOOGLE SHEETS MODULE
+   ========================================================= */
+const SHEETS = {
+  calWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
+  clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec"
+};
+
+async function fetchSheet(WEBAPP_URL, sheetName) {
+  const res = await fetch(`${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`);
+  const data = await res.json();
+  if (data.error) throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
+  const rows = data.values;
+  const headers = rows[0];
+  const seen = {};
+  return rows.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h, i) => {
+      const key = seen[h] ? `${h}_${++seen[h]}` : (seen[h] = 1, h);
+      obj[key] = r[i] || "";
+    });
+    return obj;
+  });
+}
+
+async function updateSheet(WEBAPP_URL, sheetName, hexKey, updates) {
+  const res = await fetch(WEBAPP_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "update", sheet: sheetName, hexKey, updates })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return true;
+}
+
+async function appendSheet(WEBAPP_URL, sheetName, rowData) {
+  const res = await fetch(WEBAPP_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "append", sheet: sheetName, rowData })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return true;
+}
+
+/* =========================================================
+   RESCHEDULE LOGIC
+   ========================================================= */
+let eventData = [];
+let classes = [];
+let selectedHex = null;
+
+const now = new Date();
+const CURRENT_SEASON_START = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+
+const eventsBody = document.getElementById("eventsBody");
+const classFilter = document.getElementById("classFilter");
+const eventSearch = document.getElementById("eventSearch");
+const availableDates = document.getElementById("availableDates");
+const reviewTitle = document.getElementById("reviewTitle");
+const requestBtn = document.getElementById("requestRescheduleBtn");
+const approveBtn = document.getElementById("approveRescheduleBtn");
+const auditTrail = document.getElementById("auditTrail");
+const lastActionLabel = document.getElementById("lastActionLabel");
+
+function logAction(msg) {
+  const time = new Date().toLocaleTimeString();
+  auditTrail.textContent = `[${time}] ${msg}\n` + (auditTrail.textContent === "No actions yet this session." ? "" : auditTrail.textContent);
+  lastActionLabel.textContent = msg;
+}
+
+function seasonEvents(className, search) {
+  return eventData.filter(e => {
+    if (!String(e.Season).startsWith(String(CURRENT_SEASON_START))) return false;
+    if (className && e.Class !== className) return false;
+    if (search) {
+      const s = search.toLowerCase();
+      if (!(e.Class || "").toLowerCase().includes(s) && !(e.Event || "").toLowerCase().includes(s)) return false;
+    }
+    return true;
+  });
+}
+
+function renderStats() {
+  document.getElementById("statSeason").textContent = `${CURRENT_SEASON_START}-${String(CURRENT_SEASON_START + 1).slice(-2)}`;
+  const seasonRows = eventData.filter(e => String(e.Season).startsWith(String(CURRENT_SEASON_START)));
+  document.getElementById("statRescheduled").textContent = seasonRows.filter(e => e["Rescheduled Date"] && !e["Rescheduled Date"].includes("Pending")).length;
+  document.getElementById("statPending").textContent = seasonRows.filter(e => (e["Rescheduled Date"] || "").includes("Pending")).length;
+}
+
+function renderTable() {
+  const rows = seasonEvents(classFilter.value, eventSearch.value.trim());
+  eventsBody.innerHTML = rows.length
+    ? rows.map(e => `
+      <tr data-hex="${e.HexKey}" class="${e.HexKey === selectedHex ? 'selected' : ''}">
+        <td>${new Date(e.Date).toLocaleDateString("en-AU")}</td>
+        <td>${e.Class}</td>
+        <td>${e.Event || e["Regatta Type"] || ""}</td>
+        <td>${(e["Rescheduled Date"] || "").includes("Pending")
+              ? `<span class="app-status-badge status-awaiting">Pending</span>`
+              : e["Rescheduled Date"]
+                ? `<span class="app-status-badge status-progress">Rescheduled</span>`
+                : `<span class="app-status-badge">—</span>`}</td>
+        <td><button class="btn btn-ghost select-event-btn" style="padding:4px 10px;font-size:11px;" data-hex="${e.HexKey}">Select</button></td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="5" style="text-align:center;color:var(--foam-dim);">No events found.</td></tr>`;
+
+  eventsBody.querySelectorAll(".select-event-btn").forEach(btn =>
+    btn.addEventListener("click", () => selectEvent(btn.dataset.hex))
+  );
+}
+
+function getAvailableDates() {
+  return eventData.filter(e =>
+    String(e.Season).startsWith(String(CURRENT_SEASON_START)) &&
+    !e.Competition &&
+    !isNaN(new Date(e.Date)) &&
+    new Date(e.Date).getDay() === 6
+  );
+}
+
+function renderAvailableDates() {
+  availableDates.innerHTML = getAvailableDates().map(e =>
+    `<option value="${e.Date}">${new Date(e.Date).toLocaleDateString("en-AU")} (${e.Start}–${e.Finish})</option>`
+  ).join("");
+}
+
+function selectEvent(hex) {
+  selectedHex = hex;
+  const event = eventData.find(e => e.HexKey === hex);
+  reviewTitle.textContent = event ? `Review: ${event.Class} — ${event.Event || event["Regatta Type"] || ""}` : "Select an Event";
+  renderTable();
+}
+
+/* --- Request Reschedule --- */
+requestBtn.addEventListener("click", async () => {
+  if (!selectedHex) { logAction("No event selected."); return; }
+  const newDate = availableDates.value;
+  if (!newDate) { logAction("No available date selected."); return; }
+
+  requestBtn.disabled = true;
+  try {
+    await updateSheet(SHEETS.calWebAppUrl, "Event Data", selectedHex, {
+      "Rescheduled Date": "Pending " + newDate
+    });
+
+    AdminLog.add({
+      fn: "Reschedule Event", sheet: "Event Data", field: "Rescheduled Date",
+      before: "", after: "Pending " + newDate, status: "success", message: "Reschedule requested"
+    });
+
+    logAction(`Reschedule requested for ${selectedHex} → ${new Date(newDate).toLocaleDateString("en-AU")}`);
+    await loadData();
+  } catch (err) {
+    AdminLog.add({ fn: "Reschedule Event", status: "error", message: err.message });
+    logAction(`Error: ${err.message}`);
+  } finally {
+    requestBtn.disabled = false;
+  }
+});
+
+/* --- Approve Reschedule --- */
+approveBtn.addEventListener("click", async () => {
+  if (!selectedHex) { logAction("No event selected."); return; }
+  const event = eventData.find(e => e.HexKey === selectedHex);
+  if (!event || !(event["Rescheduled Date"] || "").includes("Pending")) {
+    logAction("Selected event has no pending reschedule.");
+    return;
+  }
+
+  approveBtn.disabled = true;
+  try {
+    const newDate = event["Rescheduled Date"].replace("Pending ", "");
+    const d = new Date(newDate);
+    const newMonth = d.toLocaleString("en-AU", { month: "short" });
+    const newDateFmt = d.toLocaleDateString("en-AU");
+    const start = event.Start.includes("AM") ? "11:00" : "14:00";
+    const finish = event.Start.includes("AM") ? "13:00" : "16:00";
+
+    await appendSheet(SHEETS.calWebAppUrl, "Event Data", {
+      HexKey: crypto.randomUUID(),
+      Month: newMonth,
+      Date: newDateFmt,
+      Start: start,
+      Finish: finish,
+      Emblem: event.Emblem,
+      Class: event.Class,
+      "Regatta Type": event["Regatta Type"],
+      Competition: event.Competition,
+      Season: event.Season,
+      "Round no": "",
+      Results: ""
+    });
+
+    await updateSheet(SHEETS.calWebAppUrl, "Event Data", selectedHex, {
+      "Rescheduled Date": "", "Round no": "", Results: ""
+    });
+
+    AdminLog.add({
+      fn: "Reschedule Event", sheet: "Event Data", field: "Rescheduled Date",
+      before: event["Rescheduled Date"], after: newDateFmt, status: "success", message: "Reschedule approved"
+    });
+
+    logAction(`Reschedule approved for ${selectedHex} → ${newDateFmt}`);
+    await loadData();
+  } catch (err) {
+    AdminLog.add({ fn: "Reschedule Event", status: "error", message: err.message });
+    logAction(`Error: ${err.message}`);
+  } finally {
+    approveBtn.disabled = false;
+  }
+});
+
+classFilter.addEventListener("change", renderTable);
+eventSearch.addEventListener("input", renderTable);
+
+/* =========================================================
+   LOAD DATA
+   ========================================================= */
+async function loadData() {
+  try {
+    eventData = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
+    classes = await fetchSheet(SHEETS.clbWebAppUrl, "Classes");
+
+    classFilter.innerHTML = `<option value="">All Classes</option>` +
+      classes.map(c => `<option>${c.ClassName}</option>`).join("");
+
+    renderStats();
+    renderTable();
+    renderAvailableDates();
+  } catch (err) {
+    eventsBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
+  }
+}
+
+loadData();
+if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>
