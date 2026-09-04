@@ -237,16 +237,8 @@
 
                         // --- FETCH DATA -----------------------------------------------------
 
-                        const eventData = await fetchSheet(
-                            "1AVopdio8GLzwYGQjiX7qiVBXWQVpmArmaGBLWYTHxrM",
-                            "Event Data"
-                        );
-
-                        const classes = await fetchSheet(
-                            "1nFqeV1U0c_RLaZK4amf7QR1MMwB9q8gZLc4HriUH9iI",
-                            "Classes"
-                        );
-
+                        const eventData = await fetchSheet(SHEETS.calWebAppUrl,"Event Data");
+                        const classes = await fetchSheet(SHEETS.clbWebAppUrl,"Classes");
                         const CURRENT_SEASON = new Date().getFullYear().toString();
 
                         // --- METRICS ---------------------------------------------------------
@@ -345,7 +337,7 @@
                             const hex = eventSelect.value;
                             const newDate = availableDates.value;
 
-                            await updateSheet("Event Data", hex, {
+                            await updateSheet(SHEETS.calWebAppUrl,"Event Data", hex, {
                                 "Rescheduled Date": "Pending " + newDate
                             });
 
@@ -379,7 +371,7 @@
 
                             // --- CREATE NEW EVENT ROW ----------------------------------------
 
-                            await appendSheet("Event Data", {
+                            await appendSheet(SHEETS.calWebAppUrl, "Event Data", {
                                 HexKey: crypto.randomUUID(),
                                 Month: newMonth,
                                 Date: newDateFmt,
@@ -396,7 +388,7 @@
 
                             // --- CLEAN ORIGINAL EVENT ----------------------------------------
 
-                            await updateSheet("Event Data", hex, {
+                            await updateSheet(SHEETS.calWebAppUrl, "Event Data", hex, {
                                 "Rescheduled Date": "",
                                 "Round no": "",
                                 Results: ""
@@ -529,6 +521,8 @@
             ============================================================ */
 
             const SHEETS = {
+                calWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
+                clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
                 calendar: {
                     id: "1AVopdio8GLzwYGQjiX7qiVBXWQVpmArmaGBLWYTHxrM",
                     tabs: {
@@ -543,13 +537,10 @@
                 }
             };
 
-            // IMPORTANT: Insert your API key here
-            const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
-
             /* ------------------------------------------------------------
             FETCH SHEET — returns rows as objects
             ------------------------------------------------------------ */
-            async function fetchSheet(spreadsheetId, sheetName) {
+            async function fetchSheet(WEBAPP_URL, sheetName) {
                 const res = await fetch(`${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`);
                 const data = await res.json();
                 if (data.error) throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
@@ -566,7 +557,7 @@
             /* ------------------------------------------------------------
             UPDATE SHEET — updates a single row by HexKey
             ------------------------------------------------------------ */
-            async function updateSheet(sheetName, hexKey, updates) {
+            async function updateSheet(WEBAPP_URL, sheetName, hexKey, updates) {
                 const res = await fetch(WEBAPP_URL, {
                     method: "POST",
                     body: JSON.stringify({ action: "update", sheet: sheetName, hexKey, updates })
@@ -579,7 +570,7 @@
             /* ------------------------------------------------------------
             APPEND SHEET — adds a new row
             ------------------------------------------------------------ */
-            async function appendSheet(sheetName, rowData) {
+            async function appendSheet(WEBAPP_URL, sheetName, rowData) {
                 const res = await fetch(WEBAPP_URL, {
                     method: "POST",
                     body: JSON.stringify({ action: "append", sheet: sheetName, rowData })
