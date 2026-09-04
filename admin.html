@@ -141,29 +141,6 @@
         </footer>
 
         <script>
-            /* =========================================================
-            ADMIN LOG — shared across all functions (and reusable by index.html)
-            Entry shape: { timestamp, fn, sheet, field, before, after, status, message }
-            ========================================================= */
-            const AdminLog = (() => {
-                const KEY = "admin_log_entries";
-                const load = () => { try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } };
-                const save = (entries) => localStorage.setItem(KEY, JSON.stringify(entries));
-
-                function add({ fn, sheet = "", field = "", before = "", after = "", status = "success", message = "" }){
-                    const entries = load();
-                    entries.unshift({
-                    timestamp: new Date().toISOString(),
-                    fn, sheet, field, before, after, status, message
-                    });
-                    save(entries);
-                    renderLog();
-                }
-                function clear(){ save([]); renderLog(); }
-                function all(){ return load(); }
-
-                return { add, clear, all };
-            })();
 
             function fmtTime(iso){
                 const d = new Date(iso);
@@ -252,14 +229,8 @@
                     }
                 },
 
-                { id: "placeholder-1", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot.", 
-                  run: async (opts, log, resultsBox) => {
-                    log("Recalculating (placeholder)...");
-                    await wait(600);
-                    AdminLog.add({ fn: "Recalculate Prices", sheet: "Products", field: "Price", before: "$19.00", after: "$21.00", status: "success", message: "Rule: +10% markup" });
-                    }
-                },
-                { id: "placeholder-2", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
+                { id: "placeholder-1", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot."},
+                { id: "placeholder-2", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot."}
                 ];
 
                 const wait = ms => new Promise(r => setTimeout(r, ms));
