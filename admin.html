@@ -225,189 +225,18 @@
                 },
                 // Event Rescueduler
                 {
-                    id: "reschedule-event",
-                    icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
-                    title: "Reschedule Event",
-                    description: "Schedule an event for a different date.",
-                    options: [],
-
-                    run: async (opts, log, resultsBox) => {
-                        log("Loading event data...");
-                        await wait(300);
-
-                        // --- FETCH DATA -----------------------------------------------------
-
-                        const eventData = await fetchSheet(SHEETS.calWebAppUrl,"Event Data");
-                        const classes = await fetchSheet(SHEETS.clbWebAppUrl,"Classes");
-                        const now = new Date();
-                        const CURRENT_SEASON_START = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1; // adjust cutover month as needed
-
-                        // --- METRICS ---------------------------------------------------------
-
-                        const rescheduledCount = eventData.filter(e =>
-                            e["Rescheduled Date"] &&
-                            !e["Rescheduled Date"].includes("Pending")
-                        ).length;
-
-                        const pendingCount = eventData.filter(e =>
-                            e["Rescheduled Date"].includes("Pending")
-                        ).length;
-
-                        // --- BUILD UI --------------------------------------------------------
-
-                        resultsBox.innerHTML = `
-                            <div class="reschedule-ui">
-                                <div class="reschedule-status" style="font-size:11px;color:var(--foam-dim);"></div>
-                                <div class="metric">Rescheduled: 
-                                    <strong>${rescheduledCount}</strong>
-                                </div>
-
-                                <div class="metric">Pending: 
-                                    <strong>${pendingCount}</strong>
-                                </div>
-
-                                <label>Class Filter</label>
-                                <select id="classFilter">
-                                    <option value="">All Classes</option>
-                                    ${classes.map(c => `<option>${c.ClassName}</option>`).join("")}
-                                </select>
-
-                                <label>Select Event</label>
-                                <select id="eventSelect"></select>
-
-                                <label>Available Dates</label>
-                                <select id="availableDates"></select>
-
-                                <button class="btn btn-primary" id="requestRescheduleBtn">
-                                    Request Reschedule
-                                </button>
-
-                                <button class="btn btn-success" id="approveRescheduleBtn">
-                                    Approve
-                                </button>
-                            </div>
-                        `;
-                        const statusLine = resultsBox.querySelector(".reschedule-status");
-                        const rlog = (msg) => { statusLine.textContent = msg; };
-                        const classFilter = resultsBox.querySelector("#classFilter");
-                        const eventSelect = resultsBox.querySelector("#eventSelect");
-                        const availableDates = resultsBox.querySelector("#availableDates");
-                        const requestBtn = resultsBox.querySelector("#requestRescheduleBtn");
-                        const approveBtn = resultsBox.querySelector("#approveRescheduleBtn");
-
-                        // --- POPULATE EVENTS -------------------------------------------------
-
-                        function populateEvents(className) {
-                            const filtered = eventData.filter(e => e.Season.startsWith(String(CURRENT_SEASON_START)) &&
-                                (!className || e.Class === className)
-                            );
-
-                            eventSelect.innerHTML = filtered.map(e =>
-                                `<option value="${e.HexKey}">
-                                    ${e.Date} — ${e.Event}
-                                </option>`
-                            ).join("");
-                        }
-
-                        populateEvents("");
-
-                        classFilter.addEventListener("change", () => {
-                            populateEvents(classFilter.value);
-                        });
-
-                        // --- AVAILABLE DATES -------------------------------------------------
-
-                        function getAvailableDates() {
-                            return eventData.filter(e =>
-                                e.Season === CURRENT_SEASON &&
-                                e.Competition === "" &&
-                                new Date(e.Date).getDay() === 6 // Saturday
-                            );
-                        }
-
-                        availableDates.innerHTML = getAvailableDates().map(e =>
-                            `<option value="${e.Date}">
-                                ${e.Date} (${e.Start}–${e.Finish})
-                            </option>`
-                        ).join("");
-
-                        // --- REQUEST RESCHEDULE ----------------------------------------------
-
-                        requestBtn.addEventListener("click", async () => {
-                            const hex = eventSelect.value;
-                            const newDate = availableDates.value;
-
-                            await updateSheet(SHEETS.calWebAppUrl,"Event Data", hex, {
-                                "Rescheduled Date": "Pending " + newDate
-                            });
-
-                            AdminLog.add({
-                                fn: "Reschedule Event",
-                                sheet: "Event Data",
-                                field: "Rescheduled Date",
-                                before: "",
-                                after: "Pending " + newDate,
-                                status: "success",
-                                message: "Reschedule requested"
-                            });
-
-                            rlog(`Reschedule requested for ${hex}`);
-                        });
-
-                        // --- APPROVE RESCHEDULE ----------------------------------------------
-
-                        approveBtn.addEventListener("click", async () => {
-                            const hex = eventSelect.value;
-                            const event = eventData.find(e => e.HexKey === hex);
-
-                            const newDate = event["Rescheduled Date"].replace("Pending ", "");
-                            const d = new Date(newDate);
-
-                            const newMonth = d.toLocaleString("en-AU", { month: "short" });
-                            const newDateFmt = d.toLocaleDateString("en-AU");
-
-                            const start = event.Start.includes("AM") ? "11:00" : "14:00";
-                            const finish = event.Start.includes("AM") ? "13:00" : "16:00";
-
-                            // --- CREATE NEW EVENT ROW ----------------------------------------
-
-                            await appendSheet(SHEETS.calWebAppUrl, "Event Data", {
-                                HexKey: crypto.randomUUID(),
-                                Month: newMonth,
-                                Date: newDateFmt,
-                                Start: start,
-                                Finish: finish,
-                                Emblem: event.Emblem,
-                                Class: event.Class,
-                                "Regatta Type": event["Regatta Type"],
-                                Competition: event.Competition,
-                                Season: event.Season,
-                                "Round no": "",
-                                Results: ""
-                            });
-
-                            // --- CLEAN ORIGINAL EVENT ----------------------------------------
-
-                            await updateSheet(SHEETS.calWebAppUrl, "Event Data", hex, {
-                                "Rescheduled Date": "",
-                                "Round no": "",
-                                Results: ""
-                            });
-
-                            AdminLog.add({
-                                fn: "Reschedule Event",
-                                sheet: "Event Data",
-                                field: "Rescheduled Date",
-                                before: event["Rescheduled Date"],
-                                after: newDateFmt,
-                                status: "success",
-                                message: "Reschedule approved"
-                            });
-
-                            rlog(`Reschedule approved for ${hex}`);
-                        });
-
-                        rlog("Reschedule module ready.");
+                    id: "Member-Applications",
+                    icon: '<i data-lucide="user-pen" color="#257fb6"></i>',
+                    title: "Online Membership Applications",
+                    description: "Manage online applications through the process.",
+                    href: "applications.html",
+                    // TODO: point at the actual sheet/tab holding applications + status column
+                    status: async () => {
+                        const apps = await fetchSheet(SHEETS.clbWebAppUrl, "Applications");
+                        return {
+                            pending: apps.filter(a => a.Status === "Awaiting Approval").length,
+                            inProgress: apps.filter(a => a.Status === "In Progress").length
+                        };
                     }
                 },
 
@@ -430,84 +259,57 @@
                 const grid = document.getElementById("fnGrid");
 
                 function renderGrid(){
-                const usage = getUsage();
-                grid.innerHTML = "";
-                const sorted = [...FUNCTIONS].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
+                    const usage = getUsage();
+                    grid.innerHTML = "";
+                    const sorted = [...FUNCTIONS].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
 
-                sorted.forEach((fn, idx) => {
-                    const card = document.createElement("div");
-                    card.className = "glass fn-card" + (fn.placeholder ? " placeholder" : "");
-                    card.style.order = idx;
+                    sorted.forEach((fn, idx) => {
+                        const card = document.createElement("div");
+                        card.className = "glass fn-card" + (fn.placeholder ? " placeholder" : "");
+                        card.style.order = idx;
 
-                    const optionsHtml = (fn.options || []).map(o =>
-                    `<button type="button" class="app-filter-btn" data-opt="${o.id}">${o.label}</button>`
-                    ).join("");
+                        if (fn.href) {
+                            card.innerHTML = `
+                            <div class="tile-title">
+                                <div class="tile-icon">${fn.icon}</div>
+                                <div>
+                                <div style="font-weight:600;font-size:15px;">${fn.title}</div>
+                                <div class="fn-desc">${fn.description || ""}</div>
+                                </div>
+                            </div>
+                            <div class="fn-status-row" style="display:flex;gap:10px;margin-top:4px;">
+                                <span class="badge badge-affiliate" id="stat-pending-${fn.id}">…</span>
+                                <span class="badge badge-default" id="stat-progress-${fn.id}">…</span>
+                            </div>
+                            <div class="fn-actions" style="margin-top:auto;">
+                                <button type="button" class="btn btn-ghost" onclick="location.href='${fn.href}?mode=view'">View</button>
+                                <button type="button" class="btn btn-primary" onclick="location.href='${fn.href}?mode=add'">Add</button>
+                            </div>
+                            `;
+                            grid.appendChild(card);
 
-                    card.innerHTML = `
-                    <div class="tile-title">
-                        <div class="tile-icon">${fn.icon}</div>
-                        <div>
-                        <div style="font-weight:600;font-size:15px;">${fn.title}</div>
-                        <div class="fn-usage">Used ${usage[fn.id] || 0}x</div>
-                        </div>
-                    </div>
-                    <div class="fn-desc">${fn.description || ""}</div>
-                    <div class="fn-options">${optionsHtml}</div>
-                    <div class="fn-actions">
-                        <button type="button" class="btn btn-primary fn-run" ${fn.placeholder ? "disabled" : ""}>Run</button>
-                        <div class="spinner"></div>
-                        <span class="badge badge-default fn-status">Idle</span>
-                    </div>
-                    <div class="fn-results log-box"></div>
-                    <div class="fn-message"></div>
-                    `;
-
-                    if (!fn.placeholder){
-                    const selected = new Set();
-                    card.querySelectorAll(".fn-options .app-filter-btn").forEach(b => b.addEventListener("click", () => {
-                        b.classList.toggle("active");
-                        selected.has(b.dataset.opt) ? selected.delete(b.dataset.opt) : selected.add(b.dataset.opt);
-                    }));
-
-                    const runBtn = card.querySelector(".fn-run");
-                    const spinner = card.querySelector(".spinner");
-                    const status = card.querySelector(".fn-status");
-                    const results = card.querySelector(".fn-results");
-                    const message = card.querySelector(".fn-message");
-
-                    runBtn.addEventListener("click", async () => {
-                        runBtn.disabled = true;
-                        spinner.classList.add("active");
-                        status.className = "badge badge-affiliate fn-status";
-                        status.textContent = "Running";
-                        results.classList.add("visible");
-                        results.textContent = "";
-                        message.className = "fn-message";
-
-                        const logLine = (line) => { results.textContent += line + "\n"; results.scrollTop = results.scrollHeight; };
-
-                        try{
-                        await fn.run(Array.from(selected), logLine, results);
-                        status.className = "badge badge-full fn-status";
-                        status.textContent = "Success";
-                        message.className = "fn-message success visible";
-                        message.textContent = "Completed successfully.";
-                        bumpUsage(fn.id);
-                        renderGrid();
-                        }catch(err){
-                        status.className = "badge badge-expired fn-status";
-                        status.textContent = "Error";
-                        message.className = "fn-message error visible";
-                        message.textContent = err.message || "Something went wrong.";
-                        AdminLog.add({ fn: fn.title, status: "error", message: err.message || "Run failed" });
-                        }finally{
-                        spinner.classList.remove("active");
-                        runBtn.disabled = false;
+                            if (fn.status) {
+                                fn.status().then(s => {
+                                    card.querySelector(`#stat-pending-${fn.id}`).textContent = `${s.pending} Pending`;
+                                    card.querySelector(`#stat-progress-${fn.id}`).textContent = `${s.inProgress} In Progress`;
+                                }).catch(() => {});
+                            }
+                            return; // skip old run-based rendering below
                         }
-                    });
-                    }
 
-                    grid.appendChild(card);
+                        if (!fn.placeholder){
+                        const selected = new Set();
+                        card.querySelectorAll(".fn-options .app-filter-btn").forEach(b => b.addEventListener("click", () => {
+                            b.classList.toggle("active");
+                            selected.has(b.dataset.opt) ? selected.delete(b.dataset.opt) : selected.add(b.dataset.opt);
+                        }));
+
+                        const spinner = card.querySelector(".spinner");
+                        const status = card.querySelector(".fn-status");
+                        const results = card.querySelector(".fn-results");
+                        const message = card.querySelector(".fn-message");
+
+                    }
                 });
                 lucide.createIcons()
             }
