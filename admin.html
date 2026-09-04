@@ -75,15 +75,17 @@
         <!-- Shared Navigation Header -->
         <header class="nav-glass">
         <a href="index.html" class="brand">
-            <i class="nav-icon" data-lucide="folder-key" color="#257fb6"></i>
+
             <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
             <div class="brand-text">
                 <strong>Sydney Maritime Modellers Club</strong>
                 <span>ADMINISTRATION PORTAL</span>
             </div>
+            <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
+            <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
         </a>
         <ul class="nav-links">
-            <li class="nav-item"><a href="index.html" class="nav-link">← Public Site</a></li>
+            <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
             <li class="nav-item"><a href="#approvals" class="nav-link">Approvals Queue</a></li>
             <li class="nav-item"><a href="#audit-log" class="nav-link">Committee Logs</a></li>
         </ul>
@@ -131,204 +133,568 @@
             </div>
 
         </main>
-        
+
         <footer>
             <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
         </footer>
 
         <script>
-        /* =========================================================
-        ADMIN LOG — shared across all functions (and reusable by index.html)
-        Entry shape: { timestamp, fn, sheet, field, before, after, status, message }
-        ========================================================= */
-        const AdminLog = (() => {
-        const KEY = "admin_log_entries";
-        const load = () => { try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } };
-        const save = (entries) => localStorage.setItem(KEY, JSON.stringify(entries));
+            /* =========================================================
+            ADMIN LOG — shared across all functions (and reusable by index.html)
+            Entry shape: { timestamp, fn, sheet, field, before, after, status, message }
+            ========================================================= */
+            const AdminLog = (() => {
+                const KEY = "admin_log_entries";
+                const load = () => { try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } };
+                const save = (entries) => localStorage.setItem(KEY, JSON.stringify(entries));
 
-        function add({ fn, sheet = "", field = "", before = "", after = "", status = "success", message = "" }){
-            const entries = load();
-            entries.unshift({
-            timestamp: new Date().toISOString(),
-            fn, sheet, field, before, after, status, message
-            });
-            save(entries);
-            renderLog();
-        }
-        function clear(){ save([]); renderLog(); }
-        function all(){ return load(); }
-
-        return { add, clear, all };
-        })();
-
-        function fmtTime(iso){
-        const d = new Date(iso);
-        return d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
-        }
-
-        let logStatusFilter = "all";
-        function renderLog(){
-        const body = document.getElementById("logBody");
-        const empty = document.getElementById("logEmpty");
-        const q = document.getElementById("logSearch").value.trim().toLowerCase();
-
-        let entries = AdminLog.all();
-        if (logStatusFilter !== "all") entries = entries.filter(e => e.status === logStatusFilter);
-        if (q) entries = entries.filter(e =>
-            (e.fn||"").toLowerCase().includes(q) ||
-            (e.sheet||"").toLowerCase().includes(q) ||
-            (e.field||"").toLowerCase().includes(q)
-        );
-
-        body.innerHTML = entries.map(e => `
-            <tr>
-            <td>${fmtTime(e.timestamp)}</td>
-            <td>${e.fn || ""}</td>
-            <td>${e.sheet || ""}</td>
-            <td>${e.field || ""}</td>
-            <td class="diff-before">${e.before ?? ""}</td>
-            <td class="diff-after">${e.after ?? ""}</td>
-            <td><span class="badge ${e.status === "error" ? "badge-expired" : "badge-full"}">${e.status}</span></td>
-            <td>${e.message || ""}</td>
-            </tr>
-        `).join("");
-
-        empty.style.display = entries.length ? "none" : "block";
-        }
-
-        document.getElementById("logSearch").addEventListener("input", renderLog);
-        document.getElementById("clearLogBtn").addEventListener("click", () => { if(confirm("Clear all log entries?")) AdminLog.clear(); });
-        document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(btn => {
-        btn.addEventListener("click", () => {
-            document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            logStatusFilter = btn.dataset.status;
-            renderLog();
-        });
-        });
-
-        /* =========================================================
-        FUNCTION REGISTRY — add new functions here one at a time.
-        `run(opts, log)` does the real work; call AdminLog.add(...) for
-        every field-level change so it lands in the shared log.
-        ========================================================= */
-        const FUNCTIONS = [
-        {
-            id: "Member-Applications",
-            icon: '<i class="nav-icon" data-lucide="user-pen" color="#257fb6"></i>',
-            title: "Online Membership Applications",
-            description: "Manage online applications through the process.",
-            options: [{ id: "view", label: "View" }, { id: "update", label: "Update" }],
-        },
-        {
-            id: "recalc-prices",
-            icon: "💲",
-            title: "Recalculate Prices",
-            description: "Apply pricing rules across all product rows.",
-            options: [{ id: "preview", label: "Preview only" }],
-            run: async (opts, log) => {
-            log("Recalculating (placeholder)...");
-            await wait(600);
-            AdminLog.add({ fn: "Recalculate Prices", sheet: "Products", field: "Price", before: "$19.00", after: "$21.00", status: "success", message: "Rule: +10% markup" });
-            }
-        },
-        { id: "placeholder-1", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." },
-        { id: "placeholder-2", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
-        ];
-
-        const wait = ms => new Promise(r => setTimeout(r, ms));
-
-        const USAGE_KEY = "admin_fn_usage";
-        const getUsage = () => { try{ return JSON.parse(localStorage.getItem(USAGE_KEY)) || {}; }catch(e){ return {}; } };
-        const bumpUsage = (id) => { const u = getUsage(); u[id] = (u[id]||0)+1; localStorage.setItem(USAGE_KEY, JSON.stringify(u)); };
-
-        const grid = document.getElementById("fnGrid");
-
-        function renderGrid(){
-        const usage = getUsage();
-        grid.innerHTML = "";
-        const sorted = [...FUNCTIONS].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
-
-        sorted.forEach((fn, idx) => {
-            const card = document.createElement("div");
-            card.className = "glass fn-card" + (fn.placeholder ? " placeholder" : "");
-            card.style.order = idx;
-
-            const optionsHtml = (fn.options || []).map(o =>
-            `<button type="button" class="app-filter-btn" data-opt="${o.id}">${o.label}</button>`
-            ).join("");
-
-            card.innerHTML = `
-            <div class="tile-title">
-                <div class="tile-icon">${fn.icon}</div>
-                <div>
-                <div style="font-weight:600;font-size:15px;">${fn.title}</div>
-                <div class="fn-usage">Used ${usage[fn.id] || 0}x</div>
-                </div>
-            </div>
-            <div class="fn-desc">${fn.description || ""}</div>
-            <div class="fn-options">${optionsHtml}</div>
-            <div class="fn-actions">
-                <button type="button" class="btn btn-primary fn-run" ${fn.placeholder ? "disabled" : ""}>Run</button>
-                <div class="spinner"></div>
-                <span class="badge badge-default fn-status">Idle</span>
-            </div>
-            <div class="fn-results log-box"></div>
-            <div class="fn-message"></div>
-            `;
-
-            if (!fn.placeholder){
-            const selected = new Set();
-            card.querySelectorAll(".fn-options .app-filter-btn").forEach(b => b.addEventListener("click", () => {
-                b.classList.toggle("active");
-                selected.has(b.dataset.opt) ? selected.delete(b.dataset.opt) : selected.add(b.dataset.opt);
-            }));
-
-            const runBtn = card.querySelector(".fn-run");
-            const spinner = card.querySelector(".spinner");
-            const status = card.querySelector(".fn-status");
-            const results = card.querySelector(".fn-results");
-            const message = card.querySelector(".fn-message");
-
-            runBtn.addEventListener("click", async () => {
-                runBtn.disabled = true;
-                spinner.classList.add("active");
-                status.className = "badge badge-affiliate fn-status";
-                status.textContent = "Running";
-                results.classList.add("visible");
-                results.textContent = "";
-                message.className = "fn-message";
-
-                const logLine = (line) => { results.textContent += line + "\n"; results.scrollTop = results.scrollHeight; };
-
-                try{
-                await fn.run(Array.from(selected), logLine);
-                status.className = "badge badge-full fn-status";
-                status.textContent = "Success";
-                message.className = "fn-message success visible";
-                message.textContent = "Completed successfully.";
-                bumpUsage(fn.id);
-                renderGrid();
-                }catch(err){
-                status.className = "badge badge-expired fn-status";
-                status.textContent = "Error";
-                message.className = "fn-message error visible";
-                message.textContent = err.message || "Something went wrong.";
-                AdminLog.add({ fn: fn.title, status: "error", message: err.message || "Run failed" });
-                }finally{
-                spinner.classList.remove("active");
-                runBtn.disabled = false;
+                function add({ fn, sheet = "", field = "", before = "", after = "", status = "success", message = "" }){
+                    const entries = load();
+                    entries.unshift({
+                    timestamp: new Date().toISOString(),
+                    fn, sheet, field, before, after, status, message
+                    });
+                    save(entries);
+                    renderLog();
                 }
-            });
+                function clear(){ save([]); renderLog(); }
+                function all(){ return load(); }
+
+                return { add, clear, all };
+            })();
+
+            function fmtTime(iso){
+                const d = new Date(iso);
+                return d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
             }
 
-            grid.appendChild(card);
-        });
-        }
-        if (window.lucide) lucide.createIcons();
-        
-        renderGrid();
-        renderLog();
+            let logStatusFilter = "all";
+            function renderLog(){
+                const body = document.getElementById("logBody");
+                const empty = document.getElementById("logEmpty");
+                const q = document.getElementById("logSearch").value.trim().toLowerCase();
+
+                let entries = AdminLog.all();
+                if (logStatusFilter !== "all") entries = entries.filter(e => e.status === logStatusFilter);
+                if (q) entries = entries.filter(e =>
+                    (e.fn||"").toLowerCase().includes(q) ||
+                    (e.sheet||"").toLowerCase().includes(q) ||
+                    (e.field||"").toLowerCase().includes(q)
+                );
+
+                body.innerHTML = entries.map(e => `
+                    <tr>
+                    <td>${fmtTime(e.timestamp)}</td>
+                    <td>${e.fn || ""}</td>
+                    <td>${e.sheet || ""}</td>
+                    <td>${e.field || ""}</td>
+                    <td class="diff-before">${e.before ?? ""}</td>
+                    <td class="diff-after">${e.after ?? ""}</td>
+                    <td><span class="badge ${e.status === "error" ? "badge-expired" : "badge-full"}">${e.status}</span></td>
+                    <td>${e.message || ""}</td>
+                    </tr>
+                `).join("");
+
+                empty.style.display = entries.length ? "none" : "block";
+            }
+
+            document.getElementById("logSearch").addEventListener("input", renderLog);
+            document.getElementById("clearLogBtn").addEventListener("click", () => { if(confirm("Clear all log entries?")) AdminLog.clear(); });
+            document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(btn => {
+                btn.addEventListener("click", () => {
+                    document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    logStatusFilter = btn.dataset.status;
+                    renderLog();
+                });
+            });
+
+            /* =========================================================
+            FUNCTION REGISTRY — add new functions here one at a time.
+            `run(opts, log)` does the real work; call AdminLog.add(...) for
+            every field-level change so it lands in the shared log.
+            ========================================================= */
+            const FUNCTIONS = [
+                // Membership Applications
+                {
+                    id: "Member-Applications",
+                    icon: '<i class="nav-icon" data-lucide="user-pen" color="#257fb6"></i>',
+                    title: "Online Membership Applications",
+                    description: "Manage online applications through the process.",
+                    options: [{ id: "view", label: "View" }, { id: "update", label: "Update" }],
+                },
+                // Event Rescueduler
+                {
+                    id: "reschedule-event",
+                    icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
+                    title: "Reschedule Event",
+                    description: "Schedule an event for a different date.",
+                    options: [],
+
+                    run: async (opts, log, resultsBox) => {
+                        log("Loading event data...");
+                        await wait(300);
+
+                        // --- FETCH DATA -----------------------------------------------------
+
+                        const eventData = await fetchSheet(
+                            "1AVopdio8GLzwYGQjiX7qiVBXWQVpmArmaGBLWYTHxrM",
+                            "Event Data"
+                        );
+
+                        const classes = await fetchSheet(
+                            "1nFqeV1U0c_RLaZK4amf7QR1MMwB9q8gZLc4HriUH9iI",
+                            "Classes"
+                        );
+
+                        const CURRENT_SEASON = new Date().getFullYear().toString();
+
+                        // --- METRICS ---------------------------------------------------------
+
+                        const rescheduledCount = eventData.filter(e =>
+                            e["Rescheduled Date"] &&
+                            !e["Rescheduled Date"].includes("Pending")
+                        ).length;
+
+                        const pendingCount = eventData.filter(e =>
+                            e["Rescheduled Date"].includes("Pending")
+                        ).length;
+
+                        // --- BUILD UI --------------------------------------------------------
+
+                        resultsBox.innerHTML = `
+                            <div class="reschedule-ui">
+                                <div class="reschedule-status" style="font-size:11px;color:var(--foam-dim);"></div>
+                                <div class="metric">Rescheduled: 
+                                    <strong>${rescheduledCount}</strong>
+                                </div>
+
+                                <div class="metric">Pending: 
+                                    <strong>${pendingCount}</strong>
+                                </div>
+
+                                <label>Class Filter</label>
+                                <select id="classFilter">
+                                    <option value="">All Classes</option>
+                                    ${classes.map(c => `<option>${c.ClassName}</option>`).join("")}
+                                </select>
+
+                                <label>Select Event</label>
+                                <select id="eventSelect"></select>
+
+                                <label>Available Dates</label>
+                                <select id="availableDates"></select>
+
+                                <button class="btn btn-primary" id="requestRescheduleBtn">
+                                    Request Reschedule
+                                </button>
+
+                                <button class="btn btn-success" id="approveRescheduleBtn">
+                                    Approve
+                                </button>
+                            </div>
+                        `;
+                        const statusLine = resultsBox.querySelector(".reschedule-status");
+                        const rlog = (msg) => { statusLine.textContent = msg; };
+                        const classFilter = document.getElementById("classFilter");
+                        const eventSelect = document.getElementById("eventSelect");
+                        const availableDates = document.getElementById("availableDates");
+                        const requestBtn = document.getElementById("requestRescheduleBtn");
+                        const approveBtn = document.getElementById("approveRescheduleBtn");
+
+                        // --- POPULATE EVENTS -------------------------------------------------
+
+                        function populateEvents(className) {
+                            const filtered = eventData.filter(e =>
+                                e.Season === CURRENT_SEASON &&
+                                (!className || e.Class === className)
+                            );
+
+                            eventSelect.innerHTML = filtered.map(e =>
+                                `<option value="${e.HexKey}">
+                                    ${e.Date} — ${e.Event}
+                                </option>`
+                            ).join("");
+                        }
+
+                        populateEvents("");
+
+                        classFilter.addEventListener("change", () => {
+                            populateEvents(classFilter.value);
+                        });
+
+                        // --- AVAILABLE DATES -------------------------------------------------
+
+                        function getAvailableDates() {
+                            return eventData.filter(e =>
+                                e.Season === CURRENT_SEASON &&
+                                e.Competition === "" &&
+                                new Date(e.Date).getDay() === 6 // Saturday
+                            );
+                        }
+
+                        availableDates.innerHTML = getAvailableDates().map(e =>
+                            `<option value="${e.Date}">
+                                ${e.Date} (${e.Start}–${e.Finish})
+                            </option>`
+                        ).join("");
+
+                        // --- REQUEST RESCHEDULE ----------------------------------------------
+
+                        requestBtn.addEventListener("click", async () => {
+                            const hex = eventSelect.value;
+                            const newDate = availableDates.value;
+
+                            await updateSheet("Event Data", hex, {
+                                "Rescheduled Date": "Pending " + newDate
+                            });
+
+                            AdminLog.add({
+                                fn: "Reschedule Event",
+                                sheet: "Event Data",
+                                field: "Rescheduled Date",
+                                before: "",
+                                after: "Pending " + newDate,
+                                status: "success",
+                                message: "Reschedule requested"
+                            });
+
+                            rlog(`Reschedule requested for ${hex}`);
+                        });
+
+                        // --- APPROVE RESCHEDULE ----------------------------------------------
+
+                        approveBtn.addEventListener("click", async () => {
+                            const hex = eventSelect.value;
+                            const event = eventData.find(e => e.HexKey === hex);
+
+                            const newDate = event["Rescheduled Date"].replace("Pending ", "");
+                            const d = new Date(newDate);
+
+                            const newMonth = d.toLocaleString("en-AU", { month: "short" });
+                            const newDateFmt = d.toLocaleDateString("en-AU");
+
+                            const start = event.Start.includes("AM") ? "11:00" : "14:00";
+                            const finish = event.Start.includes("AM") ? "13:00" : "16:00";
+
+                            // --- CREATE NEW EVENT ROW ----------------------------------------
+
+                            await appendSheet("Event Data", {
+                                HexKey: crypto.randomUUID(),
+                                Month: newMonth,
+                                Date: newDateFmt,
+                                Start: start,
+                                Finish: finish,
+                                Emblem: event.Emblem,
+                                Class: event.Class,
+                                "Regatta Type": event["Regatta Type"],
+                                Competition: event.Competition,
+                                Season: event.Season,
+                                "Round no": "",
+                                Results: ""
+                            });
+
+                            // --- CLEAN ORIGINAL EVENT ----------------------------------------
+
+                            await updateSheet("Event Data", hex, {
+                                "Rescheduled Date": "",
+                                "Round no": "",
+                                Results: ""
+                            });
+
+                            AdminLog.add({
+                                fn: "Reschedule Event",
+                                sheet: "Event Data",
+                                field: "Rescheduled Date",
+                                before: event["Rescheduled Date"],
+                                after: newDateFmt,
+                                status: "success",
+                                message: "Reschedule approved"
+                            });
+
+                            rlog(`Reschedule approved for ${hex}`);
+                        });
+
+                        rlog("Reschedule module ready.");
+                    }
+                }
+
+                { id: "placeholder-1", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot.", 
+                  run: async (opts, log, resultsBox) => {
+                    log("Recalculating (placeholder)...");
+                    await wait(600);
+                    AdminLog.add({ fn: "Recalculate Prices", sheet: "Products", field: "Price", before: "$19.00", after: "$21.00", status: "success", message: "Rule: +10% markup" });
+                    }
+                },
+                { id: "placeholder-2", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
+                ];
+
+                const wait = ms => new Promise(r => setTimeout(r, ms));
+
+                const USAGE_KEY = "admin_fn_usage";
+                const getUsage = () => { try{ return JSON.parse(localStorage.getItem(USAGE_KEY)) || {}; }catch(e){ return {}; } };
+                const bumpUsage = (id) => { const u = getUsage(); u[id] = (u[id]||0)+1; localStorage.setItem(USAGE_KEY, JSON.stringify(u)); };
+
+                const grid = document.getElementById("fnGrid");
+
+                function renderGrid(){
+                const usage = getUsage();
+                grid.innerHTML = "";
+                const sorted = [...FUNCTIONS].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
+
+                sorted.forEach((fn, idx) => {
+                    const card = document.createElement("div");
+                    card.className = "glass fn-card" + (fn.placeholder ? " placeholder" : "");
+                    card.style.order = idx;
+
+                    const optionsHtml = (fn.options || []).map(o =>
+                    `<button type="button" class="app-filter-btn" data-opt="${o.id}">${o.label}</button>`
+                    ).join("");
+
+                    card.innerHTML = `
+                    <div class="tile-title">
+                        <div class="tile-icon">${fn.icon}</div>
+                        <div>
+                        <div style="font-weight:600;font-size:15px;">${fn.title}</div>
+                        <div class="fn-usage">Used ${usage[fn.id] || 0}x</div>
+                        </div>
+                    </div>
+                    <div class="fn-desc">${fn.description || ""}</div>
+                    <div class="fn-options">${optionsHtml}</div>
+                    <div class="fn-actions">
+                        <button type="button" class="btn btn-primary fn-run" ${fn.placeholder ? "disabled" : ""}>Run</button>
+                        <div class="spinner"></div>
+                        <span class="badge badge-default fn-status">Idle</span>
+                    </div>
+                    <div class="fn-results log-box"></div>
+                    <div class="fn-message"></div>
+                    `;
+
+                    if (!fn.placeholder){
+                    const selected = new Set();
+                    card.querySelectorAll(".fn-options .app-filter-btn").forEach(b => b.addEventListener("click", () => {
+                        b.classList.toggle("active");
+                        selected.has(b.dataset.opt) ? selected.delete(b.dataset.opt) : selected.add(b.dataset.opt);
+                    }));
+
+                    const runBtn = card.querySelector(".fn-run");
+                    const spinner = card.querySelector(".spinner");
+                    const status = card.querySelector(".fn-status");
+                    const results = card.querySelector(".fn-results");
+                    const message = card.querySelector(".fn-message");
+
+                    runBtn.addEventListener("click", async () => {
+                        runBtn.disabled = true;
+                        spinner.classList.add("active");
+                        status.className = "badge badge-affiliate fn-status";
+                        status.textContent = "Running";
+                        results.classList.add("visible");
+                        results.textContent = "";
+                        message.className = "fn-message";
+
+                        const logLine = (line) => { results.textContent += line + "\n"; results.scrollTop = results.scrollHeight; };
+
+                        try{
+                        await fn.run(Array.from(selected), logLine, results);
+                        status.className = "badge badge-full fn-status";
+                        status.textContent = "Success";
+                        message.className = "fn-message success visible";
+                        message.textContent = "Completed successfully.";
+                        bumpUsage(fn.id);
+                        renderGrid();
+                        }catch(err){
+                        status.className = "badge badge-expired fn-status";
+                        status.textContent = "Error";
+                        message.className = "fn-message error visible";
+                        message.textContent = err.message || "Something went wrong.";
+                        AdminLog.add({ fn: fn.title, status: "error", message: err.message || "Run failed" });
+                        }finally{
+                        spinner.classList.remove("active");
+                        runBtn.disabled = false;
+                        }
+                    });
+                    }
+
+                    grid.appendChild(card);
+                });
+                lucide.createIcons()
+            }
+
+            /* ============================================================
+            GOOGLE SHEETS MODULE — SMMC ADMIN PANEL
+            Provides:
+            - fetchSheet()
+            - updateSheet()
+            - appendSheet()
+            ============================================================ */
+
+            const SHEETS = {
+                calendar: {
+                    id: "1AVopdio8GLzwYGQjiX7qiVBXWQVpmArmaGBLWYTHxrM",
+                    tabs: {
+                        eventData: "Event Data"
+                    }
+                },
+                club: {
+                    id: "1nFqeV1U0c_RLaZK4amf7QR1MMwB9q8gZLc4HriUH9iI",
+                    tabs: {
+                        classes: "Classes"
+                    }
+                }
+            };
+
+            // IMPORTANT: Insert your API key here
+            const API_KEY = "AIzaSyC_Kb9u-r5b7g4ug2tCZ6E4uAmpdXu6KeE";
+
+            /* ------------------------------------------------------------
+            FETCH SHEET — returns rows as objects
+            ------------------------------------------------------------ */
+            async function fetchSheet(spreadsheetId, sheetName) {
+                const url =
+                    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${API_KEY}`;
+
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (!data.values || data.values.length === 0) {
+                    throw new Error(`Cannot read sheet: ${sheetName}`);
+                }
+
+                const rows = data.values;
+                const headers = rows[0];
+
+                return rows.slice(1).map(r => {
+                    const obj = {};
+                    headers.forEach((h, i) => obj[h] = r[i] || "");
+                    return obj;
+                });
+            }
+
+            /* ------------------------------------------------------------
+            UPDATE SHEET — updates a single row by HexKey
+            ------------------------------------------------------------ */
+            async function updateSheet(sheetName, hexKey, updates) {
+
+                const SPREADSHEET_ID = SHEETS.calendar.id;
+
+                // 1. Read sheet
+                const url =
+                    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}?key=${API_KEY}`;
+
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (!data.values || data.values.length === 0) {
+                    throw new Error("Sheet is empty or cannot be read.");
+                }
+
+                const rows = data.values;
+                const headers = rows[0];
+
+                // 2. Locate row by HexKey
+                const hexIndex = headers.indexOf("HexKey");
+                if (hexIndex === -1) throw new Error("HexKey column not found.");
+
+                const rowIndex = rows.findIndex(r => r[hexIndex] === hexKey);
+                if (rowIndex === -1) throw new Error(`HexKey ${hexKey} not found.`);
+
+                // 3. Build updated row
+                const row = rows[rowIndex];
+                const updatedRow = [...row];
+
+                Object.entries(updates).forEach(([field, value]) => {
+                    const colIndex = headers.indexOf(field);
+                    if (colIndex !== -1) {
+                        updatedRow[colIndex] = value;
+                    }
+                });
+
+                // 4. Write row back
+                const updateUrl =
+                    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}!A${rowIndex + 1}:Z${rowIndex + 1}?valueInputOption=USER_ENTERED&key=${API_KEY}`;
+
+                const body = {
+                    range: `${sheetName}!A${rowIndex + 1}:Z${rowIndex + 1}`,
+                    majorDimension: "ROWS",
+                    values: [updatedRow]
+                };
+
+                const updateRes = await fetch(updateUrl, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+
+                const updateJson = await updateRes.json();
+
+                if (updateJson.error) {
+                    throw new Error(updateJson.error.message || "Update failed.");
+                }
+
+                return true;
+            }
+
+            /* ------------------------------------------------------------
+            APPEND SHEET — adds a new row
+            ------------------------------------------------------------ */
+            async function appendSheet(sheetName, rowData) {
+
+                const SPREADSHEET_ID = SHEETS.calendar.id;
+
+                // 1. Fetch headers
+                const headerUrl =
+                    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}?key=${API_KEY}`;
+
+                const headerRes = await fetch(headerUrl);
+                const headerJson = await headerRes.json();
+
+                if (!headerJson.values || headerJson.values.length === 0) {
+                    throw new Error("Cannot read sheet headers.");
+                }
+
+                const headers = headerJson.values[0];
+
+                // 2. Build row in correct column order
+                const newRow = headers.map(h => rowData[h] ?? "");
+
+                // 3. Append row
+                const appendUrl =
+                    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}:append?valueInputOption=USER_ENTERED&key=${API_KEY}`;
+
+                const body = {
+                    range: sheetName,
+                    majorDimension: "ROWS",
+                    values: [newRow]
+                };
+
+                const appendRes = await fetch(appendUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+
+                const appendJson = await appendRes.json();
+
+                if (appendJson.error) {
+                    throw new Error(appendJson.error.message || "Append failed.");
+                }
+
+                return true;
+            }
+
+            /* ------------------------------------------------------------
+            EXPORT MODULE
+            ------------------------------------------------------------ */
+            window.SMMC_Sheets = {
+                fetchSheet,
+                updateSheet,
+                appendSheet,
+                SHEETS
+            };
+
+            renderGrid();
+            renderLog();
+            
         </script>
     </body>
     </html>
