@@ -544,22 +544,15 @@
             };
 
             // IMPORTANT: Insert your API key here
-            const API_KEY = "AIzaSyC_Kb9u-r5b7g4ug2tCZ6E4uAmpdXu6KeE";
+            const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
 
             /* ------------------------------------------------------------
             FETCH SHEET — returns rows as objects
             ------------------------------------------------------------ */
             async function fetchSheet(spreadsheetId, sheetName) {
-                const url =
-                    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${API_KEY}`;
-
-                const res = await fetch(url);
+                const res = await fetch(`${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`);
                 const data = await res.json();
-
-                if (!data.values || data.values.length === 0) {
-                    throw new Error(`Cannot read sheet: ${sheetName}`);
-                }
-
+                if (data.error) throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
                 const rows = data.values;
                 const headers = rows[0];
 
@@ -574,63 +567,12 @@
             UPDATE SHEET — updates a single row by HexKey
             ------------------------------------------------------------ */
             async function updateSheet(sheetName, hexKey, updates) {
-
-                const SPREADSHEET_ID = SHEETS.calendar.id;
-
-                // 1. Read sheet
-                const url =
-                    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}?key=${API_KEY}`;
-
-                const res = await fetch(url);
+                const res = await fetch(WEBAPP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "update", sheet: sheetName, hexKey, updates })
+                });
                 const data = await res.json();
-
-                if (!data.values || data.values.length === 0) {
-                    throw new Error("Sheet is empty or cannot be read.");
-                }
-
-                const rows = data.values;
-                const headers = rows[0];
-
-                // 2. Locate row by HexKey
-                const hexIndex = headers.indexOf("HexKey");
-                if (hexIndex === -1) throw new Error("HexKey column not found.");
-
-                const rowIndex = rows.findIndex(r => r[hexIndex] === hexKey);
-                if (rowIndex === -1) throw new Error(`HexKey ${hexKey} not found.`);
-
-                // 3. Build updated row
-                const row = rows[rowIndex];
-                const updatedRow = [...row];
-
-                Object.entries(updates).forEach(([field, value]) => {
-                    const colIndex = headers.indexOf(field);
-                    if (colIndex !== -1) {
-                        updatedRow[colIndex] = value;
-                    }
-                });
-
-                // 4. Write row back
-                const updateUrl =
-                    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}!A${rowIndex + 1}:Z${rowIndex + 1}?valueInputOption=USER_ENTERED&key=${API_KEY}`;
-
-                const body = {
-                    range: `${sheetName}!A${rowIndex + 1}:Z${rowIndex + 1}`,
-                    majorDimension: "ROWS",
-                    values: [updatedRow]
-                };
-
-                const updateRes = await fetch(updateUrl, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(body)
-                });
-
-                const updateJson = await updateRes.json();
-
-                if (updateJson.error) {
-                    throw new Error(updateJson.error.message || "Update failed.");
-                }
-
+                if (data.error) throw new Error(data.error);
                 return true;
             }
 
@@ -638,47 +580,12 @@
             APPEND SHEET — adds a new row
             ------------------------------------------------------------ */
             async function appendSheet(sheetName, rowData) {
-
-                const SPREADSHEET_ID = SHEETS.calendar.id;
-
-                // 1. Fetch headers
-                const headerUrl =
-                    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}?key=${API_KEY}`;
-
-                const headerRes = await fetch(headerUrl);
-                const headerJson = await headerRes.json();
-
-                if (!headerJson.values || headerJson.values.length === 0) {
-                    throw new Error("Cannot read sheet headers.");
-                }
-
-                const headers = headerJson.values[0];
-
-                // 2. Build row in correct column order
-                const newRow = headers.map(h => rowData[h] ?? "");
-
-                // 3. Append row
-                const appendUrl =
-                    `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}:append?valueInputOption=USER_ENTERED&key=${API_KEY}`;
-
-                const body = {
-                    range: sheetName,
-                    majorDimension: "ROWS",
-                    values: [newRow]
-                };
-
-                const appendRes = await fetch(appendUrl, {
+                const res = await fetch(WEBAPP_URL, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(body)
+                    body: JSON.stringify({ action: "append", sheet: sheetName, rowData })
                 });
-
-                const appendJson = await appendRes.json();
-
-                if (appendJson.error) {
-                    throw new Error(appendJson.error.message || "Append failed.");
-                }
-
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
                 return true;
             }
 
