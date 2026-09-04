@@ -225,10 +225,12 @@
                     href: "applications.html",
                     // TODO: point at the actual sheet/tab holding applications + status column
                     status: async () => {
-                        const apps = await fetchSheet(SHEETS.clbWebAppUrl, "Applications");
+                        const apps = await fetchSheet(SHEETS.appWebAppUrl, "Membership Applications");
                         return {
+                            received: apps.filter(a => a.Status === "Received").length,
                             pending: apps.filter(a => a.Status === "Awaiting Approval").length,
-                            inProgress: apps.filter(a => a.Status === "In Progress").length
+                            inProgress: apps.filter(a => a.Status === "In Progress").length,
+                            processed: apps.filter(a => a.Status === "Processed").length
                         };
                     }
                 },
@@ -238,10 +240,10 @@
                     icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
                     title: "Reschedule event",
                     description: "Manage online applications through the process.",
-                    href: "applications.html",
+                    href: "eventRescheduler.html",
                     // TODO: point at the actual sheet/tab holding applications + status column
                     status: async () => {
-                        const apps = await fetchSheet(SHEETS.clbWebAppUrl, "Applications");
+                        const apps = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
                         return {
                             pending: apps.filter(a => a.Status === "Awaiting Approval").length,
                             inProgress: apps.filter(a => a.Status === "In Progress").length
@@ -333,11 +335,18 @@
 
             const SHEETS = {
                 calWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
+                appWebAppUrl: "https://script.google.com/macros/s/AKfycbyWulPkIPBPaLA4f85ygVDpJUa-e3fWpY-XOYzTQ_2gF8h9EfuWinBdTiR1DtjYWSwl9g/exec",
                 clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
                 calendar: {
                     sheetName: "Event Data",
                     tabs: {
                         eventData: "Event Data"
+                    }
+                },
+                application: {
+                    sheetName: "Membership Applications",
+                    tabs: {
+                        applications: "Membership Applications"
                     }
                 },
                 club: {
