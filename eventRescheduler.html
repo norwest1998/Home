@@ -448,6 +448,10 @@ eventSearch.addEventListener("input", renderTable);
 async function loadData() {
   try {
     eventData = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
+    console.log('eventData length', eventData.length);
+    console.log('sample row', eventData[0]);
+    console.log('seasons found', [...new Set(eventData.map(e => e.Season))]);
+    console.log('CURRENT_SEASON_START', CURRENT_SEASON_START);
     classes = await fetchSheet(SHEETS.clbWebAppUrl, "Classes");
 
     classFilter.innerHTML = `<option value="">All Classes</option>` +
