@@ -233,6 +233,9 @@ const SHEETS = {
 async function fetchSheet(WEBAPP_URL, sheetName) {
   const res = await fetch(`${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`);
   const data = await res.json();
+
+  console.log('fetchSheet', sheetName, data);
+
   if (data.error) throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
   const rows = data.values;
   const headers = rows[0];
