@@ -29,7 +29,7 @@
 
   /* Quick Stats Bar */
   .admin-stats-row {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;
   }
   @media (max-width: 860px) { .admin-stats-row { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 480px) { .admin-stats-row { grid-template-columns: 1fr; } }
@@ -38,10 +38,27 @@
   .admin-stat-card .num { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--foam); }
   .admin-stat-card .lbl { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; color: var(--foam-dim); }
   
-  #classFilter option {
-    background: #0f3550;
-    color: var(--foam);
+  /* Filter Bar (Rescheduled toggle + class emblem pills) */
+  .filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .filter-pill {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+    border-radius: 999px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.25);
+    color: var(--foam-dim); font-family: var(--font-data); font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.05em; cursor: pointer; transition: all 0.15s ease;
   }
+  .filter-pill:hover { background: var(--glass-fill-hi); }
+  .filter-pill.active {
+    background: rgba(255,106,61,0.18); border-color: rgba(255,106,61,0.4); color: var(--signal);
+  }
+  .class-pill-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .class-pill {
+    width: 38px; height: 38px; border-radius: 50%; padding: 0; overflow: hidden;
+    border: 2px solid var(--glass-border); background: rgba(0,0,0,0.25); cursor: pointer;
+    transition: all 0.15s ease; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .class-pill img { width: 100%; height: 100%; object-fit: cover; }
+  .class-pill:hover { border-color: var(--glow); }
+  .class-pill.active { border-color: var(--signal); box-shadow: 0 0 0 2px rgba(255,106,61,0.3); }
   /* Events Table */
   .admin-table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--glass-border); }
   table.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -126,14 +143,6 @@
       <span class="lbl">Season</span>
       <span class="num" id="statSeason">–</span>
     </div>
-    <div class="admin-stat-card glass">
-      <span class="lbl">Class Filter</span>
-      <span class="num" style="font-size:15px;">
-        <select id="classFilter" style="background:transparent;color:var(--foam);border:none;font-family:var(--font-display);font-size:15px;">
-          <option value="">All Classes</option>
-        </select>
-      </span>
-    </div>
   </div>
 
   <div class="panel" id="queue">
@@ -141,8 +150,9 @@
       <div class="panel-title"><span class="dot"></span><h3>Season Events</h3></div>
     </div>
     <div class="tab-content active">
-      <div class="search-wrap">
-        <input class="search-input" type="text" id="eventSearch" placeholder="Filter events by class or name...">
+      <div class="filter-bar">
+        <button class="filter-pill" id="rescheduledToggle">Rescheduled</button>
+        <div class="class-pill-group" id="classPillGroup"></div>
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table">
@@ -284,8 +294,10 @@ const now = new Date();
 const CURRENT_SEASON_START = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
 
 const eventsBody = document.getElementById("eventsBody");
-const classFilter = document.getElementById("classFilter");
-const eventSearch = document.getElementById("eventSearch");
+const rescheduledToggle = document.getElementById("rescheduledToggle");
+const classPillGroup = document.getElementById("classPillGroup");
+let selectedClass = "";
+let rescheduledOnly = false;
 const availableDates = document.getElementById("availableDates");
 const reviewTitle = document.getElementById("reviewTitle");
 const requestBtn = document.getElementById("requestRescheduleBtn");
@@ -299,14 +311,11 @@ function logAction(msg) {
   lastActionLabel.textContent = msg;
 }
 
-function seasonEvents(className, search) {
+function seasonEvents(className, rescheduledOnly) {
   return eventData.filter(e => {
     if (!String(e.Season).startsWith(String(CURRENT_SEASON_START))) return false;
     if (className && e.Class !== className) return false;
-    if (search) {
-      const s = search.toLowerCase();
-      if (!(e.Class || "").toLowerCase().includes(s) && !(e.Event || "").toLowerCase().includes(s)) return false;
-    }
+    if (rescheduledOnly && !(e["Rescheduled Date"] || "")) return false;
     return true;
   });
 }
@@ -319,7 +328,7 @@ function renderStats() {
 }
 
 function renderTable() {
-  const rows = seasonEvents(classFilter.value, eventSearch.value.trim());
+  const rows = seasonEvents(selectedClass, rescheduledOnly);
   eventsBody.innerHTML = rows.length
     ? rows.map(e => `
       <tr data-hex="${e.HexKey}" class="${e.HexKey === selectedHex ? 'selected' : ''}">
@@ -442,8 +451,27 @@ approveBtn.addEventListener("click", async () => {
   }
 });
 
-classFilter.addEventListener("change", renderTable);
-eventSearch.addEventListener("input", renderTable);
+rescheduledToggle.addEventListener("click", () => {
+  rescheduledOnly = !rescheduledOnly;
+  rescheduledToggle.classList.toggle("active", rescheduledOnly);
+  renderTable();
+});
+
+function renderClassPills() {
+  classPillGroup.innerHTML = classes.map(c => `
+    <button class="class-pill ${c.ClassName === selectedClass ? 'active' : ''}" data-class="${c.ClassName}" title="${c.ClassName}">
+      <img src="${c.Emblem || (eventData.find(e => e.Class === c.ClassName) || {}).Emblem || ''}" alt="${c.ClassName}">
+    </button>
+  `).join("");
+
+  classPillGroup.querySelectorAll(".class-pill").forEach(btn =>
+    btn.addEventListener("click", () => {
+      selectedClass = selectedClass === btn.dataset.class ? "" : btn.dataset.class;
+      classPillGroup.querySelectorAll(".class-pill").forEach(b => b.classList.toggle("active", b.dataset.class === selectedClass));
+      renderTable();
+    })
+  );
+}
 
 /* =========================================================
    LOAD DATA
@@ -453,9 +481,7 @@ async function loadData() {
     eventData = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
     classes = await fetchSheet(SHEETS.clbWebAppUrl, "Classes");
 
-    classFilter.innerHTML = `<option value="">All Classes</option>` +
-      classes.map(c => `<option>${c.ClassName}</option>`).join("");
-
+    renderClassPills();
     renderStats();
     renderTable();
     renderAvailableDates();
