@@ -234,8 +234,6 @@ async function fetchSheet(WEBAPP_URL, sheetName) {
   const res = await fetch(`${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`);
   const data = await res.json();
 
-  console.log('fetchSheet', sheetName, data);
-
   if (data.error) throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
   const rows = data.values;
   const headers = rows[0];
@@ -312,7 +310,7 @@ function seasonEvents(className, search) {
 function renderStats() {
   document.getElementById("statSeason").textContent = `${CURRENT_SEASON_START}-${String(CURRENT_SEASON_START + 1).slice(-2)}`;
   const seasonRows = eventData.filter(e => String(e.Season).startsWith(String(CURRENT_SEASON_START)));
-  document.getElementById("statRescheduled").textContent = seasonRows.filter(e => e["Rescheduled Date"] && !e["Rescheduled Date"].includes("Pending")).length;
+  document.getElementById("statRescheduled").textContent = seasonRows.filter(e => e.Results === "Rescheduled").length;
   document.getElementById("statPending").textContent = seasonRows.filter(e => (e["Rescheduled Date"] || "").includes("Pending")).length;
 }
 
@@ -449,10 +447,6 @@ eventSearch.addEventListener("input", renderTable);
 async function loadData() {
   try {
     eventData = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
-    console.log('eventData length', eventData.length);
-    console.log('sample row', eventData[0]);
-    console.log('seasons found', [...new Set(eventData.map(e => e.Season))]);
-    console.log('CURRENT_SEASON_START', CURRENT_SEASON_START);
     classes = await fetchSheet(SHEETS.clbWebAppUrl, "Classes");
 
     classFilter.innerHTML = `<option value="">All Classes</option>` +
