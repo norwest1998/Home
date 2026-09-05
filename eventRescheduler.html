@@ -290,6 +290,11 @@ let eventData = [];
 let classes = [];
 let selectedHex = null;
 
+const INSIGNIA_OVERRIDES = { General: 'smmc-logo.png', Social: 'SmileyFace.png' };
+function classInsignia(className) {
+  return `/Home/images/classes/${INSIGNIA_OVERRIDES[className] || className + '.png'}`;
+}
+
 const now = new Date();
 const CURRENT_SEASON_START = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
 
@@ -460,7 +465,7 @@ rescheduledToggle.addEventListener("click", () => {
 function renderClassPills() {
   classPillGroup.innerHTML = classes.map(c => `
     <button class="class-pill ${c.ClassName === selectedClass ? 'active' : ''}" data-class="${c.ClassName}" title="${c.ClassName}">
-      <img src="${c.Emblem || (eventData.find(e => e.Class === c.ClassName) || {}).Emblem || ''}" alt="${c.ClassName}">
+      <img src="${classInsignia(c.ClassName)}" alt="${c.ClassName}">
     </button>
   `).join("");
 
