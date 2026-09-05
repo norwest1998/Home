@@ -239,9 +239,10 @@ async function fetchSheet(WEBAPP_URL, sheetName) {
   if (data.error) throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
   const rows = data.values;
   const headers = rows[0];
-  const seen = {};
+  
   return rows.slice(1).map(r => {
     const obj = {};
+    const seen = {};
     headers.forEach((h, i) => {
       const key = seen[h] ? `${h}_${++seen[h]}` : (seen[h] = 1, h);
       obj[key] = r[i] || "";
