@@ -1606,7 +1606,7 @@
         }
       } catch (err) {
         console.error('Failed to load event display:', err);
-        showError('event-display-container', 'Unable to load event details.');
+        showError('event-display-container', 'Unable to load event details.' + err.message);
       }
     }
     /* =========================================================================
