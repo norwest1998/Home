@@ -202,12 +202,53 @@
                     href: "applications.html",
                     // TODO: point at the actual sheet/tab holding applications + status column
                     status: async () => {
-                        const apps = await fetchSheet(SHEETS.appWebAppUrl, "Membership Applications");
+                        const apps = await fetchSheet(SHEETS.appWebAppUrl,"Membership Applications");
+                        const approvedCol = "Membership Approved";
+                        const approved = apps.filter(a =>
+                            String(a.Status).trim() === "Processed" &&
+                            (
+                            a[approvedCol] === true ||
+                            String(a[approvedCol]).toLowerCase() === "true" ||
+                            String(a[approvedCol]).toLowerCase() === "yes"
+                            )
+                            ).length;
+
+                        const rejected = apps.filter(a =>
+                            String(a.Status).trim() === "Processed" &&
+                            !(
+                            a[approvedCol] === true ||
+                            String(a[approvedCol]).toLowerCase() === "true" ||
+                            String(a[approvedCol]).toLowerCase() === "yes"
+                            )
+                            ).length;
+
                         return {
-                            received: apps.filter(a => a.Status === "Received").length,
-                            pending: apps.filter(a => a.Status === "Awaiting Approval").length,
-                            inProgress: apps.filter(a => a.Status === "In Progress").length,
-                            processed: apps.filter(a => a.Status === "Processed").length
+                            pills: [
+                                {
+                                label: "Received",
+                                value: apps.filter(a =>String(a.Status).trim() === "Received").length,className: "badge-affiliate"
+                                },{
+                                label: "In Progress",
+                                value: apps.filter(a =>
+                                String(a.Status).trim() === "In Progress"
+                                ).length,
+                                className: "badge-default"
+                                },{
+                                label: "Awaiting Approval",
+                                value: apps.filter(a =>
+                                String(a.Status).trim() === "Awaiting Approval"
+                                ).length,
+                                className: "badge-renewal"
+                                },{
+                                label: "Approved",
+                                value: approved,
+                                className: "badge-full"
+                                },{
+                                label: "Rejected",
+                                value: rejected,
+                                className: "badge-expired"
+                                }
+                            ]
                         };
                     }
                 },
@@ -222,9 +263,19 @@
                     status: async () => {
                         const apps = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
                         return {
-                            pending: apps.filter(a => a.Status === "Awaiting Approval").length,
-                            inProgress: apps.filter(a => a.Status === "In Progress").length
-                        };
+                        pills: [{
+                            label: "Pending",
+                            value: apps.filter(a =>
+                            String(a.Status).trim() === "Pending"
+                            ).length,
+                            className: "badge-renewal"
+                        },{
+                            label: "Rescheduled",
+                            value: apps.filter(a =>
+                            String(a.Status).trim() === "Rescheduled"
+                            ).length,
+                            className: "badge-full"
+                        }]};
                     }
                 },
 
@@ -259,9 +310,9 @@
                                 <div class="fn-desc">${fn.description || ""}</div>
                                 </div>
                             </div>
-                            <div class="fn-status-row" style="display:flex;gap:10px;margin-top:4px;">
-                                <span class="badge badge-affiliate" id="stat-pending-${fn.id}">…</span>
-                                <span class="badge badge-default" id="stat-progress-${fn.id}">…</span>
+                            <div class="fn-status-row"
+                                id="status-row-${fn.id}"
+                                style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
                             </div>
                             <div class="fn-actions" style="margin-top:auto;">
                                 <button type="button" class="btn btn-ghost" onclick="location.href='${fn.href}?mode=view'">View</button>
@@ -272,9 +323,14 @@
 
                             if (fn.status) {
                                 fn.status().then(s => {
-                                    card.querySelector(`#stat-pending-${fn.id}`).textContent = `${s.pending} Pending`;
-                                    card.querySelector(`#stat-progress-${fn.id}`).textContent = `${s.inProgress} In Progress`;
-                                }).catch(() => {});
+                                    const row = card.querySelector(`#status-row-${fn.id}`);                              
+                                    row.innerHTML = (s.pills || []).map(p => `
+                                    <span class="badge ${p.className}">${p.value} ${p.label}</span>
+                                    `).join("");
+                                }).catch(() => {
+                                    const row = card.querySelector(`#status-row-${fn.id}`);
+                                    row.innerHTML =`<span class="badge badge-expired">Status unavailable</span>`;
+                                });
                             }
                             return; // skip old run-based rendering below
                         }
