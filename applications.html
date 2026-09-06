@@ -59,9 +59,8 @@
 
   /* Approval Action Panel Grid */
   .action-panel-grid {
-    display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; margin-top: 24px;
+    display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 24px;
   }
-  @media (max-width: 900px) { .action-panel-grid { grid-template-columns: 1fr; } }
 
   /* Action Buttons inside Panel */
   .action-bar { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
@@ -299,9 +298,18 @@
         document.getElementById('reviewTitle').textContent = `Application Review: ${d.fullName || name}`;
 
         document.getElementById('reviewContent').innerHTML = `
+          <div class="app-status-badge ${esc(d.statusClass || appStatusCSSClass(d.status))}">
+            ${esc(d.status) || '—'}
+            ${d.statusClass === 'status-urgent' ? `<span class="urgent-note">⚠️ Requires attention — last updated: ${esc(d.lastUpdatedStr)}</span>` : ''}
+          </div>
+
           <div class="app-detail-section">
-            <span class="app-detail-section-title">Application Details</span>
+            <span class="app-detail-section-title">Personal Information</span>
             <div class="app-detail-grid">
+              <div class="app-detail-item">
+                <span class="app-detail-label">Name</span>
+                <span class="app-detail-value">${esc(d.fullName) || '—'}</span>
+              </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Email</span>
                 <span class="app-detail-value">${esc(d.email) || '—'}</span>
@@ -310,10 +318,67 @@
                 <span class="app-detail-label">Phone</span>
                 <span class="app-detail-value">${esc(d.phone) || '—'}</span>
               </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Address</span>
+                <span class="app-detail-value">${esc(d.address) || '—'}</span>
+              </div>
               <div class="app-detail-item full-width">
-                <span class="app-detail-label">Club Affiliations / Notes</span>
+                <span class="app-detail-label">Emergency Contact</span>
+                <span class="app-detail-value">${esc(d.emergency) || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="app-detail-section">
+            <span class="app-detail-section-title">Club Details</span>
+            <div class="app-detail-grid">
+              <div class="app-detail-item">
+                <span class="app-detail-label">Membership Type</span>
+                <span class="app-detail-value">${esc(d.type) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Current Club</span>
                 <span class="app-detail-value">${esc(d.currentClub) || '—'}</span>
               </div>
+            </div>
+          </div>
+
+          <div class="app-detail-section">
+            <span class="app-detail-section-title">Governance &amp; Votes</span>
+            <div class="app-detail-grid">
+              <div class="app-detail-item full-width">
+                <span class="app-detail-label">Disclaimer Signed</span>
+                <span class="app-detail-value">${esc(d.disclaimer) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Nominator</span>
+                <span class="app-detail-value">${esc(d.nominator) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Seconder</span>
+                <span class="app-detail-value">${esc(d.seconder) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Nominator Comment</span>
+                <span class="app-detail-value">${esc(d.nominatorComment) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Seconder Comment</span>
+                <span class="app-detail-value">${esc(d.seconderComment) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Votes For</span>
+                <span class="app-detail-value votes-for">${esc(d.votesFor) ?? '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Votes Against</span>
+                <span class="app-detail-value votes-against">${esc(d.votesAgainst) ?? '—'}</span>
+              </div>
+              ${d.rejectionReason ? `
+              <div class="app-detail-item full-width">
+                <span class="app-detail-label">Rejection Reason</span>
+                <span class="app-detail-value" style="color:var(--signal);">${esc(d.rejectionReason)}</span>
+              </div>` : ''}
             </div>
           </div>
 
