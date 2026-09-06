@@ -1612,7 +1612,7 @@
     /* =========================================================================
       Annual Calendar Section
       ========================================================================= */
-    const CALENDAR_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec?type=calendar';
+    const CALENDAR_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec';
     let annualCalendarMonths = [];   // cached months data from the last fetch
     let activeCalendarClass  = 'all'; // 'all' or a className, e.g. 'IOM'
     
@@ -1623,7 +1623,7 @@
       showSpinner(grid);
 
       try {
-        const response = await fetch(CALENDAR_URL);
+        const response = await fetch(`{CALENDAR_URL}?type=calendar`);
         if (!response.ok) throw new Error('Network response was not ok');
 
         const data = await response.json();
@@ -1696,29 +1696,29 @@
       grid.innerHTML = filteredMonths.map(month => buildMonthHTML(month)).join('');
     }
 
-    function buildMonthHTML(month) {
-      const eventsHTML = month.events && month.events.length
-        ? month.events.map(ev => {
-            const dateStr  = ev.dateLabel + ' • ' + ev.startTime;
-            const imgUrl   = getClassImage(ev.boatClass);  // ← shared function
-            const imageHTML = imgUrl
-              ? `<img src="${esc(imgUrl)}" alt="${esc(ev.boatClass)}" title="${esc(ev.boatClass)}"
-                    style="width:30px;height:30px;object-fit:contain;flex-shrink:0;display:block;background:rgba(255,255,255,0.85);border-radius:6px;padding:3px;">`
-              : `<div style="width:30px;height:30px;flex-shrink:0;"></div>`;
+function buildMonthHTML(month) {
+  const eventsHTML = month.events && month.events.length
+    ? month.events.map(ev => {
+        const dateStr  = ev.dateLabel + ' • ' + ev.startTime;
+        const imgUrl   = getClassImage(ev.boatClass);  // ← shared function
+        const imageHTML = imgUrl
+          ? `<img src="${esc(imgUrl)}" alt="${esc(ev.boatClass)}" title="${esc(ev.boatClass)}"
+                 style="width:30px;height:30px;object-fit:contain;flex-shrink:0;display:block;background:rgba(255,255,255,0.85);border-radius:6px;padding:3px;">`
+          : `<div style="width:30px;height:30px;flex-shrink:0;"></div>`;
 
-            return `
-              <div class="cal-event-item" style="display:flex;flex-direction:row;align-items:center;gap:12px;">
-                ${imageHTML}
-                <div style="display:flex;flex-direction:column;line-height:1.3;">
-                  <span class="date">${esc(dateStr)}</span>
-                  <span class="name">${esc(ev.eventName)}</span>
-                </div>
-              </div>`;
-          }).join('')
-        : `<div class="cal-event-item"><span class="name">${activeCalendarClass === 'all' ? 'No events scheduled' : 'No ' + esc(activeCalendarClass) + ' events this month'}</span></div>`;
+        return `
+          <div class="cal-event-item" style="display:flex;flex-direction:row;align-items:center;gap:12px;">
+            ${imageHTML}
+            <div style="display:flex;flex-direction:column;line-height:1.3;">
+              <span class="date">${esc(dateStr)}</span>
+              <span class="name">${esc(ev.eventName)}</span>
+            </div>
+          </div>`;
+      }).join('')
+    : '<div class="cal-event-item"><span class="name">No events scheduled</span></div>';
 
-      return `<div class="cal-month"><h4>${esc(month.monthLabel)}</h4>${eventsHTML}</div>`;
-    }
+  return `<div class="cal-month"><h4>${esc(month.monthLabel)}</h4>${eventsHTML}</div>`;
+}
 
     /* ══════════════════════════════════════════════════
       MEMBERS LIST — card layout with filters
