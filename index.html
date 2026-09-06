@@ -1590,59 +1590,58 @@
     /* =========================================================================
       Next Event Section
       ========================================================================= */
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec';
-
+    const CALENDAR_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec';
     async function loadEventDisplay() {
       try {
         showSpinner('event-display-container');
         const response = await fetch(`${WEB_APP_URL}?type=display&load=next`);
-        const htmlSnippet = await response.text();
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+        const data = await response.json();
 
         const container = document.getElementById('event-display-container');
-        container.innerHTML = htmlSnippet;
+        container.innerHTML = data.html;
 
         if (window.lucide) {
           lucide.createIcons();
         }
       } catch (err) {
         console.error('Failed to load event display:', err);
-        showError('event-display-container', 'Unable to load event details.' + err.message);
+        showError('event-display-container', 'Unable to load event details.');
       }
     }
+
     /* =========================================================================
       Annual Calendar Section
       ========================================================================= */
-    const CALENDAR_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec';
-    let annualCalendarMonths = [];   // cached months data from the last fetch
     let activeCalendarClass  = 'all'; // 'all' or a className, e.g. 'IOM'
       
-  async function loadAnnualCalendar() {
-    const grid = document.querySelector('#annual-calendar .calendar-grid');
-    if (!grid) return;
+    async function loadAnnualCalendar() {
+      const grid = document.querySelector('#annual-calendar .calendar-grid');
+      if (!grid) return;
 
-    grid.innerHTML = '<p class="cal-loading">Loading calendar…</p>';
+      grid.innerHTML = '<p class="cal-loading">Loading calendar…</p>';
 
-    try {
-      const response = await fetch(`${CALENDAR_URL}?type=calendar`);
-      if (!response.ok) throw new Error('Network response was not ok');
+      try {
+        const response = await fetch(`${CALENDAR_URL}?type=calendar`);
+        if (!response.ok) throw new Error('Network response was not ok');
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!data.months || data.months.length === 0) {
-        document.getElementById('calendarFilters').innerHTML = '';
-        grid.innerHTML = '<p class="cal-empty">No events scheduled for the next 3 months.</p>';
-        return;
+        if (!data.months || data.months.length === 0) {
+          document.getElementById('calendarFilters').innerHTML = '';
+          grid.innerHTML = '<p class="cal-empty">No events scheduled for the next 3 months.</p>';
+          return;
+        }
+
+        annualCalendarMonths = data.months;
+        renderCalendarFilters();
+        renderCalendarGrid();
+
+      } catch (err) {
+        console.error('Calendar fetch failed:', err);
+        grid.innerHTML = '<p class="cal-error">Unable to load calendar. Please try again later.</p>';
       }
-
-      annualCalendarMonths = data.months;
-      renderCalendarFilters();
-      renderCalendarGrid();
-
-    } catch (err) {
-      console.error('Calendar fetch failed:', err);
-      grid.innerHTML = '<p class="cal-error">Unable to load calendar. Please try again later.</p>';
     }
-  }
 
     function renderCalendarFilters() {
       const wrap = document.getElementById('calendarFilters');
