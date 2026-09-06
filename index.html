@@ -1616,30 +1616,33 @@
     let annualCalendarMonths = [];   // cached months data from the last fetch
     let activeCalendarClass  = 'all'; // 'all' or a className, e.g. 'IOM'
       
-    async function loadAnnualCalendar() {
-      const grid = document.querySelector('#annual-calendar .calendar-grid');
-      if (!grid) return;
-    
-      grid.innerHTML = '<p class="cal-loading">Loading calendar…</p>';
-    
-      try {
-        const response = await fetch(`${CALENDAR_URL}?type=calendar`);
-        if (!response.ok) throw new Error('Network response was not ok');
-    
-        const data = await response.json();
-    
-        if (!data.months || data.months.length === 0) {
-          grid.innerHTML = '<p class="cal-empty">No events scheduled for the next 3 months.</p>';
-          return;
-        }
-    
-        grid.innerHTML = data.months.map(month => buildMonthHTML(month)).join('');
-    
-      } catch (err) {
-        console.error('Calendar fetch failed:', err);
-        grid.innerHTML = '<p class="cal-error">Unable to load calendar. Please try again later.</p>';
+  async function loadAnnualCalendar() {
+    const grid = document.querySelector('#annual-calendar .calendar-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '<p class="cal-loading">Loading calendar…</p>';
+
+    try {
+      const response = await fetch(`${CALENDAR_URL}?type=calendar`);
+      if (!response.ok) throw new Error('Network response was not ok');
+
+      const data = await response.json();
+
+      if (!data.months || data.months.length === 0) {
+        document.getElementById('calendarFilters').innerHTML = '';
+        grid.innerHTML = '<p class="cal-empty">No events scheduled for the next 3 months.</p>';
+        return;
       }
+
+      annualCalendarMonths = data.months;
+      renderCalendarFilters();
+      renderCalendarGrid();
+
+    } catch (err) {
+      console.error('Calendar fetch failed:', err);
+      grid.innerHTML = '<p class="cal-error">Unable to load calendar. Please try again later.</p>';
     }
+  }
 
     function renderCalendarFilters() {
       const wrap = document.getElementById('calendarFilters');
@@ -1712,7 +1715,7 @@ function buildMonthHTML(month) {
             </div>
           </div>`;
       }).join('')
-    : '<div class="cal-event-item"><span class="name">No events scheduled</span></div>';
+        : `<div class="cal-event-item"><span class="name">${activeCalendarClass === 'all' ? 'No events scheduled' : 'No ' + esc(activeCalendarClass) + ' events this month'}</span></div>`;
 
   return `<div class="cal-month"><h4>${esc(month.monthLabel)}</h4>${eventsHTML}</div>`;
 }
