@@ -115,17 +115,14 @@
       <div class="admin-title-group">
         <h1>Membership &amp; Boat Approvals</h1>
       </div>
-      <!-- <button class="btn btn-primary" onclick="alert('Exporting registry data...')">
-        <i data-lucide="download" color="#257fb6"></i> Export Registry Data
-      </button> -->
-      <a href="admin.html" class="btn btn-ghost">← Back to Dashboard</a>
+      <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
     </div>
 
     <!-- Admin Quick Stats -->
     <div class="admin-stats-row">
       <div class="admin-stat-card glass">
         <span class="lbl">Pending Review</span>
-        <span class="num" style="color:var(--signal);">4</span>
+        <span class="num" id="pendingReviewStat" style="color:var(--signal);">—</span>
       </div>
       <div class="admin-stat-card glass">
         <span class="lbl">Awaiting Payment</span>
@@ -168,25 +165,8 @@
                 <th>Action</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td class="member-name">James Robertson</td>
-                <td>Full Membership</td>
-                <td>IOM (AUS-104)</td>
-                <td>2 Oct 2026</td>
-                <td><span class="app-status-badge status-awaiting">Awaiting Approval</span></td>
-                <td><span class="votes-for">3</span> / <span class="votes-against">0</span></td>
-                <td><button class="btn btn-ghost" style="padding:4px 10px; font-size:11px;">Review</button></td>
-              </tr>
-              <tr>
-                <td class="member-name">Sarah Chen</td>
-                <td>Boat Registration</td>
-                <td>DF95 (AUS-882)</td>
-                <td>1 Oct 2026</td>
-                <td><span class="app-status-badge status-progress">In Progress</span></td>
-                <td><span class="votes-for">1</span> / <span class="votes-against">0</span></td>
-                <td><button class="btn btn-ghost" style="padding:4px 10px; font-size:11px;">Review</button></td>
-              </tr>
+            <tbody id="appsTableBody">
+              <tr><td colspan="7"><div class="empty-state"><div class="spinner"></div> Loading applications…</div></td></tr>
             </tbody>
           </table>
         </div>
@@ -200,33 +180,11 @@
       <div class="panel">
         <div class="panel-header">
           <div class="panel-title">
-            <h3>Application Review: James Robertson</h3>
+            <h3 id="reviewTitle">Application Review</h3>
           </div>
         </div>
-        <div class="tab-content active">
-          <div class="app-detail-section">
-            <span class="app-detail-section-title">Application Details</span>
-            <div class="app-detail-grid">
-              <div class="app-detail-item">
-                <span class="app-detail-label">Email</span>
-                <span class="app-detail-value">j.robertson@example.com</span>
-              </div>
-              <div class="app-detail-item">
-                <span class="app-detail-label">Phone</span>
-                <span class="app-detail-value">+61 412 345 678</span>
-              </div>
-              <div class="app-detail-item full-width">
-                <span class="app-detail-label">Club Affiliations / Notes</span>
-                <span class="app-detail-value">Transferring from ARYA NSW. Primary hull: Britpop IOM.</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="action-bar">
-            <button class="btn btn-approve"><i data-lucide="check-circle" color="#257fb6"></i> Approve Member</button>
-            <button class="btn btn-hold"><i data-lucide="clock" color="#257fb6"></i> Request Details</button>
-            <button class="btn btn-reject"><i data-lucide="x-circle" color="#257fb6"></i> Reject</button>
-          </div>
+        <div class="tab-content active" id="reviewContent">
+          <div class="empty-state">Select an application from the queue to review it.</div>
         </div>
       </div>
 
@@ -237,20 +195,8 @@
             <h3>Committee Voting Audit</h3>
           </div>
         </div>
-        <div class="tab-content active">
-          <div class="tally-box">
-            <span class="app-detail-label">Quorum Reached</span>
-            <span class="votes-for">3 Votes Yes</span>
-          </div>
-          <div style="margin-top:14px;">
-            <span class="app-detail-label">Decision Audit Trail</span>
-            <div class="log-box" style="margin-top:6px;">
-[2026-10-02 09:15] App Received via Google Form.
-[2026-10-02 10:30] Vote YES cast by Commodore.
-[2026-10-02 11:04] Vote YES cast by Club Secretary.
-[2026-10-02 14:20] Vote YES cast by Registrar.
-            </div>
-          </div>
+        <div class="tab-content active" id="auditContent">
+          <div class="empty-state">No application selected.</div>
         </div>
       </div>
 
@@ -263,7 +209,140 @@
   </footer>
 
   <script>
+    /* =========================================================
+    GOOGLE SHEETS MODULE
+    ========================================================= */
+    const SHEETS = {
+      calWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
+      clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
+      applicationsSheetId: "1N9SFZ65rx7EA6XDBh7FUEmI504r_1aF3NYUVOg8g8Xk/edit?resourcekey=&gid=573855322#gid=573855322"
+    };
+
+    /* =========================================================
+    APPLICATIONS DATA MODULE
+    (same endpoints/response shape as index.html's Applications tab)
+    ========================================================= */
+    const HOME_DATA_API = "https://script.google.com/macros/s/AKfycbzGgNMh8KNWYquGuOoGvmrasDR5npiPoNXTouuzVeY9sRwrhDo29BVDbWGrh_FfgoieXQ/exec";
+    const APP_DETAIL_API = 'https://script.google.com/macros/s/AKfycbyWulPkIPBPaLA4f85ygVDpJUa-e3fWpY-XOYzTQ_2gF8h9EfuWinBdTiR1DtjYWSwl9g/exec';
+
+    let allApplications = [];
+    let selectedRowId = null;
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = (s === null || s === undefined) ? '' : String(s);
+      return d.innerHTML;
+    }
+
+    function appStatusCSSClass(status) {
+      const s = String(status).toLowerCase();
+      if (s.includes('received'))  return 'status-received';
+      if (s.includes('progress'))  return 'status-progress';
+      if (s.includes('awaiting'))  return 'status-awaiting';
+      if (s.includes('processed')) return 'status-processed';
+      if (s.includes('urgent'))    return 'status-urgent';
+      return 'status-received';
+    }
+
+    function renderTable() {
+      const body = document.getElementById('appsTableBody');
+      if (!allApplications.length) {
+        body.innerHTML = `<tr><td colspan="7"><div class="empty-state">No pending applications.</div></td></tr>`;
+        return;
+      }
+      body.innerHTML = allApplications.map(a => `
+        <tr data-rowid="${esc(a.rowId)}">
+          <td class="member-name">${esc(a.firstName)} ${esc(a.surname)}</td>
+          <td>${esc(a.membershipType)}</td>
+          <td>${esc(a.classOrBoat || '—')}</td>
+          <td>${esc(a.lastUpdated)}</td>
+          <td><span class="app-status-badge ${appStatusCSSClass(a.status)}">${esc(a.status)}</span></td>
+          <td><span class="votes-for">${esc(a.votesFor ?? 0)}</span> / <span class="votes-against">${esc(a.votesAgainst ?? 0)}</span></td>
+          <td><button class="btn btn-ghost review-btn" style="padding:4px 10px; font-size:11px;">Review</button></td>
+        </tr>`).join('');
+
+      body.querySelectorAll('tr[data-rowid]').forEach(row => {
+        row.addEventListener('click', () => openReview(row.dataset.rowid));
+      });
+
+      document.getElementById('pendingReviewStat').textContent = allApplications.length;
+    }
+
+    async function loadApplications() {
+      try {
+        const res  = await fetch(`${HOME_DATA_API}?action=applicationsList`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        allApplications = data.applications || [];
+        renderTable();
+      } catch (err) {
+        console.warn('Applications API unavailable:', err.message);
+        document.getElementById('appsTableBody').innerHTML =
+          `<tr><td colspan="7"><div class="empty-state" style="color:var(--signal);">⚠️ Applications list unavailable</div></td></tr>`;
+      }
+    }
+
+    async function openReview(rowId) {
+      selectedRowId = rowId;
+      const app  = allApplications.find(a => a.rowId === rowId);
+      const name = app ? `${app.firstName} ${app.surname}` : 'Application';
+
+      document.getElementById('reviewTitle').textContent = `Application Review: ${name}`;
+      document.getElementById('reviewContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
+      document.getElementById('auditContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
+
+      try {
+        const res = await fetch(`${APP_DETAIL_API}?token=${encodeURIComponent(rowId)}&action=display`);
+        const d   = await res.json();
+        if (d.error) throw new Error(d.error);
+
+        document.getElementById('reviewTitle').textContent = `Application Review: ${d.fullName || name}`;
+
+        document.getElementById('reviewContent').innerHTML = `
+          <div class="app-detail-section">
+            <span class="app-detail-section-title">Application Details</span>
+            <div class="app-detail-grid">
+              <div class="app-detail-item">
+                <span class="app-detail-label">Email</span>
+                <span class="app-detail-value">${esc(d.email) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Phone</span>
+                <span class="app-detail-value">${esc(d.phone) || '—'}</span>
+              </div>
+              <div class="app-detail-item full-width">
+                <span class="app-detail-label">Club Affiliations / Notes</span>
+                <span class="app-detail-value">${esc(d.currentClub) || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="action-bar">
+            <button class="btn btn-approve"><i data-lucide="check-circle" color="#257fb6"></i> Approve Member</button>
+            <button class="btn btn-hold"><i data-lucide="clock" color="#257fb6"></i> Request Details</button>
+            <button class="btn btn-reject"><i data-lucide="x-circle" color="#257fb6"></i> Reject</button>
+          </div>`;
+
+        document.getElementById('auditContent').innerHTML = `
+          <div class="tally-box">
+            <span class="app-detail-label">Votes For / Against</span>
+            <span class="votes-for">${esc(d.votesFor ?? 0)} Yes</span> / <span class="votes-against">${esc(d.votesAgainst ?? 0)} No</span>
+          </div>
+          <div style="margin-top:14px;">
+            <span class="app-detail-label">Decision Audit Trail</span>
+            <div class="log-box" style="margin-top:6px;">${esc(d.log) || 'No activity recorded yet.'}</div>
+          </div>`;
+
+        if (window.lucide) lucide.createIcons();
+      } catch (err) {
+        document.getElementById('reviewContent').innerHTML =
+          `<div class="empty-state" style="color:var(--signal);">⚠️ Could not load application — ${esc(err.message)}</div>`;
+        document.getElementById('auditContent').innerHTML = '';
+      }
+    }
+
     if (window.lucide) lucide.createIcons();
+    loadApplications();
   </script>
 </body>
 </html>
