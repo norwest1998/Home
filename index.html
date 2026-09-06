@@ -572,6 +572,8 @@
   /* Card Container */
   .race-card {
     position: relative;
+    margin-left: auto;
+    margin-right: auto;
     width: 100%;
     max-width: 360px;
     height: 260px;
@@ -601,10 +603,12 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     padding: 10px;
     box-sizing: border-box;
     text-align: center;
+    justify-content: flex-end;   /* weather panel anchors to bottom */
+    gap: 6px;                    /* tightens header-to-weather spacing */
+
   }
 
   /* Card Header (Title & Time) */
@@ -620,7 +624,8 @@
     font-size: 1.1rem;
     font-weight: 800;
     color: #ffd000; /* Bright yellow time matching reference image */
-    /* <!-- margin-top: 4px; */
+    margin-top: 2px; 
+    margin-bottom: 0;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
   }
 
@@ -635,7 +640,7 @@
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 12px;
-    padding: 10px 10px;
+    padding: 10px 14px;
     color: #ffffff;
     text-align: left;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -974,6 +979,18 @@
     <section class="container" style="margin-top:40px;">
       <div class="duo-grid">
         
+        <!-- Next Event Card -->
+        <div id="next-event" class="next-event-card glass">
+          <div class="feed-head">
+            <div class="feed-title">
+              <h3>Upcoming Weekend</h3>
+            </div>
+            <span class="feed-meta">Event Conditions</span>
+          </div>
+          <!-- Dynamic content from WebApp will load here -->
+          <div id="event-display-container">Loading event details...</div>
+        </div>
+
         <!-- Weather Card -->
         <div id="weather" class="weather-card glass">
           <div class="feed-head">
@@ -1029,18 +1046,7 @@
           </div>
         </div>
 
-        <!-- Next Event Card -->
 
-        <div id="next-event" class="next-event-card glass">
-          <div class="feed-head">
-            <div class="feed-title">
-              <h3>Upcoming Weekend</h3>
-            </div>
-            <span class="feed-meta">Event Conditions</span>
-          </div>
-          <!-- Dynamic content from WebApp will load here -->
-          <div id="event-display-container">Loading event details...</div>
-        </div>
 
       </div>
     </section>
