@@ -654,6 +654,17 @@
   .race-card .weather-mini-card .uvRow { font-size: 1em; opacity: 0.85; }
   .race-card .weather-mini-card .uvVal { font-size: 1em; font-weight: 600; }
 
+.race-card .weather-panel--daily {
+  margin-bottom: 12px;        /* gap between cards */
+  background: rgba(240,240,240,0.06); /* your preferred light transparent background */
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+
   .race-card .weather-panel--daily {
     display: flex;
     flex-direction: column;
@@ -661,12 +672,9 @@
     padding: 8px 12px;
     margin-top: 8px;
     border-radius: 8px;
-
-    /* NEW: remove frosted gradient */
+    margin-bottom: 12px;
     background: rgba(240, 240, 240, 0.06);
-
     border: 1px solid rgba(255, 255, 255, 0.12);
-
     backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
     -webkit-backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
     position: relative;
