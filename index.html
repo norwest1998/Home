@@ -665,10 +665,15 @@
     flex-direction: column;
     gap: 2px;
   }
-
-  .race-card .weather-panel--daily .daily-icon { font-size: 20px; align-self: center; }
-  .race-card .weather-panel--daily .daily-desc { text-align: center; font-weight: 600; }
-  .race-card .weather-panel--daily .daily-temps { text-align: center; font-weight: 700; }
+  .race-card .weather-panel--daily .daily-row--summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+  }
+  .race-card .weather-panel--daily .daily-icon { font-size: 20px; }
+  .race-card .weather-panel--daily .daily-desc { font-weight: 600; }
+  .race-card .weather-panel--daily .daily-temps { font-weight: 700; margin-left: auto; }
   .race-card .weather-panel--daily .daily-row {
     display: flex;
     justify-content: space-between;
