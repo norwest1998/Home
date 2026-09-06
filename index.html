@@ -629,8 +629,7 @@
   }
 
   /* Frosted Glass Weather Panel at Bottom */
-  .race-card .weather-cards-row,
-  .race-card .weather-mini-card {
+  .race-card .weather-cards-row {
     background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -641,6 +640,21 @@
     text-align: left;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
+
+  .race-card .weather-mini-card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border: none;
+    box-shadow: none;
+    background: none;
+    padding: 4px 0;
+  }
+
+  .race-card .weather-mini-card .temp { font-weight: 700; }
+  .race-card .weather-mini-card .wind,
+  .race-card .weather-mini-card .rain,
+  .race-card .weather-mini-card .uvRow { font-size: 12px; border: none; }
 
 
   .boat-panel-body { padding: 20px 24px 24px; }
