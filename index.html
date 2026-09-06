@@ -656,8 +656,12 @@
     padding: 8px 12px;
     margin-top: 8px;
     border-radius: 8px;
-    background: linear-gradient(155deg, var(--glass-fill-hi), var(--glass-fill));
-    border: 1px solid var(--glass-border);
+
+    /* NEW: remove frosted gradient */
+    background: rgba(255, 255, 255, 0.04);
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
     backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
     -webkit-backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
     position: relative;
