@@ -572,128 +572,125 @@
   /* Card Container */
   .race-card {
     position: relative;
+    width: 100%;
+    max-width: 420px;
     margin-left: auto;
     margin-right: auto;
-    width: 100%;
-    max-width: 360px;
-    height: 260px;
-    border-radius: 18px;
+    border-radius: 16px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    text-align: center;
     overflow: hidden;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    font-family: system-ui, -apple-system, sans-serif;
-    box-sizing: border-box;
-    margin-bottom: 20px; /* Adjust spacing as needed */
+    display: flex;
+    flex-direction: column;
   }
 
-  /* Background Image Layer */
   .race-card img.race-bg {
     position: absolute;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    z-index: 0;
+  }
+
+  .race-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(160,160,160,0.15), rgba(160,160,160,0.45));
     z-index: 1;
   }
 
-  /* Foreground Content Overlay */
   .race-card .card-content {
-    justify-content: space-between;
-    padding: 16px 10px 14px;
     position: relative;
     z-index: 2;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    text-align: center;
-    gap: 4px;
+    color: var(--foam);
   }
 
-  /* Card Header (Title & Time) */
   .race-card .heading h2 {
     margin: 0;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #ffffff;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    padding: 10px 0;
+    font-size: 1.3em;
+    color: var(--foam);
   }
 
   .race-card .race-time {
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: #ffd000; /* Bright yellow time matching reference image */
-    margin-top: 0; 
-    margin-bottom: 8px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #ffd700;
+    margin-bottom: 15px;
   }
 
-  .race-card:last-child {
-    margin-bottom: 0;
-  }
-
-  /* Frosted Glass Weather Panel at Bottom */
-  .race-card .weather-panel {
-    margin-top: auto;
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 12px;
-    padding: 10px 14px;
-    color: rgba(255, 255, 255, 0.85);
-    text-align: left;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  }
-
-  /* Layout differences only */
-  .race-card .weather-panel--hourly {
+  .race-card .weather-cards-row {
     display: flex;
-    gap: 8px;
-    overflow-x: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
   }
+
+  .race-card .weather-mini-card {
+    background: rgba(192,192,192,0.1);
+    backdrop-filter: blur(6px);
+    color: var(--foam);
+    border-radius: 5px;
+    padding: 8px;
+    flex: 0 0 80px;
+    max-width: 110px;
+    font-size: 14px;
+  }
+
+  .race-card .weather-mini-card .time { font-size: 0.75em; opacity: 0.85; }
+  .race-card .weather-mini-card .temp { font-size: 1.4em; font-weight: 600; }
+  .race-card .weather-mini-card .wind,
+  .race-card .weather-mini-card .rain,
+  .race-card .weather-mini-card .uvRow { font-size: 1em; opacity: 0.85; }
+  .race-card .weather-mini-card .uvVal { font-size: 1em; font-weight: 600; }
 
   .race-card .weather-panel--daily {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    border-radius: 8px;
+    background: linear-gradient(155deg, var(--glass-fill-hi), var(--glass-fill));
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
+    position: relative;
   }
 
-  /* Inner content, unchanged in meaning, kept as-is */
-  .race-card .weather-mini-card {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .race-card .weather-panel--daily .daily-row--summary {
+  .race-card .daily-row--summary {
     display: flex;
     align-items: center;
     gap: 8px;
     justify-content: center;
   }
-  .race-card .weather-panel--daily .daily-icon { font-size: 20px; }
-  .race-card .weather-panel--daily .daily-desc { font-weight: 600; }
-  .race-card .weather-panel--daily .daily-temps { font-weight: 700; margin-left: auto; }
-  .race-card .weather-panel--daily .daily-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12.5px;
-  } 
 
-  .race-card .weather-mini-card {
+  .race-card .daily-icon { font-size: 34px; line-height: 1; flex: none; }
+  .race-card .daily-desc { font-family: var(--font-body); font-size: 13.5px; font-weight: 600; color: var(--foam); }
+  .race-card .daily-temps { font-family: var(--font-data); font-size: 20px; display: flex; align-items: baseline; gap: 4px; margin-left: auto; }
+  .race-card .daily-temps .temp-max { font-weight: 500; }
+  .race-card .daily-temps .temp-min { font-size: 13px; color: var(--foam-dim); }
+
+  .race-card .daily-row {
+    width: 100%;
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    border: none;
-    box-shadow: none;
-    background: none;
-    padding: 4px 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-family: var(--font-data);
+    font-size: 13px;
+    color: var(--foam-dim);
+    letter-spacing: 0.02em;
+    padding-top: 4px;
   }
 
-  .race-card .weather-mini-card .temp { font-weight: 700; }
-  .race-card .weather-mini-card .wind,
-  .race-card .weather-mini-card .rain,
-  .race-card .weather-mini-card .uvRow { font-size: 12px; border: none; }
+  .race-card .daily-row .wind,
+  .race-card .daily-row .rain { color: var(--foam-dim); }
+  .race-card .daily-row .uvVal { font-weight: 500; }
 
 
   .boat-panel-body { padding: 20px 24px 24px; }
