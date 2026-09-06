@@ -1594,7 +1594,7 @@
     async function loadEventDisplay() {
       try {
         showSpinner('event-display-container');
-        const response = await fetch(`${WEB_APP_URL}?type=display&load=next`);
+        const response = await fetch(`${CALENDAR_URL}?type=display&load=next`);
         if (!response.ok) throw new Error(`Server returned ${response.status}`);
         const data = await response.json();
 
