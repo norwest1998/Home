@@ -1615,32 +1615,29 @@
     const CALENDAR_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec';
     let annualCalendarMonths = [];   // cached months data from the last fetch
     let activeCalendarClass  = 'all'; // 'all' or a className, e.g. 'IOM'
-    
+      
     async function loadAnnualCalendar() {
       const grid = document.querySelector('#annual-calendar .calendar-grid');
       if (!grid) return;
-
-      showSpinner(grid);
-
+    
+      grid.innerHTML = '<p class="cal-loading">Loading calendar…</p>';
+    
       try {
-        const response = await fetch(`{CALENDAR_URL}?type=calendar`);
+        const response = await fetch(`${CALENDAR_URL}?type=calendar`);
         if (!response.ok) throw new Error('Network response was not ok');
-
+    
         const data = await response.json();
-
+    
         if (!data.months || data.months.length === 0) {
-          document.getElementById('calendarFilters').innerHTML = '';
           grid.innerHTML = '<p class="cal-empty">No events scheduled for the next 3 months.</p>';
           return;
         }
-
-        annualCalendarMonths = data.months;
-        renderCalendarFilters();
-        renderCalendarGrid();
-
+    
+        grid.innerHTML = data.months.map(month => buildMonthHTML(month)).join('');
+    
       } catch (err) {
         console.error('Calendar fetch failed:', err);
-        showError(grid, 'Error fetching calendar: ' + err.message);
+        grid.innerHTML = '<p class="cal-error">Unable to load calendar. Please try again later.</p>';
       }
     }
 
