@@ -629,6 +629,7 @@
     justify-content: center;
     gap: 10px;
     width: 100%;
+    margin-bottom: 12px;
   }
 
   .race-card .weather-mini-card {
@@ -671,7 +672,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    justify-content: center;
+
+    /* NEW: spread items across the row */
+    justify-content: space-between;
+
+    width: 100%;
   }
 
   .race-card .daily-icon { font-size: 34px; line-height: 1; flex: none; }
