@@ -303,7 +303,7 @@
           <td>${esc(a.lastUpdated)}</td>
           <td><span class="app-status-badge ${badge.cls}">${esc(badge.label)}</span></td>
           <td><span class="votes-for">${esc(a.votesFor ?? 0)}</span> / <span class="votes-against">${esc(a.votesAgainst ?? 0)}</span></td>
-          <td><button class="btn btn-ghost review-btn" style="padding:4px 10px; font-size:11px;">Review</button></td>
+          <td><button class="btn btn-ghost review-btn" style="padding:4px 10px; font-size:11px;">${String(a.status||'').toLowerCase().includes('processed') ? 'View' : 'Review'}</button></td>
         </tr>`;
       }).join('');
 
