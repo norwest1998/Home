@@ -606,7 +606,7 @@
     padding: 10px;
     box-sizing: border-box;
     text-align: center;
-    justify-content: flex-end;   /* weather panel anchors to bottom */
+    justify-content: center;   /* weather panel anchors to bottom */
     gap: 6px;                    /* tightens header-to-weather spacing */
 
   }
@@ -634,7 +634,7 @@
   }
 
   /* Frosted Glass Weather Panel at Bottom */
-  .race-card .weather-cards-row {
+  .race-card .weather-panel {
     background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -645,6 +645,35 @@
     text-align: left;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
+
+  /* Layout differences only */
+  .race-card .weather-panel--hourly {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+  }
+
+  .race-card .weather-panel--daily {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* Inner content, unchanged in meaning, kept as-is */
+  .race-card .weather-mini-card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .race-card .weather-panel--daily .daily-icon { font-size: 20px; align-self: center; }
+  .race-card .weather-panel--daily .daily-desc { text-align: center; font-weight: 600; }
+  .race-card .weather-panel--daily .daily-temps { text-align: center; font-weight: 700; }
+  .race-card .weather-panel--daily .daily-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+  } 
 
   .race-card .weather-mini-card {
     display: flex;
