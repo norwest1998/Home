@@ -472,13 +472,15 @@ function renderClassPills() {
   classPillGroup.innerHTML = classes
   .filter(c => c.ClassName !== "Marblehead")
   .map(c => `
+  console.log(classInsignia(c.ClassName));
     <button class="class-pill ${c.ClassName === selectedClass ? 'active' : ''}"
     data-class="${c.ClassName}"
     title="${c.ClassName}">
-    <img srcnsignia(c.ClassName)}
+    ${classInsignia(c.ClassName)}
     </button>
     `)
   .join("");
+  
 
 
   classPillGroup.querySelectorAll(".class-pill").forEach(btn =>
