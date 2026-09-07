@@ -348,7 +348,7 @@
                         pills: [
                             {
                                 label: "Pending",
-                                value: events.filter(e => getVal(e, "Status").toLowerCase() === "pending").length,
+                                value: events.filter(e => getVal(e, "Status").toLowerCase().includes("pending")).length,
                                 className: "badge-renewal"
                             },
                             {
