@@ -93,6 +93,73 @@
     padding: 12px 16px; border-radius: 10px; background: rgba(0,0,0,0.25);
     border: 1px solid var(--glass-border); margin-top: 10px;
   }
+
+  /* ── Detail View Boat Display ── */
+  .boat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 10px;
+  }
+
+  .boat-card-view {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 18px;
+    padding: 16px 20px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.25s ease;
+  }
+
+  .boat-card-view:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+  }
+
+  .boat-card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #5eead4;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    letter-spacing: -0.01em;
+  }
+
+  .boat-field-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.88rem;
+  }
+
+  .boat-field-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .boat-field-label {
+    color: rgba(255, 255, 255, 0.65);
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .boat-field-value {
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .empty-boats-msg {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+    text-align: center;
+    padding: 15px 0;
+  }
 </style>
 </head>
 <body>
@@ -150,7 +217,7 @@
       <div class="panel-header">
         <div class="panel-title">
           <span class="dot"></span>
-          <h3>Pending Member &amp; Boat Register Applications</h3>
+          <h3>Member Applications</h3>
         </div>
       </div>
       
@@ -220,14 +287,13 @@
     GOOGLE SHEETS MODULE
     ========================================================= */
     const SHEETS = {
-      calWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
+      appWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
       clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
       applicationsSheetId: "1N9SFZ65rx7EA6XDBh7FUEmI504r_1aF3NYUVOg8g8Xk/edit?resourcekey=&gid=573855322#gid=573855322"
     };
 
     /* =========================================================
     APPLICATIONS DATA MODULE
-    (same endpoints/response shape as index.html's Applications tab)
     ========================================================= */
     const HOME_DATA_API = "https://script.google.com/macros/s/AKfycbzGgNMh8KNWYquGuOoGvmrasDR5npiPoNXTouuzVeY9sRwrhDo29BVDbWGrh_FfgoieXQ/exec";
     const APP_DETAIL_API = 'https://script.google.com/macros/s/AKfycbyWulPkIPBPaLA4f85ygVDpJUa-e3fWpY-XOYzTQ_2gF8h9EfuWinBdTiR1DtjYWSwl9g/exec';
@@ -251,65 +317,28 @@
       return 'status-received';
     }
 
-    // For a Processed application, work out the outcome (Approved/Rejected).
-    // Prefers an explicit result/outcome field from the API; falls back to
-    // inferring Rejected from a populated rejectionReason.
-    function processedOutcome(a) {
-      const explicit = a.result || a.outcome || a.approvalStatus;
-      if (explicit) return String(explicit);
-      return a.rejectionReason ? 'Rejected' : 'Approved';
-    }
-
-    // Returns { label, cls } for the status badge, swapping "Processed" for
-    // the actual Approved/Rejected outcome.
-    function statusBadge(a) {
-      const s = String(a.status || '').toLowerCase();
-      if (s.includes('processed')) {
-        const outcome = processedOutcome(a);
-        return { label: outcome, cls: outcome.toLowerCase().includes('reject') ? 'status-rejected' : 'status-approved' };
-      }
-      return { label: a.status, cls: appStatusCSSClass(a.status) };
-    }
-
-    function updateStats(apps) {
-      const counts = { received: 0, progress: 0, awaiting: 0, processed: 0 };
-      apps.forEach(a => {
-        const s = String(a.status || '').toLowerCase();
-        if (s.includes('progress'))       counts.progress++;
-        else if (s.includes('awaiting'))  counts.awaiting++;
-        else if (s.includes('processed')) counts.processed++;
-        else                               counts.received++;
-      });
-      document.getElementById('statReceived').textContent        = counts.received;
-      document.getElementById('statInProgress').textContent      = counts.progress;
-      document.getElementById('statAwaitingApproval').textContent = counts.awaiting;
-      document.getElementById('statProcessed').textContent       = counts.processed;
-    }
-
     function renderTable() {
       const body = document.getElementById('appsTableBody');
-      updateStats(allApplications);
       if (!allApplications.length) {
         body.innerHTML = `<tr><td colspan="7"><div class="empty-state">No pending applications.</div></td></tr>`;
         return;
       }
-      body.innerHTML = allApplications.map(a => {
-        const badge = statusBadge(a);
-        return `
+      body.innerHTML = allApplications.map(a => `
         <tr data-rowid="${esc(a.rowId)}">
           <td class="member-name">${esc(a.firstName)} ${esc(a.surname)}</td>
           <td>${esc(a.membershipType)}</td>
           <td>${esc(a.classOrBoat || '—')}</td>
           <td>${esc(a.lastUpdated)}</td>
-          <td><span class="app-status-badge ${badge.cls}">${esc(badge.label)}</span></td>
+          <td><span class="app-status-badge ${appStatusCSSClass(a.status)}">${esc(a.status)}</span></td>
           <td><span class="votes-for">${esc(a.votesFor ?? 0)}</span> / <span class="votes-against">${esc(a.votesAgainst ?? 0)}</span></td>
-          <td><button class="btn btn-ghost review-btn" style="padding:4px 10px; font-size:11px;">${String(a.status||'').toLowerCase().includes('processed') ? 'View' : 'Review'}</button></td>
-        </tr>`;
-      }).join('');
+          <td><button class="btn btn-ghost review-btn" style="padding:4px 10px; font-size:11px;">Review</button></td>
+        </tr>`).join('');
 
       body.querySelectorAll('tr[data-rowid]').forEach(row => {
         row.addEventListener('click', () => openReview(row.dataset.rowid));
       });
+
+      document.getElementById('pendingReviewStat').textContent = allApplications.length;
     }
 
     async function loadApplications() {
@@ -319,11 +348,83 @@
         if (data.error) throw new Error(data.error);
         allApplications = data.applications || [];
         renderTable();
+
+        // Automatically open review for the first application on page load
+        if (allApplications.length > 0) {
+          openReview(allApplications[0].rowId);
+        }
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
         document.getElementById('appsTableBody').innerHTML =
           `<tr><td colspan="7"><div class="empty-state" style="color:var(--signal);">⚠️ Applications list unavailable</div></td></tr>`;
       }
+    }
+
+    /**
+     * Parses and renders boat information into the boats section.
+     * @param {string|Array} boatsData - Raw JSON string or array of boat objects from sheet
+     */
+    function renderBoatDetails(boatsData) {
+      const container = document.getElementById('boatsContainer');
+      if (!container) return;
+
+      let boats = [];
+
+      // Parse JSON string if necessary
+      if (typeof boatsData === 'string' && boatsData.trim().length > 0) {
+        try {
+          boats = JSON.parse(boatsData);
+        } catch (e) {
+          console.error('Failed to parse boat JSON:', e);
+          boats = [];
+        }
+      } else if (Array.isArray(boatsData)) {
+        boats = boatsData;
+      }
+
+      // Handle empty state
+      if (!boats || boats.length === 0) {
+        container.innerHTML = '<p class="empty-boats-msg">No boat records submitted for this applicant.</p>';
+        return;
+      }
+
+      // Render boat cards grid
+      let html = '<div class="boat-grid">';
+      boats.forEach(boat => {
+        html += `
+          <div class="boat-card-view">
+            <div class="boat-card-title">${escapeHtml(boat.boatClass || 'Unspecified Class')}</div>
+            
+            <div class="boat-field-row">
+              <span class="boat-field-label">Model</span>
+              <span class="boat-field-value">${escapeHtml(boat.model || '-')}</span>
+            </div>
+            
+            <div class="boat-field-row">
+              <span class="boat-field-label">Sail No.</span>
+              <span class="boat-field-value">${escapeHtml(boat.sailNumber || '-')}</span>
+            </div>
+
+            <div class="boat-field-row">
+              <span class="boat-field-label">HRN</span>
+              <span class="boat-field-value">${escapeHtml(boat.hrn || '-')}</span>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      container.innerHTML = html;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
 
     async function openReview(rowId) {
@@ -342,10 +443,9 @@
 
         document.getElementById('reviewTitle').textContent = `Application Review: ${d.fullName || name}`;
 
-        const badge = statusBadge(d);
         document.getElementById('reviewContent').innerHTML = `
-          <div class="app-status-badge ${badge.cls}">
-            ${esc(badge.label) || '—'}
+          <div class="app-status-badge ${esc(d.statusClass || appStatusCSSClass(d.status))}">
+            ${esc(d.status) || '—'}
             ${d.statusClass === 'status-urgent' ? `<span class="urgent-note">⚠️ Requires attention — last updated: ${esc(d.lastUpdatedStr)}</span>` : ''}
           </div>
 
@@ -386,6 +486,14 @@
                 <span class="app-detail-label">Current Club</span>
                 <span class="app-detail-value">${esc(d.currentClub) || '—'}</span>
               </div>
+            </div>
+          </div>
+
+          <!-- Boats Owned Section -->
+          <div class="glass-section" id="boatsSection">
+            <h3>Boats Owned</h3>
+            <div id="boatsContainer">
+              <!-- Dynamic boat records populate here -->
             </div>
           </div>
 
@@ -434,6 +542,9 @@
             <button class="btn btn-reject"><i data-lucide="x-circle" color="#257fb6"></i> Reject</button>
           </div>`;
 
+        // Trigger render for boat details after inserting the container into DOM
+        renderBoatDetails(d.boats);
+
         document.getElementById('auditContent').innerHTML = `
           <div class="tally-box">
             <span class="app-detail-label">Votes For / Against</span>
@@ -455,5 +566,6 @@
     if (window.lucide) lucide.createIcons();
     loadApplications();
   </script>
+
 </body>
 </html>
