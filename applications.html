@@ -302,8 +302,21 @@
 
     function countVotesRequired(status, log) {
       if (!String(status).toLowerCase().includes('awaiting') || !log) return null;
-      const matches = String(log).match(/Approval vote request sent/g);
-      return matches ? matches.length : null;
+
+      const lines = String(log).split('\n').map(l => l.trim()).filter(Boolean);
+      const isRequestLine = l => /Approval (re-)?vote request sent/.test(l);
+
+      // find the last contiguous block of request lines
+      let end = -1;
+      for (let i = lines.length - 1; i >= 0; i--) {
+        if (isRequestLine(lines[i])) { end = i; break; }
+      }
+      if (end === -1) return null;
+
+      let start = end;
+      while (start > 0 && isRequestLine(lines[start - 1])) start--;
+
+      return end - start + 1;
     }
 
     function appStatusCSSClass(status) {
