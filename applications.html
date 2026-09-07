@@ -581,6 +581,8 @@
         const votesAgainstCount = voteCount(d.votesAgainst);
         const votesRequired     = countVotesRequired(d.status, d.log);
         const votesReceived     = votesForCount + votesAgainstCount;
+
+        console.log("Votes For: ", votesForCount, "Votes Req: ", votesReceived ); // View actual keys in console
         
         document.getElementById('auditContent').innerHTML = `
           <div class="tally-box">
