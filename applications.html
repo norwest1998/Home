@@ -50,6 +50,10 @@
     color: var(--glow); text-align: left; padding: 12px 14px;
     background: rgba(15,53,80,0.92); border-bottom: 1px solid var(--glass-border); white-space: nowrap;
   }
+  table.admin-table th:nth-child(n+3),
+  table.admin-table td:nth-child(n+3) {
+    text-align: center;
+  }
   table.admin-table td {
     padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
     color: var(--foam); vertical-align: middle;
@@ -61,23 +65,6 @@
   .action-panel-grid {
     display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 24px;
   }
-
-  /* Action Buttons inside Panel */
-  .action-bar { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-  .btn-approve {
-    background: rgba(74,222,128,0.18); color: #4ade80; border: 1px solid rgba(74,222,128,0.4);
-  }
-  .btn-approve:hover { background: rgba(74,222,128,0.28); }
-  
-  .btn-reject {
-    background: rgba(248,113,113,0.18); color: #f87171; border: 1px solid rgba(248,113,113,0.4);
-  }
-  .btn-reject:hover { background: rgba(248,113,113,0.28); }
-
-  .btn-hold {
-    background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.4);
-  }
-  .btn-hold:hover { background: rgba(245,158,11,0.28); }
 
   /* Approved / Rejected outcome pills */
   .app-status-badge.status-approved {
@@ -157,6 +144,14 @@
     color: var(--foam-dim, rgba(255, 255, 255, 0.6));
     font-style: italic;
     padding: 12px 0;
+  }
+
+  .app-status-badge { margin-bottom: 16px; }
+  .app-detail-section { margin-top: 16px; }
+  .app-detail-section:first-of-type { margin-top: 0; }
+
+  .app-status-badge.status-deliberation {
+    background: rgba(248,113,113,0.15); color: #fb923c; border: 1px solid rgba(251,146,60,0.4);
   }
 </style>
 </head>
@@ -307,11 +302,12 @@
 
     function appStatusCSSClass(status) {
       const s = String(status).toLowerCase();
-      if (s.includes('received'))  return 'status-received';
-      if (s.includes('progress'))  return 'status-progress';
-      if (s.includes('awaiting'))  return 'status-awaiting';
-      if (s.includes('processed')) return 'status-processed';
-      if (s.includes('urgent'))    return 'status-urgent';
+      if (s.includes('received'))     return 'status-received';
+      if (s.includes('deliberation')) return 'status-deliberation';
+      if (s.includes('progress'))     return 'status-progress';
+      if (s.includes('awaiting'))     return 'status-awaiting';
+      if (s.includes('processed'))    return 'status-processed';
+      if (s.includes('urgent'))       return 'status-urgent';
       return 'status-received';
     }
 
@@ -331,13 +327,14 @@
     }
 
     function updateStats(apps) {
-      const counts = { received: 0, progress: 0, awaiting: 0, processed: 0 };
+      const counts = { received: 0, progress: 0, awaiting: 0, deliberation: 0, processed: 0 };
       apps.forEach(a => {
         const s = String(a.status || '').toLowerCase();
-        if (s.includes('progress'))        counts.progress++;
-        else if (s.includes('awaiting'))  counts.awaiting++;
-        else if (s.includes('processed')) counts.processed++;
-        else                               counts.received++;
+        if (s.includes('progress'))          counts.progress++;
+        else if (s.includes('deliberation')) counts.deliberation++;
+        else if (s.includes('awaiting'))     counts.awaiting++;
+        else if (s.includes('processed'))    counts.processed++;
+        else                                  counts.received++;
       });
       document.getElementById('statReceived').textContent         = counts.received;
       document.getElementById('statInProgress').textContent       = counts.progress;
@@ -555,20 +552,19 @@
                 <span class="app-detail-value" style="color:var(--signal);">${esc(d.rejectionReason)}</span>
               </div>` : ''}
             </div>
-          </div>
-
-          <div class="action-bar">
-            <button class="btn btn-approve"><i data-lucide="check-circle" color="#257fb6"></i> Approve Member</button>
-            <button class="btn btn-hold"><i data-lucide="clock" color="#257fb6"></i> Request Details</button>
-            <button class="btn btn-reject"><i data-lucide="x-circle" color="#257fb6"></i> Reject</button>
           </div>`;
 
         // Render Boat Details into #boatsContainer
         renderBoatDetails(d.boats);
 
+        const votesRequired = countVotesRequired(d.status, d.log);
+        const votesReceived = (Number(d.votesFor) || 0) + (Number(d.votesAgainst) || 0);
+        
         document.getElementById('auditContent').innerHTML = `
           <div class="tally-box">
-            <span class="app-detail-label">Votes For / Against</span>
+            <span class="app-detail-label">
+              Votes Received: ${esc(votesReceived)}${votesRequired !== null ? ` of ${esc(votesRequired)}` : ''}
+            </span>
             <span class="votes-for">${esc(d.votesFor ?? 0)}</span> / <span class="votes-against">${esc(d.votesAgainst ?? 0)}</span>
           </div>
           <div style="margin-top:14px;">
