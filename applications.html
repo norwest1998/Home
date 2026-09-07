@@ -349,10 +349,6 @@
         allApplications = data.applications || [];
         renderTable();
 
-        // Automatically open review for the first application on page load
-        if (allApplications.length > 0) {
-          openReview(allApplications[0].rowId);
-        }
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
         document.getElementById('appsTableBody').innerHTML =
