@@ -587,14 +587,14 @@ console.log('full d:', JSON.stringify(d));
         const votesRequired     = countVotesRequired(d.status, d.log);
         const votesReceived     = votesForCount + votesAgainstCount;
 
-        console.log("Votes For: ", votesForCount, "Votes Req: ", votesReceived ); // View actual keys in console
+        console.log("Votes For: ", votesForCount, "Votes Rec: ", votesReceived, "Votes Req: ", votesReceived ); // View actual keys in console
         
         document.getElementById('auditContent').innerHTML = `
           <div class="tally-box">
             <span class="app-detail-label">
               Votes Received: ${esc(votesReceived)}${votesRequired !== null ? ` of ${esc(votesRequired)}` : ''}
             </span>
-            <span class="votes-for">${esc(votesForCount)}</span>${votesAgainstCount > 0 ? ` / <span class="votes-against">${esc(votesAgainstCount)}</span>` : ''}
+            <span class="votes-for">${esc(d.votesFor)}</span>${votesAgainstCount > 0 ? ` / <span class="votes-against">${esc(d.votesAgainst)}</span>` : ''}
           </div>
           <div style="margin-top:14px;">
             <span class="app-detail-label">Decision Audit Trail</span>
