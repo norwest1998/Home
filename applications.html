@@ -399,7 +399,7 @@
 
     async function loadApplications() {
       try {
-        const res  = await fetch(`${HOME_DATA_API}?action=applicationsList`);
+        const res  = await fetch(`${  HOME_DATA_API}?action=applicationsList`);
         const data = await res.json();
         console.log('sample row:', JSON.stringify(data.applications?.[0]));
         if (data.error) throw new Error(data.error);
