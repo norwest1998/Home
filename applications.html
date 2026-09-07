@@ -383,7 +383,7 @@
           <td>${esc(a.classOrBoat || '—')}</td>
           <td>${esc(a.lastUpdated)}</td>
           <td><span class="app-status-badge ${badge.cls}">${esc(badge.label)}</span></td>
-          <td><span class="votes-for">${esc(a.votesFor ?? 0)}</span> / <span class="votes-against">${esc(a.votesAgainst ?? 0)}</span></td>
+          <td><span class="votes-for">${esc(voteCount(a.votesFor))}</span> / <span class="votes-against">${esc(voteCount(a.votesAgainst))}</span></td>
           <td><button class="btn btn-ghost review-btn" style="padding:4px 10px; font-size:11px;">${String(a.status||'').toLowerCase().includes('processed') ? 'View' : 'Review'}</button></td>
         </tr>`;
       }).join('');
@@ -576,6 +576,7 @@
 
         // Render Boat Details into #boatsContainer
         renderBoatDetails(d.boats);
+
         const votesForCount     = voteCount(d.votesFor);
         const votesAgainstCount = voteCount(d.votesAgainst);
         const votesRequired     = countVotesRequired(d.status, d.log);
@@ -586,7 +587,7 @@
             <span class="app-detail-label">
               Votes Received: ${esc(votesReceived)}${votesRequired !== null ? ` of ${esc(votesRequired)}` : ''}
             </span>
-            <span class="votes-for">${esc(d.votesFor ?? 0)}</span> / <span class="votes-against">${esc(d.votesAgainst ?? 0)}</span>
+            <span class="votes-for">${esc(votesForCount)}</span>${votesAgainstCount > 0 ? ` / <span class="votes-against">${esc(votesAgainstCount)}</span>` : ''}
           </div>
           <div style="margin-top:14px;">
             <span class="app-detail-label">Decision Audit Trail</span>
