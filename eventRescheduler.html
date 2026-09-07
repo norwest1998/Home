@@ -471,9 +471,7 @@ rescheduledToggle.addEventListener("click", () => {
 function renderClassPills() {
   classPillGroup.innerHTML = classes
   .filter(c => c.ClassName !== "Marblehead")
-  .map(c =>
-  console.log(classInsignia(c.ClassName));
-   `
+  .map(c =>`
     <button class="class-pill ${c.ClassName === selectedClass ? 'active' : ''}"
     data-class="${c.ClassName}"
     title="${c.ClassName}">
@@ -481,7 +479,7 @@ function renderClassPills() {
     </button>
     `)
   .join("");
-  
+  console.log(classInsignia(c.ClassName));
 
 
   classPillGroup.querySelectorAll(".class-pill").forEach(btn =>
