@@ -300,6 +300,12 @@
       return d.innerHTML;
     }
 
+    function voteCount(v) {
+      if (Array.isArray(v)) return v.length;
+      const n = Number(v);
+      return isNaN(n) ? 0 : n;
+    }
+
     function countVotesRequired(status, log) {
       if (!String(status).toLowerCase().includes('awaiting') || !log) return null;
 
@@ -570,9 +576,10 @@
 
         // Render Boat Details into #boatsContainer
         renderBoatDetails(d.boats);
-
-        const votesRequired = countVotesRequired(d.status, d.log);
-        const votesReceived = (Number(d.votesFor) || 0) + (Number(d.votesAgainst) || 0);
+        const votesForCount     = voteCount(d.votesFor);
+        const votesAgainstCount = voteCount(d.votesAgainst);
+        const votesRequired     = countVotesRequired(d.status, d.log);
+        const votesReceived     = votesForCount + votesAgainstCount;
         
         document.getElementById('auditContent').innerHTML = `
           <div class="tally-box">
