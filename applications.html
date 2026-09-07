@@ -580,7 +580,8 @@
 
         // Render Boat Details into #boatsContainer
         renderBoatDetails(d.boats);
-
+console.log('typeof votesFor:', typeof d.votesFor, '| value:', JSON.stringify(d.votesFor));
+console.log('full d:', JSON.stringify(d));
         const votesForCount     = voteCount(d.votesFor);
         const votesAgainstCount = voteCount(d.votesAgainst);
         const votesRequired     = countVotesRequired(d.status, d.log);
