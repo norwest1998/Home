@@ -218,19 +218,22 @@
             }
         };
 
+        // Case-insensitive & trimmed fetch helper
         async function fetchSheet(WEBAPP_URL, sheetName) {
             const res = await fetch(`${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`);
             const data = await res.json();
             if (data.error) throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
             
-            // Flexibly handle raw array or { values: [...] } wrapper
             const rows = Array.isArray(data) ? data : (data.values || []);
             if (!rows || rows.length < 2) return [];
 
-            const headers = rows[0];
+            const headers = rows[0].map(h => String(h || "").trim());
+
             return rows.slice(1).map(r => {
                 const obj = {};
-                headers.forEach((h, i) => obj[h] = r[i] !== undefined ? r[i] : "");
+                headers.forEach((h, i) => {
+                    if (h) obj[h] = r[i] !== undefined ? String(r[i]).trim() : "";
+                });
                 return obj;
             });
         }
@@ -310,17 +313,34 @@
                 href: "eventRescheduler.html",
                 status: async () => {
                     const events = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
+                    console.log("Fetched Events:", events); // View actual keys in console
+
                     return {
                         pills: [
-                            { label: "Pending", value: events.filter(e => String(e.Status || "").trim() === "Pending").length, className: "badge-renewal" },
-                            { label: "Rescheduled", value: events.filter(e => String(e.Status || "").trim() === "Rescheduled").length, className: "badge-full" }
+                            {
+                                label: "Pending",
+                                value: events.filter(e => getVal(e, "Status").toLowerCase() === "pending").length,
+                                className: "badge-renewal"
+                            },
+                            {
+                                label: "Rescheduled",
+                                value: events.filter(e => getVal(e, "Status").toLowerCase() === "rescheduled").length,
+                                className: "badge-full"
+                            }
                         ]
                     };
                 }
-            },
+            }
             { id: "placeholder-1", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." },
             { id: "placeholder-2", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
         ];
+
+        // Case-insensitive field reader
+        function getVal(rowObj, fieldName) {
+            const targetKey = fieldName.toLowerCase().trim();
+            const foundKey = Object.keys(rowObj).find(k => k.toLowerCase().trim() === targetKey);
+            return foundKey ? rowObj[foundKey] : "";
+        }
 
         const USAGE_KEY = "admin_fn_usage";
         const getUsage = () => { try { return JSON.parse(localStorage.getItem(USAGE_KEY)) || {}; } catch(e) { return {}; } };
