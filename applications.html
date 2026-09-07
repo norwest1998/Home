@@ -381,11 +381,6 @@
         if (data.error) throw new Error(data.error);
         allApplications = data.applications || [];
         renderTable();
-
-        // Auto-select and review the first application on load if available
-        if (allApplications.length > 0) {
-          openReview(allApplications[0].rowId);
-        }
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
         document.getElementById('appsTableBody').innerHTML =
