@@ -225,14 +225,30 @@
             if (data.error) throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
             
             const rows = Array.isArray(data) ? data : (data.values || []);
-            if (!rows || rows.length < 2) return [];
+            if (!rows || rows.length === 0) return [];
 
-            const headers = rows[0].map(h => String(h || "").trim());
+            // Dynamically locate the actual header row (contains 'RowID' or 'Status')
+            let headerIndex = rows.findIndex(r => 
+                Array.isArray(r) && r.some(cell => {
+                    const val = String(cell || "").trim().toLowerCase();
+                    return val === "rowid" || val === "status";
+                })
+            );
 
-            return rows.slice(1).map(r => {
+            // Fallback: pick the first row with more than 3 non-empty values
+            if (headerIndex === -1) {
+                headerIndex = rows.findIndex(r => Array.isArray(r) && r.filter(c => String(c || "").trim() !== "").length > 3);
+            }
+
+            if (headerIndex === -1) return [];
+
+            const headers = rows[headerIndex].map(h => String(h || "").trim());
+
+            // Map rows starting after the detected header row
+            return rows.slice(headerIndex + 1).filter(r => r.some(cell => String(cell || "").trim() !== "")).map(r => {
                 const obj = {};
                 headers.forEach((h, i) => {
-                    if (h) obj[h] = r[i] !== undefined ? String(r[i]).trim() : "";
+                    if (h) obj[h] = r[i] !== undefined ? r[i] : "";
                 });
                 return obj;
             });
@@ -273,31 +289,31 @@
                 href: "applications.html",
                 status: async () => {
                     const apps = await fetchSheet(SHEETS.appWebAppUrl, "Membership Applications");
-                    const approvedCol = "Membership Approved";
 
-                    const approved = apps.filter(a =>
-                        String(a.Status || "").trim() === "Processed" &&
-                        (
-                            a[approvedCol] === true ||
-                            String(a[approvedCol] || "").toLowerCase() === "true" ||
-                            String(a[approvedCol] || "").toLowerCase() === "yes"
-                        )
-                    ).length;
+                    const getStatus = (r) => getRowVal(r, ["Status", "App Status", "Application Status"]);
+                    const getApproved = (r) => getRowVal(r, ["Membership Approved", "Approved"]);
 
-                    const rejected = apps.filter(a =>
-                        String(a.Status || "").trim() === "Processed" &&
-                        !(
-                            a[approvedCol] === true ||
-                            String(a[approvedCol] || "").toLowerCase() === "true" ||
-                            String(a[approvedCol] || "").toLowerCase() === "yes"
-                        )
-                    ).length;
+                    const received = apps.filter(a => getStatus(a).toLowerCase() === "received").length;
+                    const inProgress = apps.filter(a => getStatus(a).toLowerCase() === "in progress").length;
+                    const awaiting = apps.filter(a => ["awaiting approval", "pending"].includes(getStatus(a).toLowerCase())).length;
+
+                    const approved = apps.filter(a => {
+                        const st = getStatus(a).toLowerCase();
+                        const appv = getApproved(a).toLowerCase();
+                        return st === "processed" && (appv === "true" || appv === "yes" || appv === "approved");
+                    }).length;
+
+                    const rejected = apps.filter(a => {
+                        const st = getStatus(a).toLowerCase();
+                        const appv = getApproved(a).toLowerCase();
+                        return st === "processed" && (appv === "false" || appv === "no" || appv === "rejected");
+                    }).length;
 
                     return {
                         pills: [
-                            { label: "Received", value: apps.filter(a => String(a.Status || "").trim() === "Received").length, className: "badge-affiliate" },
-                            { label: "In Progress", value: apps.filter(a => String(a.Status || "").trim() === "In Progress").length, className: "badge-default" },
-                            { label: "Awaiting Approval", value: apps.filter(a => String(a.Status || "").trim() === "Awaiting Approval").length, className: "badge-renewal" },
+                            { label: "Received", value: received, className: "badge-affiliate" },
+                            { label: "In Progress", value: inProgress, className: "badge-default" },
+                            { label: "Awaiting Approval", value: awaiting, className: "badge-renewal" },
                             { label: "Approved", value: approved, className: "badge-full" },
                             { label: "Rejected", value: rejected, className: "badge-expired" }
                         ]
