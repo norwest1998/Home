@@ -302,6 +302,10 @@
 
     function voteCount(v) {
       if (Array.isArray(v)) return v.length;
+      if (typeof v === 'string') {
+        const trimmed = v.trim();
+        return trimmed === '' ? 0 : trimmed.split(',').filter(s => s.trim() !== '').length;
+      }
       const n = Number(v);
       return isNaN(n) ? 0 : n;
     }
