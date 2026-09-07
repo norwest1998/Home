@@ -296,7 +296,7 @@ let selectedHex = null;
 
 const INSIGNIA_OVERRIDES = { General: 'smmc-logo.png', Social: 'SmileyFace.png' };
 function classInsignia(className) {
-  return `/Home/images/classes/${INSIGNIA_OVERRIDES[className] || className + '.png'}`;
+  return `<img src="Home/images/classes/${INSIGNIA_OVERRIDES[className] || className + '.png'}"`;
 }
 
 const now = new Date();
