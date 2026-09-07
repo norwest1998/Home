@@ -259,25 +259,26 @@
                     title: "Reschedule event",
                     description: "Manage online applications through the process.",
                     href: "eventRescheduler.html",
-                    // TODO: point at the actual sheet/tab holding applications + status column
                     status: async () => {
-                        const apps = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
+                        
+                        const events = await fetchSheet(
+                        SHEETS.calWebAppUrl,
+                        "Event Data"
+                        );
+                        
                         return {
-                        pills: [{
-                            label: "Pending",
-                            value: apps.filter(a =>
-                            String(a.Status).trim() === "Pending"
-                            ).length,
-                            className: "badge-renewal"
-                        },{
-                            label: "Rescheduled",
-                            value: apps.filter(a =>
-                            String(a.Status).trim() === "Rescheduled"
-                            ).length,
-                            className: "badge-full"
-                        }]};
+                            pills: [
+                                {
+                                label: "Pending",
+                                value: events.filter(e =>String(e.Status || "").trim() === "Pending").length,className: "badge-renewal"
+                                },{
+                                label: "Rescheduled",
+                                value: events.filter(e =>String(e.Status || "").trim() === "Rescheduled").length,className: "badge-full"
+                                }
+                            ]
+                        };
                     }
-                },
+                }
 
                 { id: "placeholder-1", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot."},
                 { id: "placeholder-2", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot."}
@@ -437,17 +438,36 @@
                 SHEETS
             };
 
-            renderGrid();
-            renderLog();
-
             const AdminLog = {
+                all() {
+                return JSON.parse(
+                localStorage.getItem("admin_log_entries") || "[]"
+                );
+                },
             add(entry) {
-                const KEY = "admin_log_entries";
-                const entries = JSON.parse(localStorage.getItem(KEY) || "[]");
-                entries.unshift({ timestamp: new Date().toISOString(), ...entry });
-                localStorage.setItem(KEY, JSON.stringify(entries));
-            }
+                const entries = this.all();
+    
+                entries.unshift({
+                    timestamp: new Date().toISOString(),
+                    ...entry
+                    });
+                
+                localStorage.setItem(
+                    "admin_log_entries",
+                    JSON.stringify(entries)
+                    );
+                
+                renderLog();
+                },
+            
+            clear() {
+                localStorage.removeItem("admin_log_entries");
+                renderLog();
+                }
             };
+
+            renderGrid();
+            renderLog();            
 
             document.querySelector(".btn-approve").addEventListener("click", () => {
             // TODO: call updateSheet(...) to set Status = "Approved"
