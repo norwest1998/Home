@@ -151,6 +151,19 @@
     </footer>
 
     <script>
+        // Case-insensitive cell value retriever across header variations
+        function getRowVal(row, possibleKeys) {
+            if (!row) return "";
+            const rowKeys = Object.keys(row);
+            for (const targetKey of possibleKeys) {
+                const match = rowKeys.find(k => k.toLowerCase().trim() === targetKey.toLowerCase().trim());
+                if (match && row[match] !== undefined && row[match] !== null) {
+                    return String(row[match]).trim();
+                }
+            }
+            return "";
+        }
+        
         function fmtTime(iso){
             const d = new Date(iso);
             return d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
