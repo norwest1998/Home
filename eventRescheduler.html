@@ -465,11 +465,17 @@ rescheduledToggle.addEventListener("click", () => {
 });
 
 function renderClassPills() {
-  classPillGroup.innerHTML = classes.map(c => `
-    <button class="class-pill ${c.ClassName === selectedClass ? 'active' : ''}" data-class="${c.ClassName}" title="${c.ClassName}">
-      <img src="${classInsignia(c.ClassName)}" alt="${c.ClassName}">
+  classPillGroup.innerHTML = classes
+  .filter(c => c.ClassName !== "Marblehead")
+  .map(c => `
+    <button class="class-pill ${c.ClassName === selectedClass ? 'active' : ''}"
+    data-class="${c.ClassName}"
+    title="${c.ClassName}">
+    ${classInsignia(c.ClassName)}
     </button>
-  `).join("");
+    `)
+  .join("");
+
 
   classPillGroup.querySelectorAll(".class-pill").forEach(btn =>
     btn.addEventListener("click", () => {
