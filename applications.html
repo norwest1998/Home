@@ -300,6 +300,12 @@
       return d.innerHTML;
     }
 
+    function countVotesRequired(status, log) {
+      if (!String(status).toLowerCase().includes('awaiting') || !log) return null;
+      const matches = String(log).match(/Approval vote request sent/g);
+      return matches ? matches.length : null;
+    }
+
     function appStatusCSSClass(status) {
       const s = String(status).toLowerCase();
       if (s.includes('received'))     return 'status-received';
