@@ -401,6 +401,7 @@
       try {
         const res  = await fetch(`${HOME_DATA_API}?action=applicationsList`);
         const data = await res.json();
+        console.log('sample row:', JSON.stringify(data.applications?.[0]));
         if (data.error) throw new Error(data.error);
         allApplications = data.applications || [];
         renderTable();
@@ -580,15 +581,12 @@
 
         // Render Boat Details into #boatsContainer
         renderBoatDetails(d.boats);
-console.log('typeof votesFor:', typeof d.votesFor, '| value:', JSON.stringify(d.votesFor));
-console.log('full d:', JSON.stringify(d));
+
         const votesForCount     = voteCount(d.votesFor);
         const votesAgainstCount = voteCount(d.votesAgainst);
         const votesRequired     = countVotesRequired(d.status, d.log);
         const votesReceived     = votesForCount + votesAgainstCount;
 
-        console.log("Votes For: ", votesForCount, "Votes Rec: ", votesReceived, "Votes Req: ", votesReceived ); // View actual keys in console
-        
         document.getElementById('auditContent').innerHTML = `
           <div class="tally-box">
             <span class="app-detail-label">
