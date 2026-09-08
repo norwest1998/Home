@@ -775,7 +775,15 @@
   .member-name { font-weight: 600; color: var(--foam); }
  
   /* Membership badge */
- 
+
+  /* Committee indicator */
+  .whatsApp-yes {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--whatsapp);
+  }
   /* Committee indicator */
   .committee-yes {
     display: inline-flex;
@@ -1838,7 +1846,7 @@ function buildMonthHTML(month) {
       container.innerHTML = list.map((m, idx) => {
         const flags = [
           m.active    ? `<span class="committee-yes">Active</span>`    : '',
-          m.whatsapp  ? `<span class="committee-yes">WhatsApp</span>`  : '',
+          m.whatsapp  ? `<span class="whatsApp-yes">WhatsApp</span>`  : '',
           m.committee ? `<span class="committee-yes">Committee</span>` : '',
         ].filter(Boolean).join(' ');
 
