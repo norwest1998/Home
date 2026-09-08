@@ -1,0 +1,307 @@
+ace<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Member Race Stats</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --navy:#0d1b2a;
+    --sea:#1b4965;
+    --foam:#f4f9f9;
+    --gold:#c9922a;
+    --red:#a4303f;
+    --grey:#5c6b73;
+    --line:#d8e2e2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Georgia', 'Times New Roman', serif;
+    background:var(--foam);
+    color:var(--navy);
+    padding:24px;
+  }
+  .toolbar{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    max-width:640px;
+    margin:0 auto 20px;
+  }
+  .toolbar input, .toolbar select{
+    font-family:inherit;
+    font-size:15px;
+    padding:9px 12px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    background:#fff;
+    color:var(--navy);
+  }
+  .toolbar input{flex:1;}
+  .toolbar button{
+    font-family:inherit;
+    font-size:14px;
+    padding:9px 16px;
+    border:1px solid var(--sea);
+    background:var(--sea);
+    color:#fff;
+    border-radius:3px;
+    cursor:pointer;
+  }
+  .toolbar button:hover{background:var(--navy);}
+  .status{
+    max-width:640px;
+    margin:0 auto 16px;
+    font-size:13px;
+    color:var(--grey);
+    text-align:center;
+  }
+
+  .card{
+    max-width:640px;
+    margin:0 auto;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:4px;
+    overflow:hidden;
+    display:none;
+  }
+  .card.show{display:block;}
+  .card-head{
+    background:var(--navy);
+    color:var(--foam);
+    padding:22px 26px;
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .card-head h1{
+    margin:0;
+    font-size:26px;
+    font-weight:400;
+    letter-spacing:0.3px;
+  }
+  .card-head .sub{
+    font-size:13px;
+    color:#a9c4d4;
+  }
+
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    border-top:1px solid var(--line);
+  }
+  .stat{
+    padding:18px 14px;
+    text-align:center;
+    border-right:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .stat:nth-child(3n){border-right:none;}
+  .stat .num{
+    font-size:28px;
+    color:var(--sea);
+    line-height:1;
+  }
+  .stat .num.accent{color:var(--gold);}
+  .stat .num.warn{color:var(--red);}
+  .stat .lbl{
+    margin-top:6px;
+    font-size:11.5px;
+    color:var(--grey);
+    font-family:Arial, sans-serif;
+  }
+
+  .section{
+    padding:18px 26px 22px;
+    border-top:1px solid var(--line);
+  }
+  .section h2{
+    font-size:13px;
+    font-family:Arial, sans-serif;
+    text-transform:none;
+    color:var(--grey);
+    margin:0 0 10px;
+    font-weight:normal;
+  }
+  .row-line{
+    display:flex;
+    justify-content:space-between;
+    padding:7px 0;
+    border-bottom:1px dotted var(--line);
+    font-size:14.5px;
+  }
+  .row-line:last-child{border-bottom:none;}
+  .row-line .v{color:var(--sea);}
+
+  .regatta-list .row-line span:first-child{color:var(--navy);}
+
+  .empty{
+    max-width:640px;
+    margin:60px auto;
+    text-align:center;
+    color:var(--grey);
+    font-size:15px;
+  }
+  .empty code{
+    background:#e9eeee;
+    padding:2px 6px;
+    border-radius:3px;
+    font-size:13px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <select id="memberSelect"><option value="">Loading data…</option></select>
+    <button id="loadBtn">Refresh</button>
+  </div>
+  <div class="status" id="status"></div>
+
+  <div class="empty" id="emptyState">
+    Paste your published CSV URL into <code>CSV_URL</code> near the top of this file's script, then reload.
+  </div>
+
+  <div class="card" id="card">
+    <div class="card-head">
+      <h1 id="mName">—</h1>
+      <div class="sub" id="mMeta">—</div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat"><div class="num accent" id="sWinRate">—</div><div class="lbl">Win Rate</div></div>
+      <div class="stat"><div class="num" id="sTop3Rate">—</div><div class="lbl">Top-3 Rate</div></div>
+      <div class="stat"><div class="num" id="sAvgPlacing">—</div><div class="lbl">Avg Placing</div></div>
+      <div class="stat"><div class="num" id="sConsistency">—</div><div class="lbl">Consistency Index</div></div>
+      <div class="stat"><div class="num" id="sBest">—</div><div class="lbl">Best Finish</div></div>
+      <div class="stat"><div class="num warn" id="sWorst">—</div><div class="lbl">Worst Finish</div></div>
+      <div class="stat"><div class="num" id="sRaces">—</div><div class="lbl">Races Sailed</div></div>
+      <div class="stat"><div class="num" id="sRegattas">—</div><div class="lbl">Regattas</div></div>
+      <div class="stat"><div class="num" id="sPodiums">—</div><div class="lbl">Podium Finishes</div></div>
+    </div>
+
+    <div class="section">
+      <h2>Best Results</h2>
+      <div id="bestList" class="regatta-list"></div>
+    </div>
+
+    <div class="section">
+      <h2>By Regatta</h2>
+      <div id="regattaList" class="regatta-list"></div>
+    </div>
+  </div>
+
+<script>
+// ---- CONFIGURE THIS ----
+const CSV_URL = "PASTE_PUBLISHED_CSV_URL_HERE";
+// -------------------------
+
+let raceRows = [];
+
+function num(v){
+  const n = parseFloat(v);
+  return isNaN(n) ? null : n;
+}
+
+function loadData(){
+  const statusEl = document.getElementById('status');
+  const emptyEl = document.getElementById('emptyState');
+  const select = document.getElementById('memberSelect');
+
+  if(!CSV_URL || CSV_URL.indexOf('PASTE_') === 0){
+    statusEl.textContent = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+
+  emptyEl.style.display = 'none';
+  statusEl.textContent = 'Loading race archive…';
+  select.innerHTML = '<option value="">Loading…</option>';
+
+  Papa.parse(CSV_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results){
+      raceRows = results.data.filter(r => r.MemberName && r.MemberName.trim());
+      const members = [...new Set(raceRows.map(r => r.MemberName.trim()))].sort();
+      select.innerHTML = '<option value="">Select a member…</option>' +
+        members.map(m => `<option value="${m}">${m}</option>`).join('');
+      statusEl.textContent = `Loaded ${raceRows.length} race entries · ${members.length} members`;
+    },
+    error: function(err){
+      statusEl.textContent = 'Could not load sheet — check the CSV URL and sharing settings.';
+      select.innerHTML = '<option value="">—</option>';
+    }
+  });
+}
+
+function renderMember(name){
+  const card = document.getElementById('card');
+  if(!name){ card.classList.remove('show'); return; }
+
+  const rows = raceRows.filter(r => r.MemberName.trim() === name);
+  if(rows.length === 0){ card.classList.remove('show'); return; }
+
+  const positions = rows.map(r => num(r.RacePos)).filter(v => v !== null);
+  const races = positions.length;
+  const wins = positions.filter(p => p === 1).length;
+  const podiums = positions.filter(p => p <= 3).length;
+  const best = races ? Math.min(...positions) : null;
+  const worst = races ? Math.max(...positions) : null;
+  const avgPlacing = races ? (positions.reduce((a,b)=>a+b,0)/races) : null;
+
+  // prefer sheet-provided ConsistencyIndex if present, else fallback
+  const consistVals = rows.map(r => num(r.ConsistencyIndex)).filter(v => v !== null);
+  const consistency = consistVals.length ? (consistVals.reduce((a,b)=>a+b,0)/consistVals.length) : null;
+
+  const regattas = [...new Set(rows.map(r => r.RegattaName).filter(Boolean))];
+
+  document.getElementById('mName').textContent = name;
+  document.getElementById('mMeta').textContent = `${races} races across ${regattas.length} regatta${regattas.length===1?'':'s'}`;
+
+  document.getElementById('sWinRate').textContent = races ? Math.round(wins/races*100)+'%' : '—';
+  document.getElementById('sTop3Rate').textContent = races ? Math.round(podiums/races*100)+'%' : '—';
+  document.getElementById('sAvgPlacing').textContent = avgPlacing !== null ? avgPlacing.toFixed(1) : '—';
+  document.getElementById('sConsistency').textContent = consistency !== null ? consistency.toFixed(2) : '—';
+  document.getElementById('sBest').textContent = best !== null ? '#'+best : '—';
+  document.getElementById('sWorst').textContent = worst !== null ? '#'+worst : '—';
+  document.getElementById('sRaces').textContent = races;
+  document.getElementById('sRegattas').textContent = regattas.length;
+  document.getElementById('sPodiums').textContent = podiums;
+
+  // Best results: top 5 by RacePos
+  const sortedByPos = rows.filter(r => num(r.RacePos) !== null)
+    .sort((a,b)=> num(a.RacePos) - num(b.RacePos))
+    .slice(0,5);
+  document.getElementById('bestList').innerHTML = sortedByPos.map(r =>
+    `<div class="row-line"><span>${r.RegattaName||'—'} · Race ${r.RaceNo||'—'}</span><span class="v">#${r.RacePos}</span></div>`
+  ).join('') || '<div class="row-line"><span>No results</span></div>';
+
+  // By regatta summary
+  const byRegatta = {};
+  rows.forEach(r => {
+    const key = r.RegattaName || 'Unknown';
+    if(!byRegatta[key]) byRegatta[key] = [];
+    const p = num(r.RacePos);
+    if(p !== null) byRegatta[key].push(p);
+  });
+  document.getElementById('regattaList').innerHTML = Object.entries(byRegatta).map(([reg, pos]) => {
+    const avg = (pos.reduce((a,b)=>a+b,0)/pos.length).toFixed(1);
+    return `<div class="row-line"><span>${reg}</span><span class="v">${pos.length} races · avg #${avg}</span></div>`;
+  }).join('') || '<div class="row-line"><span>No regattas</span></div>';
+
+  card.classList.add('show');
+}
+
+document.getElementById('memberSelect').addEventListener('change', e => renderMember(e.target.value));
+document.getElementById('loadBtn').addEventListener('click', loadData);
+
+loadData();
+</script>
+</body>
+</html>
