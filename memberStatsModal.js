@@ -1,10 +1,12 @@
 /**
  * Member Race Stats — Modal Portal
  * -----------------------------------------------------------------
+ * Uses the site's existing theme.css classes (.drawer-overlay, .drawer,
+ * .detail-item, .badge, .btn, etc.) so it matches the rest of the site.
+ * theme.css MUST already be linked on the page before this runs.
+ *
  * Include this file on any page, then call:
  *     showMemberStats("Peter Burton");
- * It fetches the race archive CSV, finds the member, and shows an
- * in-page modal overlay with their stats. No popup window needed.
  *
  * Setup: set CSV_URL below to your published Google Sheet CSV link.
  */
@@ -18,38 +20,29 @@
     return isNaN(n) ? null : n;
   }
 
-  function injectStyles() {
-    if (document.getElementById("mrs-styles")) return;
+  function initials(name) {
+    return name.split(/\s+/).filter(Boolean).map(p => p[0]).join("").slice(0, 2).toUpperCase();
+  }
+
+  // Small additions theme.css doesn't already define: a 3-col stat grid
+  // and simple dotted list rows, built from the same design tokens.
+  function injectExtraStyles() {
+    if (document.getElementById("mrs-extra-styles")) return;
     const style = document.createElement("style");
-    style.id = "mrs-styles";
+    style.id = "mrs-extra-styles";
     style.textContent = `
-      .mrs-overlay{position:fixed;inset:0;background:rgba(13,27,42,0.55);display:flex;
-        align-items:center;justify-content:center;z-index:9999;font-family:Georgia,'Times New Roman',serif;}
-      .mrs-modal{background:#fff;width:400px;max-width:92vw;max-height:88vh;overflow-y:auto;
-        border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
-      .mrs-head{background:#0d1b2a;color:#f4f9f9;padding:16px 18px;position:relative;}
-      .mrs-head h1{margin:0;font-size:20px;font-weight:400;}
-      .mrs-head .mrs-sub{font-size:12px;color:#a9c4d4;margin-top:3px;}
-      .mrs-x{position:absolute;top:12px;right:14px;background:none;border:none;color:#a9c4d4;
-        font-size:18px;cursor:pointer;line-height:1;}
-      .mrs-x:hover{color:#fff;}
-      .mrs-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #d8e2e2;}
-      .mrs-stat{padding:12px 6px;text-align:center;border-right:1px solid #d8e2e2;border-bottom:1px solid #d8e2e2;}
-      .mrs-stat:nth-child(3n){border-right:none;}
-      .mrs-stat .n{font-size:20px;color:#1b4965;line-height:1;}
-      .mrs-stat .n.accent{color:#c9922a;}
-      .mrs-stat .n.warn{color:#a4303f;}
-      .mrs-stat .l{margin-top:4px;font-size:9.5px;color:#5c6b73;font-family:Arial,sans-serif;}
-      .mrs-section{padding:12px 18px 16px;border-top:1px solid #d8e2e2;}
-      .mrs-section h2{font-size:11px;font-family:Arial,sans-serif;color:#5c6b73;margin:0 0 8px;font-weight:normal;}
-      .mrs-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dotted #d8e2e2;font-size:12.5px;}
+      .mrs-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+      .mrs-stat{background:var(--glass-fill);border:1px solid var(--glass-border);
+        border-radius:10px;padding:10px 6px;text-align:center;}
+      .mrs-stat .n{font-family:var(--font-display);font-size:19px;color:var(--foam);line-height:1;}
+      .mrs-stat .n.accent{color:var(--glow);}
+      .mrs-stat .n.warn{color:var(--signal);}
+      .mrs-stat .l{margin-top:4px;font-family:var(--font-data);font-size:9px;
+        letter-spacing:0.06em;text-transform:uppercase;color:var(--foam-dim);}
+      .mrs-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;
+        border-bottom:1px dotted var(--glass-border);font-size:13px;color:var(--foam);}
       .mrs-row:last-child{border-bottom:none;}
-      .mrs-row .v{color:#1b4965;}
-      .mrs-empty{padding:40px 24px;text-align:center;color:#5c6b73;font-size:13px;}
-      .mrs-close-row{padding:14px 18px;text-align:center;border-top:1px solid #d8e2e2;}
-      .mrs-close-row button{font-family:Arial,sans-serif;font-size:13px;padding:8px 22px;
-        border:1px solid #1b4965;background:#1b4965;color:#fff;border-radius:3px;cursor:pointer;}
-      .mrs-close-row button:hover{background:#0d1b2a;}
+      .mrs-row .v{color:var(--glow);white-space:nowrap;}
     `;
     document.head.appendChild(style);
   }
@@ -65,28 +58,31 @@
   }
 
   function renderShell() {
-    injectStyles();
+    injectExtraStyles();
     const overlay = document.createElement("div");
-    overlay.className = "mrs-overlay";
+    overlay.className = "drawer-overlay open";
     overlay.id = "mrs-overlay";
-    overlay.innerHTML = `<div class="mrs-modal" id="mrs-modal"><div class="mrs-empty">Loading…</div></div>`;
+    overlay.innerHTML = `<div class="drawer" id="mrs-drawer"></div>`;
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) closeModal();
     });
     document.body.appendChild(overlay);
     document.addEventListener("keydown", onEsc);
-    return document.getElementById("mrs-modal");
+    return document.getElementById("mrs-drawer");
   }
 
-  function renderEmpty(modal, message) {
-    modal.innerHTML = `
-      <div class="mrs-empty">${message}</div>
-      <div class="mrs-close-row"><button id="mrs-ok">OK</button></div>
+  function renderEmpty(drawer, message) {
+    drawer.innerHTML = `
+      <div class="drawer-header">
+        <h4>Member Stats</h4>
+        <button class="drawer-close" id="mrs-x">✕</button>
+      </div>
+      <div class="empty-state">${message}</div>
     `;
-    document.getElementById("mrs-ok").addEventListener("click", closeModal);
+    document.getElementById("mrs-x").addEventListener("click", closeModal);
   }
 
-  function renderMember(modal, name) {
+  function renderMember(drawer, name) {
     const rows = raceRows.filter(r => r.MemberName.trim() === name);
 
     const positions = rows.map(r => num(r.RacePos)).filter(v => v !== null);
@@ -121,26 +117,41 @@
       return `<div class="mrs-row"><span>${reg}${cls ? " (" + cls + ")" : ""}</span><span class="v">${pos.length} races · avg #${avg}</span></div>`;
     }).join("") || `<div class="mrs-row"><span>No regattas</span></div>`;
 
-    modal.innerHTML = `
-      <div class="mrs-head">
-        <button class="mrs-x" id="mrs-x">✕</button>
-        <h1>${name}</h1>
-        <div class="mrs-sub">${races} races across ${regattas.length} regatta${regattas.length === 1 ? "" : "s"}</div>
+    drawer.innerHTML = `
+      <div class="drawer-header">
+        <h4>Race Stats</h4>
+        <button class="drawer-close" id="mrs-x">✕</button>
       </div>
-      <div class="mrs-grid">
-        <div class="mrs-stat"><div class="n accent">${races ? Math.round(wins / races * 100) + "%" : "—"}</div><div class="l">Win Rate</div></div>
-        <div class="mrs-stat"><div class="n">${races ? Math.round(podiums / races * 100) + "%" : "—"}</div><div class="l">Top-3 Rate</div></div>
-        <div class="mrs-stat"><div class="n">${avgPlacing !== null ? avgPlacing.toFixed(1) : "—"}</div><div class="l">Avg Placing</div></div>
-        <div class="mrs-stat"><div class="n">${consistency !== null ? consistency.toFixed(2) : "—"}</div><div class="l">Consistency Index</div></div>
-        <div class="mrs-stat"><div class="n">${best !== null ? "#" + best : "—"}</div><div class="l">Best Finish</div></div>
-        <div class="mrs-stat"><div class="n warn">${worst !== null ? "#" + worst : "—"}</div><div class="l">Worst Finish</div></div>
-        <div class="mrs-stat"><div class="n">${races}</div><div class="l">Races Sailed</div></div>
-        <div class="mrs-stat"><div class="n">${regattas.length}</div><div class="l">Regattas</div></div>
-        <div class="mrs-stat"><div class="n">${podiums}</div><div class="l">Podium Finishes</div></div>
+      <div class="drawer-body">
+        <div class="drawer-name-row">
+          <div class="drawer-avatar">${initials(name)}</div>
+          <div class="drawer-name-col">
+            <div class="drawer-name">${name}</div>
+            <span class="badge badge-default">${races} races · ${regattas.length} regatta${regattas.length === 1 ? "" : "s"}</span>
+          </div>
+        </div>
+
+        <div class="mrs-stat-grid">
+          <div class="mrs-stat"><div class="n accent">${races ? Math.round(wins / races * 100) + "%" : "—"}</div><div class="l">Win Rate</div></div>
+          <div class="mrs-stat"><div class="n">${races ? Math.round(podiums / races * 100) + "%" : "—"}</div><div class="l">Top-3 Rate</div></div>
+          <div class="mrs-stat"><div class="n">${avgPlacing !== null ? avgPlacing.toFixed(1) : "—"}</div><div class="l">Avg Placing</div></div>
+          <div class="mrs-stat"><div class="n">${consistency !== null ? consistency.toFixed(2) : "—"}</div><div class="l">Consistency</div></div>
+          <div class="mrs-stat"><div class="n">${best !== null ? "#" + best : "—"}</div><div class="l">Best Finish</div></div>
+          <div class="mrs-stat"><div class="n warn">${worst !== null ? "#" + worst : "—"}</div><div class="l">Worst Finish</div></div>
+        </div>
+
+        <div class="detail-item full-width">
+          <div class="detail-label">Best Results</div>
+          ${bestHtml}
+        </div>
+
+        <div class="detail-item full-width">
+          <div class="detail-label">By Regatta</div>
+          ${regattaHtml}
+        </div>
+
+        <button class="btn btn-primary" id="mrs-ok" style="width:100%;justify-content:center;">Close</button>
       </div>
-      <div class="mrs-section"><h2>Best Results</h2>${bestHtml}</div>
-      <div class="mrs-section"><h2>By Regatta</h2>${regattaHtml}</div>
-      <div class="mrs-close-row"><button id="mrs-ok">OK</button></div>
     `;
     document.getElementById("mrs-x").addEventListener("click", closeModal);
     document.getElementById("mrs-ok").addEventListener("click", closeModal);
@@ -167,20 +178,21 @@
   }
 
   window.showMemberStats = function (memberName) {
-    const modal = renderShell();
+    const drawer = renderShell();
+    drawer.innerHTML = `<div class="empty-state">Loading…</div>`;
     withData((err) => {
       if (err) {
-        renderEmpty(modal, err.message);
+        renderEmpty(drawer, err.message);
         return;
       }
       const members = [...new Set(raceRows.map(r => r.MemberName.trim()))];
       const match = members.find(m => m.toLowerCase() === memberName.trim().toLowerCase());
       if (!match) {
-        renderEmpty(modal, `No race data found for "${memberName}".`);
+        renderEmpty(drawer, `No race data found for "${memberName}".`);
         console.warn("[memberStatsModal] Available names:", members);
         return;
       }
-      renderMember(modal, match);
+      renderMember(drawer, match);
     });
   };
 })();
