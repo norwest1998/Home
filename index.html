@@ -1541,7 +1541,7 @@
     function chipHTML(r, idx){
       const placeClass = idx < 3 ? ` p${idx + 1}` : '';
       const memberNameParam = encodeURIComponent(r.sailor);
-      return `<div class="finish-chip glass${placeClass}" onclick=openMemberStats(memberNameParam) style="cursor:pointer;">
+      return `<div class="finish-chip glass${placeClass}" onclick="openMemberStats(memberNameParam)" style="cursor:pointer;">
         <div class="pos">${esc(r.pos)}<small>${ordinalSuffix(r.pos)}</small></div>
         <div class="points">${esc(r.points)}</div>
         <div class="sailor">${esc(r.sailor)}</div>
