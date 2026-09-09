@@ -106,18 +106,19 @@
       .sort((a, b) => num(a.RacePos) - num(b.RacePos))
       .slice(0, 5);
     const bestHtml = sortedByPos.map(r =>
-      `<div class="mrs-row"><span>${r.RegattaName || "—"} · Race ${r.RaceNo || "—"}</span><span class="v">#${r.RacePos}</span></div>`
+      `<div class="mrs-row"><span>${r.RegattaName || "—"}${r.Class ? " (" + r.Class + ")" : ""} · Race ${r.RaceNo || "—"}</span><span class="v">#${r.RacePos}</span></div>`
     ).join("") || `<div class="mrs-row"><span>No results</span></div>`;
 
     const byRegatta = {};
     rows.forEach(r => {
-      const key = r.RegattaName || "Unknown";
+      const key = `${r.RegattaName || "Unknown"}|${r.Class || ""}`;
       const p = num(r.RacePos);
       if (p !== null) (byRegatta[key] = byRegatta[key] || []).push(p);
     });
-    const regattaHtml = Object.entries(byRegatta).map(([reg, pos]) => {
+    const regattaHtml = Object.entries(byRegatta).map(([key, pos]) => {
+      const [reg, cls] = key.split("|");
       const avg = (pos.reduce((a, b) => a + b, 0) / pos.length).toFixed(1);
-      return `<div class="mrs-row"><span>${reg}</span><span class="v">${pos.length} races · avg #${avg}</span></div>`;
+      return `<div class="mrs-row"><span>${reg}${cls ? " (" + cls + ")" : ""}</span><span class="v">${pos.length} races · avg #${avg}</span></div>`;
     }).join("") || `<div class="mrs-row"><span>No regattas</span></div>`;
 
     modal.innerHTML = `
