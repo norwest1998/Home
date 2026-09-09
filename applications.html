@@ -341,9 +341,12 @@
     }
 
     function processedOutcome(a) {
-      const explicit = a.result || a.outcome || a.approvalStatus;
-      if (explicit) return String(explicit);
-      return a.rejectionReason ? 'Rejected' : 'Approved';
+      const approved = a.membershipApproved;
+      if (approved === true || String(approved).toUpperCase() === 'TRUE')
+        return 'Approved';
+      if (approved === false || String(approved).toUpperCase() === 'FALSE')
+        return 'Rejected';
+      return 'Processed';
     }
 
     function statusBadge(a) {
