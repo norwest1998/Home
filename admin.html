@@ -398,18 +398,36 @@
                 href: "eventRescheduler.html",
                 status: async () => {
                     const events = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
-                    console.log("Fetched Events:", events); // View actual keys in console
+
+                    // Helper to pull the Rescheduled Date field across header variations
+                    const getReschedVal = (row) => getRowVal(row, [
+                        "Rescheduled Date", 
+                        "RescheduledDate", 
+                        "Reschedule Date"
+                    ]).trim().toLowerCase();
+
+                    // 1. Pending: Column contains "pending" (e.g., "Pending 15/10/2026")
+                    const pendingCount = events.filter(e => {
+                        const val = getReschedVal(e);
+                        return val.includes("pending");
+                    }).length;
+
+                    // 2. Rescheduled: Column is populated with a date string and is no longer pending
+                    const rescheduledCount = events.filter(e => {
+                        const val = getReschedVal(e);
+                        return val !== "" && !val.includes("pending");
+                    }).length;
 
                     return {
                         pills: [
                             {
                                 label: "Pending",
-                                value: events.filter(e => getVal(e, "Status").toLowerCase().includes("pending")).length,
+                                value: pendingCount,
                                 className: "badge-renewal"
                             },
                             {
                                 label: "Rescheduled",
-                                value: events.filter(e => getVal(e, "Status").toLowerCase() === "rescheduled").length,
+                                value: rescheduledCount,
                                 className: "badge-full"
                             }
                         ]
