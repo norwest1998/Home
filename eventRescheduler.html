@@ -60,12 +60,13 @@
     width: 28px;
     height: 28px;
     object-fit: contain;
-    }
+  }
   .class-pill:hover { border-color: var(--glow); }
   .class-pill.active { border-color: var(--signal); box-shadow: 0 0 0 2px rgba(255,106,61,0.3); }
+
   /* Events Table */
   .admin-table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--glass-border); }
-  table.admin-table { width: 100%; border-collapse: collapse; font-size: 13px;  }
+  table.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   table.admin-table th {
     font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
     color: var(--glow); text-align: left; padding: 12px 14px;
@@ -85,7 +86,7 @@
   }
   @media (max-width: 900px) { .action-panel-grid { grid-template-columns: 1fr; } }
 
-  .action-bar { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .action-bar { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
   .btn-approve { background: rgba(74,222,128,0.18); color: #4ade80; border: 1px solid rgba(74,222,128,0.4); }
   .btn-approve:hover { background: rgba(74,222,128,0.28); }
   .btn-hold { background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
@@ -97,11 +98,39 @@
     border: 1px solid var(--glass-border); margin-top: 10px;
   }
 
-  /* Form fields inside the review panel */
+  /* Form fields & Card display inside the review panel */
   .app-detail-grid label { font-family: var(--font-data); font-size: 10.5px; text-transform: uppercase; color: var(--foam-dim); display:block; margin-bottom:4px; }
   .app-detail-grid select {
     width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--glass-border);
     background: rgba(0,0,0,0.25); color: var(--foam); font-size: 13px; margin-bottom: 14px;
+  }
+
+  .event-details-card {
+    padding: 14px 16px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--glass-border);
+  }
+  .event-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+  }
+  .event-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .event-detail-item .lbl {
+    font-family: var(--font-data);
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--foam-dim);
+  }
+  .event-detail-item .val {
+    font-size: 13px;
+    color: var(--foam);
+    font-weight: 600;
   }
 </style>
 </head>
@@ -127,7 +156,6 @@
 <main class="container">
 
   <div class="admin-header">
-    
     <div class="admin-title-group">
       <h1>Reschedule Event</h1>
     </div>
@@ -179,19 +207,34 @@
 
   <div class="action-panel-grid">
 
-    <!-- Selected Event Review Panel -->
-    <div class="panel">
+    <!-- Rescheduling Details Panel -->
+    <div class="panel" id="reschedulePanel">
       <div class="panel-header">
-        <div class="panel-title"><h3 id="reviewTitle">Select an Event</h3></div>
+        <div class="panel-title"><h3>Rescheduling details</h3></div>
       </div>
       <div class="tab-content active">
+        
+        <!-- Top Section: Event to be Rescheduled -->
+        <div class="app-detail-section" style="margin-bottom: 20px;">
+          <span class="app-detail-section-title">Event to be Rescheduled</span>
+          <div id="selectedEventCard" class="event-details-card">
+            <p style="color: var(--foam-dim); margin: 0; font-style: italic;">No event selected. Select an event from the Season Events table above.</p>
+          </div>
+        </div>
+
+        <!-- Bottom Section: Select Available Date & New Details Preview -->
         <div class="app-detail-section">
-          <span class="app-detail-section-title">Reschedule Details</span>
+          <span class="app-detail-section-title">Select Available Date</span>
           <div class="app-detail-grid">
             <div class="app-detail-item full-width">
-              <label>Available Dates (Saturdays, no conflicting competition)</label>
+              <label for="availableDates">Available Dates (Saturdays, no conflicting competition)</label>
               <select id="availableDates"></select>
             </div>
+          </div>
+
+          <span class="app-detail-section-title" style="margin-top: 10px; display: block;">New Event Details to be Approved</span>
+          <div id="newEventPreviewCard" class="event-details-card">
+            <p style="color: var(--foam-dim); margin: 0; font-style: italic;">Select an available date above to populate new event details.</p>
           </div>
         </div>
 
@@ -229,7 +272,7 @@
 
 <script>
 /* =========================================================
-   SHARED ADMIN LOG (same localStorage key as admin.html)
+   SHARED ADMIN LOG
    ========================================================= */
 const AdminLog = {
   add({ fn = "Reschedule Event", sheet = "", field = "", before = "", after = "", status = "success", message = "" }) {
@@ -288,6 +331,35 @@ async function appendSheet(WEBAPP_URL, sheetName, rowData) {
 }
 
 /* =========================================================
+   DATE HELPER
+   ========================================================= */
+function parseLocalDate(dateStr) {
+  if (!dateStr) return null;
+  if (dateStr instanceof Date) return dateStr;
+  const str = String(dateStr).trim().split('T')[0];
+  const parts = str.split(/[-/]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) { // YYYY-MM-DD or YYYY/MM/DD
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+    if (parts[2].length === 4) { // DD/MM/YYYY
+      return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+    }
+  }
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatDate(dateStr) {
+  const d = parseLocalDate(dateStr);
+  if (!d) return dateStr || "—";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}/${m}/${day}`;
+}
+
+/* =========================================================
    RESCHEDULE LOGIC
    ========================================================= */
 let eventData = [];
@@ -296,7 +368,7 @@ let selectedHex = null;
 
 const INSIGNIA_OVERRIDES = { General: 'smmc-logo.png', Social: 'SmileyFace.png' };
 function classInsignia(className) {
-  return `<img src="images/classes/${INSIGNIA_OVERRIDES[className] || className + '.png'}"`;
+  return `<img src="images/classes/${INSIGNIA_OVERRIDES[className] || className + '.png'}" alt="${className}">`;
 }
 
 const now = new Date();
@@ -310,7 +382,6 @@ let selectedClass = "";
 let rescheduledOnly = false;
 
 const availableDates = document.getElementById("availableDates");
-const reviewTitle = document.getElementById("reviewTitle");
 const requestBtn = document.getElementById("requestRescheduleBtn");
 const approveBtn = document.getElementById("approveRescheduleBtn");
 const auditTrail = document.getElementById("auditTrail");
@@ -356,17 +427,9 @@ function renderTable() {
     `).join("")
     : `<tr><td colspan="5" style="text-align:center;color:var(--foam-dim);">No events found.</td></tr>`;
 
-  eventsBody.querySelectorAll(".select-event-btn").forEach(btn =>
-    btn.addEventListener("click", () => selectEvent(btn.dataset.hex))
+  eventsBody.querySelectorAll("tr[data-hex]").forEach(row =>
+    row.addEventListener("click", () => selectEvent(row.dataset.hex))
   );
-}
-
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}/${m}/${day}`;
 }
 
 function getAvailableDates() {
@@ -374,74 +437,139 @@ function getAvailableDates() {
   today.setHours(0, 0, 0, 0);
 
   return eventData.filter(e => {
-    const eventDate = new Date(e.Date);
+    if (!e.Date) return false;
+    const eventDate = parseLocalDate(e.Date);
+    if (!eventDate) return false;
+
+    if (eventDate < today) return false;
+    if (eventDate.getDay() !== 6) return false;
+    if (!String(e.Season).startsWith(String(CURRENT_SEASON_START))) return false;
+
+    const eventName = String(e.Event || "").trim();
+    const regattaType = String(e["Regatta Type"] || "").trim();
 
     return (
-      eventDate >= today &&
-      eventDate.getDay() === 6 &&
-      String(e.Season).startsWith(String(CURRENT_SEASON_START)) &&
-      (e.Event === "Social Sailing" ||e["Regatta Type"] === "Social Sailing" ||e.Event === "No Events" ||e["Regatta Type"] === "No Events")
+      eventName === "Social Sailing" || regattaType === "Social Sailing" ||
+      eventName === "No Events" || regattaType === "No Events" ||
+      (eventName === "" && regattaType === "")
     );
   });
 }
 
 function renderAvailableDates() {
-  availableDates.innerHTML = getAvailableDates().map(e =>
-    `<option value="${e.Date}">${formatDate(e.Date)} (${e.Start}–${e.Finish})</option>`
-  ).join("");
+  const dates = getAvailableDates();
+  if (dates.length === 0) {
+    availableDates.innerHTML = `<option value="">No available Saturday dates found</option>`;
+  } else {
+    availableDates.innerHTML = dates.map(e =>
+      `<option value="${e.Date}">${formatDate(e.Date)} (${e.Start || '11:00'}–${e.Finish || '16:00'}) - ${e.Event || e["Regatta Type"] || "Open Slot"}</option>`
+    ).join("");
+  }
+  renderNewEventPreview();
 }
+
 function selectEvent(hex) {
   selectedHex = hex;
-  const event = eventData.find(e => e.HexKey === hex);
-  reviewTitle.textContent = event
-    ? `Review: ${event.Class} — ${event.Event || event["Regatta Type"] || ""}`
-    : "Select an Event";
-
   renderTable();
-  renderEventSelector();
+  renderSelectedEventDetails();
+  renderNewEventPreview();
+
+  // Smoothly scroll and shift focus to the Rescheduling Details panel
+  const panel = document.getElementById("reschedulePanel");
+  if (panel) {
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    panel.setAttribute("tabindex", "-1");
+    panel.focus({ preventScroll: true });
+  }
 }
 
-const eventSelector = document.getElementById("eventSelector");
-
-function renderEventSelector() {
+function renderSelectedEventDetails() {
+  const container = document.getElementById("selectedEventCard");
   if (!selectedHex) {
-    eventSelector.innerHTML = "";
+    container.innerHTML = `<p style="color: var(--foam-dim); margin: 0; font-style: italic;">No event selected. Select an event from the Season Events table above.</p>`;
     return;
   }
 
+  const event = eventData.find(e => e.HexKey === selectedHex);
+  if (!event) {
+    container.innerHTML = `<p style="color: var(--foam-dim); margin: 0; font-style: italic;">Selected event details not found.</p>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="event-details-grid">
+      <div class="event-detail-item">
+        <span class="lbl">Date</span>
+        <span class="val">${formatDate(event.Date)}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Class</span>
+        <span class="val">${event.Class || '—'}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Event Name</span>
+        <span class="val">${event.Event || event["Regatta Type"] || '—'}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Time</span>
+        <span class="val">${event.Start || ''} – ${event.Finish || ''}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Current Status</span>
+        <span class="val">${(event["Rescheduled Date"] || "").includes("Pending") 
+          ? 'Pending Reschedule' 
+          : event["Rescheduled Date"] ? 'Rescheduled' : 'Scheduled'}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderNewEventPreview() {
+  const container = document.getElementById("newEventPreviewCard");
   const selectedEvent = eventData.find(e => e.HexKey === selectedHex);
+  const targetDateStr = availableDates.value;
 
   if (!selectedEvent) {
-    eventSelector.innerHTML = "";
+    container.innerHTML = `<p style="color: var(--foam-dim); margin: 0; font-style: italic;">Select an event above first to preview new event details.</p>`;
     return;
   }
 
-  const selectedDate = availableDates.value;
-
-  const destinationEvent = eventData.find(
-    e => e.Date === selectedDate
-  );
-
-  let html = `
-    <option value="${selectedEvent.HexKey}">
-      ${formatDate(selectedEvent.Date)} - ${selectedEvent.Class} - ${selectedEvent.Event || selectedEvent["Regatta Type"]}
-    </option>
-  `;
-
-  if (destinationEvent) {
-    html += `
-      <option value="${destinationEvent.HexKey}">
-        ${formatDate(destinationEvent.Date)} - ${destinationEvent.Class} - ${destinationEvent.Event || destinationEvent["Regatta Type"]}
-      </option>
-    `;
+  if (!targetDateStr) {
+    container.innerHTML = `<p style="color: var(--foam-dim); margin: 0; font-style: italic;">Select an available date above to populate new event details.</p>`;
+    return;
   }
 
-  eventSelector.innerHTML = html;
+  const targetEvent = eventData.find(e => e.Date === targetDateStr);
+  const proposedStart = (selectedEvent.Start || "").includes("AM") ? "11:00" : "14:00";
+  const proposedFinish = (selectedEvent.Start || "").includes("AM") ? "13:00" : "16:00";
+
+  container.innerHTML = `
+    <div class="event-details-grid">
+      <div class="event-detail-item">
+        <span class="lbl">Proposed New Date</span>
+        <span class="val" style="color: var(--glow);">${formatDate(targetDateStr)}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Class</span>
+        <span class="val">${selectedEvent.Class || '—'}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Event Name</span>
+        <span class="val">${selectedEvent.Event || selectedEvent["Regatta Type"] || '—'}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Proposed Time</span>
+        <span class="val">${proposedStart} – ${proposedFinish}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Target Slot Info</span>
+        <span class="val">${targetEvent ? (targetEvent.Event || targetEvent["Regatta Type"] || "Open Slot") : "Open Slot"}</span>
+      </div>
+    </div>
+  `;
 }
 
-availableDates.addEventListener("change", () => {
-  renderEventSelector();
-});
+availableDates.addEventListener("change", renderNewEventPreview);
 
 /* --- Request Reschedule --- */
 requestBtn.addEventListener("click", async () => {
@@ -449,6 +577,7 @@ requestBtn.addEventListener("click", async () => {
   const newDate = availableDates.value;
   if (!newDate) { logAction("No available date selected."); return; }
 
+  const currentEvent = eventData.find(e => e.HexKey === selectedHex);
   requestBtn.disabled = true;
   try {
     await updateSheet(SHEETS.calWebAppUrl, "Event Data", selectedHex, {
@@ -460,7 +589,7 @@ requestBtn.addEventListener("click", async () => {
       before: "", after: "Pending " + newDate, status: "success", message: "Reschedule requested"
     });
 
-    logAction(`Reschedule requested for ${selectedHex} → ${formatDate(e.Date)}`);
+    logAction(`Reschedule requested for ${currentEvent ? currentEvent.Class : selectedHex} → ${formatDate(newDate)}`);
     await loadData();
   } catch (err) {
     AdminLog.add({ fn: "Reschedule Event", status: "error", message: err.message });
@@ -482,11 +611,11 @@ approveBtn.addEventListener("click", async () => {
   approveBtn.disabled = true;
   try {
     const newDate = event["Rescheduled Date"].replace("Pending ", "");
-    const d = new Date(newDate);
-    const newMonth = d.toLocaleString("en-AU", { month: "short" });
-    const newDateFmt = formatDate(e.Date);
-    const start = event.Start.includes("AM") ? "11:00" : "14:00";
-    const finish = event.Start.includes("AM") ? "13:00" : "16:00";
+    const d = parseLocalDate(newDate);
+    const newMonth = d ? d.toLocaleString("en-AU", { month: "short" }) : "";
+    const newDateFmt = formatDate(newDate);
+    const start = (event.Start || "").includes("AM") ? "11:00" : "14:00";
+    const finish = (event.Start || "").includes("AM") ? "13:00" : "16:00";
 
     await appendSheet(SHEETS.calWebAppUrl, "Event Data", {
       HexKey: crypto.randomUUID(),
@@ -494,11 +623,11 @@ approveBtn.addEventListener("click", async () => {
       Date: newDateFmt,
       Start: start,
       Finish: finish,
-      Emblem: event.Emblem,
-      Class: event.Class,
-      "Regatta Type": event["Regatta Type"],
-      Competition: event.Competition,
-      Season: event.Season,
+      Emblem: event.Emblem || "",
+      Class: event.Class || "",
+      "Regatta Type": event["Regatta Type"] || "",
+      Competition: event.Competition || "",
+      Season: event.Season || "",
       "Round no": "",
       Results: ""
     });
@@ -512,7 +641,7 @@ approveBtn.addEventListener("click", async () => {
       before: event["Rescheduled Date"], after: newDateFmt, status: "success", message: "Reschedule approved"
     });
 
-    logAction(`Reschedule approved for ${selectedHex} → ${newDateFmt}`);
+    logAction(`Reschedule approved for ${event.Class} → ${newDateFmt}`);
     await loadData();
   } catch (err) {
     AdminLog.add({ fn: "Reschedule Event", status: "error", message: err.message });
@@ -531,18 +660,13 @@ rescheduledToggle.addEventListener("click", () => {
 function renderClassPills() {
   classPillGroup.innerHTML = classes
   .filter(c => c.ClassName !== "Marblehead")
-  .map(c => {
-    console.log(classInsignia(c.ClassName))
-    return `
+  .map(c => `
     <button class="class-pill ${c.ClassName === selectedClass ? 'active' : ''}"
-    data-class="${c.ClassName}"
-    title="${c.ClassName}">
-    ${classInsignia(c.ClassName)}
+      data-class="${c.ClassName}"
+      title="${c.ClassName}">
+      ${classInsignia(c.ClassName)}
     </button>
-    `;
-    })
-  .join("");
-
+  `).join("");
 
   classPillGroup.querySelectorAll(".class-pill").forEach(btn =>
     btn.addEventListener("click", () => {
@@ -565,14 +689,13 @@ async function loadData() {
     renderStats();
     renderTable();
     renderAvailableDates();
+    renderSelectedEventDetails();
   } catch (err) {
     eventsBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
   }
 }
 
 loadData();
-renderAvailableDates();
-renderEventSelector();
 if (window.lucide) lucide.createIcons();
 </script>
 </body>
