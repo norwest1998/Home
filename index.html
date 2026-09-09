@@ -1418,7 +1418,10 @@
 
       document.getElementById('tableHead').innerHTML =
         '<tr>' + headers.map((h, i) => `<th class="${centerCols[i] ? 'col-center' : ''}">${h}</th>`).join('') + '</tr>';
-    
+console.log('Headers:', headers);
+console.log('Sailor Index:', sailorIdx);
+console.log('First Row:', rows[0]);
+console.log('Sailor Value:', rows[0]?.[sailorIdx]);
       document.getElementById('tableBody').innerHTML =
         rows.map(r => '<tr>' + r.map((c, i) => `<td class="${centerCols[i] ? 'col-center' : ''}" onclick="showMemberStats('${esc(r[sailorIdx])}')">${c}</td>`).join('') + '</tr>').join('');
     }
