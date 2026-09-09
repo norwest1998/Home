@@ -1,4 +1,4 @@
-ace<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -197,7 +197,7 @@ ace<!DOCTYPE html>
 
 <script>
 // ---- CONFIGURE THIS ----
-const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/edit?usp=sharing";
+const CSV_URL = "PASTE_PUBLISHED_CSV_URL_HERE";
 // -------------------------
 
 let raceRows = [];
@@ -205,6 +205,11 @@ let raceRows = [];
 function num(v){
   const n = parseFloat(v);
   return isNaN(n) ? null : n;
+}
+
+function getMemberParam(){
+  const params = new URLSearchParams(window.location.search);
+  return params.get('memberName') || params.get('member') || null;
 }
 
 function loadData(){
@@ -232,6 +237,17 @@ function loadData(){
       select.innerHTML = '<option value="">Select a member…</option>' +
         members.map(m => `<option value="${m}">${m}</option>`).join('');
       statusEl.textContent = `Loaded ${raceRows.length} race entries · ${members.length} members`;
+
+      const requested = getMemberParam();
+      if(requested){
+        const match = members.find(m => m.toLowerCase() === requested.toLowerCase());
+        if(match){
+          select.value = match;
+          renderMember(match);
+        } else {
+          statusEl.textContent += ` · No match found for "${requested}"`;
+        }
+      }
     },
     error: function(err){
       statusEl.textContent = 'Could not load sheet — check the CSV URL and sharing settings.';
