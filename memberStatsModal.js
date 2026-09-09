@@ -9,7 +9,7 @@
  * Setup: set CSV_URL below to your published Google Sheet CSV link.
  */
 (function () {
-  const CSV_URL = "PASTE_PUBLISHED_CSV_URL_HERE";
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/edit?usp=sharing";
 
   let raceRows = null; // cached after first load
 
