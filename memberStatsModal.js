@@ -82,6 +82,29 @@
     document.getElementById("mrs-x").addEventListener("click", closeModal);
   }
 
+  function computeWinRateRank(name, minRaces) {
+    const byMember = {};
+    raceRows.forEach(r => {
+      const n = r.MemberName.trim();
+      const p = num(r.RacePos);
+      if (p === null) return;
+      (byMember[n] = byMember[n] || []).push(p);
+    });
+
+    const ranked = Object.entries(byMember)
+      .map(([n, positions]) => ({
+        name: n,
+        races: positions.length,
+        winRate: positions.filter(p => p === 1).length / positions.length
+      }))
+      .filter(m => m.races >= minRaces)
+      .sort((a, b) => b.winRate - a.winRate);
+
+    const idx = ranked.findIndex(m => m.name === name);
+    if (idx === -1) return null; // not qualified (didn't meet minRaces)
+    return { rank: idx + 1, of: ranked.length };
+  }
+
   function renderMember(drawer, name) {
     const rows = raceRows.filter(r => r.MemberName.trim() === name);
 
@@ -97,6 +120,7 @@
     const consistency = consistVals.length ? consistVals.reduce((a, b) => a + b, 0) / consistVals.length : null;
 
     const regattas = [...new Set(rows.map(r => r.RegattaName).filter(Boolean))];
+    const winRateRank = computeWinRateRank(name, 5);
 
     const sortedByPos = rows.filter(r => num(r.RacePos) !== null)
       .sort((a, b) => num(a.RacePos) - num(b.RacePos))
@@ -132,7 +156,9 @@
         </div>
 
         <div class="mrs-stat-grid">
-          <div class="mrs-stat"><div class="n accent">${races ? Math.round(wins / races * 100) + "%" : "—"}</div><div class="l">Win Rate</div></div>
+          <div class="mrs-stat"><div class="n accent">${races ? Math.round(wins / races * 100) + "%" : "—"}</div><div class="l">Win Rate</div>
+            ${winRateRank ? `<div class="l" style="margin-top:2px;color:var(--glow);">Rank #${winRateRank.rank} of ${winRateRank.of}</div>` : ""}
+          </div>
           <div class="mrs-stat"><div class="n">${races ? Math.round(podiums / races * 100) + "%" : "—"}</div><div class="l">Top-3 Rate</div></div>
           <div class="mrs-stat"><div class="n">${avgPlacing !== null ? avgPlacing.toFixed(1) : "—"}</div><div class="l">Avg Placing</div></div>
           <div class="mrs-stat"><div class="n">${consistency !== null ? consistency.toFixed(2) : "—"}</div><div class="l">Consistency</div></div>
