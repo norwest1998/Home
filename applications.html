@@ -341,11 +341,26 @@
     }
 
     function processedOutcome(a) {
-      const approved = a.membershipApproved;
-      if (approved === true || String(approved).toUpperCase() === 'TRUE')
-        return 'Approved';
-      if (approved === false || String(approved).toUpperCase() === 'FALSE')
+      const approved =
+        a.membershipApproved ??
+        a.membershipapproved ??
+        a.membership_approved ??
+        a["Membership Approved"];
+
+      if (
+        approved === false ||
+        String(approved).trim().toUpperCase() === 'FALSE'
+      ) {
         return 'Rejected';
+      }
+
+      if (
+        approved === true ||
+        String(approved).trim().toUpperCase() === 'TRUE'
+      ) {
+        return 'Approved';
+      }
+
       return 'Processed';
     }
 
