@@ -361,13 +361,28 @@ function renderTable() {
   );
 }
 
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}/${m}/${day}`;
+}
+
 function getAvailableDates() {
-  return eventData.filter(e =>
-    String(e.Season).startsWith(String(CURRENT_SEASON_START)) &&
-    !e.Competition &&
-    !isNaN(new Date(e.Date)) &&
-    new Date(e.Date).getDay() === 6
-  );
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return eventData.filter(e => {
+    const eventDate = new Date(e.Date);
+
+    return (
+      eventDate >= today &&
+      eventDate.getDay() === 6 &&
+      String(e.Season).startsWith(String(CURRENT_SEASON_START)) &&
+      (e.Event === "Social Sailing" ||e["Regatta Type"] === "Social Sailing" ||e.Event === "No Events" ||e["Regatta Type"] === "No Events")
+    );
+  });
 }
 
 function renderAvailableDates() {
