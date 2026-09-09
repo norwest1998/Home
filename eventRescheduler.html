@@ -359,6 +359,40 @@ function parseLocalDate(dateStr) {
   return isNaN(d.getTime()) ? null : d;
 }
 
+function parseLocalDate(dateStr) {
+  if (!dateStr) return null;
+  if (dateStr instanceof Date) return dateStr;
+  const str = String(dateStr).trim();
+  if (!str) return null;
+
+  // Handles UTC ISO timestamps from Google Sheets (e.g. 2026-07-31T14:00:00.000Z)
+  if (str.includes("T")) {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      // Returns local Midnight using local year, month, and day
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+  }
+
+  // Handles plain string formats like YYYY-MM-DD or DD/MM/YYYY
+  const parts = str.split(/[-/.]/);
+  if (parts.length === 3) {
+    const p0 = parseInt(parts[0], 10);
+    const p1 = parseInt(parts[1], 10);
+    const p2 = parseInt(parts[2], 10);
+
+    if (parts[0].length === 4) { // YYYY-MM-DD
+      return new Date(p0, p1 - 1, p2);
+    }
+    if (parts[2].length === 4) { // DD/MM/YYYY
+      return new Date(p2, p1 - 1, p0);
+    }
+  }
+
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function formatDate(dateStr) {
   const d = parseLocalDate(dateStr);
   if (!d) return dateStr || "—";
