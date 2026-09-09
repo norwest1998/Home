@@ -1527,11 +1527,21 @@
       const s = ['th','st','nd','rd'], v = n % 100;
       return s[(v - 20) % 10] || s[v] || s[0];
     }
-
+    
+    function openMemberStats(memberName){
+      const w = 400, h = 560;
+      const left = (screen.width - w) / 2;
+      const top = (screen.height - h) / 2;
+      window.open(
+        `member-race-stats.html?memberName=${encodeURIComponent(memberName)}`,
+        'memberStats',
+        `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+    }
     function chipHTML(r, idx){
       const placeClass = idx < 3 ? ` p${idx + 1}` : '';
       const memberNameParam = encodeURIComponent(r.sailor);
-      return `<div class="finish-chip glass${placeClass}" onclick="window.location.href='memberRaceStats.html?memberName=${memberNameParam}'" style="cursor:pointer;">
+      return `<div class="finish-chip glass${placeClass}" onclick=openMemberStats(memberNameParam) style="cursor:pointer;">
         <div class="pos">${esc(r.pos)}<small>${ordinalSuffix(r.pos)}</small></div>
         <div class="points">${esc(r.points)}</div>
         <div class="sailor">${esc(r.sailor)}</div>
