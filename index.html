@@ -1414,7 +1414,7 @@
     
       const CENTER_HEADERS = /^(R\d+|Round\s*\d+|Pos|Result|Sail\s*#|Total|Drop|W|T3|T5|Rank|Discard)$/i;
       const centerCols = headers.map(h => CENTER_HEADERS.test(String(h).trim()));
-      const sailorIdx = headers.findIndex(h =>String(h).trim().toLowerCase() === 'sailor');
+      const sailorIdx = headers.findIndex(h =>String(h).trim().toLowerCase() === 'member name');
 
       document.getElementById('tableHead').innerHTML =
         '<tr>' + headers.map((h, i) => `<th class="${centerCols[i] ? 'col-center' : ''}">${h}</th>`).join('') + '</tr>';
