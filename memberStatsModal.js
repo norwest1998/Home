@@ -14,6 +14,7 @@
   const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/export?format=csv&gid=0";
 
   let raceRows = null; // cached after first load
+  let currentMemberName = null;
 
   function num(v) {
     const n = parseFloat(v);
@@ -82,7 +83,7 @@
     document.getElementById("mrs-x").addEventListener("click", closeModal);
   }
 
-  function computeWinRateRank(name, minRaces) {
+  function buildWinRateLeaderboard(minRaces) {
     const byMember = {};
     raceRows.forEach(r => {
       const n = r.MemberName.trim();
@@ -91,21 +92,65 @@
       (byMember[n] = byMember[n] || []).push(p);
     });
 
-    const ranked = Object.entries(byMember)
+    return Object.entries(byMember)
       .map(([n, positions]) => ({
         name: n,
         races: positions.length,
+        wins: positions.filter(p => p === 1).length,
         winRate: positions.filter(p => p === 1).length / positions.length
       }))
       .filter(m => m.races >= minRaces)
       .sort((a, b) => b.winRate - a.winRate);
+  }
 
+  function computeWinRateRank(name, minRaces) {
+    const ranked = buildWinRateLeaderboard(minRaces);
     const idx = ranked.findIndex(m => m.name === name);
     if (idx === -1) return null; // not qualified (didn't meet minRaces)
     return { rank: idx + 1, of: ranked.length };
   }
 
+  function showWinRateLeaderboard() {
+    const minRaces = 5;
+    const ranked = buildWinRateLeaderboard(minRaces).slice(0, 10);
+
+    const rowsHtml = ranked.map((m, i) => {
+      const isCurrent = m.name === currentMemberName;
+      return `<div class="mrs-row"${isCurrent ? ' style="color:var(--glow);font-weight:600;"' : ""}>
+        <span>#${i + 1} ${m.name}</span>
+        <span class="v">${Math.round(m.winRate * 100)}% · ${m.wins}/${m.races}</span>
+      </div>`;
+    }).join("") || `<div class="mrs-row"><span>No qualifying sailors yet</span></div>`;
+
+    injectExtraStyles();
+    const overlay = document.createElement("div");
+    overlay.className = "drawer-overlay open";
+    overlay.id = "mrs-leaderboard-overlay";
+    overlay.innerHTML = `
+      <div class="drawer">
+        <div class="drawer-header">
+          <h4>Top 10 · Win Rate</h4>
+          <button class="drawer-close" id="mrs-lb-x">✕</button>
+        </div>
+        <div class="drawer-body">
+          <div class="detail-item full-width">
+            <div class="detail-label">Minimum ${minRaces} races to qualify</div>
+            ${rowsHtml}
+          </div>
+          <button class="btn btn-primary" id="mrs-lb-ok" style="width:100%;justify-content:center;">Close</button>
+        </div>
+      </div>
+    `;
+    const closeLb = () => overlay.remove();
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeLb(); });
+    document.body.appendChild(overlay);
+    document.getElementById("mrs-lb-x").addEventListener("click", closeLb);
+    document.getElementById("mrs-lb-ok").addEventListener("click", closeLb);
+  }
+  window.showWinRateLeaderboard = showWinRateLeaderboard;
+
   function renderMember(drawer, name) {
+    currentMemberName = name;
     const rows = raceRows.filter(r => r.MemberName.trim() === name);
 
     const positions = rows.map(r => num(r.RacePos)).filter(v => v !== null);
@@ -156,7 +201,8 @@
         </div>
 
         <div class="mrs-stat-grid">
-          <div class="mrs-stat"><div class="n accent">${races ? Math.round(wins / races * 100) + "%" : "—"}</div><div class="l">Win Rate</div>
+          <div class="mrs-stat" onclick="showWinRateLeaderboard()" style="cursor:pointer;" title="See top 10">
+            <div class="n accent">${races ? Math.round(wins / races * 100) + "%" : "—"}</div><div class="l">Win Rate</div>
             ${winRateRank ? `<div class="l" style="margin-top:2px;color:var(--glow);">Rank #${winRateRank.rank} of ${winRateRank.of}</div>` : ""}
           </div>
           <div class="mrs-stat"><div class="n">${races ? Math.round(podiums / races * 100) + "%" : "—"}</div><div class="l">Top-3 Rate</div></div>
