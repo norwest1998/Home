@@ -156,10 +156,6 @@
 </head>
 <body>
 
-  <div class="toolbar">
-    <select id="memberSelect"><option value="">Loading data…</option></select>
-    <button id="loadBtn">Refresh</button>
-  </div>
   <div class="status" id="status"></div>
 
   <div class="empty" id="emptyState">
@@ -233,20 +229,19 @@ function loadData(){
     skipEmptyLines: true,
     complete: function(results){
       raceRows = results.data.filter(r => r.MemberName && r.MemberName.trim());
-      const members = [...new Set(raceRows.map(r => r.MemberName.trim()))].sort();
-      select.innerHTML = '<option value="">Select a member…</option>' +
-        members.map(m => `<option value="${m}">${m}</option>`).join('');
+      const members = [...new Set(raceRows.map(r => r.MemberName.trim()))];
       statusEl.textContent = `Loaded ${raceRows.length} race entries · ${members.length} members`;
 
       const requested = getMemberParam();
-      if(requested){
-        const match = members.find(m => m.toLowerCase() === requested.toLowerCase());
-        if(match){
-          select.value = match;
-          renderMember(match);
-        } else {
-          statusEl.textContent += ` · No match found for "${requested}"`;
-        }
+      if(!requested){
+        statusEl.textContent = 'No memberName provided in URL.';
+        return;
+      }
+      const match = members.find(m => m.toLowerCase() === requested.toLowerCase());
+      if(match){
+        renderMember(match);
+      } else {
+        statusEl.textContent += ` · No match found for "${requested}"`;
       }
     },
     error: function(err){
