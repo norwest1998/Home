@@ -1419,7 +1419,7 @@
         '<tr>' + headers.map((h, i) => `<th class="${centerCols[i] ? 'col-center' : ''}">${h}</th>`).join('') + '</tr>';
     
       document.getElementById('tableBody').innerHTML =
-        rows.map(r => '<tr>' + r.map((c, i) => `<td class="${centerCols[i] ? 'col-center' : ''}">${c}</td>`).join('') + '</tr>').join('');
+        rows.map(r => '<tr>' + r.map((c, i) => `<td class="${centerCols[i] ? 'col-center' : ''}" onclick="showMemberStats('${esc(r.sailor)}')">${c}</td>`).join('') + '</tr>').join('');
     }
     
     let activeClass = Object.keys(RESULTS_CONFIG)[0];
