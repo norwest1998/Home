@@ -1373,10 +1373,14 @@
     
     async function getSheetsForClass(classKey){
       if (sheetListCache[classKey]) return sheetListCache[classKey];
-    
+ 
       const cls = RESULTS_CONFIG[classKey];
+      if (!cls.spreadsheetId) {
+        throw new Error(`No scoresheets configured for ${cls.label}`);
+      }   
       const res = await fetch(`${DISCOVERY_URL}?ss=${cls.spreadsheetId}`);
       const data = await res.json();
+
       if (data.error) throw new Error(data.error);
       sheetListCache[classKey] = data.sheets;
       return sheetListCache[classKey];
@@ -1418,10 +1422,6 @@
 
       document.getElementById('tableHead').innerHTML =
         '<tr>' + headers.map((h, i) => `<th class="${centerCols[i] ? 'col-center' : ''}">${h}</th>`).join('') + '</tr>';
-console.log('Headers:', headers);
-console.log('Sailor Index:', sailorIdx);
-console.log('First Row:', rows[0]);
-console.log('Sailor Value:', rows[0]?.[sailorIdx]);
       document.getElementById('tableBody').innerHTML =
         rows.map(r => '<tr>' + r.map((c, i) => `<td class="${centerCols[i] ? 'col-center' : ''}" onclick="showMemberStats('${esc(r[sailorIdx])}')">${c}</td>`).join('') + '</tr>').join('');
     }
@@ -1660,13 +1660,7 @@ console.log('Sailor Value:', rows[0]?.[sailorIdx]);
 
     /**
      * Member Race Stats — Modal Portal
-     * -----------------------------------------------------------------
-     * Include this file on any page, then call:
-     *     showMemberStats("Peter Burton");
-     * It fetches the race archive CSV, finds the member, and shows an
-     * in-page modal overlay with their stats. No popup window needed.
-     *
-     * Setup: set CSV_URL below to your published Google Sheet CSV link.
+     * Include this file on any page, then call: showMemberStats("place member name here");
      */
     (function () {
       const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/edit?usp=sharing";
