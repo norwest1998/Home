@@ -343,7 +343,7 @@ function renderTable() {
   eventsBody.innerHTML = rows.length
     ? rows.map(e => `
       <tr data-hex="${e.HexKey}" class="${e.HexKey === selectedHex ? 'selected' : ''}">
-        <td>${new Date(e.Date).toLocaleDateString("en-AU")}</td>
+        <td>${formatDate(e.Date)}</td>
         <td>${e.Class}</td>
         <td>${e.Event || e["Regatta Type"] || ""}</td>
         <td>${(e["Rescheduled Date"] || "").includes("Pending")
@@ -387,16 +387,61 @@ function getAvailableDates() {
 
 function renderAvailableDates() {
   availableDates.innerHTML = getAvailableDates().map(e =>
-    `<option value="${e.Date}">${new Date(e.Date).toLocaleDateString("en-AU")} (${e.Start}–${e.Finish})</option>`
+    `<option value="${e.Date}">${formatDate(e.Date)} (${e.Start}–${e.Finish})</option>`
   ).join("");
 }
-
 function selectEvent(hex) {
   selectedHex = hex;
   const event = eventData.find(e => e.HexKey === hex);
-  reviewTitle.textContent = event ? `Review: ${event.Class} — ${event.Event || event["Regatta Type"] || ""}` : "Select an Event";
+  reviewTitle.textContent = event
+    ? `Review: ${event.Class} — ${event.Event || event["Regatta Type"] || ""}`
+    : "Select an Event";
+
   renderTable();
+  renderEventSelector();
 }
+
+const eventSelector = document.getElementById("eventSelector");
+
+function renderEventSelector() {
+  if (!selectedHex) {
+    eventSelector.innerHTML = "";
+    return;
+  }
+
+  const selectedEvent = eventData.find(e => e.HexKey === selectedHex);
+
+  if (!selectedEvent) {
+    eventSelector.innerHTML = "";
+    return;
+  }
+
+  const selectedDate = availableDates.value;
+
+  const destinationEvent = eventData.find(
+    e => e.Date === selectedDate
+  );
+
+  let html = `
+    <option value="${selectedEvent.HexKey}">
+      ${formatDate(selectedEvent.Date)} - ${selectedEvent.Class} - ${selectedEvent.Event || selectedEvent["Regatta Type"]}
+    </option>
+  `;
+
+  if (destinationEvent) {
+    html += `
+      <option value="${destinationEvent.HexKey}">
+        ${formatDate(destinationEvent.Date)} - ${destinationEvent.Class} - ${destinationEvent.Event || destinationEvent["Regatta Type"]}
+      </option>
+    `;
+  }
+
+  eventSelector.innerHTML = html;
+}
+
+availableDates.addEventListener("change", () => {
+  renderEventSelector();
+});
 
 /* --- Request Reschedule --- */
 requestBtn.addEventListener("click", async () => {
@@ -415,7 +460,7 @@ requestBtn.addEventListener("click", async () => {
       before: "", after: "Pending " + newDate, status: "success", message: "Reschedule requested"
     });
 
-    logAction(`Reschedule requested for ${selectedHex} → ${new Date(newDate).toLocaleDateString("en-AU")}`);
+    logAction(`Reschedule requested for ${selectedHex} → ${formatDate(e.Date)}`);
     await loadData();
   } catch (err) {
     AdminLog.add({ fn: "Reschedule Event", status: "error", message: err.message });
@@ -439,7 +484,7 @@ approveBtn.addEventListener("click", async () => {
     const newDate = event["Rescheduled Date"].replace("Pending ", "");
     const d = new Date(newDate);
     const newMonth = d.toLocaleString("en-AU", { month: "short" });
-    const newDateFmt = d.toLocaleDateString("en-AU");
+    const newDateFmt = formatDate(e.Date);
     const start = event.Start.includes("AM") ? "11:00" : "14:00";
     const finish = event.Start.includes("AM") ? "13:00" : "16:00";
 
@@ -526,6 +571,8 @@ async function loadData() {
 }
 
 loadData();
+renderAvailableDates();
+renderEventSelector();
 if (window.lucide) lucide.createIcons();
 </script>
 </body>
