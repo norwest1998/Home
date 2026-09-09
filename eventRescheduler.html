@@ -336,17 +336,26 @@ async function appendSheet(WEBAPP_URL, sheetName, rowData) {
 function parseLocalDate(dateStr) {
   if (!dateStr) return null;
   if (dateStr instanceof Date) return dateStr;
-  const str = String(dateStr).trim().split('T')[0];
-  const parts = str.split(/[-/]/);
+  const str = String(dateStr).trim();
+  if (!str) return null;
+
+  const cleanStr = str.split('T')[0];
+  const parts = cleanStr.split(/[-/.]/);
+
   if (parts.length === 3) {
-    if (parts[0].length === 4) { // YYYY-MM-DD or YYYY/MM/DD
-      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    const p0 = parseInt(parts[0], 10);
+    const p1 = parseInt(parts[1], 10);
+    const p2 = parseInt(parts[2], 10);
+
+    if (parts[0].length === 4) { // YYYY-MM-DD
+      return new Date(p0, p1 - 1, p2);
     }
     if (parts[2].length === 4) { // DD/MM/YYYY
-      return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+      return new Date(p2, p1 - 1, p0);
     }
   }
-  const d = new Date(dateStr);
+
+  const d = new Date(str);
   return isNaN(d.getTime()) ? null : d;
 }
 
@@ -360,7 +369,7 @@ function formatDate(dateStr) {
 }
 
 function formatTime(timeStr) {
-  if (!timeStr) return "—";
+  if (!timeStr) return "11:00 AM";
   const str = String(timeStr).trim();
   
   // If time string is ISO format containing date/time like 2026-08-01T01:00:00.000Z
@@ -375,8 +384,8 @@ function formatTime(timeStr) {
     }
   }
   
-  // Standard HH:MM strings
-  if (/^\d{1,2}:\d{2}$/.test(str)) {
+  // Standard HH:MM or HH:MM:SS strings
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(str)) {
     const [h, m] = str.split(':').map(Number);
     const ampm = h >= 12 ? 'PM' : 'AM';
     const h12 = h % 12 || 12;
@@ -463,49 +472,86 @@ function getAvailableDates() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  return eventData.filter(e => {
+  // 1. Gather all future Saturday events in the dataset
+  const futureSaturdays = eventData.filter(e => {
     if (!e.Date) return false;
-    const eventDate = parseLocalDate(e.Date);
-    if (!eventDate) return false;
+    const d = parseLocalDate(e.Date);
+    return d && d >= today && d.getDay() === 6;
+  });
 
-    if (eventDate < today) return false;
-    if (eventDate.getDay() !== 6) return false;
-    if (!String(e.Season).startsWith(String(CURRENT_SEASON_START))) return false;
-
-    const eventName = String(e.Event || "").trim();
-    const regattaType = String(e["Regatta Type"] || "").trim();
-
+  // 2. Filter for social / open slots
+  const openSlots = futureSaturdays.filter(e => {
+    const evt = String(e.Event || "").trim().toLowerCase();
+    const reg = String(e["Regatta Type"] || "").trim().toLowerCase();
     return (
-      eventName === "Social Sailing" || regattaType === "Social Sailing" ||
-      eventName === "No Events" || regattaType === "No Events" ||
-      (eventName === "" && regattaType === "")
+      evt === "" || reg === "" ||
+      evt.includes("social") || reg.includes("social") ||
+      evt.includes("no event") || reg.includes("no event") ||
+      evt.includes("open") || reg.includes("open") ||
+      evt.includes("free sail") || reg.includes("free sail") ||
+      evt.includes("practice") || reg.includes("practice")
     );
   });
+
+  // 3. Fallback to all future Saturdays if no strict social slots exist
+  return openSlots.length > 0 ? openSlots : futureSaturdays;
 }
 
 function renderAvailableDates(extraDate = null) {
   let dates = getAvailableDates();
   
+  // Deduplicate by formatted date string
+  const uniqueDatesMap = new Map();
+  dates.forEach(e => {
+    const dateKey = formatDate(e.Date);
+    if (!uniqueDatesMap.has(dateKey)) {
+      uniqueDatesMap.set(dateKey, e);
+    }
+  });
+
   if (extraDate) {
-    const exists = dates.some(e => e.Date === extraDate);
-    if (!exists) {
-      const existingMatch = eventData.find(e => e.Date === extraDate);
-      if (existingMatch) {
-        dates.push(existingMatch);
+    const extraFmt = formatDate(extraDate);
+    if (!uniqueDatesMap.has(extraFmt)) {
+      const match = eventData.find(e => formatDate(e.Date) === extraFmt);
+      if (match) {
+        uniqueDatesMap.set(extraFmt, match);
       } else {
-        dates.push({ Date: extraDate, Start: "11:00", Finish: "16:00", Event: "Rescheduled Target" });
+        uniqueDatesMap.set(extraFmt, { Date: extraDate, Start: "11:00", Finish: "16:00", Event: "Rescheduled Target" });
       }
-      dates.sort((a, b) => (parseLocalDate(a.Date) || 0) - (parseLocalDate(b.Date) || 0));
     }
   }
 
-  if (dates.length === 0) {
-    availableDates.innerHTML = `<option value="">No available Saturday dates found</option>`;
-  } else {
-    availableDates.innerHTML = dates.map(e =>
-      `<option value="${e.Date}">${formatDate(e.Date)} (${formatTime(e.Start)}–${formatTime(e.Finish)}) - ${e.Event || e["Regatta Type"] || "Open Slot"}</option>`
+  const sortedDates = Array.from(uniqueDatesMap.values()).sort((a, b) => {
+    const dA = parseLocalDate(a.Date) || 0;
+    const dB = parseLocalDate(b.Date) || 0;
+    return dA - dB;
+  });
+
+  if (sortedDates.length === 0) {
+    // Dynamic generator fallback: Upcoming 12 Saturdays
+    const generated = [];
+    let curr = new Date();
+    curr.setHours(0, 0, 0, 0);
+    while (curr.getDay() !== 6) {
+      curr.setDate(curr.getDate() + 1);
+    }
+    for (let i = 0; i < 12; i++) {
+      const dStr = `${curr.getFullYear()}/${String(curr.getMonth() + 1).padStart(2, '0')}/${String(curr.getDate()).padStart(2, '0')}`;
+      generated.push({ Date: dStr, Start: "11:00", Finish: "16:00", Event: "Open Saturday" });
+      curr.setDate(curr.getDate() + 7);
+    }
+    
+    availableDates.innerHTML = generated.map(e =>
+      `<option value="${e.Date}">${formatDate(e.Date)} (${formatTime(e.Start)}–${formatTime(e.Finish)}) - ${e.Event}</option>`
     ).join("");
+  } else {
+    availableDates.innerHTML = sortedDates.map(e => {
+      const title = e.Event || e["Regatta Type"] || "Open Slot";
+      return `<option value="${e.Date}">${formatDate(e.Date)} (${formatTime(e.Start)}–${formatTime(e.Finish)}) - ${title}</option>`;
+    }).join("");
   }
+
+  renderNewEventPreview();
 }
 
 function selectEvent(hex) {
