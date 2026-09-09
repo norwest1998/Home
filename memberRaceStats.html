@@ -115,6 +115,22 @@
     border-radius:3px;
     font-size:11px;
   }
+  .close-row{
+    padding:14px 18px;
+    text-align:center;
+    border-top:1px solid var(--line);
+  }
+  .close-row button{
+    font-family:Arial, sans-serif;
+    font-size:13px;
+    padding:8px 22px;
+    border:1px solid var(--sea);
+    background:var(--sea);
+    color:#fff;
+    border-radius:3px;
+    cursor:pointer;
+  }
+  .close-row button:hover{background:var(--navy);}
 </style>
 </head>
 <body>
@@ -123,6 +139,9 @@
 
   <div class="empty" id="emptyState">
     Paste your published CSV URL into <code>CSV_URL</code> near the top of this file's script, then reload.
+  </div>
+  <div class="close-row" id="emptyClose" style="display:none;border-top:none;">
+    <button onclick="window.close()">OK</button>
   </div>
 
   <div class="card" id="card">
@@ -152,6 +171,10 @@
       <h2>By Regatta</h2>
       <div id="regattaList" class="regatta-list"></div>
     </div>
+
+    <div class="close-row">
+      <button onclick="window.close()">OK</button>
+    </div>
   </div>
 
 <script>
@@ -168,7 +191,11 @@ function num(v){
 
 function getMemberParam(){
   const params = new URLSearchParams(window.location.search);
-  return params.get('memberName') || params.get('member') || null;
+  let val = params.get('memberName') || params.get('member') || null;
+  if(val && val.includes('%')){
+    try { val = decodeURIComponent(val); } catch(e) {}
+  }
+  return val;
 }
 
 function loadData(){
@@ -178,12 +205,12 @@ function loadData(){
 
   if(!CSV_URL || CSV_URL.indexOf('PASTE_') === 0){
     statusEl.textContent = '';
-    emptyEl.style.display = 'block';
+    emptyEl.style.display = 'block'; document.getElementById('emptyClose').style.display = 'block';
     return;
   }
   if(!requested){
     emptyEl.textContent = 'No memberName provided in the URL.';
-    emptyEl.style.display = 'block';
+    emptyEl.style.display = 'block'; document.getElementById('emptyClose').style.display = 'block';
     return;
   }
 
@@ -204,14 +231,14 @@ function loadData(){
         renderMember(match);
       } else {
         emptyEl.textContent = `No race data found for "${requested}".`;
-        emptyEl.style.display = 'block';
+        emptyEl.style.display = 'block'; document.getElementById('emptyClose').style.display = 'block';
         statusEl.textContent = '';
       }
     },
     error: function(err){
       statusEl.textContent = '';
       emptyEl.textContent = 'Could not load sheet — check the CSV URL and sharing settings.';
-      emptyEl.style.display = 'block';
+      emptyEl.style.display = 'block'; document.getElementById('emptyClose').style.display = 'block';
     }
   });
 }
