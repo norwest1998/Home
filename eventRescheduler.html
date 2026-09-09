@@ -214,15 +214,15 @@
       </div>
       <div class="tab-content active">
         
-        <!-- Top Section: Event to be Rescheduled -->
+        <!-- Top Section: Original Event to be Rescheduled -->
         <div class="app-detail-section" style="margin-bottom: 20px;">
-          <span class="app-detail-section-title">Event to be Rescheduled</span>
+          <span class="app-detail-section-title">Original Event (Event to be Rescheduled)</span>
           <div id="selectedEventCard" class="event-details-card">
             <p style="color: var(--foam-dim); margin: 0; font-style: italic;">No event selected. Select an event from the Season Events table above.</p>
           </div>
         </div>
 
-        <!-- Bottom Section: Select Available Date & New Details Preview -->
+        <!-- Bottom Section: Select Available Date & Rescheduled Event Data -->
         <div class="app-detail-section">
           <span class="app-detail-section-title">Select Available Date</span>
           <div class="app-detail-grid">
@@ -232,9 +232,9 @@
             </div>
           </div>
 
-          <span class="app-detail-section-title" style="margin-top: 10px; display: block;">New Event Details to be Approved</span>
+          <span class="app-detail-section-title" style="margin-top: 10px; display: block;">Rescheduled Event Data (Destination Details)</span>
           <div id="newEventPreviewCard" class="event-details-card">
-            <p style="color: var(--foam-dim); margin: 0; font-style: italic;">Select an available date above to populate new event details.</p>
+            <p style="color: var(--foam-dim); margin: 0; font-style: italic;">Select an available date above to populate event details.</p>
           </div>
         </div>
 
@@ -331,7 +331,7 @@ async function appendSheet(WEBAPP_URL, sheetName, rowData) {
 }
 
 /* =========================================================
-   DATE HELPER
+   DATE & TIME HELPERS
    ========================================================= */
 function parseLocalDate(dateStr) {
   if (!dateStr) return null;
@@ -357,6 +357,33 @@ function formatDate(dateStr) {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}/${m}/${day}`;
+}
+
+function formatTime(timeStr) {
+  if (!timeStr) return "—";
+  const str = String(timeStr).trim();
+  
+  // If time string is ISO format containing date/time like 2026-08-01T01:00:00.000Z
+  if (str.includes("T")) {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      let hours = d.getHours();
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const h12 = hours % 12 || 12;
+      return `${String(h12).padStart(2, '0')}:${minutes} ${ampm}`;
+    }
+  }
+  
+  // Standard HH:MM strings
+  if (/^\d{1,2}:\d{2}$/.test(str)) {
+    const [h, m] = str.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
+  }
+
+  return str;
 }
 
 /* =========================================================
@@ -456,20 +483,46 @@ function getAvailableDates() {
   });
 }
 
-function renderAvailableDates() {
-  const dates = getAvailableDates();
+function renderAvailableDates(extraDate = null) {
+  let dates = getAvailableDates();
+  
+  if (extraDate) {
+    const exists = dates.some(e => e.Date === extraDate);
+    if (!exists) {
+      const existingMatch = eventData.find(e => e.Date === extraDate);
+      if (existingMatch) {
+        dates.push(existingMatch);
+      } else {
+        dates.push({ Date: extraDate, Start: "11:00", Finish: "16:00", Event: "Rescheduled Target" });
+      }
+      dates.sort((a, b) => (parseLocalDate(a.Date) || 0) - (parseLocalDate(b.Date) || 0));
+    }
+  }
+
   if (dates.length === 0) {
     availableDates.innerHTML = `<option value="">No available Saturday dates found</option>`;
   } else {
     availableDates.innerHTML = dates.map(e =>
-      `<option value="${e.Date}">${formatDate(e.Date)} (${e.Start || '11:00'}–${e.Finish || '16:00'}) - ${e.Event || e["Regatta Type"] || "Open Slot"}</option>`
+      `<option value="${e.Date}">${formatDate(e.Date)} (${formatTime(e.Start)}–${formatTime(e.Finish)}) - ${e.Event || e["Regatta Type"] || "Open Slot"}</option>`
     ).join("");
   }
-  renderNewEventPreview();
 }
 
 function selectEvent(hex) {
   selectedHex = hex;
+  const selectedEvent = eventData.find(e => e.HexKey === hex);
+
+  let targetResDate = "";
+  if (selectedEvent && selectedEvent["Rescheduled Date"]) {
+    targetResDate = selectedEvent["Rescheduled Date"].replace(/^Pending\s+/, "").trim();
+  }
+
+  renderAvailableDates(targetResDate);
+
+  if (targetResDate) {
+    availableDates.value = targetResDate;
+  }
+
   renderTable();
   renderSelectedEventDetails();
   renderNewEventPreview();
@@ -499,7 +552,7 @@ function renderSelectedEventDetails() {
   container.innerHTML = `
     <div class="event-details-grid">
       <div class="event-detail-item">
-        <span class="lbl">Date</span>
+        <span class="lbl">Original Date</span>
         <span class="val">${formatDate(event.Date)}</span>
       </div>
       <div class="event-detail-item">
@@ -512,10 +565,10 @@ function renderSelectedEventDetails() {
       </div>
       <div class="event-detail-item">
         <span class="lbl">Time</span>
-        <span class="val">${event.Start || ''} – ${event.Finish || ''}</span>
+        <span class="val">${formatTime(event.Start)} – ${formatTime(event.Finish)}</span>
       </div>
       <div class="event-detail-item">
-        <span class="lbl">Current Status</span>
+        <span class="lbl">Reschedule Status</span>
         <span class="val">${(event["Rescheduled Date"] || "").includes("Pending") 
           ? 'Pending Reschedule' 
           : event["Rescheduled Date"] ? 'Rescheduled' : 'Scheduled'}</span>
@@ -539,14 +592,17 @@ function renderNewEventPreview() {
     return;
   }
 
-  const targetEvent = eventData.find(e => e.Date === targetDateStr);
-  const proposedStart = (selectedEvent.Start || "").includes("AM") ? "11:00" : "14:00";
-  const proposedFinish = (selectedEvent.Start || "").includes("AM") ? "13:00" : "16:00";
+  // Find destination event for that class on the rescheduled date
+  const targetClassEvent = eventData.find(e => e.Date === targetDateStr && e.Class === selectedEvent.Class);
+  const targetDateSlot = eventData.find(e => e.Date === targetDateStr);
+
+  const proposedStart = selectedEvent.Start || (targetClassEvent ? targetClassEvent.Start : "11:00");
+  const proposedFinish = selectedEvent.Finish || (targetClassEvent ? targetClassEvent.Finish : "16:00");
 
   container.innerHTML = `
     <div class="event-details-grid">
       <div class="event-detail-item">
-        <span class="lbl">Proposed New Date</span>
+        <span class="lbl">Rescheduled Date</span>
         <span class="val" style="color: var(--glow);">${formatDate(targetDateStr)}</span>
       </div>
       <div class="event-detail-item">
@@ -558,12 +614,12 @@ function renderNewEventPreview() {
         <span class="val">${selectedEvent.Event || selectedEvent["Regatta Type"] || '—'}</span>
       </div>
       <div class="event-detail-item">
-        <span class="lbl">Proposed Time</span>
-        <span class="val">${proposedStart} – ${proposedFinish}</span>
+        <span class="lbl">Time</span>
+        <span class="val">${formatTime(proposedStart)} – ${formatTime(proposedFinish)}</span>
       </div>
       <div class="event-detail-item">
-        <span class="lbl">Target Slot Info</span>
-        <span class="val">${targetEvent ? (targetEvent.Event || targetEvent["Regatta Type"] || "Open Slot") : "Open Slot"}</span>
+        <span class="lbl">Existing Slot Info</span>
+        <span class="val">${targetClassEvent ? (targetClassEvent.Event || targetClassEvent["Regatta Type"]) : (targetDateSlot ? (targetDateSlot.Event || targetDateSlot["Regatta Type"] || "Open Slot") : "Open Slot")}</span>
       </div>
     </div>
   `;
