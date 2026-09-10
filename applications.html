@@ -446,7 +446,6 @@
       try {
         const res  = await fetch(`${  HOME_DATA_API}?action=applicationsList`);
         const data = await res.json();
-        console.log('sample row:', JSON.stringify(data.applications?.[0]));
         if (data.error) throw new Error(data.error);
         allApplications = data.applications || [];
         renderTable();
@@ -531,6 +530,7 @@
         document.getElementById('reviewTitle').textContent = `Application Review: ${d.fullName || name}`;
 
         const badge = statusBadge(d);
+        if (badge.includes('processed')) console.log('raw record:', d, ' badge:', badge);
         document.getElementById('reviewContent').innerHTML = `
           <div class="app-status-badge ${badge.cls}">
             ${esc(badge.label) || '—'}
