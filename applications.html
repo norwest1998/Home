@@ -530,7 +530,7 @@
         document.getElementById('reviewTitle').textContent = `Application Review: ${d.fullName || name}`;
 
         const badge = statusBadge(d);
-        if (badge.includes('processed')) console.log('raw record:', d, ' badge:', badge);
+        if (badge === 'processed') console.log('raw record:', d, ' badge:', badge);
         document.getElementById('reviewContent').innerHTML = `
           <div class="app-status-badge ${badge.cls}">
             ${esc(badge.label) || '—'}
