@@ -280,21 +280,9 @@
     GOOGLE SHEETS MODULE
     ========================================================= */
     const SHEETS = {
-      calendar: {
-        WebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
-        sheet: "Event Data",
-        sheetId: 2034430354
-      },
-      club: {
-        WebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
-        sheet: "Members",
-        SpreadsheetId: "1nFqeV1U0c_RLaZK4amf7QR1MMwB9q8gZLc4HriUH9iI",
-        sheetId: 0
-      },
-      appl: {
-        SpreadsheetId: "1N9SFZ65rx7EA6XDBh7FUEmI504r_1aF3NYUVOg8g8Xk",
-        sheetId : 573855322 
-      }
+      calWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
+      clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
+      applicationsSheetId: "1N9SFZ65rx7EA6XDBh7FUEmI504r_1aF3NYUVOg8g8Xk/edit?resourcekey=&gid=573855322#gid=573855322"
     };
 
     /* =========================================================
@@ -353,11 +341,7 @@
     }
 
     function processedOutcome(a) {
-      const approved =
-        a.membershipApproved ??
-        a.membershipapproved ??
-        a.membership_approved ??
-        a["Membership Approved"];
+      const approved = a.approved;
 
       if (
         approved === false ||
@@ -379,7 +363,6 @@
     function statusBadge(a) {
       const s = String(a.status || '').toLowerCase();
       if (s.includes('processed')) {
-        console.log('raw record:', a);
         const outcome = processedOutcome(a);
         return { label: outcome, cls: outcome.toLowerCase().includes('reject') ? 'status-rejected' : 'status-approved' };
       }
@@ -430,7 +413,7 @@
 
     async function loadApplications() {
       try {
-        const res  = await fetch(`${HOME_DATA_API}?action=applicationsList`);
+        const res  = await fetch(`${  HOME_DATA_API}?action=applicationsList`);
         const data = await res.json();
         console.log('sample row:', JSON.stringify(data.applications?.[0]));
         if (data.error) throw new Error(data.error);
