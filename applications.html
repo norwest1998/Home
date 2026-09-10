@@ -28,11 +28,16 @@
   }
 
   /* Admin Quick Stats Bar */
-  .admin-stats-row {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+  .admin-stats-bar {
+    display: flex; align-items: stretch; gap: 16px; margin-bottom: 24px;
   }
+  .admin-stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; flex: 1;
+  }
+  .admin-stat-card--turnaround { flex: 0 0 180px; justify-content: center; }
   @media (max-width: 860px) { .admin-stats-row { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 480px) { .admin-stats-row { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) { .admin-stats-bar { flex-wrap: wrap; } .admin-stat-card--turnaround { flex-basis: 100%; } }
 
   .admin-stat-card {
     padding: 16px; display: flex; flex-direction: column; gap: 6px;
@@ -186,22 +191,28 @@
     </div>
 
     <!-- Admin Quick Stats -->
-    <div class="admin-stats-row">
-      <div class="admin-stat-card glass">
-        <span class="lbl">Received</span>
-        <span class="num" id="statReceived" style="color:#60a5fa;">—</span>
+    <div class="admin-stats-bar">
+      <div class="admin-stats-row">
+        <div class="admin-stat-card glass">
+          <span class="lbl">Received</span>
+          <span class="num" id="statReceived" style="color:#60a5fa;">—</span>
+        </div>
+        <div class="admin-stat-card glass">
+          <span class="lbl">In Progress</span>
+          <span class="num" id="statInProgress" style="color:#fbbf24;">—</span>
+        </div>
+        <div class="admin-stat-card glass">
+          <span class="lbl">Awaiting Approval</span>
+          <span class="num" id="statAwaitingApproval" style="color:var(--signal);">—</span>
+        </div>
+        <div class="admin-stat-card glass">
+          <span class="lbl">Processed</span>
+          <span class="num" id="statProcessed" style="color:var(--glow);">—</span>
+        </div>
       </div>
-      <div class="admin-stat-card glass">
-        <span class="lbl">In Progress</span>
-        <span class="num" id="statInProgress" style="color:#fbbf24;">—</span>
-      </div>
-      <div class="admin-stat-card glass">
-        <span class="lbl">Awaiting Approval</span>
-        <span class="num" id="statAwaitingApproval" style="color:var(--signal);">—</span>
-      </div>
-      <div class="admin-stat-card glass">
-        <span class="lbl">Processed</span>
-        <span class="num" id="statProcessed" style="color:var(--glow);">—</span>
+      <div class="admin-stat-card glass admin-stat-card--turnaround">
+        <span class="lbl">Avg Turnaround</span>
+        <span class="num" id="statAvgTurnaround" style="color:#a78bfa;">—</span>
       </div>
     </div>
 
@@ -360,11 +371,21 @@
       return 'Processed';
     }
 
+    function daysSince(dateStr) {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return null;
+      return (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
+    }
+
     function statusBadge(a) {
       const s = String(a.status || '').toLowerCase();
       if (s.includes('processed')) {
         const outcome = processedOutcome(a);
         return { label: outcome, cls: outcome.toLowerCase().includes('reject') ? 'status-rejected' : 'status-approved' };
+      }
+      const age = daysSince(a.lastUpdated);
+      if (age !== null && age > 3) {
+        return { label: 'Urgent, Attention required', cls: 'status-urgent' };
       }
       return { label: a.status, cls: appStatusCSSClass(a.status) };
     }
@@ -383,6 +404,15 @@
       document.getElementById('statInProgress').textContent       = counts.progress;
       document.getElementById('statAwaitingApproval').textContent = counts.awaiting;
       document.getElementById('statProcessed').textContent        = counts.processed;
+
+      const turnArounds = apps
+        .map(a => Number(a.turnAround))
+        .filter(n => !isNaN(n));
+      const avgTurnaround = turnArounds.length
+        ? (turnArounds.reduce((sum, n) => sum + n, 0) / turnArounds.length)
+        : null;
+      document.getElementById('statAvgTurnaround').textContent =
+        avgTurnaround === null ? '—' : `${avgTurnaround.toFixed(1)}d`;
     }
 
     function renderTable() {
