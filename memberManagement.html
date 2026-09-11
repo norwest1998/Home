@@ -357,7 +357,11 @@
         async function submitPaidBatch() {
             const updates = [...document.querySelectorAll('.paid-chk')]
                 .filter(c => c.checked !== (c.dataset.initial === 'true'))
-                .map(c => ({ row: parseInt(c.dataset.row, 10), isPaid: c.checked }));
+                .map(c => {
+                    const row = parseInt(c.dataset.row, 10);
+                    const member = paidMembers.find(m => m.row === row);
+                    return { row, isPaid: c.checked, name: member ? member.name : undefined };
+                });
             if (!updates.length) return;
 
             const btn = document.getElementById('savePaidBtn');
@@ -424,7 +428,7 @@
 
             try {
                 const tasks = [];
-                if (isPaid) tasks.push(apiPost('markPaid', { row: selectedMember.row, isPaid: true }));
+                if (isPaid) tasks.push(apiPost('markPaid', { row: selectedMember.row, isPaid: true, name: selectedMember.name }));
                 if (isSend) tasks.push(apiPost('sendUpdateRequest', { member: selectedMember }));
                 await Promise.all(tasks);
                 showMsg('memberMsg', 'Action(s) completed successfully.', false);
