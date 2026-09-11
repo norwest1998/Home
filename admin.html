@@ -448,7 +448,7 @@
                     const getType = (r) => getRowVal(r, ["Membership Type", "Type", "Membership"]).toLowerCase();
                     const getPaid = (r) => getRowVal(r, ["Paid-up", "Paid Up", "PaidUp", "Paid"]).toLowerCase();
 
-                    const isActive = (r) => getStatus(r) === true;
+                    const isActive = (r) => ["true", "yes", "paid"].includes(getStatus(r));
                     const isPaid = (r) => ["true", "yes", "paid"].includes(getPaid(r));
 
                     const active = members.filter(isActive).length;
