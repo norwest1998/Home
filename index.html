@@ -1585,7 +1585,7 @@
         
         // Set and display class emblem icon
         if (emblemEl && data.event) {
-          const clsName = data.event.championship || data.event.boatClass;
+          const clsName = data.event.className || data.event.boatClass;
           const emblemUrl = getClassImage(clsName);
           if (emblemUrl) {
             emblemEl.src = emblemUrl;
