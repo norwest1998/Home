@@ -825,12 +825,27 @@ async function addToCalendar(hexKey) {
   const event = eventData.find(e => e.HexKey === hexKey);
   if (!event) return;
 
-  logAction(`Adding "${event.Class} - ${event.Event || event["Regatta Type"]}" to Calendar...`);
+  logAction(`Exporting "${event.Class} - ${event.Event || event["Regatta Type"]}" to Google Calendar...`);
   try {
-    await updateSheet(SHEETS.calWebAppUrl, "Event Data", hexKey, { AddedStatus: "Synced" });
+    const res = await fetch(SHEETS.calWebAppUrl, {
+      method: "POST",
+      body: JSON.stringify({ action: "exportToCalendar", hexKey: hexKey })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
     event.AddedStatus = "Synced";
-    AdminLog.add({ hexCode: hexKey, name: event.Class, field: "AddedStatus", before: "", after: "Synced", status: "success", message: "Exported to Calendar" });
-    logAction(`Successfully added event to Calendar!`);
+    AdminLog.add({
+      hexCode: hexKey,
+      name: event.Class,
+      field: "AddedStatus",
+      before: "",
+      after: "Synced",
+      status: "success",
+      message: "Exported to Google Calendar"
+    });
+
+    logAction(`Successfully created event in Google Calendar!`);
     renderStats();
     renderTable();
   } catch (err) {
@@ -838,18 +853,20 @@ async function addToCalendar(hexKey) {
   }
 }
 
+/* --- Bulk Calendar Export --- */
 btnBulkExport.addEventListener("click", async () => {
   btnBulkExport.disabled = true;
   logAction("Initiating bulk export to Google Calendar...");
   try {
-    const unsynced = eventData.filter(e => String(e.Season).startsWith(String(selectedSeason)) && !e.AddedStatus);
-    for (const e of unsynced) {
-      await updateSheet(SHEETS.calWebAppUrl, "Event Data", e.HexKey, { AddedStatus: "Synced" });
-      e.AddedStatus = "Synced";
-    }
-    logAction(`Bulk Sync Complete: ${unsynced.length} events processed.`);
-    renderStats();
-    renderTable();
+    const res = await fetch(SHEETS.calWebAppUrl, {
+      method: "POST",
+      body: JSON.stringify({ action: "exportToCalendar", hexKey: null })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    logAction(`Bulk Sync Complete: ${data.count || 0} events added to Google Calendar.`);
+    await loadData();
   } catch (err) {
     logAction(`Bulk export error: ${err.message}`);
   } finally {
