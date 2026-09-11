@@ -572,18 +572,27 @@
   /* Layout the dynamic content horizontally inside the Next Event card */
   #event-display-container {
     display: flex;
-    flex-direction: row;
+    flex-direction: column; /* Stack event header above weather cards */
     align-items: center;
-    justify-content: space-around;
-    gap: 12px;
+    justify-content: center;
+    gap: 16px;
     width: 100%;
     padding-top: 12px;
-    overflow-x: auto; /* Enables smooth scrolling if there are many hours */
   }
 
-  /* Hourly weather card styling inside the container */
-  #event-display-container .weather-card,
-  #event-display-container .hour-card {
+  .race-event-header { text-align: center; }
+
+  .hourly-weather-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .hourly-weather-row .hour-card {
     flex: 1;
     min-width: 80px;
     max-width: 120px;
@@ -591,8 +600,14 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 10px;
+    padding: 12px 8px;
+    border-radius: 10px;
   }
+
+  .hour-card .time { font-size: 0.85em; opacity: 0.85; margin-bottom: 4px; }
+  .hour-card .temp { font-size: 1.4em; font-weight: bold; color: #00e676; margin-bottom: 4px; }
+  .hour-card .wind, .hour-card .rain { font-size: 0.9em; opacity: 0.85; }
+  .hour-card .uv { font-size: 0.9em; font-weight: 600; color: #ff9100; margin-top: 2px; }
 
   /* Card Container */
   .race-card {
@@ -1114,86 +1129,85 @@
           </div>
 
           <div id="event-display-container">
-            <!-- Race Header -->
-            <div class="race-event-header" style="text-align: center;">
+            <div class="race-event-header">
               <h2 style="margin: 0; font-size: 1.5rem;">DF95 Handicap</h2>
               <div style="color: #ffd700; font-weight: bold; margin-top: 4px;">11:00 – 13:00</div>
             </div>
 
-            <!-- Hourly Weather Cards aligned horizontally -->
+            <!-- Horizontally aligned hourly weather cards -->
             <div class="hourly-weather-row">
               <div class="hour-card glass">
                 <span class="time">11:00</span>
-                <div class="temp" style="color: #00e676; font-size: 1.5rem; font-weight: bold;">20°</div>
+                <div class="temp">20°</div>
                 <div class="wind">3.2 ⬇</div>
                 <div class="rain">0 mm</div>
-                <div class="uv" style="color: #ff9100;">UV 6</div>
+                <div class="uv">UV 6</div>
               </div>
 
               <div class="hour-card glass">
                 <span class="time">12:00</span>
-                <div class="temp" style="color: #00e676; font-size: 1.5rem; font-weight: bold;">21°</div>
+                <div class="temp">21°</div>
                 <div class="wind">3.5 ⬇</div>
                 <div class="rain">0 mm</div>
-                <div class="uv" style="color: #ff9100;">UV 6</div>
+                <div class="uv">UV 6</div>
               </div>
 
               <div class="hour-card glass">
                 <span class="time">13:00</span>
-                <div class="temp" style="color: #00e676; font-size: 1.5rem; font-weight: bold;">22°</div>
+                <div class="temp">22°</div>
                 <div class="wind">4 ⬇</div>
                 <div class="rain">0 mm</div>
-                <div class="uv" style="color: #ff9100;">UV 6</div>
+                <div class="uv">UV 6</div>
               </div>
             </div>
           </div>
         </div>
 
-          <div class="weather-week">
-            <div class="day-pill">
-              <span class="d-name">Sat</span>
-              <span class="d-icon">☀️</span>
-              <span class="d-temp">22°C</span>
-              <span class="d-wind">12 kts E</span>
-            </div>
-            <div class="day-pill">
-              <span class="d-name">Sun</span>
-              <span class="d-icon">🌤️</span>
-              <span class="d-temp">21°C</span>
-              <span class="d-wind">15 kts NE</span>
-            </div>
-            <div class="day-pill">
-              <span class="d-name">Mon</span>
-              <span class="d-icon">🌧️</span>
-              <span class="d-temp">18°C</span>
-              <span class="d-wind">18 kts S</span>
-            </div>
-            <div class="day-pill">
-              <span class="d-name">Tue</span>
-              <span class="d-icon">⛅</span>
-              <span class="d-temp">19°C</span>
-              <span class="d-wind">10 kts SE</span>
-            </div>
-            <div class="day-pill">
-              <span class="d-name">Wed</span>
-              <span class="d-icon">☀️</span>
-              <span class="d-temp">23°C</span>
-              <span class="d-wind">8 kts E</span>
-            </div>
-            <div class="day-pill">
-              <span class="d-name">Thu</span>
-              <span class="d-icon">☀️</span>
-              <span class="d-temp">24°C</span>
-              <span class="d-wind">11 kts NE</span>
-            </div>
-            <div class="day-pill">
-              <span class="d-name">Fri</span>
-              <span class="d-icon">🌤️</span>
-              <span class="d-temp">22°C</span>
-              <span class="d-wind">14 kts E</span>
-            </div>
+        <div class="weather-week">
+          <div class="day-pill">
+            <span class="d-name">Sat</span>
+            <span class="d-icon">☀️</span>
+            <span class="d-temp">22°C</span>
+            <span class="d-wind">12 kts E</span>
+          </div>
+          <div class="day-pill">
+            <span class="d-name">Sun</span>
+            <span class="d-icon">🌤️</span>
+            <span class="d-temp">21°C</span>
+            <span class="d-wind">15 kts NE</span>
+          </div>
+          <div class="day-pill">
+            <span class="d-name">Mon</span>
+            <span class="d-icon">🌧️</span>
+            <span class="d-temp">18°C</span>
+            <span class="d-wind">18 kts S</span>
+          </div>
+          <div class="day-pill">
+            <span class="d-name">Tue</span>
+            <span class="d-icon">⛅</span>
+            <span class="d-temp">19°C</span>
+            <span class="d-wind">10 kts SE</span>
+          </div>
+          <div class="day-pill">
+            <span class="d-name">Wed</span>
+            <span class="d-icon">☀️</span>
+            <span class="d-temp">23°C</span>
+            <span class="d-wind">8 kts E</span>
+          </div>
+          <div class="day-pill">
+            <span class="d-name">Thu</span>
+            <span class="d-icon">☀️</span>
+            <span class="d-temp">24°C</span>
+            <span class="d-wind">11 kts NE</span>
+          </div>
+          <div class="day-pill">
+            <span class="d-name">Fri</span>
+            <span class="d-icon">🌤️</span>
+            <span class="d-temp">22°C</span>
+            <span class="d-wind">14 kts E</span>
           </div>
         </div>
+      </div>
 
 
 
