@@ -21,6 +21,31 @@
     .panel-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
     .panel-toolbar .search-wrap { flex: 1; min-width: 200px; margin-bottom: 0; }
 
+    /* Dark select controls (native <select> ignores theme.css input styling otherwise) */
+    select.mm-select {
+        padding: 10px 38px 10px 14px;
+        border-radius: 10px;
+        background-color: var(--ocean-mid, #0f2030);
+        color: var(--foam, #eaf6ff);
+        border: 1px solid var(--glass-border);
+        font-size: 13.5px;
+        font-family: inherit;
+        outline: none;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23eaf6ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 14px;
+        cursor: pointer;
+    }
+    select.mm-select option {
+        background-color: var(--ocean-mid, #0f2030);
+        color: var(--foam, #eaf6ff);
+    }
+    select.mm-select.mm-select-wide { width: 100%; padding: 12px 40px 12px 16px; font-size: 14px; }
+    select.mm-select.mm-select-inline { min-width: 160px; }
+
     /* Member row list (bulk paid + select member reuse this) */
     .member-rows { max-height: 360px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
     .member-row {
@@ -95,43 +120,16 @@
             </div>
         </div>
 
-        <!-- 1. BULK UPDATE PAID MEMBERS -->
-        <div class="section-head"><h2>Update Paid Members</h2><p>Bulk mark members as paid / not paid.</p></div>
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title"><span class="dot"></span><h3>Members</h3></div>
-                <div class="panel-toolbar">
-                    <div class="search-wrap">
-                        <span class="search-icon">🔍</span>
-                        <input class="search-input" id="paidSearch" placeholder="Search by name…">
-                    </div>
-                </div>
-            </div>
-            <div class="tab-content active">
-                <div class="select-all-row">
-                    <label class="checkbox-inline">
-                        <input type="checkbox" id="selectAllPaid" onchange="toggleSelectAllPaid(this)">
-                        <span>Select all</span>
-                    </label>
-                    <button type="button" class="btn" id="savePaidBtn" onclick="submitPaidBatch()" disabled>Save Changes</button>
-                </div>
-                <div id="paidRows" class="member-rows"><div class="empty-state">Loading members…</div></div>
-                <div class="fn-message" id="paidMsg"></div>
-            </div>
-        </div>
-
-        <!-- 2. SELECT MEMBER -->
+        <!-- 1. SELECT MEMBER -->
         <div class="section-head"><h2>Select Member</h2><p>Mark a single member paid and/or send them an update request.</p></div>
         <div class="panel">
             <div class="panel-header">
                 <div class="panel-title"><span class="dot"></span><h3>Member Actions</h3></div>
             </div>
             <div class="tab-content active">
-                <div class="search-wrap">
-                    <select id="memberSelect" class="search-input" onchange="handleMemberSelect()">
-                        <option value="" selected>Loading members…</option>
-                    </select>
-                </div>
+                <select id="memberSelect" class="mm-select mm-select-wide" onchange="handleMemberSelect()">
+                    <option value="" selected>Loading members…</option>
+                </select>
 
                 <div id="previewCard" class="preview-card">
                     <p><span>Member ID</span><strong id="pvId"></strong></p>
@@ -144,6 +142,39 @@
                     <button type="button" class="btn" id="memberSubmitBtn" style="margin-top:14px;" onclick="submitMemberActions()" disabled>Submit</button>
                     <div class="fn-message" id="memberMsg"></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- 2. BULK UPDATE PAID MEMBERS -->
+        <div class="section-head"><h2>Update Paid Members</h2><p>Bulk mark members as paid / not paid.</p></div>
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title"><span class="dot"></span><h3>Members</h3></div>
+                <div class="panel-toolbar">
+                    <div class="search-wrap">
+                        <span class="search-icon">🔍</span>
+                        <input class="search-input" id="paidSearch" placeholder="Search by name…">
+                    </div>
+                    <select id="paidActiveFilter" class="mm-select mm-select-inline">
+                        <option value="all">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    <select id="paidMembershipFilter" class="mm-select mm-select-inline">
+                        <option value="all">All Membership Types</option>
+                    </select>
+                </div>
+            </div>
+            <div class="tab-content active">
+                <div class="select-all-row">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" id="selectAllPaid" onchange="toggleSelectAllPaid(this)">
+                        <span>Select all</span>
+                    </label>
+                    <button type="button" class="btn" id="savePaidBtn" onclick="submitPaidBatch()" disabled>Save Changes</button>
+                </div>
+                <div id="paidRows" class="member-rows"><div class="empty-state">Loading members…</div></div>
+                <div class="fn-message" id="paidMsg"></div>
             </div>
         </div>
 
@@ -228,7 +259,7 @@
         }
 
         /* ============================================================
-        1. BULK UPDATE PAID MEMBERS
+        2. BULK UPDATE PAID MEMBERS
         ============================================================ */
         let paidMembers = [];
 
@@ -236,10 +267,54 @@
             try {
                 const data = await apiGet("membersForManagement");
                 paidMembers = data.members || [];
-                renderPaidRows(paidMembers);
+                populateMembershipFilterOptions();
+                applyPaidFilters();
             } catch (err) {
                 document.getElementById('paidRows').innerHTML = `<div class="empty-state">Error: ${escapeHtml(err.message)}</div>`;
             }
+        }
+
+        // Membership type -> theme badge class (same classes admin.html uses)
+        function getMembershipBadgeClass(type) {
+            const t = String(type || '').trim().toLowerCase();
+            if (t.includes('full')) return 'badge-full';
+            if (t.includes('affiliate')) return 'badge-affiliate';
+            if (t.includes('renewal')) return 'badge-renewal';
+            if (t.includes('expired')) return 'badge-expired';
+            return 'badge-default';
+        }
+
+        // Members sheet stores Active as boolean or a status-like string
+        function isActiveStatus(status) {
+            if (status === true) return true;
+            if (status === false || status === undefined || status === null || status === '') return false;
+            const s = String(status).trim().toLowerCase();
+            return s === 'true' || s === 'yes' || s === 'active';
+        }
+
+        function populateMembershipFilterOptions() {
+            const select = document.getElementById('paidMembershipFilter');
+            const current = select.value || 'all';
+            const types = [...new Set(paidMembers.map(m => m.membershipType).filter(Boolean))].sort();
+            select.innerHTML = '<option value="all">All Membership Types</option>' +
+                types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+            if (types.includes(current)) select.value = current;
+        }
+
+        function applyPaidFilters() {
+            const q = document.getElementById('paidSearch').value.trim().toLowerCase();
+            const activeVal = document.getElementById('paidActiveFilter').value;
+            const membershipVal = document.getElementById('paidMembershipFilter').value;
+
+            let filtered = paidMembers.filter(m => (m.name || '').toLowerCase().includes(q));
+            if (activeVal !== 'all') {
+                const wantActive = activeVal === 'active';
+                filtered = filtered.filter(m => isActiveStatus(m.status) === wantActive);
+            }
+            if (membershipVal !== 'all') {
+                filtered = filtered.filter(m => (m.membershipType || '') === membershipVal);
+            }
+            renderPaidRows(filtered);
         }
 
         function renderPaidRows(members) {
@@ -250,7 +325,7 @@
                 <div class="member-row">
                     <div class="m-left">
                         <span class="m-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
-                        <span class="m-sub">${escapeHtml(m.membershipType || '')}</span>
+                        <span class="badge ${getMembershipBadgeClass(m.membershipType)}">${escapeHtml(m.membershipType || '—')}</span>
                     </div>
                     <div class="m-right">
                         <span>${escapeHtml(m.endDate || 'N/A')}</span>
@@ -263,10 +338,9 @@
             `).join('');
         }
 
-        document.getElementById('paidSearch').addEventListener('input', (e) => {
-            const q = e.target.value.trim().toLowerCase();
-            renderPaidRows(paidMembers.filter(m => (m.name||'').toLowerCase().includes(q)));
-        });
+        document.getElementById('paidSearch').addEventListener('input', applyPaidFilters);
+        document.getElementById('paidActiveFilter').addEventListener('change', applyPaidFilters);
+        document.getElementById('paidMembershipFilter').addEventListener('change', applyPaidFilters);
 
         function toggleSelectAllPaid(chk) {
             document.querySelectorAll('.paid-chk').forEach(c => c.checked = chk.checked);
@@ -301,7 +375,7 @@
         }
 
         /* ============================================================
-        2. SELECT MEMBER
+        1. SELECT MEMBER
         ============================================================ */
         let activeMembers = [];
         let selectedMember = null;
