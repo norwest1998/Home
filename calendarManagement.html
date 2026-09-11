@@ -998,7 +998,6 @@ function renderClassPills() {
 async function loadData() {
   try {
     eventData = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
-    console.log(`Event Data: ${eventData.HexCode}`);
     classes = await fetchSheet(SHEETS.clbWebAppUrl, "Classes");
 
     renderSeasonDropdown();
