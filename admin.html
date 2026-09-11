@@ -444,11 +444,11 @@
                 status: async () => {
                     const members = await fetchSheet(SHEETS.clbWebAppUrl, SHEETS.club.tabs.members);
 
-                    const getStatus = (r) => getRowVal(r, ["Status", "Membership Status"]).toLowerCase();
-                    const getType = (r) => getRowVal(r, ["Membership Type", "Type"]).toLowerCase();
+                    const getStatus = (r) => getRowVal(r, ["Active", "Membership Status"]).toLowerCase();
+                    const getType = (r) => getRowVal(r, ["Membership Type", "Type", "Membership"]).toLowerCase();
                     const getPaid = (r) => getRowVal(r, ["Paid-up", "Paid Up", "PaidUp", "Paid"]).toLowerCase();
 
-                    const isActive = (r) => getStatus(r) === "active";
+                    const isActive = (r) => getStatus(r) === true;
                     const isPaid = (r) => ["true", "yes", "paid"].includes(getPaid(r));
 
                     const active = members.filter(isActive).length;
