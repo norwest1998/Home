@@ -503,12 +503,14 @@
         function renderAuditLog() {
             const q = document.getElementById('auditSearch').value.trim().toLowerCase();
             let entries = auditEntries;
-            if (q) entries = entries.filter(e =>
-                (e.memberName || '').toLowerCase().includes(q) ||
-                (e.field || '').toLowerCase().includes(q) ||
-                (e.before || '').toLowerCase().includes(q) ||
-                (e.after || '').toLowerCase().includes(q)
-            );
+            if (q) {
+                entries = entries.filter(e =>
+                    String(e.memberName || '').toLowerCase().includes(q) ||
+                    String(e.field || '').toLowerCase().includes(q) ||
+                    String(e.before || '').toLowerCase().includes(q) ||
+                    String(e.after || '').toLowerCase().includes(q)
+                );
+            }
 
             document.getElementById('auditBody').innerHTML = entries.map(e => {
                 const isError = String(e.after || '').startsWith('ERROR:');
