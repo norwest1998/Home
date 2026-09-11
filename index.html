@@ -639,9 +639,15 @@
     color: var(--foam);
     border-radius: 5px;
     padding: 8px;
-    flex: 0 0 80px;
+    /* flex: 0 0 80px;
     max-width: 110px;
-    font-size: 14px;
+    font-size: 14px;display: flex; */
+    flex-direction: row;            /* Align cards side-by-side */
+    justify-content: space-evenly;  /* Distribute cards evenly across the card */
+    align-items: center;
+    gap: 12px;                      /* Space between weather cards */
+    width: 100%;
+    margin-top: 16px;
   }
   
   .race-card .daily-desc {
@@ -655,15 +661,15 @@
   .race-card .weather-mini-card .uvRow { font-size: 1em; opacity: 0.85; }
   .race-card .weather-mini-card .uvVal { font-size: 1em; font-weight: 600; }
 
-.race-card .weather-panel--daily {
-  margin-bottom: 12px;        /* gap between cards */
-  background: rgba(240,240,240,0.06); /* your preferred light transparent background */
-  border: 1px solid rgba(255,255,255,0.12);
-  backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
-  -webkit-backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
-  border-radius: 8px;
-  padding: 8px 12px;
-}
+  /*.race-card .weather-panel--daily {
+    margin-bottom: 12px;       
+    background: rgba(240,240,240,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
+    border-radius: 8px;
+    padding: 8px 12px;
+  } */
 
 
   .race-card .weather-panel--daily {
