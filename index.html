@@ -661,6 +661,32 @@
   .race-card .weather-mini-card .uvRow { font-size: 1em; opacity: 0.85; }
   .race-card .weather-mini-card .uvVal { font-size: 1em; font-weight: 600; }
 
+  .race-card .weather-panel--daily{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    width:100%;
+    text-align:left;
+    background:rgba(192,192,192,0.1);
+    backdrop-filter:blur(6px);
+    border-radius:8px;
+    padding:12px 14px;
+  }
+  .race-card .daily-row--summary{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .race-card .daily-icon{ font-size:1.6em; flex-shrink:0; }
+  .race-card .daily-temps{ font-size:1.3em; font-weight:600; white-space:nowrap; }
+  .race-card .daily-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:0.95em;
+    opacity:0.9;
+  }
 
   .boat-panel-body { padding: 20px 24px 24px; }
  
