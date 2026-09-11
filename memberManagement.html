@@ -206,7 +206,7 @@
                 <div class="panel-toolbar">
                     <div class="search-wrap">
                         <span class="search-icon">🔍</span>
-                        <input class="search-input" id="auditSearch" placeholder="Search by function, field, or message…">
+                        <input class="search-input" id="auditSearch" placeholder="Search by member name, function, field, or message…">
                     </div>
                     <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
                 </div>
@@ -504,9 +504,10 @@
             const q = document.getElementById('auditSearch').value.trim().toLowerCase();
             let entries = auditEntries;
             if (q) entries = entries.filter(e =>
-                (e.memberName||'').toLowerCase().includes(q) ||
-                (e.field||'').toLowerCase().includes(q) ||
-                (e.after||'').toLowerCase().includes(q)
+                (e.memberName || '').toLowerCase().includes(q) ||
+                (e.field || '').toLowerCase().includes(q) ||
+                (e.before || '').toLowerCase().includes(q) ||
+                (e.after || '').toLowerCase().includes(q)
             );
 
             document.getElementById('auditBody').innerHTML = entries.map(e => {
