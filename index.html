@@ -849,6 +849,15 @@
     flex-wrap: wrap;
   }
 
+  .latest-class-emblem {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 6px;
+    padding: 3px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
 
 </style>
 </head>
@@ -959,6 +968,8 @@
           <div class="feed-title">
             <span class="dot"></span>
             <h3>Latest Race Results</h3>
+            <!-- Class Emblem Icon (38px x 38px) -->
+            <img id="latestClassEmblem" class="latest-class-emblem" src="" alt="Class Emblem" style="width: 38px; height: 38px; object-fit: contain; display: none;">
           </div>
           <span class="feed-meta" id="latestResultsMeta">Loading latest round…</span>
         </div>
@@ -1556,19 +1567,14 @@
     async function loadLatestResults(){
       const metaEl = document.getElementById('latestResultsMeta');
       const ribbonEl = document.getElementById('resultsRibbon');
+      const emblemEl = document.getElementById('latestClassEmblem');
+
       if (!apiConfigured()) {
         metaEl.textContent = 'Not configured';
         ribbonEl.innerHTML =
           '<div class="finish-chip glass"><div class="pos">–</div>' +
           '<div class="sailor">Set HOME_DATA_API to the deployed "HomePage Data API" URL</div>' +
           '<div class="sail-no">&nbsp;</div></div>';
-        if (!fn.placeholder && fn.href) {
-            card.onclick = () => {
-                bumpUsage(fn.id);
-                location.href = fn.href;
-            };
-        }
-
         return;
       }      
       showSpinner(metaEl);
@@ -1576,6 +1582,18 @@
         const data = await apiGet({ action: 'latestResults' });
         metaEl.textContent =
           `${data.event.roundLabel} • ${data.event.championship} (Raced ${data.event.racedOn})`;
+        
+        // Set and display class emblem icon
+        if (emblemEl && data.event) {
+          const clsName = data.event.championship || data.event.boatClass;
+          const emblemUrl = getClassImage(clsName);
+          if (emblemUrl) {
+            emblemEl.src = emblemUrl;
+            emblemEl.alt = `${clsName} Emblem`;
+            emblemEl.style.display = 'inline-block';
+          }
+        }
+
         ribbonEl.innerHTML = data.results.length
           ? data.results.map(chipHTML).join('')
           : `<div class="finish-chip glass"><div class="pos">–</div><div class="sailor">No results recorded</div><div class="sail-no">&nbsp;</div></div>`;
