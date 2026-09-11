@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Management — Sydney Maritime Modellers Club</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Link Shared Theme -->
+    <link rel="stylesheet" href="theme.css">
+    <style>
+    .mm-header {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
+    }
+    .mm-title-group { display: flex; flex-direction: column; gap: 4px; }
+    .mm-title-group h1 { font-family: var(--font-display); font-size: 28px; color: var(--foam); }
+
+    .panel-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    .panel-toolbar .search-wrap { flex: 1; min-width: 200px; margin-bottom: 0; }
+
+    /* Member row list (bulk paid + select member reuse this) */
+    .member-rows { max-height: 360px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+    .member-row {
+        display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        padding: 10px 14px; border-radius: 10px;
+        background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+    }
+    .member-row .m-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+    .member-row .m-name { font-weight: 600; font-size: 13.5px; color: var(--foam); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .member-row .m-sub { font-size: 11.5px; color: var(--foam-dim); }
+    .member-row .m-right { display: flex; align-items: center; gap: 12px; white-space: nowrap; font-size: 12px; color: var(--foam-dim); }
+
+    .checkbox-inline { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--foam); cursor: pointer; user-select: none; }
+    .checkbox-inline input { width: 16px; height: 16px; accent-color: var(--glow, #00c6ff); cursor: pointer; }
+
+    .select-all-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+
+    .action-btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+
+    .preview-card {
+        margin-top: 14px; padding: 14px 16px; border-radius: 12px;
+        background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+        display: none;
+    }
+    .preview-card.visible { display: block; }
+    .preview-card p { display: flex; justify-content: space-between; font-size: 13px; color: var(--foam-dim); margin-bottom: 6px; }
+    .preview-card p strong { color: var(--foam); }
+    .preview-checks { display: flex; gap: 18px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--glass-border); flex-wrap: wrap; }
+
+    .bulk-comm-card { display: flex; flex-direction: column; gap: 10px; padding: 18px; }
+    .bulk-comm-card .bc-title { font-weight: 600; font-size: 14.5px; color: var(--foam); }
+    .bulk-comm-card .bc-desc { font-size: 12.5px; color: var(--foam-dim); line-height: 1.4; }
+    .bulk-comm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+    .log-table-wrap { max-height: 360px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+    table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .log-table th {
+        position: sticky; top: 0; background: var(--ocean-mid); text-align: left;
+        padding: 8px 10px; font-family: var(--font-data); font-size: 10px;
+        letter-spacing: 0.06em; text-transform: uppercase; color: var(--foam-dim);
+        border-bottom: 1px solid var(--glass-border);
+    }
+    .log-table td { padding: 8px 10px; border-bottom: 1px solid var(--glass-border); color: var(--foam); vertical-align: top; }
+    .log-table tr:last-child td { border-bottom: none; }
+
+    .fn-message { font-size: 12px; margin-top: 8px; display: none; }
+    .fn-message.visible { display: block; }
+    .fn-message.success { color: var(--glow, #4ade80); }
+    .fn-message.error { color: #ff6b6b; }
+    </style>
+</head>
+<body>
+    <header class="nav-glass">
+        <a href="index.html" class="brand">
+            <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+            <div class="brand-text">
+                <strong>Sydney Maritime Modellers Club</strong>
+                <span>ADMINISTRATION PORTAL</span>
+            </div>
+        </a>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="admin.html" class="nav-link">← Admin Dashboard</a></li>
+            <li class="nav-item"><a href="#audit-log" class="nav-link">Audit Log</a></li>
+        </ul>
+    </header>
+
+    <main class="container">
+        <div class="mm-header">
+            <div class="mm-title-group">
+                <h1>Member Management</h1>
+                <p style="color:var(--foam-dim);font-size:13px;">Update payments, request member updates and send renewal notices.</p>
+            </div>
+        </div>
+
+        <!-- 1. BULK UPDATE PAID MEMBERS -->
+        <div class="section-head"><h2>Update Paid Members</h2><p>Bulk mark members as paid / not paid.</p></div>
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title"><span class="dot"></span><h3>Members</h3></div>
+                <div class="panel-toolbar">
+                    <div class="search-wrap">
+                        <span class="search-icon">🔍</span>
+                        <input class="search-input" id="paidSearch" placeholder="Search by name…">
+                    </div>
+                </div>
+            </div>
+            <div class="tab-content active">
+                <div class="select-all-row">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" id="selectAllPaid" onchange="toggleSelectAllPaid(this)">
+                        <span>Select all</span>
+                    </label>
+                    <button type="button" class="btn" id="savePaidBtn" onclick="submitPaidBatch()" disabled>Save Changes</button>
+                </div>
+                <div id="paidRows" class="member-rows"><div class="empty-state">Loading members…</div></div>
+                <div class="fn-message" id="paidMsg"></div>
+            </div>
+        </div>
+
+        <!-- 2. SELECT MEMBER -->
+        <div class="section-head"><h2>Select Member</h2><p>Mark a single member paid and/or send them an update request.</p></div>
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title"><span class="dot"></span><h3>Member Actions</h3></div>
+            </div>
+            <div class="tab-content active">
+                <div class="search-wrap">
+                    <select id="memberSelect" class="search-input" onchange="handleMemberSelect()">
+                        <option value="" selected>Loading members…</option>
+                    </select>
+                </div>
+
+                <div id="previewCard" class="preview-card">
+                    <p><span>Member ID</span><strong id="pvId"></strong></p>
+                    <p><span>Name</span><strong id="pvName"></strong></p>
+                    <p><span>Email</span><strong id="pvEmail"></strong></p>
+                    <div class="preview-checks">
+                        <label class="checkbox-inline"><input type="checkbox" id="chkMarkPaid" onchange="validateMemberForm()"><span>Mark as paid</span></label>
+                        <label class="checkbox-inline"><input type="checkbox" id="chkSendUpdate" onchange="validateMemberForm()"><span>Send update request</span></label>
+                    </div>
+                    <button type="button" class="btn" id="memberSubmitBtn" style="margin-top:14px;" onclick="submitMemberActions()" disabled>Submit</button>
+                    <div class="fn-message" id="memberMsg"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. BULK COMMUNICATIONS -->
+        <div class="section-head"><h2>Member Communications</h2><p>Send to every active member. These actions cannot be targeted or undone.</p></div>
+        <div class="bulk-comm-grid">
+            <div class="glass bulk-comm-card">
+                <div class="bc-title">Request Members Update</div>
+                <div class="bc-desc">Emails every active member a link to review and update their personal &amp; boat details.</div>
+                <button type="button" class="btn" onclick="sendBulkAction('requestAllUpdates', this)">Send to All Active Members</button>
+                <div class="fn-message" id="msg-requestAllUpdates"></div>
+            </div>
+            <div class="glass bulk-comm-card">
+                <div class="bc-title">Send Membership Renewal Emails</div>
+                <div class="bc-desc">Emails every active member their renewal fee and bank details, plus the update link.</div>
+                <button type="button" class="btn" onclick="sendBulkAction('sendRenewals', this)">Send to All Active Members</button>
+                <div class="fn-message" id="msg-sendRenewals"></div>
+            </div>
+        </div>
+
+        <!-- 4. AUDIT LOG -->
+        <div class="section-head" id="audit-log"><h2>Audit Log</h2><p>Every Member Management action, recorded to the AuditLog sheet.</p></div>
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
+                <div class="panel-toolbar">
+                    <div class="search-wrap">
+                        <span class="search-icon">🔍</span>
+                        <input class="search-input" id="auditSearch" placeholder="Search by function, field, or message…">
+                    </div>
+                    <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+                </div>
+            </div>
+            <div class="tab-content active">
+                <div class="log-table-wrap">
+                    <table class="log-table">
+                        <thead><tr><th>Time</th><th>Member / Context</th><th>Action</th><th>Before</th><th>After</th><th>Status</th></tr></thead>
+                        <tbody id="auditBody"></tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+    </footer>
+
+    <script>
+        /* ============================================================
+        CONFIG — same Web App the rest of the admin site talks to
+        ============================================================ */
+        const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+        }
+
+        async function apiGet(action) {
+            const res = await fetch(`${CLB_WEBAPP_URL}?action=${encodeURIComponent(action)}`);
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            return data;
+        }
+
+        async function apiPost(action, payload) {
+            const res = await fetch(CLB_WEBAPP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action, ...payload })
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            return data;
+        }
+
+        function showMsg(elId, text, isError) {
+            const el = document.getElementById(elId);
+            el.textContent = text;
+            el.className = "fn-message visible " + (isError ? "error" : "success");
+        }
+
+        /* ============================================================
+        1. BULK UPDATE PAID MEMBERS
+        ============================================================ */
+        let paidMembers = [];
+
+        async function loadPaidMembers() {
+            try {
+                const data = await apiGet("membersForManagement");
+                paidMembers = data.members || [];
+                renderPaidRows(paidMembers);
+            } catch (err) {
+                document.getElementById('paidRows').innerHTML = `<div class="empty-state">Error: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        function renderPaidRows(members) {
+            const container = document.getElementById('paidRows');
+            if (!members.length) { container.innerHTML = '<div class="empty-state">No members found.</div>'; return; }
+
+            container.innerHTML = members.map(m => `
+                <div class="member-row">
+                    <div class="m-left">
+                        <span class="m-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
+                        <span class="m-sub">${escapeHtml(m.membershipType || '')}</span>
+                    </div>
+                    <div class="m-right">
+                        <span>${escapeHtml(m.endDate || 'N/A')}</span>
+                        <label class="checkbox-inline">
+                            <span>Paid</span>
+                            <input type="checkbox" class="paid-chk" data-row="${m.row}" data-initial="${m.isPaid ? 'true':'false'}" ${m.isPaid ? 'checked':''} onchange="validatePaidForm()">
+                        </label>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('paidSearch').addEventListener('input', (e) => {
+            const q = e.target.value.trim().toLowerCase();
+            renderPaidRows(paidMembers.filter(m => (m.name||'').toLowerCase().includes(q)));
+        });
+
+        function toggleSelectAllPaid(chk) {
+            document.querySelectorAll('.paid-chk').forEach(c => c.checked = chk.checked);
+            validatePaidForm();
+        }
+
+        function validatePaidForm() {
+            const modified = [...document.querySelectorAll('.paid-chk')].filter(c => c.checked !== (c.dataset.initial === 'true'));
+            const btn = document.getElementById('savePaidBtn');
+            btn.disabled = modified.length === 0;
+            btn.textContent = modified.length ? `Save Changes (${modified.length})` : 'Save Changes';
+        }
+
+        async function submitPaidBatch() {
+            const updates = [...document.querySelectorAll('.paid-chk')]
+                .filter(c => c.checked !== (c.dataset.initial === 'true'))
+                .map(c => ({ row: parseInt(c.dataset.row, 10), isPaid: c.checked }));
+            if (!updates.length) return;
+
+            const btn = document.getElementById('savePaidBtn');
+            btn.disabled = true; btn.textContent = 'Saving…';
+            try {
+                const result = await apiPost('updatePaidBatch', { updates });
+                showMsg('paidMsg', `${result.count} member(s) updated.`, false);
+                await loadPaidMembers();
+            } catch (err) {
+                showMsg('paidMsg', 'Error: ' + err.message, true);
+            } finally {
+                btn.textContent = 'Save Changes';
+                validatePaidForm();
+            }
+        }
+
+        /* ============================================================
+        2. SELECT MEMBER
+        ============================================================ */
+        let activeMembers = [];
+        let selectedMember = null;
+
+        async function loadActiveMembers() {
+            const select = document.getElementById('memberSelect');
+            try {
+                const data = await apiGet("activeMembers");
+                activeMembers = data.members || [];
+                select.innerHTML = '<option value="" disabled selected>-- Select a Member --</option>' +
+                    activeMembers.map((m, i) => `<option value="${i}">${escapeHtml(m.name)} (${escapeHtml(m.email)})</option>`).join('');
+            } catch (err) {
+                select.innerHTML = `<option value="">Error: ${escapeHtml(err.message)}</option>`;
+            }
+        }
+
+        function handleMemberSelect() {
+            const idx = document.getElementById('memberSelect').value;
+            selectedMember = activeMembers[idx];
+            const card = document.getElementById('previewCard');
+            if (selectedMember) {
+                document.getElementById('pvId').textContent = selectedMember.id;
+                document.getElementById('pvName').textContent = selectedMember.name;
+                document.getElementById('pvEmail').textContent = selectedMember.email;
+                card.classList.add('visible');
+            } else {
+                card.classList.remove('visible');
+            }
+            validateMemberForm();
+        }
+
+        function validateMemberForm() {
+            const isPaid = document.getElementById('chkMarkPaid').checked;
+            const isSend = document.getElementById('chkSendUpdate').checked;
+            document.getElementById('memberSubmitBtn').disabled = !(selectedMember && (isPaid || isSend));
+        }
+
+        async function submitMemberActions() {
+            if (!selectedMember) return;
+            const isPaid = document.getElementById('chkMarkPaid').checked;
+            const isSend = document.getElementById('chkSendUpdate').checked;
+            if (!isPaid && !isSend) return;
+
+            const btn = document.getElementById('memberSubmitBtn');
+            btn.disabled = true; btn.textContent = 'Processing…';
+
+            try {
+                const tasks = [];
+                if (isPaid) tasks.push(apiPost('markPaid', { row: selectedMember.row, isPaid: true }));
+                if (isSend) tasks.push(apiPost('sendUpdateRequest', { member: selectedMember }));
+                await Promise.all(tasks);
+                showMsg('memberMsg', 'Action(s) completed successfully.', false);
+                document.getElementById('chkMarkPaid').checked = false;
+                document.getElementById('chkSendUpdate').checked = false;
+                await loadPaidMembers(); // paid list may now be stale
+            } catch (err) {
+                showMsg('memberMsg', 'Error: ' + err.message, true);
+            } finally {
+                btn.textContent = 'Submit';
+                validateMemberForm();
+            }
+        }
+
+        /* ============================================================
+        3. BULK COMMUNICATIONS
+        ============================================================ */
+        const BULK_LABELS = {
+            requestAllUpdates: "Request Members Update",
+            sendRenewals: "Send Membership Renewal Emails"
+        };
+
+        async function sendBulkAction(action, btn) {
+            if (!confirm(`${BULK_LABELS[action]} will be sent to ALL active members. Continue?`)) return;
+            btn.disabled = true;
+            const originalText = btn.textContent;
+            btn.textContent = 'Sending…';
+            try {
+                await apiPost(action, {});
+                showMsg(`msg-${action}`, 'Sent to all active members.', false);
+                await loadAuditLog();
+            } catch (err) {
+                showMsg(`msg-${action}`, 'Error: ' + err.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        /* ============================================================
+        4. AUDIT LOG (reads the AuditLog sheet)
+        ============================================================ */
+        let auditEntries = [];
+
+        function fmtTime(v) {
+            const d = new Date(v);
+            return isNaN(d) ? String(v) : d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+        }
+
+        async function loadAuditLog() {
+            try {
+                const res = await fetch(`${CLB_WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent('AuditLog')}`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                const rows = data.values || [];
+                // Schema written by processForm()/logAudit(): [HexCode, Timestamp, MemberName, Field, OldValue, NewValue]
+                // Row 0 assumed header if present.
+                auditEntries = rows.slice(1).filter(r => r.some(c => c !== "")).map(r => ({
+                    hexCode: r[0], timestamp: r[1], memberName: r[2], field: r[3], before: r[4], after: r[5]
+                })).reverse();
+                renderAuditLog();
+            } catch (err) {
+                document.getElementById('auditBody').innerHTML = '';
+                document.getElementById('auditEmpty').style.display = 'block';
+                document.getElementById('auditEmpty').textContent = 'Error loading audit log: ' + err.message;
+            }
+        }
+
+        function renderAuditLog() {
+            const q = document.getElementById('auditSearch').value.trim().toLowerCase();
+            let entries = auditEntries;
+            if (q) entries = entries.filter(e =>
+                (e.memberName||'').toLowerCase().includes(q) ||
+                (e.field||'').toLowerCase().includes(q) ||
+                (e.after||'').toLowerCase().includes(q)
+            );
+
+            document.getElementById('auditBody').innerHTML = entries.map(e => {
+                const isError = String(e.after || '').startsWith('ERROR:');
+                return `
+                <tr>
+                    <td>${fmtTime(e.timestamp)}</td>
+                    <td>${escapeHtml(e.memberName)}</td>
+                    <td>${escapeHtml(e.field)}</td>
+                    <td>${escapeHtml(e.before)}</td>
+                    <td>${escapeHtml(e.after)}</td>
+                    <td><span class="badge ${isError ? 'badge-expired' : 'badge-full'}">${isError ? 'error' : 'success'}</span></td>
+                </tr>`;
+            }).join('');
+            document.getElementById('auditEmpty').style.display = entries.length ? 'none' : 'block';
+        }
+
+        document.getElementById('auditSearch').addEventListener('input', renderAuditLog);
+        document.getElementById('refreshLogBtn').addEventListener('click', loadAuditLog);
+
+        /* ============================================================
+        INIT
+        ============================================================ */
+        loadPaidMembers();
+        loadActiveMembers();
+        loadAuditLog();
+        if (window.lucide) lucide.createIcons();
+    </script>
+</body>
+</html>
