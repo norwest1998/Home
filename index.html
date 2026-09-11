@@ -674,6 +674,27 @@
     width: 100%;
     margin-top: 16px;
   }
+
+    /* Horizontal container for hourly weather cards inside a race card */
+  .hourly-weather-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  /* Individual hour card styling */
+  .hourly-weather-row .hour-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 12px 8px;
+  }
   
   .race-card .daily-desc {
     flex: 1;
@@ -1092,33 +1113,39 @@
             <span class="feed-meta">Event Conditions</span>
           </div>
 
-          <!-- Dynamic content rendered horizontally -->
           <div id="event-display-container">
-            
-            <div class="hour-card glass">
-              <span class="time">11:00</span>
-              <div class="temp">20°</div>
-              <div class="wind">3.2 ⬇</div>
-              <div class="rain">0 mm</div>
-              <div class="uv">UV 6</div>
+            <!-- Race Header -->
+            <div class="race-event-header" style="text-align: center;">
+              <h2 style="margin: 0; font-size: 1.5rem;">DF95 Handicap</h2>
+              <div style="color: #ffd700; font-weight: bold; margin-top: 4px;">11:00 – 13:00</div>
             </div>
 
-            <div class="hour-card glass">
-              <span class="time">12:00</span>
-              <div class="temp">21°</div>
-              <div class="wind">3.5 ⬇</div>
-              <div class="rain">0 mm</div>
-              <div class="uv">UV 6</div>
-            </div>
+            <!-- Hourly Weather Cards aligned horizontally -->
+            <div class="hourly-weather-row">
+              <div class="hour-card glass">
+                <span class="time">11:00</span>
+                <div class="temp" style="color: #00e676; font-size: 1.5rem; font-weight: bold;">20°</div>
+                <div class="wind">3.2 ⬇</div>
+                <div class="rain">0 mm</div>
+                <div class="uv" style="color: #ff9100;">UV 6</div>
+              </div>
 
-            <div class="hour-card glass">
-              <span class="time">13:00</span>
-              <div class="temp">22°</div>
-              <div class="wind">4 ⬇</div>
-              <div class="rain">0 mm</div>
-              <div class="uv">UV 6</div>
-            </div>
+              <div class="hour-card glass">
+                <span class="time">12:00</span>
+                <div class="temp" style="color: #00e676; font-size: 1.5rem; font-weight: bold;">21°</div>
+                <div class="wind">3.5 ⬇</div>
+                <div class="rain">0 mm</div>
+                <div class="uv" style="color: #ff9100;">UV 6</div>
+              </div>
 
+              <div class="hour-card glass">
+                <span class="time">13:00</span>
+                <div class="temp" style="color: #00e676; font-size: 1.5rem; font-weight: bold;">22°</div>
+                <div class="wind">4 ⬇</div>
+                <div class="rain">0 mm</div>
+                <div class="uv" style="color: #ff9100;">UV 6</div>
+              </div>
+            </div>
           </div>
         </div>
 
