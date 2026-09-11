@@ -183,14 +183,14 @@
                     <button type="button" class="app-filter-btn active" data-status="all">All</button>
                     <button type="button" class="app-filter-btn" data-status="success">Success</button>
                     <button type="button" class="app-filter-btn" data-status="error">Errors</button>
-                    <button type="button" class="btn btn-ghost" id="clearLogBtn" style="padding:5px 12px;font-size:11px;">Clear</button>
+                    <button type="button" class="btn btn-ghost" id="clearLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
                 </div>
             </div>
             <div class="tab-content active">
                 <div class="log-table-wrap">
                     <table class="log-table">
                         <thead>
-                            <tr><th>Time</th><th>Function</th><th>Sheet</th><th>Field</th><th>Before</th><th>After</th><th>Status</th><th>Message</th></tr>
+                            <tr><th>Time</th><th>Name</th><th>Field</th><th>Before</th><th>After</th><th>Status</th></tr>
                         </thead>
                         <tbody id="logBody"></tbody>
                     </table>
@@ -234,7 +234,6 @@
             if (logStatusFilter !== "all") entries = entries.filter(e => e.status === logStatusFilter);
             if (q) entries = entries.filter(e =>
                 (e.fn||"").toLowerCase().includes(q) ||
-                (e.sheet||"").toLowerCase().includes(q) ||
                 (e.field||"").toLowerCase().includes(q)
             );
 
@@ -242,12 +241,10 @@
                 <tr>
                 <td>${fmtTime(e.timestamp)}</td>
                 <td>${e.fn || ""}</td>
-                <td>${e.sheet || ""}</td>
                 <td>${e.field || ""}</td>
                 <td class="diff-before">${e.before ?? ""}</td>
                 <td class="diff-after">${e.after ?? ""}</td>
                 <td><span class="badge ${e.status === "error" ? "badge-expired" : "badge-full"}">${e.status}</span></td>
-                <td>${e.message || ""}</td>
                 </tr>
             `).join("");
 
@@ -255,7 +252,7 @@
         }
 
         document.getElementById("logSearch").addEventListener("input", renderLog);
-        document.getElementById("clearLogBtn").addEventListener("click", () => { if(confirm("Clear all log entries?")) AdminLog.clear(); });
+        document.getElementById("clearLogBtn").addEventListener("click", () => AdminLog.refresh());
         document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(btn => {
             btn.addEventListener("click", () => {
                 document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(b => b.classList.remove("active"));
@@ -538,18 +535,31 @@
             lucide.createIcons();
         }
 
+        // Single shared source: the AuditLog sheet also written to by Member Management
+        // and Event Rescheduler. Schema: [HexCode, Timestamp, Name, Field, OldValue, NewValue]
         const AdminLog = {
+            _cache: [],
             all() {
-                return JSON.parse(localStorage.getItem("admin_log_entries") || "[]");
+                return this._cache;
             },
-            add(entry) {
-                const entries = this.all();
-                entries.unshift({ timestamp: new Date().toISOString(), ...entry });
-                localStorage.setItem("admin_log_entries", JSON.stringify(entries));
-                renderLog();
-            },
-            clear() {
-                localStorage.removeItem("admin_log_entries");
+            async refresh() {
+                try {
+                    const rows = await fetchSheet(SHEETS.clbWebAppUrl, "AuditLog");
+                    // fetchSheet returns objects keyed by header row; fall back to raw fetch if headers differ.
+                    this._cache = rows.map(r => {
+                        const vals = Object.values(r);
+                        const isError = String(vals[5] ?? "").startsWith("ERROR:");
+                        return {
+                            timestamp: vals[1], fn: vals[2], sheet: "", field: vals[3],
+                            before: vals[4], after: vals[5],
+                            status: isError ? "error" : "success",
+                            message: isError ? String(vals[5]).replace(/^ERROR:\s*/, "") : ""
+                        };
+                    }).reverse();
+                } catch (err) {
+                    console.error("AuditLog fetch failed:", err);
+                    this._cache = [];
+                }
                 renderLog();
             }
         };
@@ -599,7 +609,7 @@
         }
 
         renderGrid();
-        renderLog();
+        AdminLog.refresh();
         loadMemberHealth();
     </script>
 </body>

@@ -275,11 +275,13 @@
    SHARED ADMIN LOG
    ========================================================= */
 const AdminLog = {
-  add({ fn = "Reschedule Event", sheet = "", field = "", before = "", after = "", status = "success", message = "" }) {
-    const KEY = "admin_log_entries";
-    const entries = JSON.parse(localStorage.getItem(KEY) || "[]");
-    entries.unshift({ timestamp: new Date().toISOString(), fn, sheet, field, before, after, status, message });
-    localStorage.setItem(KEY, JSON.stringify(entries));
+  // Writes directly to the shared AuditLog sheet (same source Member Management uses),
+  // so every module's history lives in one place instead of a per-browser local log.
+  add({ hexCode = "", name = "", field = "", before = "", after = "", status = "success", message = "" }) {
+    const value = status === "error" ? `ERROR: ${message || after}` : after;
+    return appendSheet(SHEETS.clbWebAppUrl, "AuditLog", {
+      HexCode: hexCode, Timestamp: new Date().toISOString(), Name: name, Field: field, OldValue: before, NewValue: value
+    }).catch(err => console.error("AuditLog write failed:", err));
   }
 };
 
@@ -721,14 +723,14 @@ requestBtn.addEventListener("click", async () => {
     });
 
     AdminLog.add({
-      fn: "Reschedule Event", sheet: "Event Data", field: "Rescheduled Date",
+      hexCode: selectedHex, name: currentEvent ? currentEvent.Class : selectedHex, field: "Rescheduled Date",
       before: "", after: "Pending " + newDate, status: "success", message: "Reschedule requested"
     });
 
     logAction(`Reschedule requested for ${currentEvent ? currentEvent.Class : selectedHex} → ${formatDate(newDate)}`);
     await loadData();
   } catch (err) {
-    AdminLog.add({ fn: "Reschedule Event", status: "error", message: err.message });
+    AdminLog.add({ hexCode: selectedHex, name: currentEvent ? currentEvent.Class : selectedHex, field: "Rescheduled Date", status: "error", message: err.message });
     logAction(`Error: ${err.message}`);
   } finally {
     requestBtn.disabled = false;
@@ -773,14 +775,14 @@ approveBtn.addEventListener("click", async () => {
     });
 
     AdminLog.add({
-      fn: "Reschedule Event", sheet: "Event Data", field: "Rescheduled Date",
+      hexCode: selectedHex, name: event.Class, field: "Rescheduled Date",
       before: event["Rescheduled Date"], after: newDateFmt, status: "success", message: "Reschedule approved"
     });
 
     logAction(`Reschedule approved for ${event.Class} → ${newDateFmt}`);
     await loadData();
   } catch (err) {
-    AdminLog.add({ fn: "Reschedule Event", status: "error", message: err.message });
+    AdminLog.add({ hexCode: selectedHex, name: event ? event.Class : selectedHex, field: "Rescheduled Date", status: "error", message: err.message });
     logAction(`Error: ${err.message}`);
   } finally {
     approveBtn.disabled = false;
