@@ -815,6 +815,96 @@ function renderClassPills() {
   );
 }
 
+function exportEventsToCalendar() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const data = sheet.getDataRange().getValues();
+  
+  if (data.length <= 1) return; // Exit if sheet only has headers or is empty
+
+  // Column number where status/calendar name is stored (13 = Column M)
+  const STATUS_COL = 13;
+  
+  // Cache created/found calendars to avoid repeated API lookups
+  const calendars = {};
+  
+  // Array to collect status column values for rows 2 to data.length
+  const statusUpdates = [];
+  let updatesMade = false;
+  
+  // Loop through rows (skipping header row 0)
+  for (let i = 1; i < data.length; i++) {
+    const [
+      hexKey, month, dateVal, start, finish, 
+      emblem, className, regattaType, competition, 
+      regionalConflicts, season, roundNo, addedStatus
+    ] = data[i];
+    
+    // Store current status by default
+    statusUpdates.push([addedStatus || ""]);
+
+    // Skip empty rows or events that already have a calendar populated
+    if (!className || !dateVal || addedStatus) continue;
+    
+    // 1. Get or create a Calendar for the specific Class
+    const calName = "Regattas - " + className;
+    if (!calendars[calName]) {
+      const cals = CalendarApp.getCalendarsByName(calName);
+      if (cals.length > 0) {
+        calendars[calName] = cals[0];
+      } else {
+        calendars[calName] = CalendarApp.createCalendar(calName);
+      }
+    }
+    const calendar = calendars[calName];
+    
+    // 2. Build Event Title and Description
+    const title = `${competition} - ${regattaType} (Round ${roundNo})`;
+    const description = 
+      `HexKey: ${hexKey}\n` +
+      `Emblem: ${emblem}\n` +
+      `Season: ${season}\n` +
+      `Regional Conflicts: ${regionalConflicts}`;
+      
+    // 3. Construct Start & End Date/Time
+    let startTime, endTime;
+    
+    if (start instanceof Date && finish instanceof Date) {
+      startTime = start;
+      endTime = finish;
+    } else {
+      // Fallback if Start/Finish are whole dates or text
+      const eventDate = new Date(dateVal);
+      startTime = new Date(eventDate);
+      endTime = new Date(eventDate);
+      
+      if (start) {
+        const sTime = new Date(start);
+        startTime.setHours(sTime.getHours(), sTime.getMinutes());
+      }
+      if (finish) {
+        const fTime = new Date(finish);
+        endTime.setHours(fTime.getHours(), fTime.getMinutes());
+      }
+    }
+    
+    // 4. Create Calendar Event
+    calendar.createEvent(title, startTime, endTime, {
+      description: description
+    });
+
+    // 5. Update in-memory status array (index i - 1 maps to row i + 1)
+    statusUpdates[i - 1][0] = calName;
+    updatesMade = true;
+  }
+  
+  // Batch write all status updates back to the sheet in one operation
+  if (updatesMade) {
+    sheet.getRange(2, STATUS_COL, statusUpdates.length, 1).setValues(statusUpdates);
+  }
+
+  Logger.log("All new events exported successfully!");
+}
+
 /* =========================================================
    LOAD DATA
    ========================================================= */
