@@ -569,6 +569,31 @@
   /* =========================================================
       next event card 
     ========================================================= */
+  /* Layout the dynamic content horizontally inside the Next Event card */
+  #event-display-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    gap: 12px;
+    width: 100%;
+    padding-top: 12px;
+    overflow-x: auto; /* Enables smooth scrolling if there are many hours */
+  }
+
+  /* Hourly weather card styling inside the container */
+  #event-display-container .weather-card,
+  #event-display-container .hour-card {
+    flex: 1;
+    min-width: 80px;
+    max-width: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 10px;
+  }
+
   /* Card Container */
   .race-card {
     position: relative;
@@ -1066,18 +1091,36 @@
             </div>
             <span class="feed-meta">Event Conditions</span>
           </div>
-          <!-- Dynamic content from WebApp will load here -->
-          <div id="event-display-container">Loading event details...</div>
-        </div>
 
-        <!-- Weather Card -->
-        <div id="weather" class="weather-card glass">
-          <div class="feed-head">
-            <div class="feed-title">
-              <h3>7-Day SMMC Weather Forecast</h3>
+          <!-- Dynamic content rendered horizontally -->
+          <div id="event-display-container">
+            
+            <div class="hour-card glass">
+              <span class="time">11:00</span>
+              <div class="temp">20°</div>
+              <div class="wind">3.2 ⬇</div>
+              <div class="rain">0 mm</div>
+              <div class="uv">UV 6</div>
             </div>
-            <span class="feed-meta">Lakeside Conditions</span>
+
+            <div class="hour-card glass">
+              <span class="time">12:00</span>
+              <div class="temp">21°</div>
+              <div class="wind">3.5 ⬇</div>
+              <div class="rain">0 mm</div>
+              <div class="uv">UV 6</div>
+            </div>
+
+            <div class="hour-card glass">
+              <span class="time">13:00</span>
+              <div class="temp">22°</div>
+              <div class="wind">4 ⬇</div>
+              <div class="rain">0 mm</div>
+              <div class="uv">UV 6</div>
+            </div>
+
           </div>
+        </div>
 
           <div class="weather-week">
             <div class="day-pill">
