@@ -825,7 +825,9 @@ async function addToCalendar(hexKey) {
   const event = eventData.find(e => e.HexKey === hexKey);
   if (!event) return;
 
-  logAction(`Exporting "${event.Class} - ${event.Event || event["Regatta Type"]}" to Google Calendar...`);
+  const targetCalName = "Regattas - " + event.Class;
+  logAction(`Exporting "${event.Class} - ${event.Event || event["Regatta Type"]}" to ${targetCalName}...`);
+
   try {
     const res = await fetch(SHEETS.calWebAppUrl, {
       method: "POST",
@@ -834,18 +836,18 @@ async function addToCalendar(hexKey) {
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
-    event.AddedStatus = "Synced";
+    event.AddedStatus = targetCalName;
     AdminLog.add({
       hexCode: hexKey,
       name: event.Class,
       field: "AddedStatus",
       before: "",
-      after: "Synced",
+      after: targetCalName,
       status: "success",
-      message: "Exported to Google Calendar"
+      message: `Exported to ${targetCalName}`
     });
 
-    logAction(`Successfully created event in Google Calendar!`);
+    logAction(`Successfully added event to "${targetCalName}"!`);
     renderStats();
     renderTable();
   } catch (err) {
