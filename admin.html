@@ -437,11 +437,36 @@
             // Member Management 
             { 
                 id: "member-management", 
-                placeholder: true, 
                 icon: '<i data-lucide="user" color="#257fb6"></i>', 
                 title: "Member Management", 
                 description: "Manage member details and communcation",
-                href: "memberManagement.html"
+                href: "memberManagement.html",
+                status: async () => {
+                    const members = await fetchSheet(SHEETS.clbWebAppUrl, SHEETS.club.tabs.members);
+
+                    const getStatus = (r) => getRowVal(r, ["Status", "Membership Status"]).toLowerCase();
+                    const getType = (r) => getRowVal(r, ["Membership Type", "Type"]).toLowerCase();
+                    const getPaid = (r) => getRowVal(r, ["Paid-up", "Paid Up", "PaidUp", "Paid"]).toLowerCase();
+
+                    const isActive = (r) => getStatus(r) === "active";
+                    const isPaid = (r) => ["true", "yes", "paid"].includes(getPaid(r));
+
+                    const active = members.filter(isActive).length;
+                    const full = members.filter(r => isActive(r) && getType(r) === "full").length;
+                    const affiliate = members.filter(r => isActive(r) && getType(r) === "affiliate").length;
+                    const expired = members.filter(r => !isActive(r) && getType(r) === "expired").length;
+                    const paidUp = members.filter(r => isActive(r) && isPaid(r)).length;
+
+                    return {
+                        pills: [
+                            { label: "Active", value: active, className: "badge-full" },
+                            { label: "Full", value: full, className: "badge-affiliate" },
+                            { label: "Affiliate", value: affiliate, className: "badge-default" },
+                            { label: "Expired", value: expired, className: "badge-expired" },
+                            { label: "Paid-up", value: paidUp, className: "badge-renewal" }
+                        ]
+                    };
+                }
             },
             { id: "placeholder-2", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
         ];
@@ -579,4 +604,4 @@
         loadMemberHealth();
     </script>
 </body>
-</html> 
+</html>
