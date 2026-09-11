@@ -566,49 +566,9 @@
     flex-direction: column;
   }
 
-  /* =========================================================
+/* =========================================================
       next event card 
     ========================================================= */
-  /* Layout the dynamic content horizontally inside the Next Event card */
-  #event-display-container {
-    display: flex;
-    flex-direction: column; /* Stack event header above weather cards */
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    width: 100%;
-    padding-top: 12px;
-  }
-
-  .race-event-header { text-align: center; }
-
-  .hourly-weather-row {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    align-items: stretch;
-    gap: 10px;
-    width: 100%;
-    overflow-x: auto;
-  }
-
-  .hourly-weather-row .hour-card {
-    flex: 1;
-    min-width: 80px;
-    max-width: 120px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 12px 8px;
-    border-radius: 10px;
-  }
-
-  .hour-card .time { font-size: 0.85em; opacity: 0.85; margin-bottom: 4px; }
-  .hour-card .temp { font-size: 1.4em; font-weight: bold; color: #00e676; margin-bottom: 4px; }
-  .hour-card .wind, .hour-card .rain { font-size: 0.9em; opacity: 0.85; }
-  .hour-card .uv { font-size: 0.9em; font-weight: 600; color: #ff9100; margin-top: 2px; }
-
   /* Card Container */
   .race-card {
     position: relative;
@@ -689,27 +649,6 @@
     width: 100%;
     margin-top: 16px;
   }
-
-    /* Horizontal container for hourly weather cards inside a race card */
-  .hourly-weather-row {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: stretch;
-    gap: 12px;
-    width: 100%;
-    margin-top: 16px;
-  }
-
-  /* Individual hour card styling */
-  .hourly-weather-row .hour-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 12px 8px;
-  }
   
   .race-card .daily-desc {
     flex: 1;
@@ -721,66 +660,6 @@
   .race-card .weather-mini-card .rain,
   .race-card .weather-mini-card .uvRow { font-size: 1em; opacity: 0.85; }
   .race-card .weather-mini-card .uvVal { font-size: 1em; font-weight: 600; }
-
-  /*.race-card .weather-panel--daily {
-    margin-bottom: 12px;       
-    background: rgba(240,240,240,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
-    -webkit-backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
-    border-radius: 8px;
-    padding: 8px 12px;
-  } */
-
-
-  .race-card .weather-panel--daily {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px 12px;
-    margin-top: 8px;
-    border-radius: 8px;
-    margin-bottom: 12px;
-    background: rgba(240, 240, 240, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
-    -webkit-backdrop-filter: blur(var(--glass-blur, 12px)) saturate(140%);
-    position: relative;
-  }
-
-  .race-card .daily-row--summary {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    /* NEW: spread items across the row */
-    justify-content: space-between;
-
-    width: 100%;
-  }
-
-  .race-card .daily-icon { font-size: 34px; line-height: 1; flex: none; }
-  .race-card .daily-desc { font-family: var(--font-body); font-size: 13.5px; font-weight: 600; color: var(--foam); }
-  .race-card .daily-temps { font-family: var(--font-data); font-size: 20px; display: flex; align-items: baseline; gap: 4px; margin-left: auto; }
-  .race-card .daily-temps .temp-max { font-weight: 500; }
-  .race-card .daily-temps .temp-min { font-size: 13px; color: var(--foam-dim); }
-
-  .race-card .daily-row {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    font-family: var(--font-data);
-    font-size: 13px;
-    color: var(--foam-dim);
-    letter-spacing: 0.02em;
-    padding-top: 4px;
-  }
-
-  .race-card .daily-row .wind,
-  .race-card .daily-row .rain { color: var(--foam-dim); }
-  .race-card .daily-row .uvVal { font-weight: 500; }
 
 
   .boat-panel-body { padding: 20px 24px 24px; }
@@ -1127,40 +1006,8 @@
             </div>
             <span class="feed-meta">Event Conditions</span>
           </div>
-
-          <div id="event-display-container">
-            <div class="race-event-header">
-              <h2 style="margin: 0; font-size: 1.5rem;">DF95 Handicap</h2>
-              <div style="color: #ffd700; font-weight: bold; margin-top: 4px;">11:00 – 13:00</div>
-            </div>
-
-            <!-- Horizontally aligned hourly weather cards -->
-            <div class="hourly-weather-row">
-              <div class="hour-card glass">
-                <span class="time">11:00</span>
-                <div class="temp">20°</div>
-                <div class="wind">3.2 ⬇</div>
-                <div class="rain">0 mm</div>
-                <div class="uv">UV 6</div>
-              </div>
-
-              <div class="hour-card glass">
-                <span class="time">12:00</span>
-                <div class="temp">21°</div>
-                <div class="wind">3.5 ⬇</div>
-                <div class="rain">0 mm</div>
-                <div class="uv">UV 6</div>
-              </div>
-
-              <div class="hour-card glass">
-                <span class="time">13:00</span>
-                <div class="temp">22°</div>
-                <div class="wind">4 ⬇</div>
-                <div class="rain">0 mm</div>
-                <div class="uv">UV 6</div>
-              </div>
-            </div>
-          </div>
+          <!-- Dynamic content from WebApp will load here -->
+          <div id="event-display-container">Loading event details...</div>
         </div>
 
         <div class="weather-week">
