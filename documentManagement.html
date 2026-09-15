@@ -140,6 +140,7 @@
         </div>
         <button class="app-filter-btn" id="driveConnectBtn">Connect Google Drive</button>
         <button class="app-filter-btn" id="browseDriveBtn">Browse Root Folder</button>
+        <button class="app-filter-btn" id="syncDriveBtn">Sync All Drive Files</button>
     </div>
 
     <div class="doc-toolbar">
@@ -863,6 +864,122 @@ document.getElementById("markSignoffBtn").addEventListener("click", async () => 
     document.getElementById("detailModal").classList.remove("visible");
     await loadDocs();
 });
+
+document.getElementById("syncDriveBtn").addEventListener("click", syncDriveToSheet);
+
+// Recursively fetches all non-folder files from Drive root and subfolders
+async function fetchAllDriveFilesRecursively(folderId) {
+    let allFiles = [];
+    
+    const query = `'${folderId}' in parents and trashed = false`;
+    const fields = "files(id, name, mimeType, webViewLink)";
+    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}`;
+
+    const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${driveToken}` }
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const items = data.files || [];
+
+    for (const item of items) {
+        if (item.mimeType === "application/vnd.google-apps.folder") {
+            // Recursively search subfolder
+            const subFiles = await fetchAllDriveFilesRecursively(item.id);
+            allFiles = allFiles.concat(subFiles);
+        } else {
+            allFiles.push(item);
+        }
+    }
+
+    return allFiles;
+}
+
+// Scans Google Drive and appends unindexed files to Google Sheets database
+async function syncDriveToSheet() {
+    if (!driveToken) {
+        alert("Connect Google Drive first.");
+        return;
+    }
+
+    const btn = document.getElementById("syncDriveBtn");
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Scanning Drive...";
+
+    try {
+        // 1. Fetch all files from Drive recursively
+        const driveFiles = await fetchAllDriveFilesRecursively(DOC_CONFIG.rootFolderId);
+
+        // 2. Fetch fresh Sheet data
+        await loadDocs();
+
+        // 3. Identify files present in Drive but missing in Google Sheets
+        const existingFileIds = new Set(DOCS.map(d => d.DriveFileId));
+        const missingFiles = driveFiles.filter(f => !existingFileIds.has(f.id));
+
+        if (missingFiles.length === 0) {
+            alert("All Google Drive files are already registered in the Google Sheet database!");
+            return;
+        }
+
+        if (!confirm(`Found ${missingFiles.length} unregistered file(s) in Drive. Add them to the Google Sheet database now?`)) {
+            return;
+        }
+
+        const who = prompt("Enter your name for the change log:") || "Auto Sync";
+        const now = new Date().toISOString();
+
+        // 4. Batch append missing files to Google Sheet database
+        let count = 0;
+        for (const file of missingFiles) {
+            count++;
+            btn.textContent = `Syncing (${count}/${missingFiles.length})...`;
+            
+            const rowId = genRowId();
+            
+            // Register in Documents sheet
+            await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, {
+                RowID: rowId,
+                Title: file.name,
+                Category: "Uncategorised",
+                Keywords: "drive-sync",
+                DriveFileId: file.id,
+                DriveLink: file.webViewLink,
+                Version: 1,
+                Status: "Draft",
+                Owner: who,
+                LastModifiedBy: who,
+                LastModifiedDate: now,
+                ReviewedBy: "",
+                ReviewDate: "",
+                SignedOffBy: "",
+                SignOffDate: ""
+            });
+
+            // Register initial version entry
+            await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.versionsSheet, {
+                RowID: genRowId(),
+                DocID: rowId,
+                Version: 1,
+                DriveFileId: file.id,
+                DriveLink: file.webViewLink,
+                ChangedBy: who,
+                ChangedDate: now,
+                Notes: "Auto-synced from Google Drive"
+            });
+        }
+
+        alert(`Successfully synced ${missingFiles.length} file(s) to the Google Sheet database.`);
+        await loadDocs(); // Reload view grid
+    } catch (err) {
+        alert("Sync failed: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
 
 loadDocs();
 lucide.createIcons();
