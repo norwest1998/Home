@@ -110,6 +110,7 @@
             <div class="fn-usage" id="driveStatusText">Not connected</div>
         </div>
         <button class="app-filter-btn" id="driveConnectBtn">Connect Google Drive</button>
+        <button class="app-filter-btn" id="browseDriveBtn">Browse Root Folder</button>
     </div>
 
     <div class="doc-toolbar">
@@ -220,7 +221,7 @@ const DOC_CONFIG = {
     driveClientId: "738246015685-4vk2o2l7nit598jvkl8r423sa4hff8rf.apps.googleusercontent.com",
     driveApiKey: "AIzaSyDkxPD4NWTDKxUFhD2phSzxuL-f4NS0P7k",
     rootFolderId: "1h-nPRC_EH2G-SG8PqDWU0WXfTTpO4feM",
-    driveScope: "https://www.googleapis.com/auth/drive.file"
+    driveScope: "https://www.googleapis.com/auth/drive.readonly"
 };
 
 /* ---------- Sheets helpers (same pattern as admin.html) ---------- */
@@ -376,6 +377,73 @@ function renderGrid() {
 }
 document.getElementById("docSearch").addEventListener("input", renderGrid);
 document.getElementById("statusFilter").addEventListener("change", renderGrid);
+
+// Event listener for the Browse Drive button
+document.getElementById("browseDriveBtn").addEventListener("click", async () => {
+    try {
+        const items = await fetchDriveFolderContents(DOC_CONFIG.rootFolderId);
+        renderDriveItems(items);
+    } catch (err) {
+        alert("Error fetching Drive files: " + err.message);
+    }
+});
+
+// Fetch contents of a specific Google Drive folder
+async function fetchDriveFolderContents(folderId) {
+    if (!driveToken) {
+        alert("Connect Google Drive first.");
+        return [];
+    }
+
+    const query = `'${folderId}' in parents and trashed = false`;
+    const fields = "files(id, name, mimeType, webViewLink)";
+    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}`;
+
+    const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${driveToken}` }
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+
+    return data.files || [];
+}
+
+// Render fetched Drive files and folders into the main view grid
+function renderDriveItems(items) {
+    const grid = document.getElementById("docGrid");
+    if (!items.length) {
+        grid.innerHTML = `<div class="empty-state">No files or folders found in root.</div>`;
+        return;
+    }
+
+    grid.innerHTML = items.map(item => {
+        const isFolder = item.mimeType === "application/vnd.google-apps.folder";
+        const icon = isFolder ? "📁" : "📄";
+        const typeLabel = isFolder ? "Folder" : "File";
+
+        return `
+            <div class="glass doc-card">
+                <div class="doc-card-top">
+                    <div>
+                        <div class="doc-title">${icon} ${item.name}</div>
+                        <div class="doc-meta">Type: ${typeLabel}</div>
+                    </div>
+                </div>
+                <div class="doc-actions">
+                    ${item.webViewLink ? `<a class="app-filter-btn" href="${item.webViewLink}" target="_blank">Open in Drive</a>` : ""}
+                    ${!isFolder ? `<button class="app-filter-btn active" onclick="selectDriveDocument('${item.id}', '${item.name}')">Select Document</button>` : ""}
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+// Populates the upload modal with the selected document details
+function selectDriveDocument(fileId, fileName) {
+    openUploadModal(null);
+    document.getElementById("titleInput").value = fileName;
+}
 
 /* ---------- Save progress indicator ---------- */
 let progressSteps = [];
