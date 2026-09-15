@@ -583,10 +583,11 @@ document.getElementById("driveFileArchiveBtn").addEventListener("click", async (
 
 let currentDriveFile = null;
 
-// Opens modal displaying document metadata from Google Drive
+// Opens modal displaying detailed Drive and Google Sheet database metadata
 async function selectDriveDocument(fileId) {
     try {
-        const fields = "id, name, mimeType, size, createdTime, modifiedTime, webViewLink, parents";
+        // 1. Fetch expanded metadata fields from Google Drive API
+        const fields = "id, name, mimeType, size, createdTime, modifiedTime, webViewLink, parents, description, version, lastModifyingUser(displayName, emailAddress), owners(displayName, emailAddress)";
         const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=${encodeURIComponent(fields)}`, {
             headers: { Authorization: `Bearer ${driveToken}` }
         });
@@ -595,17 +596,51 @@ async function selectDriveDocument(fileId) {
 
         currentDriveFile = file;
 
+        // 2. Find matching record in Google Sheets database (if registered)
+        const matchedDoc = DOCS.find(d => d.DriveFileId === file.id);
+
+        // Format Drive attributes
         const sizeKb = file.size ? (file.size / 1024).toFixed(1) + " KB" : "N/A";
         const created = new Date(file.createdTime).toLocaleString();
         const modified = new Date(file.modifiedTime).toLocaleString();
+        const driveEditor = file.lastModifyingUser ? `${file.lastModifyingUser.displayName}` : "Unknown";
+        const driveOwner = file.owners && file.owners.length > 0 ? file.owners[0].displayName : "Unknown";
 
+        // Build side-by-side layout (Drive API info + Google Sheet database info)
         document.getElementById("driveFileTitle").textContent = file.name;
         document.getElementById("driveFileMeta").innerHTML = `
-            <strong>File ID:</strong> ${file.id}<br>
-            <strong>Type:</strong> ${file.mimeType}<br>
-            <strong>Size:</strong> ${sizeKb}<br>
-            <strong>Created:</strong> ${created}<br>
-            <strong>Last Modified:</strong> ${modified}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin: 12px 0; text-align:left;">
+                <div>
+                    <div style="font-weight:600; color:var(--foam); margin-bottom:6px;">Google Drive Meta</div>
+                    <strong>Drive Owner:</strong> ${driveOwner}<br>
+                    <strong>Last Modified By:</strong> ${driveEditor}<br>
+                    <strong>Last Modified:</strong> ${modified}<br>
+                    <strong>Created:</strong> ${created}<br>
+                    <strong>File Size:</strong> ${sizeKb}<br>
+                    <strong>Drive Revision:</strong> v${file.version || 1}
+                </div>
+                <div>
+                    <div style="font-weight:600; color:var(--foam); margin-bottom:6px;">Database Record</div>
+                    ${matchedDoc ? `
+                        <strong>Status:</strong> <span class="badge ${statusBadgeClass(matchedDoc.Status)}">${matchedDoc.Status || "Draft"}</span><br>
+                        <strong>Doc Version:</strong> v${matchedDoc.Version || "1"}<br>
+                        <strong>Category:</strong> ${matchedDoc.Category || "Uncategorised"}<br>
+                        <strong>Doc Owner:</strong> ${matchedDoc.Owner || "—"}<br>
+                        <strong>Reviewed By:</strong> ${matchedDoc.ReviewedBy || "—"}<br>
+                        <strong>Signed Off By:</strong> ${matchedDoc.SignedOffBy || "—"}
+                    ` : `<em style="color:var(--foam-dim);">Not registered in database sheet</em>`}
+                </div>
+            </div>
+            ${file.description ? `
+                <div style="margin-top:10px; padding:8px 10px; background:rgba(255,255,255,0.04); border-radius:6px; font-size:12px;">
+                    <strong>Description:</strong> ${file.description}
+                </div>
+            ` : ""}
+            ${matchedDoc && matchedDoc.Keywords ? `
+                <div class="doc-keywords" style="margin-top:10px;">
+                    ${matchedDoc.Keywords.split(",").map(k => `<span class="kw-chip">${k.trim()}</span>`).join("")}
+                </div>
+            ` : ""}
         `;
 
         document.getElementById("driveFileOpenBtn").href = file.webViewLink || "#";
