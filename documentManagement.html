@@ -186,6 +186,19 @@
     </div>
 </div>
 
+<!-- Drive Document Details Modal -->
+<div class="modal-backdrop" id="driveFileModal">
+    <div class="glass modal-box">
+        <h3 id="driveFileTitle">Document Details</h3>
+        <div class="fn-desc" id="driveFileMeta" style="line-height: 1.6; margin: 14px 0;"></div>
+        <div class="modal-actions" style="flex-wrap:wrap;">
+            <a class="app-filter-btn active" id="driveFileOpenBtn" href="#" target="_blank">Open Document</a>
+            <button class="app-filter-btn" id="driveFileArchiveBtn">Archive Document</button>
+            <button class="app-filter-btn" id="driveFileCloseBtn">Close</button>
+        </div>
+    </div>
+</div>
+
 <script>
 /* ============================================================
    SETUP REQUIRED — fill these in before this page will work:
@@ -453,11 +466,99 @@ async function openFolder(folderId) {
     }
 }
 
-// Populates the upload modal with the selected document details
-function selectDriveDocument(fileId, fileName) {
-    openUploadModal(null);
-    document.getElementById("titleInput").value = fileName;
+let currentDriveFile = null;
+
+// Opens modal displaying document metadata from Google Drive
+async function selectDriveDocument(fileId) {
+    try {
+        const fields = "id, name, mimeType, size, createdTime, modifiedTime, webViewLink, parents";
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=${encodeURIComponent(fields)}`, {
+            headers: { Authorization: `Bearer ${driveToken}` }
+        });
+        const file = await res.json();
+        if (file.error) throw new Error(file.error.message);
+
+        currentDriveFile = file;
+
+        const sizeKb = file.size ? (file.size / 1024).toFixed(1) + " KB" : "N/A";
+        const created = new Date(file.createdTime).toLocaleString();
+        const modified = new Date(file.modifiedTime).toLocaleString();
+
+        document.getElementById("driveFileTitle").textContent = file.name;
+        document.getElementById("driveFileMeta").innerHTML = `
+            <strong>File ID:</strong> ${file.id}<br>
+            <strong>Type:</strong> ${file.mimeType}<br>
+            <strong>Size:</strong> ${sizeKb}<br>
+            <strong>Created:</strong> ${created}<br>
+            <strong>Last Modified:</strong> ${modified}
+        `;
+
+        document.getElementById("driveFileOpenBtn").href = file.webViewLink || "#";
+        document.getElementById("driveFileModal").classList.add("visible");
+    } catch (err) {
+        alert("Failed to load document details: " + err.message);
+    }
 }
+
+// Close button handler for drive detail modal
+document.getElementById("driveFileCloseBtn").addEventListener("click", () => {
+    document.getElementById("driveFileModal").classList.remove("visible");
+});
+
+// Helper to find or automatically create an "Archive" folder inside the root folder
+async function getOrCreateArchiveFolder() {
+    const q = `'${DOC_CONFIG.rootFolderId}' in parents and name = 'Archive' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+    const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}`, {
+        headers: { Authorization: `Bearer ${driveToken}` }
+    });
+    const searchData = await searchRes.json();
+    if (searchData.files && searchData.files.length > 0) {
+        return searchData.files[0].id;
+    }
+
+    const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${driveToken}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: "Archive",
+            mimeType: "application/vnd.google-apps.folder",
+            parents: [DOC_CONFIG.rootFolderId]
+        })
+    });
+    const createData = await createRes.json();
+    return createData.id;
+}
+
+// Moves the document in Google Drive to the Archive folder
+document.getElementById("driveFileArchiveBtn").addEventListener("click", async () => {
+    if (!currentDriveFile) return;
+    if (!confirm(`Are you sure you want to move "${currentDriveFile.name}" to the Archive folder?`)) return;
+
+    try {
+        const archiveFolderId = await getOrCreateArchiveFolder();
+        const previousParents = (currentDriveFile.parents || []).join(",");
+
+        const url = `https://www.googleapis.com/drive/v3/files/${currentDriveFile.id}?addParents=${archiveFolderId}&removeParents=${previousParents}`;
+        const res = await fetch(url, {
+            method: "PATCH",
+            headers: { Authorization: `Bearer ${driveToken}` }
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+
+        alert(`"${currentDriveFile.name}" was successfully moved to the Archive folder.`);
+        document.getElementById("driveFileModal").classList.remove("visible");
+
+        // Refresh root listing
+        const items = await fetchDriveFolderContents(DOC_CONFIG.rootFolderId);
+        renderDriveItems(items);
+    } catch (err) {
+        alert("Failed to archive document: " + err.message);
+    }
+});
 
 /* ---------- Save progress indicator ---------- */
 let progressSteps = [];

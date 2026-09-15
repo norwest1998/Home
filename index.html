@@ -866,6 +866,18 @@
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   }
 
+  .championship-selector-row{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:16px;
+      flex-wrap:wrap;
+    }
+
+    .championship-selector-row .class-select-wrap{
+      margin-bottom:0;
+    }
+
 </style>
 </head>
 <body>
@@ -999,12 +1011,13 @@
             <span class="dot"></span>
             <h3>Championship Standings</h3>
           </div>
+
+        </div>
+        <div class="championship-selector-row">
+          <div id="classTabs"></div>
           <!-- Class Insignia Image Display -->
           <img id="classInsignia" class="class-insignia" src="" alt="Class Insignia" style="display:none;">
         </div>
-    
-        <div id="classTabs"></div>
-
         <div class="round-tabs" id="roundTabs"></div>
         <div class="standings-status" id="statusLine"></div>
         <div class="sheet-meta" id="sheetMeta"></div>
