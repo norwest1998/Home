@@ -156,6 +156,72 @@
             </div>
         </div>
 
+        <!-- 4. MEMBER LISTS -->
+        <div class="section-head" id="member-lists">
+            <h2>Member Lists</h2>
+            <p>Search, filter and generate dynamic member lists.</p>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="dot"></span>
+                    <h3>Directory & Queries</h3>
+                </div>
+            </div>
+
+            <div class="tab-content active">
+
+                <div class="panel-toolbar">
+                    <input
+                        id="memberListSearch"
+                        class="search-input"
+                        type="text"
+                        placeholder="Search members by name..."
+                        oninput="filterMemberDirectory()"
+                    >
+                </div>
+
+                <div class="panel-toolbar">
+                    <button class="btn btn-ghost"
+                            onclick="setMemberListFilter('all')">
+                        All Members
+                    </button>
+
+                    <button class="btn btn-ghost"
+                            onclick="setMemberListFilter('paid')">
+                        Paid Members
+                    </button>
+
+                    <button class="btn btn-ghost"
+                            onclick="setMemberListFilter('committee')">
+                        Committee
+                    </button>
+                </div>
+
+                <div class="panel-toolbar">
+                    <input
+                        type="text"
+                        id="memberQuery"
+                        class="search-input"
+                        placeholder="e.g. DF65 sailors, unpaid members, affiliate members"
+                        onkeydown="if(event.key==='Enter') runMemberQuery()"
+                    >
+
+                    <button class="btn"
+                            onclick="runMemberQuery()">
+                        Run Query
+                    </button>
+                </div>
+
+                <div id="memberListsResults"
+                    class="member-rows">
+                </div>
+
+            </div>
+        </div>
+
+
         <!-- 2. BULK UPDATE PAID MEMBERS -->
         <div class="section-head"><h2>Update Paid Members</h2><p>Bulk mark members as paid / not paid.</p></div>
         <div class="panel">
@@ -268,9 +334,113 @@
             el.textContent = text;
             el.className = "fn-message visible " + (isError ? "error" : "success");
         }
+        /* ============================================================
+        MEMBERS Lists
+        ============================================================ */
+        let memberDirectoryData = [];
+        let currentMemberListFilter = 'all';
+
+        async function loadMemberLists() {
+            try {
+                const data = await apiGet("membersForManagement");
+                memberDirectoryData = data.members || [];
+                renderMemberDirectory(memberDirectoryData);
+            } catch(err) {
+                document.getElementById('memberListsResults').innerHTML =
+                    `<div class="empty-state">
+                        Error loading members: ${escapeHtml(err.message)}
+                    </div>`;
+            }
+        }
+
+        function filterMemberDirectory() {
+            const q =
+                document.getElementById('memberListSearch')
+                .value
+                .trim()
+                .toLowerCase();
+
+            let filtered = memberDirectoryData;
+
+            if (currentMemberListFilter === 'paid') {
+                filtered = filtered.filter(m => m.isPaid);
+            }
+
+            if (currentMemberListFilter === 'committee') {
+                filtered = filtered.filter(m => m.committee === true);
+            }
+
+            filtered = filtered.filter(m =>
+                (m.name || '').toLowerCase().includes(q)
+            );
+
+            renderMemberDirectory(filtered);
+        }
+
+        function setMemberListFilter(filter) {
+            currentMemberListFilter = filter;
+            filterMemberDirectory();
+        }
+
+        function renderMemberDirectory(members) {
+            const container = document.getElementById('memberListsResults');
+
+            if (!members.length) {
+                container.innerHTML = '<div class="empty-state">No members found.</div>';
+
+                return;
+            }
+
+            container.innerHTML = members.map(m => `
+                <div class="member-row">
+                    <div class="m-left">
+                        <div>
+                            <div class="m-name">
+                                ${escapeHtml(m.name)}
+                            </div>
+                            <div class="m-sub">
+                                ${escapeHtml(m.email || '')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="m-right">
+                        <span>
+                            ${m.isPaid ? '✅ Paid' : '❌ Unpaid'}
+                        </span>
+                        <span>
+                            ${escapeHtml(m.membershipType || '')}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function runMemberQuery() {
+            const query =
+                document.getElementById('memberQuery')
+                .value
+                .trim();
+
+            if (!query) return;
+
+            const container =document.getElementById('memberListsResults');
+            container.innerHTML = '<div class="empty-state">Generating list...</div>';
+
+            try {
+                const result =await apiPost('queryMemberContactAgent', {query: query});
+                renderMemberDirectory(result.members || []);
+            } catch(err) {
+
+                container.innerHTML =
+                    `<div class="empty-state">
+                        Error: ${escapeHtml(err.message)}
+                    </div>`;
+            }
+        }
 
         /* ============================================================
-        2. BULK UPDATE PAID MEMBERS
+        BULK UPDATE PAID MEMBERS
         ============================================================ */
         let paidMembers = [];
 
@@ -601,6 +771,7 @@
         ============================================================ */
         loadPaidMembers();
         loadActiveMembers();
+        loadMemberLists();
         loadAuditLog();
         if (window.lucide) lucide.createIcons();
     </script>
