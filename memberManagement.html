@@ -172,7 +172,7 @@
                             id="memberCollapseBtn"
                             onclick="toggleMemberResults()"
                             title="Show / Hide Results">
-                            <i class="nav-icon" data-lucide="list-collapse" color="#257fb6">
+                            <i class="nav-icon" id="memberCollapseIcon" data-lucide="list-chevrons-up-down" color="#257fb6"></i>
                         </button>
 
                     </div>
@@ -210,14 +210,17 @@
             </div>
 
             <div class="tab-content active">
-                <div class="panel-toolbar">                   
-                    <input
-                        id="memberListSearch"
-                        class="search-input"
-                        type="text"
-                        placeholder=<i class="nav-icon" data-lucide="search" color="#257fb6"></i>" Search members by name..."
-                        oninput="filterMemberDirectory()"
-                    >
+                <div class="panel-toolbar">
+                    <div class="search-wrap">
+                        <span class="search-icon"><i class="nav-icon" data-lucide="search" color="#257fb6"></i></span>
+                        <input
+                            id="memberListSearch"
+                            class="search-input"
+                            type="text"
+                            placeholder="Search members by name..."
+                            oninput="filterMemberDirectory()"
+                        >
+                    </div>
                 </div>
 
                 <div class="panel-toolbar">
@@ -285,7 +288,8 @@
                 <div class="panel-title"><span class="dot"></span><h3>Members</h3></div>
                 <div class="panel-toolbar">
                     <div class="search-wrap">
-                        <input class="search-input" id="paidSearch" placeholder=<i class="nav-icon" data-lucide="search" color="#257fb6"></i>"  Search by name…">
+                        <span class="search-icon"><i class="nav-icon" data-lucide="search" color="#257fb6"></i></span>
+                        <input class="search-input" id="paidSearch" placeholder="Search by name…">
                     </div>
                     <select id="paidActiveFilter" class="mm-select mm-select-inline">
                         <option value="all">All Status</option>
@@ -369,19 +373,27 @@
 
         async function apiGet(action) {
             const res = await fetch(`${CLB_WEBAPP_URL}?action=${encodeURIComponent(action)}`);
+            if (!res.ok) throw new Error(`Server error (${res.status})`);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             return data;
         }
 
         async function apiPost(action, payload) {
+            // No Content-Type header set intentionally — avoids a CORS preflight to the Apps Script Web App.
             const res = await fetch(CLB_WEBAPP_URL, {
                 method: "POST",
                 body: JSON.stringify({ action, ...payload })
             });
+            if (!res.ok) throw new Error(`Server error (${res.status})`);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             return data;
+        }
+
+        function debounce(fn, delay = 150) {
+            let t;
+            return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
         }
 
         function showMsg(elId, text, isError) {
@@ -408,7 +420,7 @@
             }
         }
 
-        function filterMemberDirectory() {
+        const filterMemberDirectory = debounce(function filterMemberDirectoryImpl() {
             const q =
                 document.getElementById('memberListSearch')
                 .value
@@ -430,7 +442,7 @@
             );
 
             renderMemberDirectory(filtered);
-        }
+        }, 150);
 
         function setMemberListFilter(filter) {
             currentMemberListFilter = filter;
@@ -446,7 +458,12 @@
                 return;
             }
 
-            container.innerHTML = members.map(m => `
+            container.innerHTML = members.map(m => {
+                const isPaid = !!m.isPaid;
+                const isActive = isActiveStatus(m.status);
+                const membershipClass = getMembershipBadgeClass(m.membershipType);
+                const membershipStr = m.membershipType || '—';
+                return `
                 <div class="member-row">
                     <div class="m-left">
                         <div>
@@ -475,7 +492,8 @@
 
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         async function runMemberQuery() {
@@ -503,26 +521,35 @@
 
         let memberResultsVisible = false;
 
+        function setCollapseIcon(expanded) {
+            const icon = document.getElementById('memberCollapseIcon');
+            icon.setAttribute('data-lucide', expanded ? 'list-chevrons-down-up' : 'list-chevrons-up-down');
+            if (window.lucide) lucide.createIcons();
+        }
+
         function toggleMemberResults() {
-
             const results = document.getElementById('memberResults');
-            const btn = document.getElementById('memberCollapseBtn');
             memberResultsVisible = !memberResultsVisible;
-
             results.style.display = memberResultsVisible ? 'block' : 'none';
-            btn.textContent = memberResultsVisible 
-                ? `<i class="nav-icon" data-lucide="list-chevrons-down-up" color="#257fb6"></i>` 
-                : `<i class="nav-icon" data-lucide="list-chevrons-up-down" color="#257fb6"></i>`;
+            setCollapseIcon(memberResultsVisible);
         }
 
         function showMemberResults() {
-            const results = document.getElementById('memberResults');
-            const btn = document.getElementById('memberCollapseBtn');
-
-            results.style.display = 'block';
-            btn.textContent = `<i class="nav-icon" data-lucide="list-chevrons-down-up" color="#257fb6"></i>`;
+            document.getElementById('memberResults').style.display = 'block';
             memberResultsVisible = true;
+            setCollapseIcon(true);
         }
+
+        // Close the results dropdown when clicking outside it
+        document.addEventListener('click', (e) => {
+            if (!memberResultsVisible) return;
+            const wrapper = document.querySelector('.member-search-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                document.getElementById('memberResults').style.display = 'none';
+                memberResultsVisible = false;
+                setCollapseIcon(false);
+            }
+        });
 
 
 
@@ -607,7 +634,7 @@
             `).join('');
         }
 
-        document.getElementById('paidSearch').addEventListener('input', applyPaidFilters);
+        document.getElementById('paidSearch').addEventListener('input', debounce(applyPaidFilters, 150));
         document.getElementById('paidActiveFilter').addEventListener('change', applyPaidFilters);
         document.getElementById('paidMembershipFilter').addEventListener('change', applyPaidFilters);
 
@@ -654,17 +681,17 @@
         let selectedMember = null;
 
         async function loadActiveMembers() {
-            const select = document.getElementById('memberSelect');
             try {
                 const data = await apiGet("activeMembers");
                 activeMembers = data.members || [];
                 renderMemberResults(activeMembers);
             } catch (err) {
-                select.innerHTML = `<option value="">Error: ${escapeHtml(err.message)}</option>`;
+                document.getElementById('memberResults').innerHTML =
+                    `<div style="padding:10px;color:var(--foam-dim);">Error: ${escapeHtml(err.message)}</div>`;
             }
         }
 
-        function filterMembers() {
+        const filterMembers = debounce(function filterMembersImpl() {
             const q = document.getElementById('memberSearch')
                 .value
                 .trim()
@@ -675,7 +702,7 @@
             );
 
             renderMemberResults(filtered);
-        }
+        }, 150);
 
         function renderMemberResults(members) {
             const container = document.getElementById('memberResults');
@@ -702,40 +729,28 @@
             container.style.display = 'block';
         }
 
+        function showMemberPreview(member) {
+            const card = document.getElementById('previewCard');
+            if (member) {
+                document.getElementById('pvId').textContent = member.id;
+                document.getElementById('pvName').textContent = member.name;
+                document.getElementById('pvEmail').textContent = member.email;
+                card.classList.add('visible');
+            } else {
+                card.classList.remove('visible');
+            }
+            validateMemberForm();
+        }
+
         function selectMember(row) {
             selectedMember = activeMembers.find(m => m.row === row);
 
             document.getElementById('memberSearch').value = selectedMember ? selectedMember.name : '';
             document.getElementById('memberResults').style.display = 'none';
-            document.getElementById('memberCollapseBtn').textContent = '▼';
+            setCollapseIcon(false);
             memberResultsVisible = false;
-            const card = document.getElementById('previewCard');
 
-            if (selectedMember) {
-                document.getElementById('pvId').textContent = selectedMember.id;
-                document.getElementById('pvName').textContent = selectedMember.name;
-                document.getElementById('pvEmail').textContent = selectedMember.email;
-                card.classList.add('visible');
-            } else {
-                card.classList.remove('visible');
-            }
-
-            validateMemberForm();
-        }
-
-        function handleMemberSelect() {
-            const idx = document.getElementById('memberSelect').value;
-            selectedMember = activeMembers[idx];
-            const card = document.getElementById('previewCard');
-            if (selectedMember) {
-                document.getElementById('pvId').textContent = selectedMember.id;
-                document.getElementById('pvName').textContent = selectedMember.name;
-                document.getElementById('pvEmail').textContent = selectedMember.email;
-                card.classList.add('visible');
-            } else {
-                card.classList.remove('visible');
-            }
-            validateMemberForm();
+            showMemberPreview(selectedMember);
         }
 
         function validateMemberForm() {
