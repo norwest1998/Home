@@ -78,6 +78,35 @@
 .progress-step.error { color:#ff6b6b; }
 
 .gdrive-banner { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; margin-bottom:18px; }
+.doc-layout{
+    display:grid;
+    grid-template-columns:240px 1fr;
+    gap:20px;
+    align-items:start;
+}
+
+.lib-tree{
+    grid-column:1;
+    grid-row:1 / span 2;
+}
+
+#driveBreadcrumbs{
+    grid-column:2;
+    grid-row:1;
+}
+
+#docGrid{
+    grid-column:2;
+    grid-row:2;
+}
+.fn-grid{
+    display:flex;
+    flex-direction:column;
+    gap:12px
+}
+.fn-card{
+    width:100%;
+}
 </style>
 </head>
 <body>
