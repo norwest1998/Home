@@ -130,9 +130,17 @@
                 <div class="panel-title"><span class="dot"></span><h3>Member Actions</h3></div>
             </div>
             <div class="tab-content active">
-                <select id="memberSelect" class="mm-select mm-select-wide" onchange="handleMemberSelect()">
-                    <option value="" selected>Loading members…</option>
-                </select>
+                <div style="position:relative;">
+                    <input
+                        id="memberSearch"
+                        class="search-input"
+                        placeholder="Type member name..."
+                        autocomplete="off"
+                        oninput="filterMembers()"
+                    >
+
+                    <div id="memberResults"></div>
+                </div>
 
                 <div id="previewCard" class="preview-card">
                     <p><span>Member ID</span><strong id="pvId"></strong></p>
