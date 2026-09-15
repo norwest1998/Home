@@ -275,6 +275,7 @@
                 </div>
                 <div id="memberListsResults"
                     class="member-rows">
+                    <div class="empty-state">Type a name above or choose a filter to see members.</div>
                 </div>
 
             </div>
@@ -411,7 +412,7 @@
             try {
                 const data = await apiGet("membersForManagement");
                 memberDirectoryData = data.members || [];
-                renderMemberDirectory(memberDirectoryData);
+                // Don't render on load — table stays empty until the user searches or picks a filter.
             } catch(err) {
                 document.getElementById('memberListsResults').innerHTML =
                     `<div class="empty-state">
@@ -563,10 +564,22 @@
                 const data = await apiGet("membersForManagement");
                 paidMembers = data.members || [];
                 populateMembershipFilterOptions();
-                applyPaidFilters();
+                if (hasPaidSearchActivity()) {
+                    applyPaidFilters();
+                } else {
+                    document.getElementById('paidRows').innerHTML =
+                        '<div class="empty-state">Type a name above or choose a filter to see members.</div>';
+                }
             } catch (err) {
                 document.getElementById('paidRows').innerHTML = `<div class="empty-state">Error: ${escapeHtml(err.message)}</div>`;
             }
+        }
+
+        function hasPaidSearchActivity() {
+            const q = document.getElementById('paidSearch').value.trim();
+            const activeVal = document.getElementById('paidActiveFilter').value;
+            const membershipVal = document.getElementById('paidMembershipFilter').value;
+            return !!q || activeVal !== 'all' || membershipVal !== 'all';
         }
 
         // Membership type -> theme badge class (same classes admin.html uses)
