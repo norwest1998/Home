@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Management — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js"></script>
+
+<!-- Link Shared Theme -->
+<link rel="stylesheet" href="theme.css">
+<style>
+/* =========================================================
+   DOCUMENT MANAGEMENT — page-specific layout only
+   (tokens/primitives come from theme.css, same as admin.html)
+   ========================================================= */
+.doc-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+.doc-toolbar .search-wrap { flex:1; min-width:220px; margin-bottom:0; }
+.doc-layout { display:grid; grid-template-columns: 240px 1fr; gap:20px; align-items:start; }
+@media (max-width: 820px) { .doc-layout { grid-template-columns: 1fr; } }
+
+.lib-tree { padding:16px; }
+.lib-tree h3 { font-size:13px; margin-bottom:10px; }
+.lib-node { display:block; width:100%; text-align:left; background:none; border:none; cursor:pointer;
+    padding:6px 8px; border-radius:6px; color:var(--foam-dim); font-size:13px; font-family:inherit; }
+.lib-node:hover { background: rgba(255,255,255,0.06); color:var(--foam); }
+.lib-node.active { background: rgba(37,127,182,0.18); color:var(--foam); font-weight:600; }
+.lib-node.child { padding-left:22px; font-size:12.5px; }
+
+.doc-card { padding:18px; display:flex; flex-direction:column; gap:10px; }
+.doc-card-top { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+.doc-title { font-weight:600; font-size:15px; }
+.doc-meta { font-size:11.5px; color:var(--foam-dim); }
+.doc-keywords { display:flex; flex-wrap:wrap; gap:6px; }
+.kw-chip { font-size:10.5px; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.08); color:var(--foam-dim); }
+.doc-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:auto; padding-top:6px; }
+.doc-actions button { font-size:11.5px; padding:6px 10px; }
+
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,10,20,0.6); display:none; align-items:center; justify-content:center; z-index:50; }
+.modal-backdrop.visible { display:flex; }
+.modal-box { max-width:480px; width:92%; padding:24px; max-height:86vh; overflow:auto; }
+.modal-box h3 { margin-bottom:14px; }
+.modal-box label { display:block; font-size:12px; color:var(--foam-dim); margin:10px 0 4px; }
+.modal-box input, .modal-box select, .modal-box textarea {
+    width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--glass-border);
+    background:rgba(255,255,255,0.04); color:var(--foam); font-family:inherit; font-size:13px;
+}
+.modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+
+.ver-row { display:flex; justify-content:space-between; gap:10px; font-size:12px; padding:8px 0; border-bottom:1px solid var(--glass-border); }
+.ver-row:last-child { border-bottom:none; }
+
+.gdrive-banner { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; margin-bottom:18px; }
+</style>
+</head>
+<body>
+<header class="nav-glass">
+    <a href="admin.html" class="brand">
+        <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+        <div class="brand-text">
+            <strong>Sydney Maritime Modellers Club</strong>
+            <span>ADMINISTRATION PORTAL</span>
+        </div>
+        <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
+        <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
+    </a>
+    <ul class="nav-links">
+        <li class="nav-item"><a href="admin.html" class="nav-link">Admin Dashboard</a></li>
+        <li class="nav-item"><a href="admin.html#audit-log" class="nav-link">Committee Logs</a></li>
+    </ul>
+</header>
+
+<main class="container">
+
+    <div class="section-head">
+        <h2>Document Management</h2>
+        <p>Club document library — storage, keywords, versioning, review and sign-off.</p>
+    </div>
+
+    <div class="glass gdrive-banner" id="driveBanner">
+        <div>
+            <div style="font-weight:600;font-size:13px;">Google Drive</div>
+            <div class="fn-usage" id="driveStatusText">Not connected</div>
+        </div>
+        <button class="app-filter-btn" id="driveConnectBtn">Connect Google Drive</button>
+    </div>
+
+    <div class="doc-toolbar">
+        <div class="search-wrap">
+            <input class="search-input" id="docSearch" placeholder="Search by title, keyword, category or owner…">
+        </div>
+        <select id="statusFilter">
+            <option value="all">All statuses</option>
+            <option value="Draft">Draft</option>
+            <option value="In Review">In Review</option>
+            <option value="Signed Off">Signed Off</option>
+            <option value="Archived">Archived</option>
+        </select>
+        <button class="app-filter-btn active" id="uploadBtn">+ Upload Document</button>
+    </div>
+
+    <div class="doc-layout">
+        <div class="glass lib-tree" id="libTree">
+            <h3>Library</h3>
+            <div id="libTreeBody"></div>
+        </div>
+
+        <section class="fn-grid" id="docGrid"></section>
+    </div>
+
+</main>
+
+<footer>
+    <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+</footer>
+
+<!-- Upload / New Version modal -->
+<div class="modal-backdrop" id="uploadModal">
+    <div class="glass modal-box">
+        <h3 id="uploadModalTitle">Upload Document</h3>
+        <label>File</label>
+        <input type="file" id="fileInput">
+        <label>Title</label>
+        <input type="text" id="titleInput">
+        <label>Library category (e.g. Governance/Constitution)</label>
+        <input type="text" id="categoryInput" list="categoryList">
+        <datalist id="categoryList"></datalist>
+        <label>Keywords (comma separated)</label>
+        <input type="text" id="keywordsInput">
+        <label>Change notes</label>
+        <textarea id="notesInput" rows="2"></textarea>
+        <div class="modal-actions">
+            <button class="app-filter-btn" id="uploadCancelBtn">Cancel</button>
+            <button class="app-filter-btn active" id="uploadSaveBtn">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Detail / version history / review / sign-off modal -->
+<div class="modal-backdrop" id="detailModal">
+    <div class="glass modal-box">
+        <h3 id="detailTitle">Document</h3>
+        <div class="fn-desc" id="detailMeta"></div>
+        <div id="detailVersions" style="margin:14px 0;"></div>
+        <label>Your name</label>
+        <input type="text" id="actorName" placeholder="For review / sign-off / change records">
+        <div class="modal-actions" style="flex-wrap:wrap;">
+            <button class="app-filter-btn" id="markReviewBtn">Mark In Review</button>
+            <button class="app-filter-btn" id="markSignoffBtn">Sign Off</button>
+            <button class="app-filter-btn" id="detailCloseBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ============================================================
+   SETUP REQUIRED — fill these in before this page will work:
+   1) driveClientId / driveApiKey: create an OAuth 2.0 Client ID
+      (Web application) + API key in Google Cloud Console, with
+      the Drive API enabled and this page's origin authorised.
+   2) rootFolderId: the Google Drive folder ID that will act as
+      the root of the document library.
+   3) clbWebAppUrl: reuse the SAME Apps Script Web App already
+      used for Members/Classes (see admin.html -> SHEETS.clbWebAppUrl),
+      with two extra tabs added to that spreadsheet:
+
+      Tab "Documents" — headers:
+        RowID | Title | Category | Keywords | DriveFileId | DriveLink |
+        Version | Status | Owner | LastModifiedBy | LastModifiedDate |
+        ReviewedBy | ReviewDate | SignedOffBy | SignOffDate
+
+      Tab "DocumentVersions" — headers:
+        RowID | DocID | Version | DriveFileId | DriveLink |
+        ChangedBy | ChangedDate | Notes
+
+      No backend code changes should be needed if your Apps Script
+      already handles generic fetch/update/append by sheet name
+      (as it does for Members/Classes/AuditLog). Every update/append
+      made here will show up in the existing Committee Logs /
+      Admin Log automatically, since that's driven off the same
+      AuditLog sheet — this satisfies "who changed what, when".
+   ============================================================ */
+const DOC_CONFIG = {
+    clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
+    documentsSheet: "Documents",
+    versionsSheet: "DocumentVersions",
+    driveClientId: "YOUR_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+    driveApiKey: "YOUR_GOOGLE_API_KEY",
+    rootFolderId: "YOUR_DRIVE_ROOT_FOLDER_ID",
+    driveScope: "https://www.googleapis.com/auth/drive.file"
+};
+
+/* ---------- Sheets helpers (same pattern as admin.html) ---------- */
+async function fetchSheet(url, sheetName) {
+    const res = await fetch(`${url}?action=fetch&sheet=${encodeURIComponent(sheetName)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const rows = Array.isArray(data) ? data : (data.values || []);
+    if (!rows.length) return [];
+    let headerIndex = rows.findIndex(r => Array.isArray(r) && r.some(c => {
+        const v = String(c || "").trim().toLowerCase();
+        return v === "rowid" || v === "status";
+    }));
+    if (headerIndex === -1) headerIndex = 0;
+    const headers = rows[headerIndex].map(h => String(h || "").trim());
+    return rows.slice(headerIndex + 1).filter(r => r.some(c => String(c || "").trim() !== "")).map(r => {
+        const obj = {};
+        headers.forEach((h, i) => { if (h) obj[h] = r[i] !== undefined ? r[i] : ""; });
+        return obj;
+    });
+}
+async function updateSheet(url, sheetName, hexKey, updates) {
+    const res = await fetch(url, { method: "POST", body: JSON.stringify({ action: "update", sheet: sheetName, hexKey, updates }) });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return true;
+}
+async function appendSheet(url, sheetName, rowData) {
+    const res = await fetch(url, { method: "POST", body: JSON.stringify({ action: "append", sheet: sheetName, rowData }) });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return true;
+}
+function genRowId() {
+    const bytes = new Uint8Array(8);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/* ---------- Google Drive auth (Google Identity Services) ---------- */
+let driveToken = null;
+let tokenClient = null;
+
+function initGis() {
+    if (!window.google || DOC_CONFIG.driveClientId.startsWith("YOUR_")) return;
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: DOC_CONFIG.driveClientId,
+        scope: DOC_CONFIG.driveScope,
+        callback: (resp) => {
+            if (resp.error) { console.error(resp); return; }
+            driveToken = resp.access_token;
+            document.getElementById("driveStatusText").textContent = "Connected";
+            document.getElementById("driveConnectBtn").textContent = "Reconnect";
+        }
+    });
+}
+document.getElementById("driveConnectBtn").addEventListener("click", () => {
+    if (!tokenClient) { alert("Set driveClientId / driveApiKey in DOC_CONFIG first."); return; }
+    tokenClient.requestAccessToken();
+});
+window.addEventListener("load", () => setTimeout(initGis, 300));
+
+async function driveUploadNew(file, folderName) {
+    const metadata = { name: file.name, parents: [DOC_CONFIG.rootFolderId] };
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+    form.append("file", file);
+    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink", {
+        method: "POST", headers: { Authorization: `Bearer ${driveToken}` }, body: form
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return { fileId: data.id, link: data.webViewLink };
+}
+async function driveUpdateContent(fileId, file) {
+    const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+        method: "PATCH", headers: { Authorization: `Bearer ${driveToken}`, "Content-Type": file.type || "application/octet-stream" }, body: file
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data;
+}
+
+/* ---------- State + rendering ---------- */
+let DOCS = [];
+let activeCategory = null;
+
+async function loadDocs() {
+    DOCS = await fetchSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet);
+    renderLibraryTree();
+    renderGrid();
+}
+
+function renderLibraryTree() {
+    const body = document.getElementById("libTreeBody");
+    const cats = [...new Set(DOCS.map(d => d.Category).filter(Boolean))].sort();
+    const tops = [...new Set(cats.map(c => c.split("/")[0]))];
+    let html = `<button class="lib-node ${activeCategory === null ? "active" : ""}" data-cat="">All documents</button>`;
+    tops.forEach(top => {
+        html += `<button class="lib-node ${activeCategory === top ? "active" : ""}" data-cat="${top}">${top}</button>`;
+        cats.filter(c => c.startsWith(top + "/")).forEach(c => {
+            html += `<button class="lib-node child ${activeCategory === c ? "active" : ""}" data-cat="${c}">${c.split("/").slice(1).join("/")}</button>`;
+        });
+    });
+    body.innerHTML = html;
+    body.querySelectorAll(".lib-node").forEach(btn => {
+        btn.addEventListener("click", () => { activeCategory = btn.dataset.cat || null; renderLibraryTree(); renderGrid(); });
+    });
+    const dl = document.getElementById("categoryList");
+    dl.innerHTML = cats.map(c => `<option value="${c}">`).join("");
+}
+
+function statusBadgeClass(status) {
+    return { "Draft": "badge-default", "In Review": "badge-renewal", "Signed Off": "badge-full", "Archived": "badge-expired" }[status] || "badge-default";
+}
+
+function renderGrid() {
+    const grid = document.getElementById("docGrid");
+    const q = document.getElementById("docSearch").value.trim().toLowerCase();
+    const statusF = document.getElementById("statusFilter").value;
+
+    let list = DOCS.slice();
+    if (activeCategory) list = list.filter(d => d.Category === activeCategory || (d.Category || "").startsWith(activeCategory + "/"));
+    if (statusF !== "all") list = list.filter(d => d.Status === statusF);
+    if (q) list = list.filter(d =>
+        (d.Title || "").toLowerCase().includes(q) ||
+        (d.Keywords || "").toLowerCase().includes(q) ||
+        (d.Category || "").toLowerCase().includes(q) ||
+        (d.Owner || "").toLowerCase().includes(q)
+    );
+
+    grid.innerHTML = list.map(d => `
+        <div class="glass doc-card">
+            <div class="doc-card-top">
+                <div>
+                    <div class="doc-title">${d.Title || "Untitled"}</div>
+                    <div class="doc-meta">${d.Category || "Uncategorised"} · v${d.Version || "1"} · ${d.Owner || ""}</div>
+                </div>
+                <span class="badge ${statusBadgeClass(d.Status)}">${d.Status || "Draft"}</span>
+            </div>
+            <div class="doc-keywords">${(d.Keywords || "").split(",").filter(Boolean).map(k => `<span class="kw-chip">${k.trim()}</span>`).join("")}</div>
+            <div class="doc-meta">Last modified by ${d.LastModifiedBy || "—"} on ${d.LastModifiedDate || "—"}</div>
+            <div class="doc-actions">
+                ${d.DriveLink ? `<a class="app-filter-btn" href="${d.DriveLink}" target="_blank">Open</a>` : ""}
+                <button class="app-filter-btn" data-action="version" data-id="${d.RowID}">New version</button>
+                <button class="app-filter-btn" data-action="detail" data-id="${d.RowID}">Review / Sign-off</button>
+            </div>
+        </div>
+    `).join("") || `<div class="empty-state">No documents match.</div>`;
+
+    grid.querySelectorAll('[data-action="version"]').forEach(b => b.addEventListener("click", () => openUploadModal(b.dataset.id)));
+    grid.querySelectorAll('[data-action="detail"]').forEach(b => b.addEventListener("click", () => openDetailModal(b.dataset.id)));
+}
+document.getElementById("docSearch").addEventListener("input", renderGrid);
+document.getElementById("statusFilter").addEventListener("change", renderGrid);
+
+/* ---------- Upload / new version modal ---------- */
+let uploadTargetDocId = null;
+function openUploadModal(docId) {
+    uploadTargetDocId = docId || null;
+    const doc = docId ? DOCS.find(d => d.RowID === docId) : null;
+    document.getElementById("uploadModalTitle").textContent = doc ? `New version — ${doc.Title}` : "Upload Document";
+    document.getElementById("titleInput").value = doc ? doc.Title : "";
+    document.getElementById("titleInput").disabled = !!doc;
+    document.getElementById("categoryInput").value = doc ? doc.Category : "";
+    document.getElementById("categoryInput").disabled = !!doc;
+    document.getElementById("keywordsInput").value = doc ? doc.Keywords : "";
+    document.getElementById("notesInput").value = "";
+    document.getElementById("fileInput").value = "";
+    document.getElementById("uploadModal").classList.add("visible");
+}
+document.getElementById("uploadBtn").addEventListener("click", () => openUploadModal(null));
+document.getElementById("uploadCancelBtn").addEventListener("click", () => document.getElementById("uploadModal").classList.remove("visible"));
+
+document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
+    const file = document.getElementById("fileInput").files[0];
+    if (!file) { alert("Choose a file."); return; }
+    if (!driveToken) { alert("Connect Google Drive first."); return; }
+    const title = document.getElementById("titleInput").value.trim();
+    const category = document.getElementById("categoryInput").value.trim();
+    const keywords = document.getElementById("keywordsInput").value.trim();
+    const notes = document.getElementById("notesInput").value.trim();
+    const who = prompt("Your name (for the change record):") || "Unknown";
+    const now = new Date().toISOString();
+
+    try {
+        if (uploadTargetDocId) {
+            const doc = DOCS.find(d => d.RowID === uploadTargetDocId);
+            await driveUpdateContent(doc.DriveFileId, file);
+            const newVersion = (parseInt(doc.Version, 10) || 1) + 1;
+            await updateSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, doc.RowID, {
+                Version: newVersion, LastModifiedBy: who, LastModifiedDate: now, Status: "Draft"
+            });
+            await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.versionsSheet, {
+                RowID: genRowId(), DocID: doc.RowID, Version: newVersion,
+                DriveFileId: doc.DriveFileId, DriveLink: doc.DriveLink, ChangedBy: who, ChangedDate: now, Notes: notes
+            });
+        } else {
+            const { fileId, link } = await driveUploadNew(file);
+            const rowId = genRowId();
+            await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, {
+                RowID: rowId, Title: title || file.name, Category: category, Keywords: keywords,
+                DriveFileId: fileId, DriveLink: link, Version: 1, Status: "Draft", Owner: who,
+                LastModifiedBy: who, LastModifiedDate: now, ReviewedBy: "", ReviewDate: "", SignedOffBy: "", SignOffDate: ""
+            });
+            await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.versionsSheet, {
+                RowID: genRowId(), DocID: rowId, Version: 1, DriveFileId: fileId, DriveLink: link, ChangedBy: who, ChangedDate: now, Notes: notes || "Initial upload"
+            });
+        }
+        document.getElementById("uploadModal").classList.remove("visible");
+        await loadDocs();
+    } catch (err) {
+        alert("Save failed: " + err.message);
+    }
+});
+
+/* ---------- Detail / review / sign-off modal ---------- */
+let detailDocId = null;
+async function openDetailModal(docId) {
+    detailDocId = docId;
+    const doc = DOCS.find(d => d.RowID === docId);
+    document.getElementById("detailTitle").textContent = doc.Title;
+    document.getElementById("detailMeta").textContent =
+        `${doc.Category || "Uncategorised"} · Status: ${doc.Status} · Reviewed by: ${doc.ReviewedBy || "—"} (${doc.ReviewDate || "—"}) · Signed off by: ${doc.SignedOffBy || "—"} (${doc.SignOffDate || "—"})`;
+    document.getElementById("detailModal").classList.add("visible");
+
+    const versions = (await fetchSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.versionsSheet)).filter(v => v.DocID === docId);
+    document.getElementById("detailVersions").innerHTML = versions.map(v => `
+        <div class="ver-row">
+            <span>v${v.Version} — ${v.ChangedBy} — ${v.ChangedDate}</span>
+            <a href="${v.DriveLink}" target="_blank">Open</a>
+        </div>
+    `).join("") || `<div class="fn-desc">No version history yet.</div>`;
+}
+document.getElementById("detailCloseBtn").addEventListener("click", () => document.getElementById("detailModal").classList.remove("visible"));
+
+document.getElementById("markReviewBtn").addEventListener("click", async () => {
+    const who = document.getElementById("actorName").value.trim();
+    if (!who) { alert("Enter your name."); return; }
+    await updateSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, detailDocId, {
+        Status: "In Review", ReviewedBy: who, ReviewDate: new Date().toISOString()
+    });
+    document.getElementById("detailModal").classList.remove("visible");
+    await loadDocs();
+});
+document.getElementById("markSignoffBtn").addEventListener("click", async () => {
+    const who = document.getElementById("actorName").value.trim();
+    if (!who) { alert("Enter your name."); return; }
+    await updateSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, detailDocId, {
+        Status: "Signed Off", SignedOffBy: who, SignOffDate: new Date().toISOString()
+    });
+    document.getElementById("detailModal").classList.remove("visible");
+    await loadDocs();
+});
+
+loadDocs();
+lucide.createIcons();
+</script>
+</body>
+</html>

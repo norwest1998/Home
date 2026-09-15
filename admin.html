@@ -464,7 +464,26 @@
                     };
                 }
             },
-            { id: "documentRepository", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
+            // Document Management
+            {
+                id: "documentRepository",
+                icon: '<i data-lucide="folder-open" color="#257fb6"></i>',
+                title: "Document Management",
+                description: "Library, search, versioning, review and sign-off.",
+                href: "documentManagement.html",
+                status: async () => {
+                    const docs = await fetchSheet(SHEETS.clbWebAppUrl, "Documents");
+                    const count = (s) => docs.filter(d => getRowVal(d, ["Status"]) === s).length;
+                    return {
+                        pills: [
+                            { label: "Draft", value: count("Draft"), className: "badge-default" },
+                            { label: "In Review", value: count("In Review"), className: "badge-renewal" },
+                            { label: "Signed Off", value: count("Signed Off"), className: "badge-full" }
+                        ]
+                    };
+                }
+            },
+            { id: "add-function-slot", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
         ];
 
         // Case-insensitive field reader
