@@ -634,7 +634,7 @@
   .race-card .weather-cards-row {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: center;
     gap: 10px;
     width: 100%;
     margin-bottom: 12px;
@@ -684,8 +684,37 @@
     justify-content:space-between;
     gap:10px;
   }
-  .race-card .daily-icon{ font-size:1.6em; flex-shrink:0; }
-  .race-card .daily-temps{ font-size:1.3em; font-weight:600; white-space:nowrap; }
+
+
+  .race-card.daily-desc {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--foam);
+    flex: 1;
+    text-align: center;
+    padding: 0 6px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .race-card .daily-icon{
+    font-size:1.6em; 
+    flex-shrink:0; 
+    line-height: 1;
+    flex: none;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+    }
+  .race-card .daily-temps{ 
+    font-size:1.3em; 
+    font-weight:600; 
+    white-space:nowrap; 
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    flex: none;
+  }
   .race-card .daily-row{
     display:flex;
     align-items:center;
