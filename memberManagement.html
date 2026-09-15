@@ -46,8 +46,11 @@
     select.mm-select.mm-select-wide { width: 100%; padding: 12px 40px 12px 16px; font-size: 14px; }
     select.mm-select.mm-select-inline { min-width: 160px; }
 
-    /* Member row list (bulk paid + select member reuse this) */
-    .member-rows { max-height: 360px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+    /* Small icon variant for use inside search inputs, pills, and compact buttons (nav-icon is 38px and too large here) */
+    .inline-icon { width: 15px; height: 15px; flex-shrink: 0; vertical-align: -3px; }
+
+    /* Member row list (bulk paid + select member reuse this) — grows to fit content, page scrolls instead */
+    .member-rows { display: flex; flex-direction: column; gap: 8px; }
     .member-row {
         display: flex; justify-content: space-between; align-items: center; gap: 12px;
         padding: 10px 14px; border-radius: 10px;
@@ -98,12 +101,8 @@
 
     .member-search-results {
         display: none;
-        position: absolute;
+        position: static;
         width: 100%;
-        z-index: 1000;
-
-        max-height: 220px; /* approx 5 rows */
-        overflow-y: auto;
 
         background: var(--ocean-mid,#0f2030);
         border: 1px solid var(--glass-border);
@@ -157,22 +156,24 @@
             <div class="tab-content active">
                 <div class="member-search-wrapper" style="position:relative;">
                     <div style="display:flex;gap:8px;align-items:center;">
-                        <input
-                            id="memberSearch"
-                            class="search-input"
-                            placeholder="Search member..."
-                            autocomplete="off"
-                            oninput="filterMembers()"
-                            onclick="showMemberResults()"
-                        >
+                        <div class="search-wrap" style="margin-bottom:0;">
+                            <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
+                            <input
+                                id="memberSearch"
+                                class="search-input"
+                                placeholder="Search member..."
+                                autocomplete="off"
+                                oninput="filterMembers()"
+                            >
+                        </div>
 
                         <button
                             type="button"
                             class="btn btn-ghost"
                             id="memberCollapseBtn"
                             onclick="toggleMemberResults()"
-                            title="Show / Hide Results">
-                            <i class="nav-icon" id="memberCollapseIcon" data-lucide="list-chevrons-up-down" color="#257fb6"></i>
+                            title="Show / Hide All Members">
+                            <i class="inline-icon" id="memberCollapseIcon" data-lucide="list-chevrons-up-down" color="#257fb6"></i>
                         </button>
 
                     </div>
@@ -212,7 +213,7 @@
             <div class="tab-content active">
                 <div class="panel-toolbar">
                     <div class="search-wrap">
-                        <span class="search-icon"><i class="nav-icon" data-lucide="search" color="#257fb6"></i></span>
+                        <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
                         <input
                             id="memberListSearch"
                             class="search-input"
@@ -261,7 +262,7 @@
                         class="btn btn-ghost"
                         id="btn-copy-phones"
                         onclick="copyPhoneList()">
-                        <i class="nav-icon" data-lucide="phone" color="#257fb6"></i> Copy Phone List
+                        <i class="inline-icon" data-lucide="phone" color="#257fb6"></i> Copy Phone List
                     </button>
 
                     <button
@@ -269,7 +270,7 @@
                         class="btn btn-ghost"
                         id="btn-copy-emails"
                         onclick="copyEmailList()">
-                        <i class="nav-icon" data-lucide="mail" color="#257fb6"></i> Copy Email List
+                        <i class="inline-icon" data-lucide="mail" color="#257fb6"></i> Copy Email List
                     </button>
 
                 </div>
@@ -288,7 +289,7 @@
                 <div class="panel-title"><span class="dot"></span><h3>Members</h3></div>
                 <div class="panel-toolbar">
                     <div class="search-wrap">
-                        <span class="search-icon"><i class="nav-icon" data-lucide="search" color="#257fb6"></i></span>
+                        <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
                         <input class="search-input" id="paidSearch" placeholder="Search by name…">
                     </div>
                     <select id="paidActiveFilter" class="mm-select mm-select-inline">
@@ -338,7 +339,7 @@
                 <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
                 <div class="panel-toolbar">
                     <div class="search-wrap">
-                        <span class="search-icon"><i class="nav-icon" data-lucide="search" color="#257fb6"></i></span>
+                        <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
                         <input class="search-input" id="auditSearch" placeholder="Search by member name, function, field, or message…">
                     </div>
                     <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
@@ -478,15 +479,15 @@
 
                     <div class="m-right">
 
-                        <span class="badge-pill ${membershipClass}">
+                        <span class="badge ${membershipClass}">
                             ${escapeHtml(membershipStr)}
                         </span>
 
-                        <span class="badge-pill ${isPaid ? 'pill-paid' : 'pill-unpaid'}">
+                        <span class="badge ${isPaid ? 'badge-full' : 'badge-expired'}">
                             ${isPaid ? 'Paid' : 'Unpaid'}
                         </span>
 
-                        <span class="badge-pill ${isActive ? 'pill-active' : 'pill-inactive'}">
+                        <span class="badge ${isActive ? 'badge-full' : 'badge-default'}">
                             ${isActive ? 'Active' : 'Inactive'}
                         </span>
 
@@ -528,16 +529,15 @@
         }
 
         function toggleMemberResults() {
-            const results = document.getElementById('memberResults');
             memberResultsVisible = !memberResultsVisible;
-            results.style.display = memberResultsVisible ? 'block' : 'none';
+            if (memberResultsVisible) {
+                const q = document.getElementById('memberSearch').value.trim().toLowerCase();
+                const list = q ? activeMembers.filter(m => (m.name || '').toLowerCase().includes(q)) : activeMembers;
+                renderMemberResults(list);
+            } else {
+                document.getElementById('memberResults').style.display = 'none';
+            }
             setCollapseIcon(memberResultsVisible);
-        }
-
-        function showMemberResults() {
-            document.getElementById('memberResults').style.display = 'block';
-            memberResultsVisible = true;
-            setCollapseIcon(true);
         }
 
         // Close the results dropdown when clicking outside it
@@ -617,11 +617,14 @@
             const container = document.getElementById('paidRows');
             if (!members.length) { container.innerHTML = '<div class="empty-state">No members found.</div>'; return; }
 
-            container.innerHTML = members.map(m => `
+            container.innerHTML = members.map(m => {
+                const isActive = isActiveStatus(m.status);
+                return `
                 <div class="member-row">
                     <div class="m-left">
                         <span class="m-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
                         <span class="badge ${getMembershipBadgeClass(m.membershipType)}">${escapeHtml(m.membershipType || '—')}</span>
+                        <span class="badge ${isActive ? 'badge-full' : 'badge-default'}">${isActive ? 'Active' : 'Inactive'}</span>
                     </div>
                     <div class="m-right">
                         <span>${escapeHtml(m.endDate || 'N/A')}</span>
@@ -631,7 +634,8 @@
                         </label>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         document.getElementById('paidSearch').addEventListener('input', debounce(applyPaidFilters, 150));
@@ -684,10 +688,11 @@
             try {
                 const data = await apiGet("activeMembers");
                 activeMembers = data.members || [];
-                renderMemberResults(activeMembers);
+                // Don't render/show the dropdown on load — only the search input is shown until the user types.
             } catch (err) {
                 document.getElementById('memberResults').innerHTML =
                     `<div style="padding:10px;color:var(--foam-dim);">Error: ${escapeHtml(err.message)}</div>`;
+                document.getElementById('memberResults').style.display = 'block';
             }
         }
 
@@ -697,10 +702,19 @@
                 .trim()
                 .toLowerCase();
 
+            if (!q) {
+                document.getElementById('memberResults').style.display = 'none';
+                memberResultsVisible = false;
+                setCollapseIcon(false);
+                return;
+            }
+
             const filtered = activeMembers.filter(m =>
                 (m.name || '').toLowerCase().includes(q)
             );
 
+            memberResultsVisible = true;
+            setCollapseIcon(true);
             renderMemberResults(filtered);
         }, 150);
 
