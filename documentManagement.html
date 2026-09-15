@@ -413,7 +413,7 @@ async function fetchDriveFolderContents(folderId) {
 function renderDriveItems(items) {
     const grid = document.getElementById("docGrid");
     if (!items.length) {
-        grid.innerHTML = `<div class="empty-state">No files or folders found in root.</div>`;
+        grid.innerHTML = `<div class="empty-state">No files or folders found.</div>`;
         return;
     }
 
@@ -421,6 +421,7 @@ function renderDriveItems(items) {
         const isFolder = item.mimeType === "application/vnd.google-apps.folder";
         const icon = isFolder ? "📁" : "📄";
         const typeLabel = isFolder ? "Folder" : "File";
+        const safeName = item.name.replace(/'/g, "\\'");
 
         return `
             <div class="glass doc-card">
@@ -431,12 +432,25 @@ function renderDriveItems(items) {
                     </div>
                 </div>
                 <div class="doc-actions">
-                    ${item.webViewLink ? `<a class="app-filter-btn" href="${item.webViewLink}" target="_blank">Open in Drive</a>` : ""}
-                    ${!isFolder ? `<button class="app-filter-btn active" onclick="selectDriveDocument('${item.id}', '${item.name}')">Select Document</button>` : ""}
+                    ${isFolder 
+                        ? `<button class="app-filter-btn active" onclick="openFolder('${item.id}')">Open Folder</button>` 
+                        : item.webViewLink ? `<a class="app-filter-btn" href="${item.webViewLink}" target="_blank">Open in Drive</a>` : ""
+                    }
+                    ${!isFolder ? `<button class="app-filter-btn" onclick="selectDriveDocument('${item.id}', '${safeName}')">Select Document</button>` : ""}
                 </div>
             </div>
         `;
     }).join("");
+}
+
+// Opens a subfolder by fetching its contents using its Drive ID
+async function openFolder(folderId) {
+    try {
+        const items = await fetchDriveFolderContents(folderId);
+        renderDriveItems(items);
+    } catch (err) {
+        alert("Error opening folder: " + err.message);
+    }
 }
 
 // Populates the upload modal with the selected document details
