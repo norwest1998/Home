@@ -544,6 +544,7 @@ document.getElementById("driveFileArchiveBtn").addEventListener("click", async (
     try {
         const archiveFolderId = await getOrCreateArchiveFolder();
         const previousParents = (currentDriveFile.parents || []).join(",");
+        logDocumentAction(currentDriveFile.id, currentDriveFile.name, "Archive document");
 
         // 1. Move file in Google Drive
         const url = `https://www.googleapis.com/drive/v3/files/${currentDriveFile.id}?addParents=${archiveFolderId}&removeParents=${previousParents}`;
@@ -646,33 +647,24 @@ async function getOrCreateArchiveFolder() {
     return createData.id;
 }
 
-// Moves the document in Google Drive to the Archive folder
-document.getElementById("driveFileArchiveBtn").addEventListener("click", async () => {
-    if (!currentDriveFile) return;
-    if (!confirm(`Are you sure you want to move "${currentDriveFile.name}" to the Archive folder?`)) return;
-
+// Logs document viewing events to the AuditLog sheet
+async function logDocumentAction(fileId, fileName, action) {
     try {
-        const archiveFolderId = await getOrCreateArchiveFolder();
-        const previousParents = (currentDriveFile.parents || []).join(",");
-
-        const url = `https://www.googleapis.com/drive/v3/files/${currentDriveFile.id}?addParents=${archiveFolderId}&removeParents=${previousParents}`;
-        const res = await fetch(url, {
-            method: "PATCH",
-            headers: { Authorization: `Bearer ${driveToken}` }
+        const who = document.getElementById("actorName")?.value.trim() || "Web App User";
+        const now = new Date().toISOString();
+        
+        await appendSheet(DOC_CONFIG.clbWebAppUrl, "AuditLog", {
+            RowID: genRowId(),
+            Action: action,
+            Target: fileName,
+            TargetID: fileId,
+            User: who,
+            Timestamp: now
         });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message);
-
-        alert(`"${currentDriveFile.name}" was successfully moved to the Archive folder.`);
-        document.getElementById("driveFileModal").classList.remove("visible");
-
-        // Refresh root listing
-        const items = await fetchDriveFolderContents(DOC_CONFIG.rootFolderId);
-        renderDriveItems(items);
     } catch (err) {
-        alert("Failed to archive document: " + err.message);
+        console.error("Failed to log document open action:", err);
     }
-});
+}
 
 /* ---------- Save progress indicator ---------- */
 let progressSteps = [];
