@@ -53,6 +53,30 @@
 .ver-row { display:flex; justify-content:space-between; gap:10px; font-size:12px; padding:8px 0; border-bottom:1px solid var(--glass-border); }
 .ver-row:last-child { border-bottom:none; }
 
+.progress-box { display:none; margin-top:14px; }
+.progress-box.visible { display:block; }
+.progress-spinner {
+    width:22px; height:22px; border-radius:50%;
+    border:3px solid rgba(255,255,255,0.15); border-top-color: var(--signal, #ff6a3d);
+    animation: progress-spin 0.8s linear infinite; margin:0 auto 12px;
+}
+@keyframes progress-spin { to { transform: rotate(360deg); } }
+.progress-steps { display:flex; flex-direction:column; gap:8px; }
+.progress-step { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--foam-dim); }
+.progress-step .step-icon {
+    width:16px; height:16px; border-radius:50%; border:2px solid var(--glass-border);
+    flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px;
+}
+.progress-step.active { color: var(--foam); font-weight:600; }
+.progress-step.active .step-icon { border-color: var(--signal, #ff6a3d); }
+.progress-step.active .step-icon::after { content:""; width:6px; height:6px; border-radius:50%; background: var(--signal, #ff6a3d); }
+.progress-step.done { color: var(--foam); }
+.progress-step.done .step-icon { border-color: var(--glow, #4ade80); background: var(--glow, #4ade80); }
+.progress-step.done .step-icon::after { content:"✓"; color:#08210f; font-size:10px; }
+.progress-step.error .step-icon { border-color:#ff6b6b; }
+.progress-step.error .step-icon::after { content:"✕"; color:#ff6b6b; font-size:10px; }
+.progress-step.error { color:#ff6b6b; }
+
 .gdrive-banner { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; margin-bottom:18px; }
 </style>
 </head>
@@ -132,7 +156,13 @@
         <input type="text" id="keywordsInput">
         <label>Change notes</label>
         <textarea id="notesInput" rows="2"></textarea>
-        <div class="modal-actions">
+
+        <div class="progress-box" id="uploadProgress">
+            <div class="progress-spinner"></div>
+            <div class="progress-steps" id="progressSteps"></div>
+        </div>
+
+        <div class="modal-actions" id="uploadModalActions">
             <button class="app-filter-btn" id="uploadCancelBtn">Cancel</button>
             <button class="app-filter-btn active" id="uploadSaveBtn">Save</button>
         </div>
@@ -347,6 +377,35 @@ function renderGrid() {
 document.getElementById("docSearch").addEventListener("input", renderGrid);
 document.getElementById("statusFilter").addEventListener("change", renderGrid);
 
+/* ---------- Save progress indicator ---------- */
+let progressSteps = [];
+function initProgress(steps) {
+    progressSteps = steps;
+    const box = document.getElementById("uploadProgress");
+    const list = document.getElementById("progressSteps");
+    list.innerHTML = steps.map((s, i) => `
+        <div class="progress-step" id="pstep-${i}"><span class="step-icon"></span><span>${s}</span></div>
+    `).join("");
+    box.classList.add("visible");
+    document.getElementById("uploadModalActions").style.display = "none";
+    ["fileInput","titleInput","categoryInput","keywordsInput","notesInput"].forEach(id => document.getElementById(id).disabled = true);
+}
+function setStep(i, state) {
+    progressSteps.forEach((_, idx) => {
+        const el = document.getElementById(`pstep-${idx}`);
+        if (!el) return;
+        el.classList.remove("active", "done", "error");
+        if (idx < i || (idx === i && state === "done")) el.classList.add("done");
+        else if (idx === i && state === "active") el.classList.add("active");
+        else if (idx === i && state === "error") el.classList.add("error");
+    });
+}
+function resetProgress() {
+    document.getElementById("uploadProgress").classList.remove("visible");
+    document.getElementById("uploadModalActions").style.display = "flex";
+    ["fileInput","titleInput","categoryInput","keywordsInput","notesInput"].forEach(id => document.getElementById(id).disabled = false);
+}
+
 /* ---------- Upload / new version modal ---------- */
 let uploadTargetDocId = null;
 function openUploadModal(docId) {
@@ -360,10 +419,12 @@ function openUploadModal(docId) {
     document.getElementById("keywordsInput").value = doc ? doc.Keywords : "";
     document.getElementById("notesInput").value = "";
     document.getElementById("fileInput").value = "";
+    resetProgress();
+    document.getElementById("uploadSaveBtn").textContent = "Save";
     document.getElementById("uploadModal").classList.add("visible");
 }
 document.getElementById("uploadBtn").addEventListener("click", () => openUploadModal(null));
-document.getElementById("uploadCancelBtn").addEventListener("click", () => document.getElementById("uploadModal").classList.remove("visible"));
+document.getElementById("uploadCancelBtn").addEventListener("click", () => { resetProgress(); document.getElementById("uploadModal").classList.remove("visible"); });
 
 document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
     const file = document.getElementById("fileInput").files[0];
@@ -375,35 +436,68 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
     const notes = document.getElementById("notesInput").value.trim();
     const who = prompt("Your name (for the change record):") || "Unknown";
     const now = new Date().toISOString();
+    const isNewVersion = !!uploadTargetDocId;
+
+    initProgress(isNewVersion
+        ? ["Uploading new version to Drive", "Updating document record", "Recording version history", "Refreshing library"]
+        : ["Uploading file to Drive", "Creating document record", "Recording version history", "Refreshing library"]);
 
     try {
-        if (uploadTargetDocId) {
+        if (isNewVersion) {
             const doc = DOCS.find(d => d.RowID === uploadTargetDocId);
+
+            setStep(0, "active");
             await driveUpdateContent(doc.DriveFileId, file);
+            setStep(0, "done");
+
+            setStep(1, "active");
             const newVersion = (parseInt(doc.Version, 10) || 1) + 1;
             await updateSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, doc.RowID, {
                 Version: newVersion, LastModifiedBy: who, LastModifiedDate: now, Status: "Draft"
             });
+            setStep(1, "done");
+
+            setStep(2, "active");
             await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.versionsSheet, {
                 RowID: genRowId(), DocID: doc.RowID, Version: newVersion,
                 DriveFileId: doc.DriveFileId, DriveLink: doc.DriveLink, ChangedBy: who, ChangedDate: now, Notes: notes
             });
+            setStep(2, "done");
         } else {
+            setStep(0, "active");
             const { fileId, link } = await driveUploadNew(file);
+            setStep(0, "done");
+
+            setStep(1, "active");
             const rowId = genRowId();
             await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, {
                 RowID: rowId, Title: title || file.name, Category: category, Keywords: keywords,
                 DriveFileId: fileId, DriveLink: link, Version: 1, Status: "Draft", Owner: who,
                 LastModifiedBy: who, LastModifiedDate: now, ReviewedBy: "", ReviewDate: "", SignedOffBy: "", SignOffDate: ""
             });
+            setStep(1, "done");
+
+            setStep(2, "active");
             await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.versionsSheet, {
                 RowID: genRowId(), DocID: rowId, Version: 1, DriveFileId: fileId, DriveLink: link, ChangedBy: who, ChangedDate: now, Notes: notes || "Initial upload"
             });
+            setStep(2, "done");
         }
-        document.getElementById("uploadModal").classList.remove("visible");
+
+        setStep(3, "active");
         await loadDocs();
+        setStep(3, "done");
+
+        setTimeout(() => {
+            resetProgress();
+            document.getElementById("uploadModal").classList.remove("visible");
+        }, 500);
     } catch (err) {
+        const failedIndex = progressSteps.findIndex((_, i) => document.getElementById(`pstep-${i}`)?.classList.contains("active"));
+        setStep(failedIndex === -1 ? 0 : failedIndex, "error");
         alert("Save failed: " + err.message);
+        document.getElementById("uploadModalActions").style.display = "flex";
+        document.getElementById("uploadSaveBtn").textContent = "Retry";
     }
 });
 
