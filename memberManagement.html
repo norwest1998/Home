@@ -95,6 +95,31 @@
     .fn-message.visible { display: block; }
     .fn-message.success { color: var(--glow, #4ade80); }
     .fn-message.error { color: #ff6b6b; }
+
+    .member-search-results {
+        display: none;
+        position: absolute;
+        width: 100%;
+        z-index: 1000;
+
+        max-height: 220px; /* approx 5 rows */
+        overflow-y: auto;
+
+        background: var(--ocean-mid,#0f2030);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        margin-top: 4px;
+    }
+
+    .member-search-row {
+        padding: 10px 14px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    .member-search-row:hover {
+        background: rgba(255,255,255,0.08);
+    }
     </style>
 </head>
 <body>
@@ -130,17 +155,30 @@
                 <div class="panel-title"><span class="dot"></span><h3>Member Actions</h3></div>
             </div>
             <div class="tab-content active">
-                <div style="position:relative;">
-                    <i class="tile-icon" data-lucide="search" color="#257fb6"></i>
-                    <input
-                        id="memberSearch"
-                        class="search-input"
-                        placeholder="Type member name..."
-                        autocomplete="off"
-                        oninput="filterMembers()"
-                    >
+                <div class="member-search-wrapper" style="position:relative;">
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input
+                            id="memberSearch"
+                            class="search-input"
+                            placeholder="Search member..."
+                            autocomplete="off"
+                            oninput="filterMembers()"
+                            onclick="showMemberResults()"
+                        >
 
-                    <div id="memberResults"></div>
+                        <button
+                            type="button"
+                            class="btn btn-ghost"
+                            id="memberCollapseBtn"
+                            onclick="toggleMemberResults()"
+                            title="Show / Hide Results">
+                            <i class="tile-icon" data-lucide="list-collapse" color="#257fb6">
+                        </button>
+
+                    </div>
+                    <div id="memberResults"
+                        class="member-search-results">
+                    </div>
                 </div>
 
                 <div id="previewCard" class="preview-card">
@@ -172,14 +210,12 @@
             </div>
 
             <div class="tab-content active">
-
-                <div class="panel-toolbar">
-                    <i class="tile-icon" data-lucide="search" color="#257fb6"></i>
+                <div class="panel-toolbar">                   
                     <input
                         id="memberListSearch"
                         class="search-input"
                         type="text"
-                        placeholder="Search members by name..."
+                        placeholder=<i class="tile-icon" data-lucide="search" color="#257fb6"></i>" Search members by name..."
                         oninput="filterMemberDirectory()"
                     >
                 </div>
@@ -250,7 +286,7 @@
                 <div class="panel-toolbar">
                     <div class="search-wrap">
                         <span class="search-icon">🔍</span>
-                        <input class="search-input" id="paidSearch" placeholder="Search by name…">
+                        <input class="search-input" id="paidSearch" placeholder=<i class="tile-icon" data-lucide="search" color="#257fb6"></i>"Search by name…">
                     </div>
                     <select id="paidActiveFilter" class="mm-select mm-select-inline">
                         <option value="all">All Status</option>
@@ -425,12 +461,19 @@
                     </div>
 
                     <div class="m-right">
-                        <span>
-                            ${m.isPaid ? '✅ Paid' : '❌ Unpaid'}
+
+                        <span class="badge-pill ${membershipClass}">
+                            ${escapeHtml(membershipStr)}
                         </span>
-                        <span>
-                            ${escapeHtml(m.membershipType || '')}
+
+                        <span class="badge-pill ${isPaid ? 'pill-paid' : 'pill-unpaid'}">
+                            ${isPaid ? 'Paid' : 'Unpaid'}
                         </span>
+
+                        <span class="badge-pill ${isActive ? 'pill-active' : 'pill-inactive'}">
+                            ${isActive ? 'Active' : 'Inactive'}
+                        </span>
+
                     </div>
                 </div>
             `).join('');
