@@ -1411,7 +1411,9 @@
     
     async function loadActiveSheet(){
       const statusEl = document.getElementById('statusLine');
-      showSpinner(statusEl);
+      document.getElementById('tableHead').innerHTML = '';
+      document.getElementById('tableBody').innerHTML =
+        '<tr><td colspan="100%"><div class="empty-state"><div class="spinner"></div></div></td></tr>';
       updateClassInsignia(activeClass);
 
       const cls = RESULTS_CONFIG[activeClass];
