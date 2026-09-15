@@ -502,6 +502,32 @@
             }
         }
 
+        let memberResultsVisible = false;
+
+        function toggleMemberResults() {
+
+            const results = document.getElementById('memberResults');
+            const btn = document.getElementById('memberCollapseBtn');
+            memberResultsVisible = !memberResultsVisible;
+
+            results.style.display = memberResultsVisible ? 'block' : 'none';
+            btn.textContent = memberResultsVisible 
+                ? `<i class="tile-icon" data-lucide="list-chevrons-down-up" color="#257fb6"></i>` 
+                : `<i class="tile-icon" data-lucide="list-chevrons-up-down" color="#257fb6"></i>`;
+        }
+
+        function showMemberResults() {
+            const results = document.getElementById('memberResults');
+            const btn = document.getElementById('memberCollapseBtn');
+
+            results.style.display = 'block';
+            btn.textContent = `<i class="tile-icon" data-lucide="list-chevrons-down-up" color="#257fb6"></i>`;
+            memberResultsVisible = true;
+        }
+
+
+
+        
         /* ============================================================
         BULK UPDATE PAID MEMBERS
         ============================================================ */
@@ -680,11 +706,10 @@
         function selectMember(row) {
             selectedMember = activeMembers.find(m => m.row === row);
 
-            document.getElementById('memberSearch').value =
-                selectedMember ? selectedMember.name : '';
-
+            document.getElementById('memberSearch').value = selectedMember ? selectedMember.name : '';
             document.getElementById('memberResults').style.display = 'none';
-
+            document.getElementById('memberCollapseBtn').textContent = '▼';
+            memberResultsVisible = false;
             const card = document.getElementById('previewCard');
 
             if (selectedMember) {
