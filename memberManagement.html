@@ -131,6 +131,7 @@
             </div>
             <div class="tab-content active">
                 <div style="position:relative;">
+                    <i class="tile-icon" data-lucide="search" color="#257fb6"></i>
                     <input
                         id="memberSearch"
                         class="search-input"
@@ -173,6 +174,7 @@
             <div class="tab-content active">
 
                 <div class="panel-toolbar">
+                    <i class="tile-icon" data-lucide="search" color="#257fb6"></i>
                     <input
                         id="memberListSearch"
                         class="search-input"
@@ -213,7 +215,25 @@
                         Run Query
                     </button>
                 </div>
+                <div class="action-btn-row">
 
+                    <button
+                        type="button"
+                        class="btn btn-ghost"
+                        id="btn-copy-phones"
+                        onclick="copyPhoneList()">
+                        <i class="tile-icon" data-lucide="phone" color="#257fb6"></i> Copy Phone List
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-ghost"
+                        id="btn-copy-emails"
+                        onclick="copyEmailList()">
+                        <i class="tile-icon" data-lucide="mail" color="#257fb6"></i> Copy Email List
+                    </button>
+
+                </div>
                 <div id="memberListsResults"
                     class="member-rows">
                 </div>
@@ -279,7 +299,7 @@
                 <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
                 <div class="panel-toolbar">
                     <div class="search-wrap">
-                        <span class="search-icon">🔍</span>
+                        <span class="search-icon"><i class="tile-icon" data-lucide="search" color="#257fb6"></i></span>
                         <input class="search-input" id="auditSearch" placeholder="Search by member name, function, field, or message…">
                     </div>
                     <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
