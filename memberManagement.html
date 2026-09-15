@@ -392,11 +392,70 @@
             try {
                 const data = await apiGet("activeMembers");
                 activeMembers = data.members || [];
-                select.innerHTML = '<option value="" disabled selected>-- Select a Member --</option>' +
-                    activeMembers.map((m, i) => `<option value="${i}">${escapeHtml(m.name)} (${escapeHtml(m.email)})</option>`).join('');
+                renderMemberResults(activeMembers);
             } catch (err) {
                 select.innerHTML = `<option value="">Error: ${escapeHtml(err.message)}</option>`;
             }
+        }
+
+        function filterMembers() {
+            const q = document.getElementById('memberSearch')
+                .value
+                .trim()
+                .toLowerCase();
+
+            const filtered = activeMembers.filter(m =>
+                (m.name || '').toLowerCase().includes(q)
+            );
+
+            renderMemberResults(filtered);
+        }
+
+        function renderMemberResults(members) {
+            const container = document.getElementById('memberResults');
+
+            if (!members.length) {
+                container.innerHTML =
+                    '<div style="padding:10px;color:var(--foam-dim);">No members found</div>';
+                container.style.display = 'block';
+                return;
+            }
+
+            container.innerHTML = members.map(m => `
+                <div
+                    style="padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--glass-border);"
+                    onclick="selectMember(${m.row})"
+                >
+                    <strong>${escapeHtml(m.name)}</strong><br>
+                    <span style="font-size:12px;color:var(--foam-dim);">
+                        ${escapeHtml(m.email)}
+                    </span>
+                </div>
+            `).join('');
+
+            container.style.display = 'block';
+        }
+
+        function selectMember(row) {
+            selectedMember = activeMembers.find(m => m.row === row);
+
+            document.getElementById('memberSearch').value =
+                selectedMember ? selectedMember.name : '';
+
+            document.getElementById('memberResults').style.display = 'none';
+
+            const card = document.getElementById('previewCard');
+
+            if (selectedMember) {
+                document.getElementById('pvId').textContent = selectedMember.id;
+                document.getElementById('pvName').textContent = selectedMember.name;
+                document.getElementById('pvEmail').textContent = selectedMember.email;
+                card.classList.add('visible');
+            } else {
+                card.classList.remove('visible');
+            }
+
+            validateMemberForm();
         }
 
         function handleMemberSelect() {
