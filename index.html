@@ -297,7 +297,11 @@
   table.standings tbody tr:nth-child(2) td:first-child{ color:#dbe6ea; font-weight:700; }
   table.standings tbody tr:nth-child(3) td:first-child{ color:var(--signal); font-weight:700; }
   
-  .table-scroll{ overflow-x:auto; max-height:480px; overflow-y:auto; border-radius:12px; }
+  .table-scroll{ 
+    overflow-x:visible; 
+    overflow-y:visible; 
+    border-radius:12px; 
+  }
 
   @media (max-width:640px){
     #race-results-hub.container{ padding:0 10px; }
