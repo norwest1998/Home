@@ -867,17 +867,19 @@
   }
 
   .championship-selector-row{
-      display:flex;
-      flex: space-between;
-      align-items:center;
-      gap:12px;
-      margin-bottom:16px;
-      flex-wrap:wrap;
-    }
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:16px;
+  }
 
-    .championship-selector-row .class-select-wrap{
-      margin-bottom:0;
-    }
+  .championship-selector-row .class-select-wrap{
+    margin-bottom:0;
+  }
+
+  .class-insignia{
+    margin-left:auto;   /* pushes icon to the far right */
+  }
 
 </style>
 </head>
@@ -1445,8 +1447,16 @@
 
       document.getElementById('tableHead').innerHTML =
         '<tr>' + headers.map((h, i) => `<th class="${centerCols[i] ? 'col-center' : ''}">${h}</th>`).join('') + '</tr>';
+      const attIdx = headers.findIndex(h => String(h).trim().toUpperCase() === 'ATT');
+      const filteredRows = attIdx >= 0 ? rows.filter(r => Number(r[attIdx]) > 0) : rows;
+
       document.getElementById('tableBody').innerHTML =
-        rows.map(r => '<tr>' + r.map((c, i) => `<td class="${centerCols[i] ? 'col-center' : ''}" onclick="showMemberStats('${esc(r[sailorIdx])}')">${c}</td>`).join('') + '</tr>').join('');
+        filteredRows.map(r =>
+          '<tr>' + r.map((c, i) =>
+            `<td class="${centerCols[i] ? 'col-center' : ''}"
+            onclick="showMemberStats('${esc(r[sailorIdx])}')">${c}</td>`
+          ).join('') + '</tr>'
+        ).join('');
     }
     
     let activeClass = Object.keys(RESULTS_CONFIG)[0];
