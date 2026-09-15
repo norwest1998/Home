@@ -1926,7 +1926,7 @@
           <div class="day-pill" style="background-image:url('${esc(day.bg)}'); background-size:cover; background-position:center;">
             <span class="d-day">${esc(day.day.substring(0, 3))}</span>
             <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
-            <span class="d-desc">${esc(day.description || day.summary || '')}</span>
+            <span class="d-desc">${esc(day.desc ||'')}</span>
             <span class="d-temp">${esc(day.max)}°C</span>
             <span class="d-wind" style="font-size:10px;">${esc(day.wind)} kts ${esc(day.windScale)}</span>
             <span class="d-rain" style="font-size:10px;">${esc(day.rain)}</span>
