@@ -172,7 +172,7 @@
                             id="memberCollapseBtn"
                             onclick="toggleMemberResults()"
                             title="Show / Hide Results">
-                            <i class="tile-icon" data-lucide="list-collapse" color="#257fb6">
+                            <i class="nav-icon" data-lucide="list-collapse" color="#257fb6">
                         </button>
 
                     </div>
@@ -215,7 +215,7 @@
                         id="memberListSearch"
                         class="search-input"
                         type="text"
-                        placeholder=<i class="tile-icon" data-lucide="search" color="#257fb6"></i>" Search members by name..."
+                        placeholder=<i class="nav-icon" data-lucide="search" color="#257fb6"></i>" Search members by name..."
                         oninput="filterMemberDirectory()"
                     >
                 </div>
@@ -258,7 +258,7 @@
                         class="btn btn-ghost"
                         id="btn-copy-phones"
                         onclick="copyPhoneList()">
-                        <i class="tile-icon" data-lucide="phone" color="#257fb6"></i> Copy Phone List
+                        <i class="nav-icon" data-lucide="phone" color="#257fb6"></i> Copy Phone List
                     </button>
 
                     <button
@@ -266,7 +266,7 @@
                         class="btn btn-ghost"
                         id="btn-copy-emails"
                         onclick="copyEmailList()">
-                        <i class="tile-icon" data-lucide="mail" color="#257fb6"></i> Copy Email List
+                        <i class="nav-icon" data-lucide="mail" color="#257fb6"></i> Copy Email List
                     </button>
 
                 </div>
@@ -285,8 +285,7 @@
                 <div class="panel-title"><span class="dot"></span><h3>Members</h3></div>
                 <div class="panel-toolbar">
                     <div class="search-wrap">
-                        <span class="search-icon">🔍</span>
-                        <input class="search-input" id="paidSearch" placeholder=<i class="tile-icon" data-lucide="search" color="#257fb6"></i>"Search by name…">
+                        <input class="search-input" id="paidSearch" placeholder=<i class="nav-icon" data-lucide="search" color="#257fb6"></i>"  Search by name…">
                     </div>
                     <select id="paidActiveFilter" class="mm-select mm-select-inline">
                         <option value="all">All Status</option>
@@ -335,7 +334,7 @@
                 <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
                 <div class="panel-toolbar">
                     <div class="search-wrap">
-                        <span class="search-icon"><i class="tile-icon" data-lucide="search" color="#257fb6"></i></span>
+                        <span class="search-icon"><i class="nav-icon" data-lucide="search" color="#257fb6"></i></span>
                         <input class="search-input" id="auditSearch" placeholder="Search by member name, function, field, or message…">
                     </div>
                     <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
@@ -512,8 +511,8 @@
 
             results.style.display = memberResultsVisible ? 'block' : 'none';
             btn.textContent = memberResultsVisible 
-                ? `<i class="tile-icon" data-lucide="list-chevrons-down-up" color="#257fb6"></i>` 
-                : `<i class="tile-icon" data-lucide="list-chevrons-up-down" color="#257fb6"></i>`;
+                ? `<i class="nav-icon" data-lucide="list-chevrons-down-up" color="#257fb6"></i>` 
+                : `<i class="nav-icon" data-lucide="list-chevrons-up-down" color="#257fb6"></i>`;
         }
 
         function showMemberResults() {
@@ -521,7 +520,7 @@
             const btn = document.getElementById('memberCollapseBtn');
 
             results.style.display = 'block';
-            btn.textContent = `<i class="tile-icon" data-lucide="list-chevrons-down-up" color="#257fb6"></i>`;
+            btn.textContent = `<i class="nav-icon" data-lucide="list-chevrons-down-up" color="#257fb6"></i>`;
             memberResultsVisible = true;
         }
 
