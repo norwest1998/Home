@@ -242,15 +242,17 @@
                 </div>
 
                 <div class="panel-toolbar">
-                    <input
-                        type="text"
-                        id="memberQuery"
-                        class="search-input"
-                        placeholder="e.g. DF65 sailors, unpaid members, affiliate members"
-                        onkeydown="if(event.key==='Enter') runMemberQuery()"
-                    >
+                    <div class="search-wrap" style="margin-bottom:0;">
+                        <input
+                            type="text"
+                            id="memberQuery"
+                            class="search-input"
+                            placeholder="e.g. DF65 sailors, unpaid members, affiliate members"
+                            onkeydown="if(event.key==='Enter') runMemberQuery()"
+                        >
+                    </div>
 
-                    <button class="btn"
+                    <button class="btn" style="flex-shrink:0;"
                             onclick="runMemberQuery()">
                         Run Query
                     </button>
