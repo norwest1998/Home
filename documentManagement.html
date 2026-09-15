@@ -229,6 +229,27 @@
     </div>
 </div>
 
+<!-- Drive Sync Progress Modal -->
+<div class="modal-backdrop" id="syncModal">
+    <div class="glass modal-box" style="text-align:center;">
+        <h3 id="syncModalTitle">Syncing with Google Drive</h3>
+        <div class="progress-spinner" id="syncSpinner" style="margin:20px auto;"></div>
+        
+        <div id="syncStatusLabel" style="font-weight:600; font-size:14px; margin-bottom:12px; color:var(--foam);">Initializing...</div>
+        
+        <!-- Animated Progress Bar -->
+        <div style="background:rgba(255,255,255,0.08); border-radius:10px; height:10px; width:100%; overflow:hidden; margin-bottom:12px;">
+            <div id="syncProgressBar" style="background:var(--signal, #ff6a3d); height:100%; width:0%; transition:width 0.3s ease;"></div>
+        </div>
+
+        <div id="syncDetailText" style="font-size:12px; color:var(--foam-dim); margin-bottom:16px;">Preparing scan...</div>
+
+        <div class="modal-actions" id="syncModalActions" style="justify-content:center; display:none;">
+            <button class="app-filter-btn active" id="syncCloseBtn">Done</button>
+        </div>
+    </div>
+</div>
+
 <script>
 /* ============================================================
    SETUP REQUIRED — fill these in before this page will work:
@@ -866,51 +887,72 @@ document.getElementById("markSignoffBtn").addEventListener("click", async () => 
 });
 
 document.getElementById("syncDriveBtn").addEventListener("click", syncDriveToSheet);
+document.getElementById("syncCloseBtn").addEventListener("click", () => {
+    document.getElementById("syncModal").classList.remove("visible");
+});
 
-// Recursively fetches all non-folder files from Drive root and subfolders
-async function fetchAllDriveFilesRecursively(folderId) {
+// Recursively fetches all non-folder files from Drive with live scan updates
+async function fetchAllDriveFilesRecursively(folderId, updateScanStatus) {
     let allFiles = [];
     
-    const query = `'${folderId}' in parents and trashed = false`;
-    const fields = "files(id, name, mimeType, webViewLink)";
-    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}`;
+    async function scanFolder(fId) {
+        const query = `'${fId}' in parents and trashed = false`;
+        const fields = "files(id, name, mimeType, webViewLink)";
+        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}`;
 
-    const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${driveToken}` }
-    });
-    const data = await response.json();
-    if (data.error) throw new Error(data.error.message);
+        const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${driveToken}` }
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
 
-    const items = data.files || [];
+        const items = data.files || [];
 
-    for (const item of items) {
-        if (item.mimeType === "application/vnd.google-apps.folder") {
-            // Recursively search subfolder
-            const subFiles = await fetchAllDriveFilesRecursively(item.id);
-            allFiles = allFiles.concat(subFiles);
-        } else {
-            allFiles.push(item);
+        for (const item of items) {
+            if (item.mimeType === "application/vnd.google-apps.folder") {
+                if (updateScanStatus) updateScanStatus(`Scanning subfolder: ${item.name}...`);
+                await scanFolder(item.id);
+            } else {
+                allFiles.push(item);
+                if (updateScanStatus) updateScanStatus(`Discovered ${allFiles.length} file(s)...`);
+            }
         }
     }
 
+    await scanFolder(folderId);
     return allFiles;
 }
 
-// Scans Google Drive and appends unindexed files to Google Sheets database
+// Scans Google Drive and appends unindexed files with spinner, live counts, and percentage bar
 async function syncDriveToSheet() {
     if (!driveToken) {
         alert("Connect Google Drive first.");
         return;
     }
 
-    const btn = document.getElementById("syncDriveBtn");
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = "Scanning Drive...";
+    const modal = document.getElementById("syncModal");
+    const spinner = document.getElementById("syncSpinner");
+    const statusLabel = document.getElementById("syncStatusLabel");
+    const progressBar = document.getElementById("syncProgressBar");
+    const detailText = document.getElementById("syncDetailText");
+    const actions = document.getElementById("syncModalActions");
+
+    // Reset Modal UI
+    modal.classList.add("visible");
+    spinner.style.display = "block";
+    actions.style.display = "none";
+    progressBar.style.width = "0%";
+    statusLabel.textContent = "Scanning Google Drive...";
+    detailText.textContent = "Checking root folder and subfolders...";
 
     try {
-        // 1. Fetch all files from Drive recursively
-        const driveFiles = await fetchAllDriveFilesRecursively(DOC_CONFIG.rootFolderId);
+        // 1. Fetch all files from Drive recursively with live scan feedback
+        const driveFiles = await fetchAllDriveFilesRecursively(DOC_CONFIG.rootFolderId, (msg) => {
+            detailText.textContent = msg;
+        });
+
+        statusLabel.textContent = "Comparing with database...";
+        detailText.textContent = `Found ${driveFiles.length} total file(s) in Drive. Checking registered items...`;
 
         // 2. Fetch fresh Sheet data
         await loadDocs();
@@ -920,23 +962,29 @@ async function syncDriveToSheet() {
         const missingFiles = driveFiles.filter(f => !existingFileIds.has(f.id));
 
         if (missingFiles.length === 0) {
-            alert("All Google Drive files are already registered in the Google Sheet database!");
+            spinner.style.display = "none";
+            progressBar.style.width = "100%";
+            statusLabel.textContent = "All Files Up To Date!";
+            detailText.textContent = `All ${driveFiles.length} files in Google Drive are already registered.`;
+            actions.style.display = "flex";
             return;
         }
 
-        if (!confirm(`Found ${missingFiles.length} unregistered file(s) in Drive. Add them to the Google Sheet database now?`)) {
-            return;
-        }
-
-        const who = prompt("Enter your name for the change log:") || "Auto Sync";
+        const total = missingFiles.length;
+        const who = prompt(`Found ${total} new file(s) in Drive. Enter your name for the change log:`) || "Auto Sync";
         const now = new Date().toISOString();
 
-        // 4. Batch append missing files to Google Sheet database
-        let count = 0;
-        for (const file of missingFiles) {
-            count++;
-            btn.textContent = `Syncing (${count}/${missingFiles.length})...`;
-            
+        // 4. Batch append missing files with live percentage and file count updates
+        for (let i = 0; i < total; i++) {
+            const file = missingFiles[i];
+            const countNum = i + 1;
+            const percent = Math.round((countNum / total) * 100);
+
+            // Update progress feedback UI
+            progressBar.style.width = `${percent}%`;
+            statusLabel.textContent = `Syncing File ${countNum} of ${total} (${percent}%)`;
+            detailText.textContent = `Adding: "${file.name}"`;
+
             const rowId = genRowId();
             
             // Register in Documents sheet
@@ -971,13 +1019,19 @@ async function syncDriveToSheet() {
             });
         }
 
-        alert(`Successfully synced ${missingFiles.length} file(s) to the Google Sheet database.`);
-        await loadDocs(); // Reload view grid
+        // Completion status
+        spinner.style.display = "none";
+        progressBar.style.width = "100%";
+        statusLabel.textContent = "Sync Complete!";
+        detailText.textContent = `Successfully added ${total} new file(s) to the Google Sheet database.`;
+        actions.style.display = "flex";
+
+        await loadDocs(); // Reload main database view grid
     } catch (err) {
-        alert("Sync failed: " + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = originalText;
+        spinner.style.display = "none";
+        statusLabel.textContent = "Sync Failed";
+        detailText.textContent = err.message;
+        actions.style.display = "flex";
     }
 }
 
