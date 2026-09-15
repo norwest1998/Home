@@ -132,7 +132,7 @@
             <h3>Library</h3>
             <div id="libTreeBody"></div>
         </div>
-
+        <div id="driveBreadcrumbs" style="margin-bottom:14px; font-size:13px; display:none; color:var(--foam-dim);"></div>
         <section class="fn-grid" id="docGrid"></section>
     </div>
 
@@ -422,7 +422,46 @@ async function fetchDriveFolderContents(folderId) {
     return data.files || [];
 }
 
-// Render fetched Drive files and folders into the main view grid
+let driveFolderStack = [{ id: DOC_CONFIG.rootFolderId, name: "Root" }];
+
+// Render clickable breadcrumb links
+function renderBreadcrumbs() {
+    const container = document.getElementById("driveBreadcrumbs");
+    if (driveFolderStack.length <= 1) {
+        container.style.display = "none";
+        return;
+    }
+    container.style.display = "block";
+    container.innerHTML = "<strong>Path:</strong> " + driveFolderStack.map((item, index) => {
+        if (index === driveFolderStack.length - 1) {
+            return `<span style="color:var(--foam); font-weight:600;">${item.name}</span>`;
+        }
+        return `<a href="#" onclick="navigateToFolderIndex(${index}); return false;" style="color:var(--foam-dim); text-decoration:underline;">${item.name}</a>`;
+    }).join(" &gt; ");
+}
+
+// Navigate back to any parent folder in the stack
+async function navigateToFolderIndex(index) {
+    driveFolderStack = driveFolderStack.slice(0, index + 1);
+    const current = driveFolderStack[driveFolderStack.length - 1];
+    const items = await fetchDriveFolderContents(current.id);
+    renderDriveItems(items);
+    renderBreadcrumbs();
+}
+
+// Reset stack when browsing from root
+document.getElementById("browseDriveBtn").addEventListener("click", async () => {
+    try {
+        driveFolderStack = [{ id: DOC_CONFIG.rootFolderId, name: "Root" }];
+        const items = await fetchDriveFolderContents(DOC_CONFIG.rootFolderId);
+        renderDriveItems(items);
+        renderBreadcrumbs();
+    } catch (err) {
+        alert("Error fetching Drive files: " + err.message);
+    }
+});
+
+// Pass folder name to openFolder
 function renderDriveItems(items) {
     const grid = document.getElementById("docGrid");
     if (!items.length) {
@@ -446,25 +485,71 @@ function renderDriveItems(items) {
                 </div>
                 <div class="doc-actions">
                     ${isFolder 
-                        ? `<button class="app-filter-btn active" onclick="openFolder('${item.id}')">Open Folder</button>` 
+                        ? `<button class="app-filter-btn active" onclick="openFolder('${item.id}', '${safeName}')">Open Folder</button>` 
                         : item.webViewLink ? `<a class="app-filter-btn" href="${item.webViewLink}" target="_blank">Open in Drive</a>` : ""
                     }
-                    ${!isFolder ? `<button class="app-filter-btn" onclick="selectDriveDocument('${item.id}', '${safeName}')">Select Document</button>` : ""}
+                    ${!isFolder ? `<button class="app-filter-btn" onclick="selectDriveDocument('${item.id}')">Select Document</button>` : ""}
                 </div>
             </div>
         `;
     }).join("");
 }
 
-// Opens a subfolder by fetching its contents using its Drive ID
-async function openFolder(folderId) {
+// Open folder and push to history stack
+async function openFolder(folderId, folderName) {
     try {
         const items = await fetchDriveFolderContents(folderId);
+        driveFolderStack.push({ id: folderId, name: folderName });
         renderDriveItems(items);
+        renderBreadcrumbs();
     } catch (err) {
         alert("Error opening folder: " + err.message);
     }
 }
+
+// Archive document in Drive AND update status in Google Sheet database
+document.getElementById("driveFileArchiveBtn").addEventListener("click", async () => {
+    if (!currentDriveFile) return;
+    if (!confirm(`Are you sure you want to move "${currentDriveFile.name}" to the Archive folder?`)) return;
+
+    try {
+        const archiveFolderId = await getOrCreateArchiveFolder();
+        const previousParents = (currentDriveFile.parents || []).join(",");
+
+        // 1. Move file in Google Drive
+        const url = `https://www.googleapis.com/drive/v3/files/${currentDriveFile.id}?addParents=${archiveFolderId}&removeParents=${previousParents}`;
+        const res = await fetch(url, {
+            method: "PATCH",
+            headers: { Authorization: `Bearer ${driveToken}` }
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+
+        // 2. Update Google Sheet status if registered
+        const matchedDoc = DOCS.find(d => d.DriveFileId === currentDriveFile.id);
+        if (matchedDoc) {
+            const who = prompt("Enter your name for the change log:") || "System Admin";
+            const now = new Date().toISOString();
+            await updateSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, matchedDoc.RowID, {
+                Status: "Archived",
+                LastModifiedBy: who,
+                LastModifiedDate: now
+            });
+            await loadDocs(); // Reload database sheet records
+        }
+
+        alert(`"${currentDriveFile.name}" moved to Archive${matchedDoc ? ' and updated in the database.' : '.'}`);
+        document.getElementById("driveFileModal").classList.remove("visible");
+
+        // Refresh current folder view
+        const currentFolder = driveFolderStack[driveFolderStack.length - 1];
+        const items = await fetchDriveFolderContents(currentFolder.id);
+        renderDriveItems(items);
+        renderBreadcrumbs();
+    } catch (err) {
+        alert("Failed to archive document: " + err.message);
+    }
+});
 
 let currentDriveFile = null;
 
