@@ -440,6 +440,14 @@
     position: relative;
     z-index: 1;
   }
+  .day-pill .d-desc{
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--foam);
+    min-width: 70px;
+    text-align: center;
+    white-space: nowrap;
+  }
   .day-pill .d-name{ font-family:var(--font-data); font-size:11px; color:var(--glow); text-transform:uppercase; }
   .day-pill .d-icon{ font-size:18px; margin:2px 0; }
   .day-pill .d-temp{ font-family:var(--font-data); font-size:13px; font-weight:600; color:var(--glow); }
@@ -1095,42 +1103,49 @@
           <div class="day-pill">
             <span class="d-name">Sat</span>
             <span class="d-icon">☀️</span>
+            <span class="d-desc">${esc(day.description || day.summary || '')}</span>
             <span class="d-temp">22°C</span>
             <span class="d-wind">12 kts E</span>
           </div>
           <div class="day-pill">
             <span class="d-name">Sun</span>
             <span class="d-icon">🌤️</span>
+            <span class="d-desc">${esc(day.description || day.summary || '')}</span>
             <span class="d-temp">21°C</span>
             <span class="d-wind">15 kts NE</span>
           </div>
           <div class="day-pill">
             <span class="d-name">Mon</span>
             <span class="d-icon">🌧️</span>
+            <span class="d-desc">${esc(day.description || day.summary || '')}</span>
             <span class="d-temp">18°C</span>
             <span class="d-wind">18 kts S</span>
           </div>
           <div class="day-pill">
             <span class="d-name">Tue</span>
             <span class="d-icon">⛅</span>
+            <span class="d-desc">${esc(day.description || day.summary || '')}</span>
             <span class="d-temp">19°C</span>
             <span class="d-wind">10 kts SE</span>
           </div>
           <div class="day-pill">
             <span class="d-name">Wed</span>
             <span class="d-icon">☀️</span>
+            <span class="d-desc">${esc(day.description || day.summary || '')}</span>
             <span class="d-temp">23°C</span>
             <span class="d-wind">8 kts E</span>
           </div>
           <div class="day-pill">
             <span class="d-name">Thu</span>
             <span class="d-icon">☀️</span>
+            <span class="d-desc">${esc(day.description || day.summary || '')}</span>
             <span class="d-temp">24°C</span>
             <span class="d-wind">11 kts NE</span>
           </div>
           <div class="day-pill">
             <span class="d-name">Fri</span>
             <span class="d-icon">🌤️</span>
+            <span class="d-desc">${esc(day.description || day.summary || '')}</span>
             <span class="d-temp">22°C</span>
             <span class="d-wind">14 kts E</span>
           </div>
@@ -1911,6 +1926,7 @@
           <div class="day-pill" style="background-image:url('${esc(day.bg)}'); background-size:cover; background-position:center;">
             <span class="d-day">${esc(day.day.substring(0, 3))}</span>
             <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
+            <span class="d-desc">${esc(day.description || day.summary || '')}</span>
             <span class="d-temp">${esc(day.max)}°C</span>
             <span class="d-wind" style="font-size:10px;">${esc(day.wind)} kts ${esc(day.windScale)}</span>
             <span class="d-rain" style="font-size:10px;">${esc(day.rain)}</span>
