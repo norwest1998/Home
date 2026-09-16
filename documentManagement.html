@@ -258,8 +258,8 @@
       the Drive API enabled and this page's origin authorised.
    2) rootFolderId: the Google Drive folder ID that will act as
       the root of the document library.
-   3) clbWebAppUrl: reuse the SAME Apps Script Web App already
-      used for Members/Classes (see admin.html -> SHEETS.clbWebAppUrl),
+   3) docWebAppUrl: reuse the SAME Apps Script Web App already
+      used for Members/Classes (see admin.html -> SHEETS.docWebAppUrl),
       with two extra tabs added to that spreadsheet:
 
       Tab "Documents" — headers:
@@ -279,7 +279,7 @@
       AuditLog sheet — this satisfies "who changed what, when".
    ============================================================ */
 const DOC_CONFIG = {
-    clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
+    docWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec",
     documentsSheet: "Documents",
     versionsSheet: "DocumentVersions",
     driveClientId: "738246015685-4vk2o2l7nit598jvkl8r423sa4hff8rf.apps.googleusercontent.com",
@@ -374,7 +374,7 @@ let DOCS = [];
 let activeCategory = null;
 
 async function loadDocs() {
-    DOCS = await fetchSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet);
+    DOCS = await fetchSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet);
     renderLibraryTree();
     renderGrid();
 }
@@ -582,7 +582,7 @@ document.getElementById("driveFileArchiveBtn").addEventListener("click", async (
         if (matchedDoc) {
             const who = prompt("Enter your name for the change log:") || "System Admin";
             const now = new Date().toISOString();
-            await updateSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, matchedDoc.RowID, {
+            await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, matchedDoc.RowID, {
                 Status: "Archived",
                 LastModifiedBy: who,
                 LastModifiedDate: now
@@ -710,7 +710,7 @@ async function logDocumentAction(fileId, fileName, action) {
         const who = document.getElementById("actorName")?.value.trim() || "Web App User";
         const now = new Date().toISOString();
         
-        await appendSheet(DOC_CONFIG.clbWebAppUrl, "AuditLog", {
+        await appendSheet(DOC_CONFIG.docWebAppUrl, "AuditLog", {
             RowID: genRowId(),
             Action: action,
             Target: fileName,
@@ -798,13 +798,13 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
 
             setStep(1, "active");
             const newVersion = (parseInt(doc.Version, 10) || 1) + 1;
-            await updateSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, doc.RowID, {
+            await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, doc.RowID, {
                 Version: newVersion, LastModifiedBy: who, LastModifiedDate: now, Status: "Draft"
             });
             setStep(1, "done");
 
             setStep(2, "active");
-            await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.versionsSheet, {
+            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
                 RowID: genRowId(), DocID: doc.RowID, Version: newVersion,
                 DriveFileId: doc.DriveFileId, DriveLink: doc.DriveLink, ChangedBy: who, ChangedDate: now, Notes: notes
             });
@@ -816,7 +816,7 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
 
             setStep(1, "active");
             const rowId = genRowId();
-            await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, {
+            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, {
                 RowID: rowId, Title: title || file.name, Category: category, Keywords: keywords,
                 DriveFileId: fileId, DriveLink: link, Version: 1, Status: "Draft", Owner: who,
                 LastModifiedBy: who, LastModifiedDate: now, ReviewedBy: "", ReviewDate: "", SignedOffBy: "", SignOffDate: ""
@@ -824,7 +824,7 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
             setStep(1, "done");
 
             setStep(2, "active");
-            await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.versionsSheet, {
+            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
                 RowID: genRowId(), DocID: rowId, Version: 1, DriveFileId: fileId, DriveLink: link, ChangedBy: who, ChangedDate: now, Notes: notes || "Initial upload"
             });
             setStep(2, "done");
@@ -857,7 +857,7 @@ async function openDetailModal(docId) {
         `${doc.Category || "Uncategorised"} · Status: ${doc.Status} · Reviewed by: ${doc.ReviewedBy || "—"} (${doc.ReviewDate || "—"}) · Signed off by: ${doc.SignedOffBy || "—"} (${doc.SignOffDate || "—"})`;
     document.getElementById("detailModal").classList.add("visible");
 
-    const versions = (await fetchSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.versionsSheet)).filter(v => v.DocID === docId);
+    const versions = (await fetchSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet)).filter(v => v.DocID === docId);
     document.getElementById("detailVersions").innerHTML = versions.map(v => `
         <div class="ver-row">
             <span>v${v.Version} — ${v.ChangedBy} — ${v.ChangedDate}</span>
@@ -870,7 +870,7 @@ document.getElementById("detailCloseBtn").addEventListener("click", () => docume
 document.getElementById("markReviewBtn").addEventListener("click", async () => {
     const who = document.getElementById("actorName").value.trim();
     if (!who) { alert("Enter your name."); return; }
-    await updateSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, detailDocId, {
+    await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, detailDocId, {
         Status: "In Review", ReviewedBy: who, ReviewDate: new Date().toISOString()
     });
     document.getElementById("detailModal").classList.remove("visible");
@@ -879,7 +879,7 @@ document.getElementById("markReviewBtn").addEventListener("click", async () => {
 document.getElementById("markSignoffBtn").addEventListener("click", async () => {
     const who = document.getElementById("actorName").value.trim();
     if (!who) { alert("Enter your name."); return; }
-    await updateSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, detailDocId, {
+    await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, detailDocId, {
         Status: "Signed Off", SignedOffBy: who, SignOffDate: new Date().toISOString()
     });
     document.getElementById("detailModal").classList.remove("visible");
@@ -988,7 +988,7 @@ async function syncDriveToSheet() {
             const rowId = genRowId();
             
             // Register in Documents sheet
-            await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.documentsSheet, {
+            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, {
                 RowID: rowId,
                 Title: file.name,
                 Category: "Uncategorised",
@@ -1007,7 +1007,7 @@ async function syncDriveToSheet() {
             });
 
             // Register initial version entry
-            await appendSheet(DOC_CONFIG.clbWebAppUrl, DOC_CONFIG.versionsSheet, {
+            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
                 RowID: genRowId(),
                 DocID: rowId,
                 Version: 1,
