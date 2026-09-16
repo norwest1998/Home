@@ -385,13 +385,13 @@ function renderGrid() {
     const statusF = document.getElementById("statusFilter").value;
 
     let list = DOCS.slice();
-    if (activeCategory) list = list.filter(d => d.Category === activeCategory || (d.Category || "").startsWith(activeCategory + "/"));
+    if (activeCategory) list = list.filter(d => d.Category === activeCategory || String(d.Category || "").startsWith(activeCategory + "/"));
     if (statusF !== "all") list = list.filter(d => d.Status === statusF);
     if (q) list = list.filter(d =>
-        (d.Title || "").toLowerCase().includes(q) ||
-        (d.Keywords || "").toLowerCase().includes(q) ||
-        (d.Category || "").toLowerCase().includes(q) ||
-        (d.Owner || "").toLowerCase().includes(q)
+        String(d.Title || "").toLowerCase().includes(q) ||
+        String(d.Keywords || "").toLowerCase().includes(q) ||
+        String(d.Category || "").toLowerCase().includes(q) ||
+        String(d.Owner || "").toLowerCase().includes(q)
     );
 
     grid.innerHTML = list.map(d => `
@@ -403,7 +403,7 @@ function renderGrid() {
                 </div>
                 <span class="badge ${statusBadgeClass(d.Status)}">${d.Status || "Draft"}</span>
             </div>
-            <div class="doc-keywords">${(d.Keywords || "").split(",").filter(Boolean).map(k => `<span class="kw-chip">${k.trim()}</span>`).join("")}</div>
+            <div class="doc-keywords">${String(d.Keywords || "").split(",").filter(Boolean).map(k => `<span class="kw-chip">${k.trim()}</span>`).join("")}</div>
             <div class="doc-meta">Last modified by ${d.LastModifiedBy || "—"} on ${d.LastModifiedDate || "—"}</div>
             <div class="doc-actions">
                 ${d.DriveLink ? `<a class="app-filter-btn" href="${d.DriveLink}" target="_blank">Open</a>` : ""}
@@ -416,6 +416,7 @@ function renderGrid() {
     grid.querySelectorAll('[data-action="version"]').forEach(b => b.addEventListener("click", () => openUploadModal(b.dataset.id)));
     grid.querySelectorAll('[data-action="detail"]').forEach(b => b.addEventListener("click", () => openDetailModal(b.dataset.id)));
 }
+
 document.getElementById("docSearch").addEventListener("input", renderGrid);
 document.getElementById("statusFilter").addEventListener("change", renderGrid);
 
@@ -868,11 +869,10 @@ document.getElementById("syncCloseBtn").addEventListener("click", () => {
     document.getElementById("syncModal").classList.remove("visible");
 });
 
-// Recursively fetches all non-folder files from Drive with live scan updates
 async function fetchAllDriveFilesRecursively(folderId, updateScanStatus) {
     let allFiles = [];
     
-    async function scanFolder(fId) {
+    async function scanFolder(fId, currentPath = "") {
         const query = `'${fId}' in parents and trashed = false`;
         const fields = "files(id, name, mimeType, webViewLink)";
         const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}`;
@@ -888,15 +888,16 @@ async function fetchAllDriveFilesRecursively(folderId, updateScanStatus) {
         for (const item of items) {
             if (item.mimeType === "application/vnd.google-apps.folder") {
                 if (updateScanStatus) updateScanStatus(`Scanning subfolder: ${item.name}...`);
-                await scanFolder(item.id);
+                const nextPath = currentPath ? `${currentPath}/${item.name}` : item.name;
+                await scanFolder(item.id, nextPath);
             } else {
-                allFiles.push(item);
+                allFiles.push({ ...item, category: currentPath || "Root" });
                 if (updateScanStatus) updateScanStatus(`Discovered ${allFiles.length} file(s)...`);
             }
         }
     }
 
-    await scanFolder(folderId);
+    await scanFolder(folderId, "");
     return allFiles;
 }
 
@@ -964,11 +965,10 @@ async function syncDriveToSheet() {
 
             const rowId = genRowId();
             
-            // Register in Documents sheet
             await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, {
                 RowID: rowId,
                 Title: file.name,
-                Category: "Uncategorised",
+                Category: file.category || "Root",
                 Keywords: "drive-sync",
                 DriveFileId: file.id,
                 DriveLink: file.webViewLink,
