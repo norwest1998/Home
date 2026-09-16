@@ -357,7 +357,7 @@
         }
 
         async function apiGet(action) {
-            const res = await fetch(`${CLB_WEBAPP_URL}?action=${encodeURIComponent(action)}&sheetName=Members`);
+            const res = await fetch(`${CLB_WEBAPP_URL}?action=${encodeURIComponent(action)}&sheet=Members`);
             if (!res.ok) throw new Error(`Server error (${res.status})`);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
