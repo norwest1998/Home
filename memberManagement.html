@@ -658,7 +658,7 @@
             const container = document.getElementById('memberListsResults');
             container.innerHTML = '<div class="empty-state">Generating list...</div>';
             try {
-                const result = await apiPost('queryMemberContactAgent', { query });
+                const result = await apiPost('query', { query: query });
                 renderMemberDirectory(result.members || []);
             } catch (err) {
                 container.innerHTML = `<div class="empty-state">Error: ${escapeHtml(err.message)}</div>`;
