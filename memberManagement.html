@@ -119,6 +119,55 @@
     .member-search-row:hover {
         background: rgba(255,255,255,0.08);
     }
+
+    /* Member Actions: header row (select-all + bulk icons), per-row icons/checkbox */
+    .list-header-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 14px 10px; }
+    .row-actions { display: flex; align-items: center; gap: 6px; }
+    .icon-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; border-radius: 8px; padding: 0;
+        background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+        cursor: pointer; color: var(--foam-dim, #9db6c9); transition: background .15s, color .15s;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,0.12); color: var(--foam); }
+    .icon-btn .inline-icon { color: inherit; stroke: currentColor; }
+    .row-select { margin-left: 4px; }
+    .member-row.clickable { cursor: pointer; }
+    .member-row .m-left { flex-wrap: wrap; row-gap: 6px; }
+
+    /* Member modal */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0; z-index: 1000;
+        background: rgba(0,10,20,0.65); align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal-box {
+        width: 100%; max-width: 580px; max-height: 85vh; overflow-y: auto;
+        background: var(--ocean-mid, #0f2030); border: 1px solid var(--glass-border);
+        border-radius: 14px; padding: 24px; position: relative;
+    }
+    .modal-close {
+        position: absolute; top: 14px; right: 14px; width: 30px; height: 30px;
+        display: flex; align-items: center; justify-content: center; border-radius: 8px;
+        background: none; border: none; cursor: pointer; color: var(--foam-dim);
+    }
+    .modal-close:hover { background: rgba(255,255,255,0.08); color: var(--foam); }
+    .modal-title { font-size: 19px; font-weight: 600; color: var(--foam); margin-bottom: 2px; }
+    .modal-section-title {
+        font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--foam-dim); margin: 18px 0 8px; padding-top: 12px; border-top: 1px solid var(--glass-border);
+    }
+    .modal-field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px,1fr)); gap: 12px 16px; }
+    .modal-field span { display: block; font-size: 10.5px; color: var(--foam-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+    .modal-field strong { color: var(--foam); font-weight: 500; font-size: 13px; }
+    .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--glass-border); }
+    .modal-actions button { display: flex; align-items: center; gap: 6px; }
+    table.boat-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    table.boat-table th {
+        text-align: left; padding: 6px 8px; color: var(--foam-dim); font-size: 10px;
+        text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--glass-border);
+    }
+    table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-border); color: var(--foam); }
     </style>
 </head>
 <body>
@@ -147,67 +196,15 @@
             <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
         </div>
 
-        <!-- 1. SELECT MEMBER -->
-        <div class="section-head"><h2>Select Member</h2><p>Mark a single member paid and/or send them an update request.</p></div>
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title"><span class="dot"></span><h3>Member Actions</h3></div>
-            </div>
-            <div class="tab-content active">
-                <div class="member-search-wrapper" style="position:relative;">
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <div class="search-wrap" style="margin-bottom:0;">
-                            <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
-                            <input
-                                id="memberSearch"
-                                class="search-input"
-                                placeholder="Search member..."
-                                autocomplete="off"
-                                oninput="filterMembers()"
-                            >
-                        </div>
-
-                        <button
-                            type="button"
-                            class="btn btn-ghost"
-                            id="memberCollapseBtn"
-                            onclick="toggleMemberResults()"
-                            title="Show / Hide All Members">
-                            <i class="inline-icon" id="memberCollapseIcon" data-lucide="list-chevrons-up-down" color="#257fb6"></i>
-                        </button>
-
-                    </div>
-                    <div id="memberResults"
-                        class="member-search-results">
-                    </div>
-                </div>
-
-                <div id="previewCard" class="preview-card">
-                    <p><span>Member ID</span><strong id="pvId"></strong></p>
-                    <p><span>Name</span><strong id="pvName"></strong></p>
-                    <p><span>Email</span><strong id="pvEmail"></strong></p>
-                    <div class="preview-checks">
-                        <label class="checkbox-inline"><input type="checkbox" id="chkMarkPaid" onchange="validateMemberForm()"><span>Mark as paid</span></label>
-                        <label class="checkbox-inline"><input type="checkbox" id="chkSendUpdate" onchange="validateMemberForm()"><span>Send update request</span></label>
-                    </div>
-                    <button type="button" class="btn" id="memberSubmitBtn" style="margin-top:14px;" onclick="submitMemberActions()" disabled>Submit</button>
-                    <div class="fn-message" id="memberMsg"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 4. MEMBER LISTS -->
-        <div class="section-head" id="member-lists">
-            <h2>Member Lists</h2>
-            <p>Search, filter and generate dynamic member lists.</p>
+        <!-- MEMBER ACTIONS (merged: Select Member + Member Lists + Update Paid Members) -->
+        <div class="section-head" id="member-actions">
+            <h2>Member Actions</h2>
+            <p>Search, filter, and act on members — payments, update requests, and status changes.</p>
         </div>
 
         <div class="panel">
             <div class="panel-header">
-                <div class="panel-title">
-                    <span class="dot"></span>
-                    <h3>Directory & Queries</h3>
-                </div>
+                <div class="panel-title"><span class="dot"></span><h3>Select Members</h3></div>
             </div>
 
             <div class="tab-content active">
@@ -222,19 +219,16 @@
                             oninput="filterMemberDirectory()"
                         >
                     </div>
-                    <button class="btn btn-ghost"
-                            onclick="setMemberListFilter('all')">
-                        All Members
-                    </button>
-
-                    <button class="btn btn-ghost"
-                            onclick="setMemberListFilter('paid')">
-                        Paid Members
-                    </button>
-
-                    <button class="btn btn-ghost"
-                            onclick="setMemberListFilter('committee')">
-                        Committee
+                    <select id="memberStatusFilter" class="mm-select mm-select-inline">
+                        <option value="all">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    <select id="memberMembershipFilter" class="mm-select mm-select-inline">
+                        <option value="all">All Membership Types</option>
+                    </select>
+                    <button type="button" class="btn btn-ghost" id="refreshMembersBtn" onclick="loadMembers()" title="Refresh member list">
+                        <i class="inline-icon" data-lucide="refresh-cw" color="#257fb6"></i> Refresh
                     </button>
                 </div>
 
@@ -248,70 +242,35 @@
                             onkeydown="if(event.key==='Enter') runMemberQuery()"
                         >
                     </div>
-
-                    <button class="btn" style="flex-shrink:0;"
-                            onclick="runMemberQuery()">
-                        Run Query
-                    </button>
+                    <button class="btn" style="flex-shrink:0;" onclick="runMemberQuery()">Run Query</button>
                 </div>
-                <div class="action-btn-row">
 
-                    <button
-                        type="button"
-                        class="btn btn-ghost"
-                        id="btn-copy-phones"
-                        onclick="copyPhoneList()">
+                <div class="action-btn-row">
+                    <button type="button" class="btn btn-ghost" id="btn-copy-phones" onclick="copyPhoneList()">
                         <i class="inline-icon" data-lucide="phone" color="#257fb6"></i> Copy Phone List
                     </button>
-
-                    <button
-                        type="button"
-                        class="btn btn-ghost"
-                        id="btn-copy-emails"
-                        onclick="copyEmailList()">
+                    <button type="button" class="btn btn-ghost" id="btn-copy-emails" onclick="copyEmailList()">
                         <i class="inline-icon" data-lucide="mail" color="#257fb6"></i> Copy Email List
                     </button>
-
-                </div>
-                <div id="memberListsResults"
-                    class="member-rows">
-                    <div class="empty-state">Type a name above or choose a filter to see members.</div>
                 </div>
 
-            </div>
-        </div>
-
-
-        <!-- 2. BULK UPDATE PAID MEMBERS -->
-        <div class="section-head"><h2>Update Paid Members</h2><p>Bulk mark members as paid / not paid.</p></div>
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title"><span class="dot"></span><h3>Members</h3></div>
-                <div class="panel-toolbar">
-                    <div class="search-wrap">
-                        <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
-                        <input class="search-input" id="paidSearch" placeholder="Search by name…">
-                    </div>
-                    <select id="paidActiveFilter" class="mm-select mm-select-inline">
-                        <option value="all">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                    <select id="paidMembershipFilter" class="mm-select mm-select-inline">
-                        <option value="all">All Membership Types</option>
-                    </select>
-                </div>
-            </div>
-            <div class="tab-content active">
-                <div class="select-all-row">
+                <div class="list-header-row" id="memberActionsHeader" style="display:none;">
                     <label class="checkbox-inline">
-                        <input type="checkbox" id="selectAllPaid" onchange="toggleSelectAllPaid(this)">
+                        <input type="checkbox" id="selectAllMembers" onchange="toggleSelectAllMembers(this)">
                         <span>Select all</span>
                     </label>
-                    <button type="button" class="btn" id="savePaidBtn" onclick="submitPaidBatch()" disabled>Save Changes</button>
+                    <div class="row-actions">
+                        <button type="button" class="icon-btn" title="Request update (selected)" onclick="handleBulkAction('requestUpdate')"><i class="inline-icon" data-lucide="mail-plus"></i></button>
+                        <button type="button" class="icon-btn" title="Mark paid (selected)" onclick="handleBulkAction('markPaid')"><i class="inline-icon" data-lucide="dollar-sign"></i></button>
+                        <button type="button" class="icon-btn" title="Inactivate (selected)" onclick="handleBulkAction('inactivate')"><i class="inline-icon" data-lucide="user-x"></i></button>
+                        <button type="button" class="icon-btn" title="Expire (selected)" onclick="handleBulkAction('expire')"><i class="inline-icon" data-lucide="shield-off"></i></button>
+                    </div>
                 </div>
-                <div id="paidRows" class="member-rows"><div class="empty-state">Loading members…</div></div>
-                <div class="fn-message" id="paidMsg"></div>
+
+                <div id="memberListsResults" class="member-rows">
+                    <div class="empty-state">Type a name above or choose a filter to see members.</div>
+                </div>
+                <div class="fn-message" id="memberActionsMsg"></div>
             </div>
         </div>
 
@@ -356,6 +315,30 @@
             </div>
         </div>
     </main>
+
+    <div class="modal-overlay" id="memberModalOverlay" onclick="if(event.target===this) closeMemberModal()">
+        <div class="modal-box">
+            <button type="button" class="modal-close" onclick="closeMemberModal()" title="Close">
+                <i class="inline-icon" data-lucide="x"></i>
+            </button>
+            <div class="modal-title" id="modalMemberName">—</div>
+            <p style="color:var(--foam-dim);font-size:12.5px;margin:0;" id="modalMemberSub"></p>
+
+            <div class="modal-section-title" style="border-top:none;padding-top:0;">Member Details</div>
+            <div class="modal-field-grid" id="modalMemberFields"></div>
+
+            <div class="modal-section-title">Boats</div>
+            <div id="modalBoats"><div class="empty-state">Loading boats…</div></div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" onclick="handleModalAction('requestUpdate')"><i class="inline-icon" data-lucide="mail-plus"></i> Request Update</button>
+                <button type="button" class="btn btn-ghost" onclick="handleModalAction('markPaid')"><i class="inline-icon" data-lucide="dollar-sign"></i> Mark Paid</button>
+                <button type="button" class="btn btn-ghost" onclick="handleModalAction('inactivate')"><i class="inline-icon" data-lucide="user-x"></i> Inactivate</button>
+                <button type="button" class="btn btn-ghost" onclick="handleModalAction('expire')"><i class="inline-icon" data-lucide="shield-off"></i> Expire</button>
+            </div>
+            <div class="fn-message" id="modalMsg"></div>
+        </div>
+    </div>
 
     <footer>
         <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
@@ -404,183 +387,53 @@
             el.className = "fn-message visible " + (isError ? "error" : "success");
         }
         /* ============================================================
-        MEMBERS Lists
+        MEMBER ACTIONS (search, filter, list, select, and act)
         ============================================================ */
-        let memberDirectoryData = [];
-        let currentMemberListFilter = 'all';
+        let allMembers = [];
+        let selectedMemberRows = new Set();
+        let activeModalMember = null;
 
-        async function loadMemberLists() {
+        const ACTION_LABELS = {
+            requestUpdate: 'Request Update',
+            markPaid: 'Mark Paid',
+            inactivate: 'Inactivate',
+            expire: 'Expire'
+        };
+
+        async function loadMembers() {
             try {
-                const data = await apiGet("membersForManagement");
-                memberDirectoryData = data.members || [];
-                // Don't render on load — table stays empty until the user searches or picks a filter.
-            } catch(err) {
-                document.getElementById('memberListsResults').innerHTML =
-                    `<div class="empty-state">
-                        Error loading members: ${escapeHtml(err.message)}
-                    </div>`;
-            }
-        }
-
-        const filterMemberDirectory = debounce(function filterMemberDirectoryImpl() {
-            const q =
-                document.getElementById('memberListSearch')
-                .value
-                .trim()
-                .toLowerCase();
-
-            let filtered = memberDirectoryData;
-
-            if (currentMemberListFilter === 'paid') {
-                filtered = filtered.filter(m => m.isPaid);
-            }
-
-            if (currentMemberListFilter === 'committee') {
-                filtered = filtered.filter(m => m.committee === true);
-            }
-
-            filtered = filtered.filter(m =>
-                (m.name || '').toLowerCase().includes(q)
-            );
-
-            renderMemberDirectory(filtered);
-        }, 150);
-
-        function setMemberListFilter(filter) {
-            currentMemberListFilter = filter;
-            filterMemberDirectory();
-        }
-
-        function renderMemberDirectory(members) {
-            const container = document.getElementById('memberListsResults');
-
-            if (!members.length) {
-                container.innerHTML = '<div class="empty-state">No members found.</div>';
-
-                return;
-            }
-
-            container.innerHTML = members.map(m => {
-                const isPaid = !!m.isPaid;
-                const isActive = isActiveStatus(m.status);
-                const membershipClass = getMembershipBadgeClass(m.membershipType);
-                const membershipStr = m.membershipType || '—';
-                return `
-                <div class="member-row">
-                    <div class="m-left">
-                        <div>
-                            <div class="m-name">
-                                ${escapeHtml(m.name)}
-                            </div>
-                            <div class="m-sub">
-                                ${escapeHtml(m.email || '')}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="m-right">
-
-                        <span class="badge ${membershipClass}">
-                            ${escapeHtml(membershipStr)}
-                        </span>
-
-                        <span class="badge ${isPaid ? 'badge-full' : 'badge-expired'}">
-                            ${isPaid ? 'Paid' : 'Unpaid'}
-                        </span>
-
-                        <span class="badge ${isActive ? 'badge-full' : 'badge-default'}">
-                            ${isActive ? 'Active' : 'Inactive'}
-                        </span>
-
-                    </div>
-                </div>
-            `;
-            }).join('');
-        }
-
-        async function runMemberQuery() {
-            const query =
-                document.getElementById('memberQuery')
-                .value
-                .trim();
-
-            if (!query) return;
-
-            const container =document.getElementById('memberListsResults');
-            container.innerHTML = '<div class="empty-state">Generating list...</div>';
-
-            try {
-                const result =await apiPost('queryMemberContactAgent', {query: query});
-                renderMemberDirectory(result.members || []);
-            } catch(err) {
-
-                container.innerHTML =
-                    `<div class="empty-state">
-                        Error: ${escapeHtml(err.message)}
-                    </div>`;
-            }
-        }
-
-        let memberResultsVisible = false;
-
-        function setCollapseIcon(expanded) {
-            const icon = document.getElementById('memberCollapseIcon');
-            icon.setAttribute('data-lucide', expanded ? 'list-chevrons-down-up' : 'list-chevrons-up-down');
-            if (window.lucide) lucide.createIcons();
-        }
-
-        function toggleMemberResults() {
-            memberResultsVisible = !memberResultsVisible;
-            if (memberResultsVisible) {
-                const q = document.getElementById('memberSearch').value.trim().toLowerCase();
-                const list = q ? activeMembers.filter(m => (m.name || '').toLowerCase().includes(q)) : activeMembers;
-                renderMemberResults(list);
-            } else {
-                document.getElementById('memberResults').style.display = 'none';
-            }
-            setCollapseIcon(memberResultsVisible);
-        }
-
-        // Close the results dropdown when clicking outside it
-        document.addEventListener('click', (e) => {
-            if (!memberResultsVisible) return;
-            const wrapper = document.querySelector('.member-search-wrapper');
-            if (wrapper && !wrapper.contains(e.target)) {
-                document.getElementById('memberResults').style.display = 'none';
-                memberResultsVisible = false;
-                setCollapseIcon(false);
-            }
-        });
-
-
-
-        
-        /* ============================================================
-        BULK UPDATE PAID MEMBERS
-        ============================================================ */
-        let paidMembers = [];
-
-        async function loadPaidMembers() {
-            try {
-                const data = await apiGet("membersForManagement");
-                paidMembers = data.members || [];
+                const data = await apiGet('fetch');
+                allMembers = data.members || [];
                 populateMembershipFilterOptions();
-                if (hasPaidSearchActivity()) {
-                    applyPaidFilters();
-                } else {
-                    document.getElementById('paidRows').innerHTML =
-                        '<div class="empty-state">Type a name above or choose a filter to see members.</div>';
-                }
+                filterMemberDirectory();
             } catch (err) {
-                document.getElementById('paidRows').innerHTML = `<div class="empty-state">Error: ${escapeHtml(err.message)}</div>`;
+                document.getElementById('memberListsResults').innerHTML =
+                    `<div class="empty-state">Error loading members: ${escapeHtml(err.message)}</div>`;
             }
         }
 
-        function hasPaidSearchActivity() {
-            const q = document.getElementById('paidSearch').value.trim();
-            const activeVal = document.getElementById('paidActiveFilter').value;
-            const membershipVal = document.getElementById('paidMembershipFilter').value;
-            return !!q || activeVal !== 'all' || membershipVal !== 'all';
+        function hasMemberListActivity() {
+            const q = document.getElementById('memberListSearch').value.trim();
+            const statusVal = document.getElementById('memberStatusFilter').value;
+            const membershipVal = document.getElementById('memberMembershipFilter').value;
+            return !!q || statusVal !== 'all' || membershipVal !== 'all';
+        }
+
+        function populateMembershipFilterOptions() {
+            const select = document.getElementById('memberMembershipFilter');
+            const current = select.value || 'all';
+            const types = [...new Set(allMembers.map(m => m.membershipType).filter(Boolean))].sort();
+            select.innerHTML = '<option value="all">All Membership Types</option>' +
+                types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+            if (types.includes(current)) select.value = current;
+        }
+
+        // Members sheet stores Active as boolean or a status-like string
+        function isActiveStatus(status) {
+            if (status === true) return true;
+            if (status === false || status === undefined || status === null || status === '') return false;
+            const s = String(status).trim().toLowerCase();
+            return s === 'true' || s === 'yes' || s === 'active';
         }
 
         // Membership type -> theme badge class (same classes admin.html uses)
@@ -593,222 +446,256 @@
             return 'badge-default';
         }
 
-        // Members sheet stores Active as boolean or a status-like string
-        function isActiveStatus(status) {
-            if (status === true) return true;
-            if (status === false || status === undefined || status === null || status === '') return false;
-            const s = String(status).trim().toLowerCase();
-            return s === 'true' || s === 'yes' || s === 'active';
-        }
+        const filterMemberDirectory = debounce(function filterMemberDirectoryImpl() {
+            if (!hasMemberListActivity()) {
+                document.getElementById('memberListsResults').innerHTML =
+                    '<div class="empty-state">Type a name above or choose a filter to see members.</div>';
+                document.getElementById('memberActionsHeader').style.display = 'none';
+                return;
+            }
 
-        function populateMembershipFilterOptions() {
-            const select = document.getElementById('paidMembershipFilter');
-            const current = select.value || 'all';
-            const types = [...new Set(paidMembers.map(m => m.membershipType).filter(Boolean))].sort();
-            select.innerHTML = '<option value="all">All Membership Types</option>' +
-                types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
-            if (types.includes(current)) select.value = current;
-        }
+            const q = document.getElementById('memberListSearch').value.trim().toLowerCase();
+            const statusVal = document.getElementById('memberStatusFilter').value;
+            const membershipVal = document.getElementById('memberMembershipFilter').value;
 
-        function applyPaidFilters() {
-            const q = document.getElementById('paidSearch').value.trim().toLowerCase();
-            const activeVal = document.getElementById('paidActiveFilter').value;
-            const membershipVal = document.getElementById('paidMembershipFilter').value;
-
-            let filtered = paidMembers.filter(m => (m.name || '').toLowerCase().includes(q));
-            if (activeVal !== 'all') {
-                const wantActive = activeVal === 'active';
+            let filtered = allMembers.filter(m => (m.name || '').toLowerCase().includes(q));
+            if (statusVal !== 'all') {
+                const wantActive = statusVal === 'active';
                 filtered = filtered.filter(m => isActiveStatus(m.status) === wantActive);
             }
             if (membershipVal !== 'all') {
                 filtered = filtered.filter(m => (m.membershipType || '') === membershipVal);
             }
-            renderPaidRows(filtered);
-        }
+            renderMemberDirectory(filtered);
+        }, 150);
 
-        function renderPaidRows(members) {
-            const container = document.getElementById('paidRows');
-            if (!members.length) { container.innerHTML = '<div class="empty-state">No members found.</div>'; return; }
+        document.getElementById('memberStatusFilter').addEventListener('change', filterMemberDirectory);
+        document.getElementById('memberMembershipFilter').addEventListener('change', filterMemberDirectory);
+
+        function renderMemberDirectory(members) {
+            const container = document.getElementById('memberListsResults');
+            const header = document.getElementById('memberActionsHeader');
+
+            if (!members.length) {
+                container.innerHTML = '<div class="empty-state">No members found.</div>';
+                header.style.display = 'none';
+                return;
+            }
+
+            header.style.display = 'flex';
+            document.getElementById('selectAllMembers').checked = members.every(m => selectedMemberRows.has(m.row));
 
             container.innerHTML = members.map(m => {
+                const isPaid = !!m.isPaid;
                 const isActive = isActiveStatus(m.status);
+                const membershipClass = getMembershipBadgeClass(m.membershipType);
+                const classesStr = m.classesSailed || m.classes || '—';
+                const checked = selectedMemberRows.has(m.row) ? 'checked' : '';
                 return `
-                <div class="member-row">
+                <div class="member-row clickable" onclick="handleRowClick(${m.row})">
                     <div class="m-left">
-                        <span class="m-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
-                        <span class="badge ${getMembershipBadgeClass(m.membershipType)}">${escapeHtml(m.membershipType || '—')}</span>
+                        <div class="m-name">${escapeHtml(m.name)}</div>
+                        <span class="badge ${membershipClass}">${escapeHtml(m.membershipType || '—')}</span>
+                        <span class="badge ${isPaid ? 'badge-full' : 'badge-expired'}">${isPaid ? 'Paid' : 'Unpaid'}</span>
                         <span class="badge ${isActive ? 'badge-full' : 'badge-default'}">${isActive ? 'Active' : 'Inactive'}</span>
+                        <span class="badge badge-default">${escapeHtml(classesStr)}</span>
                     </div>
                     <div class="m-right">
-                        <span>${escapeHtml(m.endDate || 'N/A')}</span>
-                        <label class="checkbox-inline">
-                            <span>Paid</span>
-                            <input type="checkbox" class="paid-chk" data-row="${m.row}" data-initial="${m.isPaid ? 'true':'false'}" ${m.isPaid ? 'checked':''} onchange="validatePaidForm()">
+                        <div class="row-actions">
+                            <button type="button" class="icon-btn" title="Request update" onclick="event.stopPropagation(); handleMemberAction('requestUpdate', ${m.row})"><i class="inline-icon" data-lucide="mail-plus"></i></button>
+                            <button type="button" class="icon-btn" title="Mark paid" onclick="event.stopPropagation(); handleMemberAction('markPaid', ${m.row})"><i class="inline-icon" data-lucide="dollar-sign"></i></button>
+                            <button type="button" class="icon-btn" title="Inactivate" onclick="event.stopPropagation(); handleMemberAction('inactivate', ${m.row})"><i class="inline-icon" data-lucide="user-x"></i></button>
+                            <button type="button" class="icon-btn" title="Expire" onclick="event.stopPropagation(); handleMemberAction('expire', ${m.row})"><i class="inline-icon" data-lucide="shield-off"></i></button>
+                        </div>
+                        <label class="checkbox-inline row-select" onclick="event.stopPropagation()">
+                            <input type="checkbox" class="member-select-chk" data-row="${m.row}" ${checked} onchange="toggleMemberSelect(${m.row}, this.checked)">
                         </label>
                     </div>
-                </div>
-            `;
+                </div>`;
             }).join('');
+
+            if (window.lucide) lucide.createIcons();
         }
 
-        document.getElementById('paidSearch').addEventListener('input', debounce(applyPaidFilters, 150));
-        document.getElementById('paidActiveFilter').addEventListener('change', applyPaidFilters);
-        document.getElementById('paidMembershipFilter').addEventListener('change', applyPaidFilters);
-
-        function toggleSelectAllPaid(chk) {
-            document.querySelectorAll('.paid-chk').forEach(c => c.checked = chk.checked);
-            validatePaidForm();
+        function handleRowClick(row) {
+            const member = allMembers.find(m => m.row === row);
+            if (member) openMemberModal(member);
         }
 
-        function validatePaidForm() {
-            const modified = [...document.querySelectorAll('.paid-chk')].filter(c => c.checked !== (c.dataset.initial === 'true'));
-            const btn = document.getElementById('savePaidBtn');
-            btn.disabled = modified.length === 0;
-            btn.textContent = modified.length ? `Save Changes (${modified.length})` : 'Save Changes';
+        function toggleMemberSelect(row, checked) {
+            if (checked) selectedMemberRows.add(row); else selectedMemberRows.delete(row);
+            const boxes = [...document.querySelectorAll('.member-select-chk')];
+            document.getElementById('selectAllMembers').checked = boxes.length > 0 && boxes.every(c => c.checked);
         }
 
-        async function submitPaidBatch() {
-            const updates = [...document.querySelectorAll('.paid-chk')]
-                .filter(c => c.checked !== (c.dataset.initial === 'true'))
-                .map(c => {
-                    const row = parseInt(c.dataset.row, 10);
-                    const member = paidMembers.find(m => m.row === row);
-                    return { row, isPaid: c.checked, name: member ? member.name : undefined };
-                });
-            if (!updates.length) return;
+        function toggleSelectAllMembers(chk) {
+            document.querySelectorAll('.member-select-chk').forEach(c => {
+                c.checked = chk.checked;
+                const row = parseInt(c.dataset.row, 10);
+                if (chk.checked) selectedMemberRows.add(row); else selectedMemberRows.delete(row);
+            });
+        }
 
-            const btn = document.getElementById('savePaidBtn');
-            btn.disabled = true; btn.textContent = 'Saving…';
-            try {
-                const result = await apiPost('updatePaidBatch', { updates });
-                showMsg('paidMsg', `${result.count} member(s) updated.`, false);
-                await loadPaidMembers();
-            } catch (err) {
-                showMsg('paidMsg', 'Error: ' + err.message, true);
-            } finally {
-                btn.textContent = 'Save Changes';
-                validatePaidForm();
+        // Single source of truth for what each action calls server-side — used by row icons, bulk icons, and the modal.
+        async function runMemberActionApi(action, member) {
+            switch (action) {
+                case 'requestUpdate': return apiPost('sendUpdateRequest', { member });
+                case 'markPaid': return apiPost('markPaid', { row: member.row, isPaid: true, name: member.name });
+                case 'inactivate': return apiPost('setActive', { row: member.row, isActive: false, name: member.name });
+                case 'expire': return apiPost('setMembershipStatus', { row: member.row, status: 'Expired', name: member.name });
             }
+        }
+
+        async function handleMemberAction(action, row) {
+            const member = allMembers.find(m => m.row === row);
+            if (!member) return;
+            if (!confirm(`${ACTION_LABELS[action]}: ${member.name}?`)) return;
+            try {
+                await runMemberActionApi(action, member);
+                showMsg('memberActionsMsg', `${ACTION_LABELS[action]} completed for ${member.name}.`, false);
+                await loadMembers();
+                if (activeModalMember && activeModalMember.row === row) {
+                    const refreshed = allMembers.find(m => m.row === row) || member;
+                    await openMemberModal(refreshed, true);
+                }
+            } catch (err) {
+                showMsg('memberActionsMsg', 'Error: ' + err.message, true);
+            }
+        }
+
+        async function handleBulkAction(action) {
+            const members = allMembers.filter(m => selectedMemberRows.has(m.row));
+            if (!members.length) {
+                showMsg('memberActionsMsg', `No members selected to perform ${ACTION_LABELS[action]} action.`, true);
+                return;
+            }
+            if (!confirm(`${ACTION_LABELS[action]}: ${members.length} selected member(s)?`)) return;
+            try {
+                await Promise.all(members.map(m => runMemberActionApi(action, m)));
+                showMsg('memberActionsMsg', `${ACTION_LABELS[action]} completed for ${members.length} member(s).`, false);
+                selectedMemberRows.clear();
+                await loadMembers();
+            } catch (err) {
+                showMsg('memberActionsMsg', 'Error: ' + err.message, true);
+            }
+        }
+
+        async function runMemberQuery() {
+            const query = document.getElementById('memberQuery').value.trim();
+            if (!query) return;
+            const container = document.getElementById('memberListsResults');
+            container.innerHTML = '<div class="empty-state">Generating list...</div>';
+            try {
+                const result = await apiPost('queryMemberContactAgent', { query });
+                renderMemberDirectory(result.members || []);
+            } catch (err) {
+                container.innerHTML = `<div class="empty-state">Error: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        // Copies the currently selected members if any are checked, otherwise every member currently in the list.
+        function copyPhoneList() {
+            const scoped = selectedMemberRows.size ? allMembers.filter(m => selectedMemberRows.has(m.row)) : allMembers;
+            const phones = scoped.map(m => m.phone).filter(Boolean);
+            navigator.clipboard.writeText(phones.join(', '))
+                .then(() => showMsg('memberActionsMsg', `Copied ${phones.length} phone number(s).`, false))
+                .catch(err => showMsg('memberActionsMsg', 'Copy failed: ' + err.message, true));
+        }
+
+        function copyEmailList() {
+            const scoped = selectedMemberRows.size ? allMembers.filter(m => selectedMemberRows.has(m.row)) : allMembers;
+            const emails = scoped.map(m => m.email).filter(Boolean);
+            navigator.clipboard.writeText(emails.join(', '))
+                .then(() => showMsg('memberActionsMsg', `Copied ${emails.length} email address(es).`, false))
+                .catch(err => showMsg('memberActionsMsg', 'Copy failed: ' + err.message, true));
         }
 
         /* ============================================================
-        1. SELECT MEMBER
+        MEMBER MODAL (full member detail + boats + actions)
         ============================================================ */
-        let activeMembers = [];
-        let selectedMember = null;
+        const MODAL_FIELD_LABELS = {
+            memberId: 'Member ID', id: 'Member ID', email: 'Email', phone: 'Phone',
+            address: 'Address', membershipType: 'Membership Type', status: 'Status',
+            isPaid: 'Paid', endDate: 'Renewal Date', joinDate: 'Join Date', committee: 'Committee'
+        };
 
-        async function loadActiveMembers() {
+        function humanizeKey(key) {
+            return key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+        }
+
+        function formatFieldValue(value) {
+            if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+            return (value === null || value === undefined || value === '') ? '—' : String(value);
+        }
+
+        async function openMemberModal(member, silentRefresh) {
+            activeModalMember = member;
+            document.getElementById('modalMemberName').textContent = member.name || '—';
+            document.getElementById('modalMemberSub').textContent = member.email || '';
+
+            document.getElementById('modalMemberFields').innerHTML = Object.keys(member)
+                .filter(k => k !== 'row' && k !== 'name')
+                .map(k => `
+                    <div class="modal-field">
+                        <span>${escapeHtml(MODAL_FIELD_LABELS[k] || humanizeKey(k))}</span>
+                        <strong>${escapeHtml(formatFieldValue(member[k]))}</strong>
+                    </div>`).join('');
+
+            if (!silentRefresh) {
+                document.getElementById('modalMsg').className = 'fn-message';
+                document.getElementById('memberModalOverlay').classList.add('visible');
+            }
+
+            const boatsEl = document.getElementById('modalBoats');
+            boatsEl.innerHTML = '<div class="empty-state">Loading boats…</div>';
             try {
-                const data = await apiGet("activeMembers");
-                activeMembers = data.members || [];
-                // Don't render/show the dropdown on load — only the search input is shown until the user types.
+                const data = await apiPost('memberBoats', { row: member.row, name: member.name });
+                renderModalBoats(data.boats || []);
             } catch (err) {
-                document.getElementById('memberResults').innerHTML =
-                    `<div style="padding:10px;color:var(--foam-dim);">Error: ${escapeHtml(err.message)}</div>`;
-                document.getElementById('memberResults').style.display = 'block';
-            }
-        }
-
-        const filterMembers = debounce(function filterMembersImpl() {
-            const q = document.getElementById('memberSearch')
-                .value
-                .trim()
-                .toLowerCase();
-
-            if (!q) {
-                document.getElementById('memberResults').style.display = 'none';
-                memberResultsVisible = false;
-                setCollapseIcon(false);
-                return;
+                boatsEl.innerHTML = `<div class="empty-state">Error loading boats: ${escapeHtml(err.message)}</div>`;
             }
 
-            const filtered = activeMembers.filter(m =>
-                (m.name || '').toLowerCase().includes(q)
-            );
-
-            memberResultsVisible = true;
-            setCollapseIcon(true);
-            renderMemberResults(filtered);
-        }, 150);
-
-        function renderMemberResults(members) {
-            const container = document.getElementById('memberResults');
-
-            if (!members.length) {
-                container.innerHTML =
-                    '<div style="padding:10px;color:var(--foam-dim);">No members found</div>';
-                container.style.display = 'block';
-                return;
-            }
-
-            container.innerHTML = members.map(m => `
-                <div
-                    style="padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--glass-border);"
-                    onclick="selectMember(${m.row})"
-                >
-                    <strong>${escapeHtml(m.name)}</strong><br>
-                    <span style="font-size:12px;color:var(--foam-dim);">
-                        ${escapeHtml(m.email)}
-                    </span>
-                </div>
-            `).join('');
-
-            container.style.display = 'block';
+            if (window.lucide) lucide.createIcons();
         }
 
-        function showMemberPreview(member) {
-            const card = document.getElementById('previewCard');
-            if (member) {
-                document.getElementById('pvId').textContent = member.id;
-                document.getElementById('pvName').textContent = member.name;
-                document.getElementById('pvEmail').textContent = member.email;
-                card.classList.add('visible');
-            } else {
-                card.classList.remove('visible');
-            }
-            validateMemberForm();
+        function renderModalBoats(boats) {
+            const el = document.getElementById('modalBoats');
+            if (!boats.length) { el.innerHTML = '<div class="empty-state">No boats on record.</div>'; return; }
+            el.innerHTML = `
+                <table class="boat-table">
+                    <thead><tr><th>Class</th><th>Sail No</th><th>Model</th><th>Handicap</th><th>HRN</th><th>GH</th><th>GH HCap</th><th>Active</th></tr></thead>
+                    <tbody>
+                        ${boats.map(b => `
+                            <tr>
+                                <td>${escapeHtml(b.Class)}</td>
+                                <td>${escapeHtml(b.SailNo)}</td>
+                                <td>${escapeHtml(b.Model)}</td>
+                                <td>${escapeHtml(b.Handicap)}</td>
+                                <td>${escapeHtml(b.HRN)}</td>
+                                <td>${escapeHtml(b.GH)}</td>
+                                <td>${escapeHtml(b['GH HCap'])}</td>
+                                <td>${b.Active ? 'Yes' : 'No'}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>`;
         }
 
-        function selectMember(row) {
-            selectedMember = activeMembers.find(m => m.row === row);
-
-            document.getElementById('memberSearch').value = selectedMember ? selectedMember.name : '';
-            document.getElementById('memberResults').style.display = 'none';
-            setCollapseIcon(false);
-            memberResultsVisible = false;
-
-            showMemberPreview(selectedMember);
+        function closeMemberModal() {
+            document.getElementById('memberModalOverlay').classList.remove('visible');
+            activeModalMember = null;
         }
 
-        function validateMemberForm() {
-            const isPaid = document.getElementById('chkMarkPaid').checked;
-            const isSend = document.getElementById('chkSendUpdate').checked;
-            document.getElementById('memberSubmitBtn').disabled = !(selectedMember && (isPaid || isSend));
-        }
-
-        async function submitMemberActions() {
-            if (!selectedMember) return;
-            const isPaid = document.getElementById('chkMarkPaid').checked;
-            const isSend = document.getElementById('chkSendUpdate').checked;
-            if (!isPaid && !isSend) return;
-
-            const btn = document.getElementById('memberSubmitBtn');
-            btn.disabled = true; btn.textContent = 'Processing…';
-
+        async function handleModalAction(action) {
+            if (!activeModalMember) return;
+            if (!confirm(`${ACTION_LABELS[action]}: ${activeModalMember.name}?`)) return;
             try {
-                const tasks = [];
-                if (isPaid) tasks.push(apiPost('markPaid', { row: selectedMember.row, isPaid: true, name: selectedMember.name }));
-                if (isSend) tasks.push(apiPost('sendUpdateRequest', { member: selectedMember }));
-                await Promise.all(tasks);
-                showMsg('memberMsg', 'Action(s) completed successfully.', false);
-                document.getElementById('chkMarkPaid').checked = false;
-                document.getElementById('chkSendUpdate').checked = false;
-                await loadPaidMembers(); // paid list may now be stale
+                await runMemberActionApi(action, activeModalMember);
+                showMsg('modalMsg', `${ACTION_LABELS[action]} completed.`, false);
+                await loadMembers();
+                const refreshed = allMembers.find(m => m.row === activeModalMember.row) || activeModalMember;
+                await openMemberModal(refreshed, true);
             } catch (err) {
-                showMsg('memberMsg', 'Error: ' + err.message, true);
-            } finally {
-                btn.textContent = 'Submit';
-                validateMemberForm();
+                showMsg('modalMsg', 'Error: ' + err.message, true);
             }
         }
 
@@ -898,9 +785,7 @@
         /* ============================================================
         INIT
         ============================================================ */
-        loadPaidMembers();
-        loadActiveMembers();
-        loadMemberLists();
+        loadMembers();
         loadAuditLog();
         if (window.lucide) lucide.createIcons();
     </script>
