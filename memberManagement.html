@@ -356,8 +356,11 @@
             return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
         }
 
-        async function apiGet(action) {
-            const res = await fetch(`${CLB_WEBAPP_URL}?action=${encodeURIComponent(action)}&sheet=Members`);
+        async function apiGet(action, sheet) {
+            const url = sheet
+                ? `${CLB_WEBAPP_URL}?action=${encodeURIComponent(action)}&sheet=${encodeURIComponent(sheet)}`
+                : `${CLB_WEBAPP_URL}?action=${encodeURIComponent(action)}`;
+            const res = await fetch(url);
             if (!res.ok) throw new Error(`Server error (${res.status})`);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
@@ -390,6 +393,7 @@
         MEMBER ACTIONS (search, filter, list, select, and act)
         ============================================================ */
         let allMembers = [];
+        let allBoats = [];
         let selectedMemberRows = new Set();
         let activeModalMember = null;
 
@@ -400,10 +404,78 @@
             expire: 'Expire'
         };
 
+        function parseBoolLike(v) {
+            if (v === true) return true;
+            if (v === false || v === undefined || v === null || v === '') return false;
+            const s = String(v).trim().toLowerCase();
+            return s === 'true' || s === 'yes' || s === 'active' || s === '1';
+        }
+
+        // Members sheet columns: ID | Active | MemberName | Membership | Start Date | End Date | Paid up |
+        // Phone | email | WhatsApp | Duplicate | Address Line | Suburb | PCode | Emergency Contact Name |
+        // Emergency Contact Number | Calendar Subscription | Home Club | Committee
+        function parseMembersSheet(values) {
+            return (values || []).slice(1)
+                .map((r, i) => ({ r, sheetRow: i + 2 }))
+                .filter(({ r }) => r.some(c => c !== ''))
+                .map(({ r, sheetRow }) => ({
+                    row: sheetRow,
+                    id: r[0],
+                    status: r[1],
+                    name: r[2],
+                    membershipType: r[3],
+                    startDate: r[4],
+                    endDate: r[5],
+                    isPaid: parseBoolLike(r[6]),
+                    phone: r[7],
+                    email: r[8],
+                    whatsapp: r[9],
+                    duplicate: r[10],
+                    addressLine: r[11],
+                    suburb: r[12],
+                    postcode: r[13],
+                    emergencyContactName: r[14],
+                    emergencyContactNumber: r[15],
+                    calendarSubscription: r[16],
+                    homeClub: r[17],
+                    committee: r[18]
+                }));
+        }
+
+        // ClassMembers sheet columns: BoatID | Active | Member | Class | SailNo | Model | Handicap | HRN | GH | GH HCap
+        function parseBoatsSheet(values) {
+            return (values || []).slice(1)
+                .filter(r => r.some(c => c !== ''))
+                .map(r => ({
+                    boatId: r[0],
+                    active: parseBoolLike(r[1]),
+                    member: r[2],
+                    class: r[3],
+                    sailNo: r[4],
+                    model: r[5],
+                    handicap: r[6],
+                    hrn: r[7],
+                    gh: r[8],
+                    ghHcap: r[9]
+                }));
+        }
+
+        function getMemberClasses(name) {
+            const n = String(name || '').trim().toLowerCase();
+            const classes = allBoats
+                .filter(b => String(b.member || '').trim().toLowerCase() === n && b.active)
+                .map(b => b.class).filter(Boolean);
+            return classes.length ? classes.join(', ') : '—';
+        }
+
         async function loadMembers() {
             try {
-                const data = await apiGet('fetch');
-                allMembers = data.members || [];
+                const [membersData, boatsData] = await Promise.all([
+                    apiGet('fetch', 'Members'),
+                    apiGet('fetch', 'ClassMembers')
+                ]);
+                allMembers = parseMembersSheet(membersData.values);
+                allBoats = parseBoatsSheet(boatsData.values);
                 populateMembershipFilterOptions();
                 filterMemberDirectory();
             } catch (err) {
@@ -489,7 +561,7 @@
                 const isPaid = !!m.isPaid;
                 const isActive = isActiveStatus(m.status);
                 const membershipClass = getMembershipBadgeClass(m.membershipType);
-                const classesStr = m.classesSailed || m.classes || '—';
+                const classesStr = getMemberClasses(m.name);
                 const checked = selectedMemberRows.has(m.row) ? 'checked' : '';
                 return `
                 <div class="member-row clickable" onclick="handleRowClick(${m.row})">
@@ -614,9 +686,12 @@
         MEMBER MODAL (full member detail + boats + actions)
         ============================================================ */
         const MODAL_FIELD_LABELS = {
-            memberId: 'Member ID', id: 'Member ID', email: 'Email', phone: 'Phone',
-            address: 'Address', membershipType: 'Membership Type', status: 'Status',
-            isPaid: 'Paid', endDate: 'Renewal Date', joinDate: 'Join Date', committee: 'Committee'
+            id: 'Member ID', status: 'Active', membershipType: 'Membership Type',
+            startDate: 'Start Date', endDate: 'End Date', isPaid: 'Paid Up',
+            phone: 'Phone', email: 'Email', whatsapp: 'WhatsApp', duplicate: 'Duplicate',
+            addressLine: 'Address', suburb: 'Suburb', postcode: 'Postcode',
+            emergencyContactName: 'Emergency Contact Name', emergencyContactNumber: 'Emergency Contact Number',
+            calendarSubscription: 'Calendar Subscription', homeClub: 'Home Club', committee: 'Committee'
         };
 
         function humanizeKey(key) {
@@ -628,7 +703,7 @@
             return (value === null || value === undefined || value === '') ? '—' : String(value);
         }
 
-        async function openMemberModal(member, silentRefresh) {
+        function openMemberModal(member, silentRefresh) {
             activeModalMember = member;
             document.getElementById('modalMemberName').textContent = member.name || '—';
             document.getElementById('modalMemberSub').textContent = member.email || '';
@@ -646,14 +721,11 @@
                 document.getElementById('memberModalOverlay').classList.add('visible');
             }
 
-            const boatsEl = document.getElementById('modalBoats');
-            boatsEl.innerHTML = '<div class="empty-state">Loading boats…</div>';
-            try {
-                const data = await apiPost('memberBoats', { row: member.row, name: member.name });
-                renderModalBoats(data.boats || []);
-            } catch (err) {
-                boatsEl.innerHTML = `<div class="empty-state">Error loading boats: ${escapeHtml(err.message)}</div>`;
-            }
+            // Boats come from the ClassMembers sheet, already loaded in allBoats — matched by member name.
+            const memberBoats = allBoats.filter(b =>
+                String(b.member || '').trim().toLowerCase() === String(member.name || '').trim().toLowerCase()
+            );
+            renderModalBoats(memberBoats);
 
             if (window.lucide) lucide.createIcons();
         }
@@ -667,14 +739,14 @@
                     <tbody>
                         ${boats.map(b => `
                             <tr>
-                                <td>${escapeHtml(b.Class)}</td>
-                                <td>${escapeHtml(b.SailNo)}</td>
-                                <td>${escapeHtml(b.Model)}</td>
-                                <td>${escapeHtml(b.Handicap)}</td>
-                                <td>${escapeHtml(b.HRN)}</td>
-                                <td>${escapeHtml(b.GH)}</td>
-                                <td>${escapeHtml(b['GH HCap'])}</td>
-                                <td>${b.Active ? 'Yes' : 'No'}</td>
+                                <td>${escapeHtml(b.class)}</td>
+                                <td>${escapeHtml(b.sailNo)}</td>
+                                <td>${escapeHtml(b.model)}</td>
+                                <td>${escapeHtml(b.handicap)}</td>
+                                <td>${escapeHtml(b.hrn)}</td>
+                                <td>${escapeHtml(b.gh)}</td>
+                                <td>${escapeHtml(b.ghHcap)}</td>
+                                <td>${b.active ? 'Yes' : 'No'}</td>
                             </tr>`).join('')}
                     </tbody>
                 </table>`;
