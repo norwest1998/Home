@@ -98,7 +98,7 @@
     grid-column:2;
     grid-row:2;
 } */
- 
+
 .fn-grid{
     display:flex;
     flex-direction:column;
@@ -434,21 +434,55 @@ async function loadDocs() {
 
 function renderLibraryTree() {
     const body = document.getElementById("libTreeBody");
-    const cats = [...new Set(DOCS.map(d => d.Category).filter(Boolean))].sort();
-    const tops = [...new Set(cats.map(c => c.split("/")[0]))];
-    let html = `<button class="lib-node ${activeCategory === null ? "active" : ""}" data-cat="">All documents</button>`;
-    tops.forEach(top => {
-        html += `<button class="lib-node ${activeCategory === top ? "active" : ""}" data-cat="${top}">${top}</button>`;
-        cats.filter(c => c.startsWith(top + "/")).forEach(c => {
-            html += `<button class="lib-node child ${activeCategory === c ? "active" : ""}" data-cat="${c}">${c.split("/").slice(1).join("/")}</button>`;
+    
+    // 1. Build a set of all explicit and intermediate folder paths
+    const allPaths = new Set();
+    DOCS.forEach(d => {
+        if (!d.Category) return;
+        const parts = String(d.Category).trim().split("/");
+        let currentPath = "";
+        parts.forEach(part => {
+            currentPath = currentPath ? `${currentPath}/${part}` : part;
+            allPaths.add(currentPath);
         });
     });
-    body.innerHTML = html;
-    body.querySelectorAll(".lib-node").forEach(btn => {
-        btn.addEventListener("click", () => { activeCategory = btn.dataset.cat || null; renderLibraryTree(); renderGrid(); });
+
+    // 2. Sort paths alphabetically to keep hierarchy aligned
+    const sortedPaths = [...allPaths].sort();
+
+    // 3. Render "All documents" root button
+    let html = `<button class="lib-node ${activeCategory === null ? "active" : ""}" data-cat="">All documents</button>`;
+
+    // 4. Render each folder with dynamic indentation based on depth
+    sortedPaths.forEach(catPath => {
+        const parts = catPath.split("/");
+        const depth = parts.length - 1; // 0 = Root level, 1 = Subfolder, 2 = Sub-subfolder...
+        const displayName = parts[parts.length - 1]; // Extract folder name only
+        const paddingLeft = 8 + (depth * 14); // Increases indentation per level
+
+        const isActive = activeCategory === catPath;
+        
+        html += `<button class="lib-node ${isActive ? "active" : ""}" 
+                         data-cat="${catPath}" 
+                         style="padding-left: ${paddingLeft}px;">
+                    ${depth > 0 ? "└ " : ""}${displayName}
+                 </button>`;
     });
+
+    body.innerHTML = html;
+
+    // Attach click listeners
+    body.querySelectorAll(".lib-node").forEach(btn => {
+        btn.addEventListener("click", () => { 
+            activeCategory = btn.dataset.cat || null; 
+            renderLibraryTree(); 
+            renderGrid(); 
+        });
+    });
+
+    // Update datalist for upload form modal
     const dl = document.getElementById("categoryList");
-    dl.innerHTML = cats.map(c => `<option value="${c}">`).join("");
+    if (dl) dl.innerHTML = sortedPaths.map(c => `<option value="${c}">`).join("");
 }
 
 function statusBadgeClass(status) {
