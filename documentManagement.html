@@ -136,7 +136,7 @@
     <div class="glass gdrive-banner" id="driveBanner">
         <div>
             <div style="font-weight:600;font-size:13px;">Google Drive</div>
-            <div class="fn-usage" id="driveStatusText">Not connected</div>
+            <div class="fn-usage" id="driveStatusText" style="color: #ff6b6b; font-weight: 600;">Not connected</div>
         </div>
         <button class="app-filter-btn" id="driveConnectBtn">Connect Google Drive</button>
         <button class="app-filter-btn" id="browseDriveBtn">Browse Root Folder</button>
@@ -314,15 +314,21 @@ function initGis() {
         callback: (resp) => {
             if (resp.error) { console.error(resp); return; }
             driveToken = resp.access_token;
-            document.getElementById("driveStatusText").textContent = "Connected";
+            
+            const statusText = document.getElementById("driveStatusText");
+            statusText.textContent = "Connected";
+            statusText.style.color = "#4ade80";
+            
             document.getElementById("driveConnectBtn").textContent = "Reconnect";
         }
     });
 }
+
 document.getElementById("driveConnectBtn").addEventListener("click", () => {
     if (!tokenClient) { alert("Set driveClientId / driveApiKey in DOC_CONFIG first."); return; }
     tokenClient.requestAccessToken();
 });
+
 window.addEventListener("load", () => setTimeout(initGis, 300));
 
 async function driveUploadNew(file, folderName) {
@@ -337,6 +343,7 @@ async function driveUploadNew(file, folderName) {
     if (data.error) throw new Error(data.error.message);
     return { fileId: data.id, link: data.webViewLink };
 }
+
 async function driveUpdateContent(fileId, file) {
     const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
         method: "PATCH", headers: { Authorization: `Bearer ${driveToken}`, "Content-Type": file.type || "application/octet-stream" }, body: file
