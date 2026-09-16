@@ -132,6 +132,49 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 }
 .log-table td { padding: 8px 10px; border-bottom: 1px solid var(--glass-border); color: var(--foam); vertical-align: top; }
 .log-table tr:last-child td { border-bottom: none; }
+
+.lib-node-wrap {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    border-radius: 6px;
+}
+.lib-node-wrap:hover { background: rgba(255,255,255,0.06); }
+.lib-node-wrap.active { background: rgba(37,127,182,0.18); }
+
+.tree-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    color: var(--foam-dim);
+    font-size: 9px;
+    flex-shrink: 0;
+    user-select: none;
+}
+.tree-toggle:hover { color: var(--foam); }
+.tree-spacer { width: 20px; flex-shrink: 0; }
+
+.lib-node-btn {
+    flex: 1;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 8px 6px 2px;
+    color: var(--foam-dim);
+    font-size: 13px;
+    font-family: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lib-node-wrap.active .lib-node-btn {
+    color: var(--foam);
+    font-weight: 600;
+}
 </style>
 </head>
 <body>
@@ -432,55 +475,106 @@ async function loadDocs() {
     await loadAuditLog();
 }
 
+// Global set to track open folder paths (e.g. "Governance", "Governance/Policies")
+let expandedCategories = new Set();
+
 function renderLibraryTree() {
     const body = document.getElementById("libTreeBody");
-    
-    // 1. Build a set of all explicit and intermediate folder paths
+
+    // 1. Collect all folder paths and direct parent relationships
     const allPaths = new Set();
     DOCS.forEach(d => {
         if (!d.Category) return;
         const parts = String(d.Category).trim().split("/");
-        let currentPath = "";
+        let current = "";
         parts.forEach(part => {
-            currentPath = currentPath ? `${currentPath}/${part}` : part;
-            allPaths.add(currentPath);
+            current = current ? `${current}/${part}` : part;
+            allPaths.add(current);
         });
     });
 
-    // 2. Sort paths alphabetically to keep hierarchy aligned
     const sortedPaths = [...allPaths].sort();
+    
+    // Determine which paths contain subfolders
+    const parentPaths = new Set();
+    sortedPaths.forEach(path => {
+        const parent = path.substring(0, path.lastIndexOf("/"));
+        if (parent) parentPaths.add(parent);
+    });
 
-    // 3. Render "All documents" root button
-    let html = `<button class="lib-node ${activeCategory === null ? "active" : ""}" data-cat="">All documents</button>`;
+    // 2. Render Root "All documents" option
+    let html = `
+        <div class="lib-node-wrap ${activeCategory === null ? "active" : ""}">
+            <span class="tree-spacer"></span>
+            <button class="lib-node-btn" data-cat="">All documents</button>
+        </div>
+    `;
 
-    // 4. Render each folder with dynamic indentation based on depth
+    // 3. Render tree items
     sortedPaths.forEach(catPath => {
         const parts = catPath.split("/");
-        const depth = parts.length - 1; // 0 = Root level, 1 = Subfolder, 2 = Sub-subfolder...
-        const displayName = parts[parts.length - 1]; // Extract folder name only
-        const paddingLeft = 8 + (depth * 14); // Increases indentation per level
+        const depth = parts.length - 1;
+        const displayName = parts[parts.length - 1];
+        const hasChildren = parentPaths.has(catPath);
+        const isExpanded = expandedCategories.has(catPath);
+
+        // Check if all parent folders in this path are currently expanded
+        let isVisible = true;
+        let ancestorPath = "";
+        for (let i = 0; i < depth; i++) {
+            ancestorPath = ancestorPath ? `${ancestorPath}/${parts[i]}` : parts[i];
+            if (!expandedCategories.has(ancestorPath)) {
+                isVisible = false;
+                break;
+            }
+        }
+
+        // Hide item if any ancestor folder is collapsed
+        if (!isVisible) return;
 
         const isActive = activeCategory === catPath;
-        
-        html += `<button class="lib-node ${isActive ? "active" : ""}" 
-                         data-cat="${catPath}" 
-                         style="padding-left: ${paddingLeft}px;">
-                    ${depth > 0 ? "└ " : ""}${displayName}
-                 </button>`;
+        const indentPadding = depth * 14;
+
+        html += `
+            <div class="lib-node-wrap ${isActive ? "active" : ""}" style="padding-left: ${indentPadding}px;">
+                ${hasChildren 
+                    ? `<span class="tree-toggle" data-toggle="${catPath}">${isExpanded ? "▼" : "►"}</span>` 
+                    : `<span class="tree-spacer"></span>`
+                }
+                <button class="lib-node-btn" data-cat="${catPath}">${displayName}</button>
+            </div>
+        `;
     });
 
     body.innerHTML = html;
 
-    // Attach click listeners
-    body.querySelectorAll(".lib-node").forEach(btn => {
-        btn.addEventListener("click", () => { 
-            activeCategory = btn.dataset.cat || null; 
-            renderLibraryTree(); 
-            renderGrid(); 
+    // 4. Attach click listener to toggle arrows (expand/collapse without selecting category)
+    body.querySelectorAll(".tree-toggle").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const path = btn.dataset.toggle;
+            if (expandedCategories.has(path)) {
+                expandedCategories.delete(path);
+            } else {
+                expandedCategories.add(path);
+            }
+            renderLibraryTree();
         });
     });
 
-    // Update datalist for upload form modal
+    // 5. Attach click listener to category names (selects category & auto-expands it)
+    body.querySelectorAll(".lib-node-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            activeCategory = btn.dataset.cat || null;
+            if (activeCategory) {
+                expandedCategories.add(activeCategory);
+            }
+            renderLibraryTree();
+            renderGrid();
+        });
+    });
+
+    // Update upload category dropdown
     const dl = document.getElementById("categoryList");
     if (dl) dl.innerHTML = sortedPaths.map(c => `<option value="${c}">`).join("");
 }
