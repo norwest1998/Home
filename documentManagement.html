@@ -14,9 +14,19 @@
 <link rel="stylesheet" href="theme.css">
 <style>
 /* =========================================================
-   DOCUMENT MANAGEMENT — page-specific layout only
-   (tokens/primitives come from theme.css, same as admin.html)
+   DOCUMENT MANAGEMENT — page-specific layout & workspace elements
    ========================================================= */
+.mm-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
+}
+.mm-title-group { display: flex; flex-direction: column; gap: 4px; }
+.mm-title-group h1 { font-family: var(--font-display); font-size: 28px; color: var(--foam); }
+
+.panel-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.panel-toolbar .search-wrap { flex: 1; min-width: 200px; margin-bottom: 0; }
+.inline-icon { width: 15px; height: 15px; flex-shrink: 0; vertical-align: -3px; }
+
 .doc-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
 .doc-toolbar .search-wrap { flex:1; min-width:220px; margin-bottom:0; }
 .doc-layout { display:grid; grid-template-columns: 240px 1fr; gap:20px; align-items:start; }
@@ -78,17 +88,6 @@
 .progress-step.error { color:#ff6b6b; }
 
 .gdrive-banner { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; margin-bottom:18px; }
-.doc-layout{
-    display:grid;
-    grid-template-columns:240px 1fr;
-    gap:20px;
-    align-items:start;
-}
-
-.lib-tree{
-    grid-column:1;
-    grid-row:1 / span 2;
-}
 
 #driveBreadcrumbs{
     grid-column:2;
@@ -107,6 +106,18 @@
 .fn-card{
     width:100%;
 }
+
+/* Audit Log Table Styling */
+.log-table-wrap { max-height: 360px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.log-table th {
+    position: sticky; top: 0; background: var(--ocean-mid, #0f2030); text-align: left;
+    padding: 8px 10px; font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--foam-dim);
+    border-bottom: 1px solid var(--glass-border);
+}
+.log-table td { padding: 8px 10px; border-bottom: 1px solid var(--glass-border); color: var(--foam); vertical-align: top; }
+.log-table tr:last-child td { border-bottom: none; }
 </style>
 </head>
 <body>
@@ -122,17 +133,22 @@
     </a>
     <ul class="nav-links">
         <li class="nav-item"><a href="admin.html" class="nav-link">Admin Dashboard</a></li>
-        <li class="nav-item"><a href="admin.html#audit-log" class="nav-link">Committee Logs</a></li>
+        <li class="nav-item"><a href="#audit-log" class="nav-link">Audit Log</a></li>
     </ul>
 </header>
 
 <main class="container">
 
-    <div class="section-head">
-        <h2>Document Management</h2>
-        <p>Club document library — storage, keywords, versioning, review and sign-off.</p>
+    <!-- Admin Workspace Header (Matching memberManagement style) -->
+    <div class="mm-header">
+        <div class="mm-title-group">
+            <h1>Document Management</h1>
+            <p style="color:var(--foam-dim);font-size:13px;">Club document library — storage, keywords, versioning, review and sign-off.</p>
+        </div>
+        <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
     </div>
 
+    <!-- Google Drive Banner -->
     <div class="glass gdrive-banner" id="driveBanner">
         <div>
             <div style="font-weight:600;font-size:13px;">Google Drive</div>
@@ -164,6 +180,42 @@
         </div>
         <div id="driveBreadcrumbs" style="margin-bottom:14px; font-size:13px; display:none; color:var(--foam-dim);"></div>
         <section class="fn-grid" id="docGrid"></section>
+    </div>
+
+    <!-- AUDIT LOG (Matching memberManagement style) -->
+    <div class="section-head" id="audit-log" style="margin-top: 36px;">
+        <h2>Audit Log</h2>
+        <p>Every Document Management action, recorded to the AuditLog sheet.</p>
+    </div>
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
+            <div class="panel-toolbar">
+                <div class="search-wrap">
+                    <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
+                    <input class="search-input" id="auditSearch" placeholder="Search by user, action, target, or ID…">
+                </div>
+                <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+            </div>
+        </div>
+        <div class="tab-content active">
+            <div class="log-table-wrap">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>User / Context</th>
+                            <th>Action</th>
+                            <th>Target Document</th>
+                            <th>Target ID</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="auditEmpty" style="display:none;">No activity recorded yet.</div>
+        </div>
     </div>
 
 </main>
@@ -237,7 +289,6 @@
         
         <div id="syncStatusLabel" style="font-weight:600; font-size:14px; margin-bottom:12px; color:var(--foam);">Initializing...</div>
         
-        <!-- Animated Progress Bar -->
         <div style="background:rgba(255,255,255,0.08); border-radius:10px; height:10px; width:100%; overflow:hidden; margin-bottom:12px;">
             <div id="syncProgressBar" style="background:var(--signal, #ff6a3d); height:100%; width:0%; transition:width 0.3s ease;"></div>
         </div>
@@ -251,9 +302,6 @@
 </div>
 
 <script>
-/* ============================================================
-Document Management
-============================================================ */
 const DOC_CONFIG = {
     audWebAppUrl: "https://script.google.com/macros/s/AKfycbwDLWh4_GE_uRJFmNihhBfONT54fhyliEybq3tnrvticdtrekG1rn_iUvtTgxjDzlE/exec",
     docWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec",
@@ -265,7 +313,7 @@ const DOC_CONFIG = {
     driveScope: "https://www.googleapis.com/auth/drive.readonly"
 };
 
-/* ---------- Sheets helpers (same pattern as admin.html) ---------- */
+/* ---------- Sheets helpers ---------- */
 async function fetchSheet(url, sheetName) {
     const res = await fetch(`${url}?action=fetch&sheet=${encodeURIComponent(sheetName)}`);
     const data = await res.json();
@@ -274,7 +322,7 @@ async function fetchSheet(url, sheetName) {
     if (!rows.length) return [];
     let headerIndex = rows.findIndex(r => Array.isArray(r) && r.some(c => {
         const v = String(c || "").trim().toLowerCase();
-        return v === "rowid" || v === "status";
+        return v === "rowid" || v === "status" || v === "action";
     }));
     if (headerIndex === -1) headerIndex = 0;
     const headers = rows[headerIndex].map(h => String(h || "").trim());
@@ -302,6 +350,11 @@ function genRowId() {
     return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
 /* ---------- Google Drive auth (Google Identity Services) ---------- */
 let driveToken = null;
 let tokenClient = null;
@@ -318,20 +371,18 @@ function initGis() {
             const statusText = document.getElementById("driveStatusText");
             statusText.textContent = "Connected";
             statusText.style.color = "#4ade80";
-            
+
             document.getElementById("driveConnectBtn").textContent = "Reconnect";
         }
     });
 }
-
 document.getElementById("driveConnectBtn").addEventListener("click", () => {
     if (!tokenClient) { alert("Set driveClientId / driveApiKey in DOC_CONFIG first."); return; }
     tokenClient.requestAccessToken();
 });
-
 window.addEventListener("load", () => setTimeout(initGis, 300));
 
-async function driveUploadNew(file, folderName) {
+async function driveUploadNew(file) {
     const metadata = { name: file.name, parents: [DOC_CONFIG.rootFolderId] };
     const form = new FormData();
     form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
@@ -343,7 +394,6 @@ async function driveUploadNew(file, folderName) {
     if (data.error) throw new Error(data.error.message);
     return { fileId: data.id, link: data.webViewLink };
 }
-
 async function driveUpdateContent(fileId, file) {
     const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
         method: "PATCH", headers: { Authorization: `Bearer ${driveToken}`, "Content-Type": file.type || "application/octet-stream" }, body: file
@@ -361,6 +411,7 @@ async function loadDocs() {
     DOCS = await fetchSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet);
     renderLibraryTree();
     renderGrid();
+    await loadAuditLog();
 }
 
 function renderLibraryTree() {
@@ -423,60 +474,33 @@ function renderGrid() {
     grid.querySelectorAll('[data-action="version"]').forEach(b => b.addEventListener("click", () => openUploadModal(b.dataset.id)));
     grid.querySelectorAll('[data-action="detail"]').forEach(b => b.addEventListener("click", () => openDetailModal(b.dataset.id)));
 }
-
 document.getElementById("docSearch").addEventListener("input", renderGrid);
 document.getElementById("statusFilter").addEventListener("change", renderGrid);
 
-// Event listener for the Browse Drive button
-document.getElementById("browseDriveBtn").addEventListener("click", async () => {
-    try {
-        const items = await fetchDriveFolderContents(DOC_CONFIG.rootFolderId);
-        renderDriveItems(items);
-    } catch (err) {
-        alert("Error fetching Drive files: " + err.message);
-    }
-});
-
-// Fetch contents of a specific Google Drive folder
 async function fetchDriveFolderContents(folderId) {
-    if (!driveToken) {
-        alert("Connect Google Drive first.");
-        return [];
-    }
-
+    if (!driveToken) { alert("Connect Google Drive first."); return []; }
     const query = `'${folderId}' in parents and trashed = false`;
     const fields = "files(id, name, mimeType, webViewLink)";
     const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}`;
 
-    const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${driveToken}` }
-    });
-
+    const response = await fetch(url, { headers: { Authorization: `Bearer ${driveToken}` } });
     const data = await response.json();
     if (data.error) throw new Error(data.error.message);
-
     return data.files || [];
 }
 
 let driveFolderStack = [{ id: DOC_CONFIG.rootFolderId, name: "Root" }];
 
-// Render clickable breadcrumb links
 function renderBreadcrumbs() {
     const container = document.getElementById("driveBreadcrumbs");
-    if (driveFolderStack.length <= 1) {
-        container.style.display = "none";
-        return;
-    }
+    if (driveFolderStack.length <= 1) { container.style.display = "none"; return; }
     container.style.display = "block";
     container.innerHTML = "<strong>Path:</strong> " + driveFolderStack.map((item, index) => {
-        if (index === driveFolderStack.length - 1) {
-            return `<span style="color:var(--foam); font-weight:600;">${item.name}</span>`;
-        }
+        if (index === driveFolderStack.length - 1) return `<span style="color:var(--foam); font-weight:600;">${item.name}</span>`;
         return `<a href="#" onclick="navigateToFolderIndex(${index}); return false;" style="color:var(--foam-dim); text-decoration:underline;">${item.name}</a>`;
     }).join(" &gt; ");
 }
 
-// Navigate back to any parent folder in the stack
 async function navigateToFolderIndex(index) {
     driveFolderStack = driveFolderStack.slice(0, index + 1);
     const current = driveFolderStack[driveFolderStack.length - 1];
@@ -485,7 +509,6 @@ async function navigateToFolderIndex(index) {
     renderBreadcrumbs();
 }
 
-// Reset stack when browsing from root
 document.getElementById("browseDriveBtn").addEventListener("click", async () => {
     try {
         driveFolderStack = [{ id: DOC_CONFIG.rootFolderId, name: "Root" }];
@@ -497,13 +520,9 @@ document.getElementById("browseDriveBtn").addEventListener("click", async () => 
     }
 });
 
-// Pass folder name to openFolder
 function renderDriveItems(items) {
     const grid = document.getElementById("docGrid");
-    if (!items.length) {
-        grid.innerHTML = `<div class="empty-state">No files or folders found.</div>`;
-        return;
-    }
+    if (!items.length) { grid.innerHTML = `<div class="empty-state">No files or folders found.</div>`; return; }
 
     grid.innerHTML = items.map(item => {
         const isFolder = item.mimeType === "application/vnd.google-apps.folder";
@@ -531,7 +550,6 @@ function renderDriveItems(items) {
     }).join("");
 }
 
-// Open folder and push to history stack
 async function openFolder(folderId, folderName) {
     try {
         const items = await fetchDriveFolderContents(folderId);
@@ -543,7 +561,6 @@ async function openFolder(folderId, folderName) {
     }
 }
 
-// Archive document in Drive AND update status in Google Sheet database
 document.getElementById("driveFileArchiveBtn").addEventListener("click", async () => {
     if (!currentDriveFile) return;
     if (!confirm(`Are you sure you want to move "${currentDriveFile.name}" to the Archive folder?`)) return;
@@ -551,34 +568,26 @@ document.getElementById("driveFileArchiveBtn").addEventListener("click", async (
     try {
         const archiveFolderId = await getOrCreateArchiveFolder();
         const previousParents = (currentDriveFile.parents || []).join(",");
-        logDocumentAction(currentDriveFile.id, currentDriveFile.name, "Archive document");
+        await logDocumentAction(currentDriveFile.id, currentDriveFile.name, "Archive Document");
 
-        // 1. Move file in Google Drive
         const url = `https://www.googleapis.com/drive/v3/files/${currentDriveFile.id}?addParents=${archiveFolderId}&removeParents=${previousParents}`;
-        const res = await fetch(url, {
-            method: "PATCH",
-            headers: { Authorization: `Bearer ${driveToken}` }
-        });
+        const res = await fetch(url, { method: "PATCH", headers: { Authorization: `Bearer ${driveToken}` } });
         const data = await res.json();
         if (data.error) throw new Error(data.error.message);
 
-        // 2. Update Google Sheet status if registered
         const matchedDoc = DOCS.find(d => d.DriveFileId === currentDriveFile.id);
         if (matchedDoc) {
             const who = prompt("Enter your name for the change log:") || "System Admin";
             const now = new Date().toISOString();
             await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, matchedDoc.RowID, {
-                Status: "Archived",
-                LastModifiedBy: who,
-                LastModifiedDate: now
+                Status: "Archived", LastModifiedBy: who, LastModifiedDate: now
             });
-            await loadDocs(); // Reload database sheet records
+            await loadDocs();
         }
 
-        alert(`"${currentDriveFile.name}" moved to Archive${matchedDoc ? ' and updated in the database.' : '.'}`);
+        alert(`"${currentDriveFile.name}" moved to Archive${matchedDoc ? ' and updated in database.' : '.'}`);
         document.getElementById("driveFileModal").classList.remove("visible");
 
-        // Refresh current folder view
         const currentFolder = driveFolderStack[driveFolderStack.length - 1];
         const items = await fetchDriveFolderContents(currentFolder.id);
         renderDriveItems(items);
@@ -590,10 +599,8 @@ document.getElementById("driveFileArchiveBtn").addEventListener("click", async (
 
 let currentDriveFile = null;
 
-// Opens modal displaying detailed Drive and Google Sheet database metadata
 async function selectDriveDocument(fileId) {
     try {
-        // 1. Fetch expanded metadata fields from Google Drive API
         const fields = "id, name, mimeType, size, createdTime, modifiedTime, webViewLink, parents, description, version, lastModifyingUser(displayName, emailAddress), owners(displayName, emailAddress)";
         const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=${encodeURIComponent(fields)}`, {
             headers: { Authorization: `Bearer ${driveToken}` }
@@ -602,18 +609,15 @@ async function selectDriveDocument(fileId) {
         if (file.error) throw new Error(file.error.message);
 
         currentDriveFile = file;
+        await logDocumentAction(file.id, file.name, "View Document Details");
 
-        // 2. Find matching record in Google Sheets database (if registered)
         const matchedDoc = DOCS.find(d => d.DriveFileId === file.id);
-
-        // Format Drive attributes
         const sizeKb = file.size ? (file.size / 1024).toFixed(1) + " KB" : "N/A";
         const created = new Date(file.createdTime).toLocaleString();
         const modified = new Date(file.modifiedTime).toLocaleString();
         const driveEditor = file.lastModifyingUser ? `${file.lastModifyingUser.displayName}` : "Unknown";
         const driveOwner = file.owners && file.owners.length > 0 ? file.owners[0].displayName : "Unknown";
 
-        // Build side-by-side layout (Drive API info + Google Sheet database info)
         document.getElementById("driveFileTitle").textContent = file.name;
         document.getElementById("driveFileMeta").innerHTML = `
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin: 12px 0; text-align:left;">
@@ -638,16 +642,8 @@ async function selectDriveDocument(fileId) {
                     ` : `<em style="color:var(--foam-dim);">Not registered in database sheet</em>`}
                 </div>
             </div>
-            ${file.description ? `
-                <div style="margin-top:10px; padding:8px 10px; background:rgba(255,255,255,0.04); border-radius:6px; font-size:12px;">
-                    <strong>Description:</strong> ${file.description}
-                </div>
-            ` : ""}
-            ${matchedDoc && matchedDoc.Keywords ? `
-                <div class="doc-keywords" style="margin-top:10px;">
-                    ${matchedDoc.Keywords.split(",").map(k => `<span class="kw-chip">${k.trim()}</span>`).join("")}
-                </div>
-            ` : ""}
+            ${file.description ? `<div style="margin-top:10px; padding:8px 10px; background:rgba(255,255,255,0.04); border-radius:6px; font-size:12px;"><strong>Description:</strong> ${file.description}</div>` : ""}
+            ${matchedDoc && matchedDoc.Keywords ? `<div class="doc-keywords" style="margin-top:10px;">${matchedDoc.Keywords.split(",").map(k => `<span class="kw-chip">${k.trim()}</span>`).join("")}</div>` : ""}
         `;
 
         document.getElementById("driveFileOpenBtn").href = file.webViewLink || "#";
@@ -657,39 +653,28 @@ async function selectDriveDocument(fileId) {
     }
 }
 
-// Close button handler for drive detail modal
 document.getElementById("driveFileCloseBtn").addEventListener("click", () => {
     document.getElementById("driveFileModal").classList.remove("visible");
 });
 
-// Helper to find or automatically create an "Archive" folder inside the root folder
 async function getOrCreateArchiveFolder() {
     const q = `'${DOC_CONFIG.rootFolderId}' in parents and name = 'Archive' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
     const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}`, {
         headers: { Authorization: `Bearer ${driveToken}` }
     });
     const searchData = await searchRes.json();
-    if (searchData.files && searchData.files.length > 0) {
-        return searchData.files[0].id;
-    }
+    if (searchData.files && searchData.files.length > 0) return searchData.files[0].id;
 
     const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
         method: "POST",
-        headers: {
-            Authorization: `Bearer ${driveToken}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            name: "Archive",
-            mimeType: "application/vnd.google-apps.folder",
-            parents: [DOC_CONFIG.rootFolderId]
-        })
+        headers: { Authorization: `Bearer ${driveToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Archive", mimeType: "application/vnd.google-apps.folder", parents: [DOC_CONFIG.rootFolderId] })
     });
     const createData = await createRes.json();
     return createData.id;
 }
 
-// Logs document viewing events to the AuditLog sheet
+/* ---------- Audit Logging Functions ---------- */
 async function logDocumentAction(fileId, fileName, action) {
     try {
         const who = document.getElementById("actorName")?.value.trim() || "Web App User";
@@ -703,10 +688,91 @@ async function logDocumentAction(fileId, fileName, action) {
             User: who,
             Timestamp: now
         });
+        await loadAuditLog();
     } catch (err) {
-        console.error("Failed to log document open action:", err);
+        console.error("Failed to log document action:", err);
     }
 }
+
+let auditEntries = [];
+
+function fmtTime(v) {
+    if (!v) return "—";
+    const d = new Date(v);
+    return isNaN(d) ? String(v) : d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+}
+
+async function loadAuditLog() {
+    try {
+        const res = await fetch(`${DOC_CONFIG.audWebAppUrl}?action=fetch&sheet=${encodeURIComponent('AuditLog')}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        const rows = Array.isArray(data) ? data : (data.values || []);
+        if (!rows.length) { auditEntries = []; renderAuditLog(); return; }
+
+        let headerIdx = rows.findIndex(r => Array.isArray(r) && r.some(c => {
+            const v = String(c || "").trim().toLowerCase();
+            return v === "rowid" || v === "action" || v === "timestamp" || v === "user" || v === "membername" || v === "field";
+        }));
+        if (headerIdx === -1) headerIdx = 0;
+        const headers = rows[headerIdx].map(h => String(h || "").trim().toLowerCase());
+
+        const dataRows = rows.slice(headerIdx + 1).filter(r => r.some(c => String(c || "").trim() !== ""));
+        
+        auditEntries = dataRows.map(r => {
+            const getVal = (possibleKeys) => {
+                for (let k of possibleKeys) {
+                    const idx = headers.indexOf(k);
+                    if (idx !== -1 && r[idx] !== undefined) return r[idx];
+                }
+                return "";
+            };
+            return {
+                timestamp: getVal(["timestamp", "time", "date"]),
+                user: getVal(["user", "membername", "changedby", "actor"]),
+                action: getVal(["action", "field", "event"]),
+                target: getVal(["target", "before", "title", "object"]),
+                targetId: getVal(["targetid", "rowid", "after", "docid"]),
+                status: getVal(["status"]) || "success"
+            };
+        }).reverse();
+        renderAuditLog();
+    } catch (err) {
+        document.getElementById('auditBody').innerHTML = '';
+        document.getElementById('auditEmpty').style.display = 'block';
+        document.getElementById('auditEmpty').textContent = 'Error loading audit log: ' + err.message;
+    }
+}
+
+function renderAuditLog() {
+    const q = document.getElementById('auditSearch').value.trim().toLowerCase();
+    let entries = auditEntries;
+    if (q) {
+        entries = entries.filter(e =>
+            String(e.user || '').toLowerCase().includes(q) ||
+            String(e.action || '').toLowerCase().includes(q) ||
+            String(e.target || '').toLowerCase().includes(q) ||
+            String(e.targetId || '').toLowerCase().includes(q)
+        );
+    }
+
+    document.getElementById('auditBody').innerHTML = entries.map(e => {
+        const isError = String(e.status || '').toLowerCase().includes('error') || String(e.action || '').startsWith('ERROR:');
+        return `
+        <tr>
+            <td>${fmtTime(e.timestamp)}</td>
+            <td>${escapeHtml(e.user || '—')}</td>
+            <td>${escapeHtml(e.action || '—')}</td>
+            <td>${escapeHtml(e.target || '—')}</td>
+            <td>${escapeHtml(e.targetId || '—')}</td>
+            <td><span class="badge ${isError ? 'badge-expired' : 'badge-full'}">${isError ? 'error' : 'success'}</span></td>
+        </tr>`;
+    }).join('');
+    document.getElementById('auditEmpty').style.display = entries.length ? 'none' : 'block';
+}
+
+document.getElementById('auditSearch').addEventListener('input', renderAuditLog);
+document.getElementById('refreshLogBtn').addEventListener('click', loadAuditLog);
 
 /* ---------- Save progress indicator ---------- */
 let progressSteps = [];
@@ -793,6 +859,7 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
                 RowID: genRowId(), DocID: doc.RowID, Version: newVersion,
                 DriveFileId: doc.DriveFileId, DriveLink: doc.DriveLink, ChangedBy: who, ChangedDate: now, Notes: notes
             });
+            await logDocumentAction(doc.DriveFileId, title || file.name, "Upload New Version");
             setStep(2, "done");
         } else {
             setStep(0, "active");
@@ -812,6 +879,7 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
             await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
                 RowID: genRowId(), DocID: rowId, Version: 1, DriveFileId: fileId, DriveLink: link, ChangedBy: who, ChangedDate: now, Notes: notes || "Initial upload"
             });
+            await logDocumentAction(fileId, title || file.name, "Upload Document");
             setStep(2, "done");
         }
 
@@ -855,18 +923,22 @@ document.getElementById("detailCloseBtn").addEventListener("click", () => docume
 document.getElementById("markReviewBtn").addEventListener("click", async () => {
     const who = document.getElementById("actorName").value.trim();
     if (!who) { alert("Enter your name."); return; }
+    const doc = DOCS.find(d => d.RowID === detailDocId);
     await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, detailDocId, {
         Status: "In Review", ReviewedBy: who, ReviewDate: new Date().toISOString()
     });
+    await logDocumentAction(doc ? doc.DriveFileId : detailDocId, doc ? doc.Title : "Document", "Marked In Review");
     document.getElementById("detailModal").classList.remove("visible");
     await loadDocs();
 });
 document.getElementById("markSignoffBtn").addEventListener("click", async () => {
     const who = document.getElementById("actorName").value.trim();
     if (!who) { alert("Enter your name."); return; }
+    const doc = DOCS.find(d => d.RowID === detailDocId);
     await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, detailDocId, {
         Status: "Signed Off", SignedOffBy: who, SignOffDate: new Date().toISOString()
     });
+    await logDocumentAction(doc ? doc.DriveFileId : detailDocId, doc ? doc.Title : "Document", "Marked Signed Off");
     document.getElementById("detailModal").classList.remove("visible");
     await loadDocs();
 });
@@ -884,9 +956,7 @@ async function fetchAllDriveFilesRecursively(folderId, updateScanStatus) {
         const fields = "files(id, name, mimeType, webViewLink)";
         const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}`;
 
-        const response = await fetch(url, {
-            headers: { Authorization: `Bearer ${driveToken}` }
-        });
+        const response = await fetch(url, { headers: { Authorization: `Bearer ${driveToken}` } });
         const data = await response.json();
         if (data.error) throw new Error(data.error.message);
 
@@ -908,12 +978,8 @@ async function fetchAllDriveFilesRecursively(folderId, updateScanStatus) {
     return allFiles;
 }
 
-// Scans Google Drive and appends unindexed files with spinner, live counts, and percentage bar
 async function syncDriveToSheet() {
-    if (!driveToken) {
-        alert("Connect Google Drive first.");
-        return;
-    }
+    if (!driveToken) { alert("Connect Google Drive first."); return; }
 
     const modal = document.getElementById("syncModal");
     const spinner = document.getElementById("syncSpinner");
@@ -922,7 +988,6 @@ async function syncDriveToSheet() {
     const detailText = document.getElementById("syncDetailText");
     const actions = document.getElementById("syncModalActions");
 
-    // Reset Modal UI
     modal.classList.add("visible");
     spinner.style.display = "block";
     actions.style.display = "none";
@@ -931,7 +996,6 @@ async function syncDriveToSheet() {
     detailText.textContent = "Checking root folder and subfolders...";
 
     try {
-        // 1. Fetch all files from Drive recursively with live scan feedback
         const driveFiles = await fetchAllDriveFilesRecursively(DOC_CONFIG.rootFolderId, (msg) => {
             detailText.textContent = msg;
         });
@@ -939,10 +1003,8 @@ async function syncDriveToSheet() {
         statusLabel.textContent = "Comparing with database...";
         detailText.textContent = `Found ${driveFiles.length} total file(s) in Drive. Checking registered items...`;
 
-        // 2. Fetch fresh Sheet data
         await loadDocs();
 
-        // 3. Identify files present in Drive but missing in Google Sheets
         const existingFileIds = new Set(DOCS.map(d => d.DriveFileId));
         const missingFiles = driveFiles.filter(f => !existingFileIds.has(f.id));
 
@@ -959,13 +1021,11 @@ async function syncDriveToSheet() {
         const who = prompt(`Found ${total} new file(s) in Drive. Enter your name for the change log:`) || "Auto Sync";
         const now = new Date().toISOString();
 
-        // 4. Batch append missing files with live percentage and file count updates
         for (let i = 0; i < total; i++) {
             const file = missingFiles[i];
             const countNum = i + 1;
             const percent = Math.round((countNum / total) * 100);
 
-            // Update progress feedback UI
             progressBar.style.width = `${percent}%`;
             statusLabel.textContent = `Syncing File ${countNum} of ${total} (${percent}%)`;
             detailText.textContent = `Adding: "${file.name}"`;
@@ -990,7 +1050,6 @@ async function syncDriveToSheet() {
                 SignOffDate: ""
             });
 
-            // Register initial version entry
             await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
                 RowID: genRowId(),
                 DocID: rowId,
@@ -1003,14 +1062,15 @@ async function syncDriveToSheet() {
             });
         }
 
-        // Completion status
+        await logDocumentAction(DOC_CONFIG.rootFolderId, "Google Drive Library", `Auto-synced ${total} document(s)`);
+
         spinner.style.display = "none";
         progressBar.style.width = "100%";
         statusLabel.textContent = "Sync Complete!";
         detailText.textContent = `Successfully added ${total} new file(s) to the Google Sheet database.`;
         actions.style.display = "flex";
 
-        await loadDocs(); // Reload main database view grid
+        await loadDocs();
     } catch (err) {
         spinner.style.display = "none";
         statusLabel.textContent = "Sync Failed";
