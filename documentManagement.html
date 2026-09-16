@@ -252,33 +252,10 @@
 
 <script>
 /* ============================================================
-   SETUP REQUIRED — fill these in before this page will work:
-   1) driveClientId / driveApiKey: create an OAuth 2.0 Client ID
-      (Web application) + API key in Google Cloud Console, with
-      the Drive API enabled and this page's origin authorised.
-   2) rootFolderId: the Google Drive folder ID that will act as
-      the root of the document library.
-   3) docWebAppUrl: reuse the SAME Apps Script Web App already
-      used for Members/Classes (see admin.html -> SHEETS.docWebAppUrl),
-      with two extra tabs added to that spreadsheet:
-
-      Tab "Documents" — headers:
-        RowID | Title | Category | Keywords | DriveFileId | DriveLink |
-        Version | Status | Owner | LastModifiedBy | LastModifiedDate |
-        ReviewedBy | ReviewDate | SignedOffBy | SignOffDate
-
-      Tab "DocumentVersions" — headers:
-        RowID | DocID | Version | DriveFileId | DriveLink |
-        ChangedBy | ChangedDate | Notes
-
-      No backend code changes should be needed if your Apps Script
-      already handles generic fetch/update/append by sheet name
-      (as it does for Members/Classes/AuditLog). Every update/append
-      made here will show up in the existing Committee Logs /
-      Admin Log automatically, since that's driven off the same
-      AuditLog sheet — this satisfies "who changed what, when".
-   ============================================================ */
+Document Management
+============================================================ */
 const DOC_CONFIG = {
+    audWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec",
     docWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec",
     documentsSheet: "Documents",
     versionsSheet: "DocumentVersions",
@@ -710,7 +687,7 @@ async function logDocumentAction(fileId, fileName, action) {
         const who = document.getElementById("actorName")?.value.trim() || "Web App User";
         const now = new Date().toISOString();
         
-        await appendSheet(DOC_CONFIG.docWebAppUrl, "AuditLog", {
+        await appendSheet(DOC_CONFIG.audWebAppUrl, "AuditLog", {
             RowID: genRowId(),
             Action: action,
             Target: fileName,

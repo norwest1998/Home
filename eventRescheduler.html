@@ -279,7 +279,7 @@ const AdminLog = {
   // so every module's history lives in one place instead of a per-browser local log.
   add({ hexCode = "", name = "", field = "", before = "", after = "", status = "success", message = "" }) {
     const value = status === "error" ? `ERROR: ${message || after}` : after;
-    return appendSheet(SHEETS.clbWebAppUrl, "AuditLog", {
+    return appendSheet(SHEETS.audWebAppUrl, "AuditLog", {
       HexCode: hexCode, Timestamp: new Date().toISOString(), Name: name, Field: field, OldValue: before, NewValue: value
     }).catch(err => console.error("AuditLog write failed:", err));
   }
@@ -290,6 +290,7 @@ const AdminLog = {
    ========================================================= */
 const SHEETS = {
   calWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
+  audWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec",
   clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec"
 };
 

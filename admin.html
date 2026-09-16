@@ -266,20 +266,25 @@
         GOOGLE SHEETS MODULE — SMMC ADMIN PANEL
         ============================================================ */
         const SHEETS = {
+            audWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec",
+            docWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec",
             calWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
             appWebAppUrl: "https://script.google.com/macros/s/AKfycbyWulPkIPBPaLA4f85ygVDpJUa-e3fWpY-XOYzTQ_2gF8h9EfuWinBdTiR1DtjYWSwl9g/exec",
             clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
             calendar: {
-                sheetName: "Event Data",
                 tabs: { eventData: "Event Data" }
             },
             application: {
-                sheetName: "Membership Applications",
                 tabs: { applications: "Membership Applications" }
             },
             club: {
-                sheetName: "Classes",
                 tabs: { classes: "Classes", members: "Members" }
+            },
+            document:{
+                tabs: {documents: "Documents", version: "DocumentVersions"}
+            },
+            audit:{
+                tabs: {tracking: "Tracking", log: "AuditLog"}
             }
         };
 
@@ -353,7 +358,7 @@
                 description: "Manage online applications through the process.",
                 href: "applications.html",
                 status: async () => {
-                    const apps = await fetchSheet(SHEETS.appWebAppUrl, "Membership Applications");
+                    const apps = await fetchSheet(SHEETS.appWebAppUrl, SHEETS.application.tabs.applications);
 
                     const getStatus = (r) => getRowVal(r, ["Status", "App Status", "Application Status"]);
                     const getApproved = (r) => getRowVal(r, ["Membership Approved", "Approved"]);
@@ -393,7 +398,7 @@
                 description: "Manage online applications through the process.",
                 href: "eventRescheduler.html",
                 status: async () => {
-                    const events = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
+                    const events = await fetchSheet(SHEETS.calWebAppUrl, SHEETS.calendar.tabs.eventData);
 
                     // Helper to pull the Rescheduled Date field across header variations
                     const getReschedVal = (row) => getRowVal(row, [
@@ -472,7 +477,7 @@
                 description: "Library, search, versioning, review and sign-off.",
                 href: "documentManagement.html",
                 status: async () => {
-                    const docs = await fetchSheet(SHEETS.clbWebAppUrl, "Documents");
+                    const docs = await fetchSheet(SHEETS.docWebAppUrl, SHEETS.document.tabs.documents);
                     const count = (s) => docs.filter(d => getRowVal(d, ["Status"]) === s).length;
                     return {
                         pills: [
@@ -563,7 +568,7 @@
             },
             async refresh() {
                 try {
-                    const rows = await fetchSheet(SHEETS.clbWebAppUrl, "AuditLog");
+                    const rows = await fetchSheet(SHEETS.audWebAppUrl, SHEETS.audit.tabs.log);
                     // fetchSheet returns objects keyed by header row; fall back to raw fetch if headers differ.
                     this._cache = rows.map(r => {
                         const vals = Object.values(r);
