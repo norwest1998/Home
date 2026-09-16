@@ -89,7 +89,7 @@
 
 .gdrive-banner { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; margin-bottom:18px; }
 
-#driveBreadcrumbs{
+/* #driveBreadcrumbs{
     grid-column:2;
     grid-row:1;
 }
@@ -97,7 +97,8 @@
 #docGrid{
     grid-column:2;
     grid-row:2;
-}
+} */
+ 
 .fn-grid{
     display:flex;
     flex-direction:column;
@@ -105,6 +106,19 @@
 }
 .fn-card{
     width:100%;
+}
+
+.doc-layout { 
+    display: grid; 
+    grid-template-columns: 240px 1fr; 
+    gap: 20px; 
+    align-items: start; 
+}
+
+.doc-main-column {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
 /* Audit Log Table Styling */
@@ -178,8 +192,12 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
             <h3>Library</h3>
             <div id="libTreeBody"></div>
         </div>
-        <div id="driveBreadcrumbs" style="margin-bottom:14px; font-size:13px; display:none; color:var(--foam-dim);"></div>
-        <section class="fn-grid" id="docGrid"></section>
+        
+        <!-- Wrapper for right side content -->
+        <div class="doc-main-column">
+            <div id="driveBreadcrumbs" style="margin-bottom:14px; font-size:13px; display:none; color:var(--foam-dim);"></div>
+            <section class="fn-grid" id="docGrid"></section>
+        </div>
     </div>
 
     <!-- AUDIT LOG (Matching memberManagement style) -->
