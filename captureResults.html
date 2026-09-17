@@ -1005,6 +1005,7 @@ let state = {
   pendingSelection: new Set(), // sail numbers ticked during competitor selection
   longPressTarget: null,      // {sailNo, mode:'draft'|'race', raceIdx} currently showing the code-change modal
   drag: null,                  // active drag-to-reorder session, see bindDragHandle
+  selectedClass: 'ALL',
 };
 
 // Entries lock the instant the first race exists — not before.
@@ -1437,6 +1438,96 @@ function overlaysHTML(){
     </div>
     <div class="overlay-body">${body}</div>
   </div>`;
+}
+
+function renderClassFilterIcons(events) {
+  // Extract unique classes from events
+  const classes = ['ALL', ...new Set(events.map(e => e.classCode || e.class))];
+
+  return `
+    <div class="class-filter-bar" style="display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px;">
+      ${classes.map(cls => {
+        const isActive = state.selectedClass === cls;
+        const activeStyle = isActive 
+          ? 'background: var(--glow); color: var(--ocean-deep); border-color: var(--glow);' 
+          : 'background: var(--glass-fill); color: var(--foam-dim); border-color: var(--glass-border);';
+        
+        return `
+          <button 
+            onclick="selectClassFilter('${cls}')" 
+            class="class-icon-btn"
+            style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; ${activeStyle}"
+          >
+            <span class="class-roundel" style="width: 18px; height: 18px; font-size: 8px;">${cls === 'ALL' ? '★' : cls.substring(0, 2)}</span>
+            <span>${cls}</span>
+          </button>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function selectClassFilter(classCode) {
+  state.selectedClass = classCode;
+  renderEventSelection(); // Re-render the view
+}
+
+function renderEventSelection() {
+  const app = document.getElementById('app');
+  
+  // 1. Filter events: only future/today dates AND match selected class
+  const filteredEvents = eventsData.filter(event => {
+    const isFuture = isFutureOrToday(event.date);
+    const matchesClass = state.selectedClass === 'ALL' || (event.classCode || event.class) === state.selectedClass;
+    return isFuture && matchesClass;
+  });
+
+  // Sort chronologically (earliest upcoming date first)
+  filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // 2. Render UI
+  app.innerHTML = `
+    <div class="app-wrap">
+      <div class="section-title">Select Upcoming Event</div>
+      <div class="section-hint">Showing future scheduled races. Filter by class below.</div>
+
+      <!-- Class Icon Filter Bar -->
+      ${renderClassFilterIcons(eventsData)}
+
+      <!-- Event List Container -->
+      <div class="panel panel-pad">
+        ${filteredEvents.length === 0 ? `
+          <div class="empty-note">No upcoming events found for the selected class.</div>
+        ` : `
+          <div class="event-list">
+            ${filteredEvents.map(event => {
+              const d = new Date(event.date);
+              const dow = d.toLocaleDateString('en-US', { weekday: 'short' });
+              const dnum = d.getDate();
+              const mon = d.toLocaleDateString('en-US', { month: 'short' });
+              
+              return `
+                <div class="event-item" onclick="onSelectEvent('${event.id}')">
+                  <div class="event-date-block">
+                    <div class="dow">${dow}</div>
+                    <div class="dnum">${dnum}</div>
+                    <div class="mon">${mon}</div>
+                  </div>
+                  <div class="event-main">
+                    <div class="event-name">${event.title || event.name}</div>
+                    <div class="event-meta">
+                      <span class="class-roundel">${(event.classCode || event.class || 'RC').substring(0, 2)}</span>
+                      ${event.classCode || event.class || 'All Classes'} • ${event.location || 'Main Club'}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `}
+      </div>
+    </div>
+  `;
 }
 
 function renderScoresheet(){
@@ -1939,6 +2030,16 @@ function attachDynamicHandlers(){
     el.addEventListener('click', (e)=>{ if(e.target === el) closeLongPressModal(); });
   });
 }
+
+/* =============Helpers ==========*/
+// Helper: Check if date string (YYYY-MM-DD) is today or future
+function isFutureOrToday(dateStr) {
+  const eventDate = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time to compare date only
+  return eventDate >= today;
+}
+
 
 /* ============ BOOT ============ */
 render();
