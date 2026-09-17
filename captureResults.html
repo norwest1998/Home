@@ -1005,7 +1005,7 @@ let state = {
   eventSearch: '',
   pendingSelection: new Set(), // sail numbers ticked during competitor selection
   longPressTarget: null,      // {sailNo, mode:'draft'|'race', raceIdx} currently showing the code-change modal
-  drag: null,                 // active drag-to-reorder session, see bindDragHandle
+  drag: null,                  // active drag-to-reorder session, see bindDragHandle
 };
 
 // Entries lock the instant the first race exists — not before.
@@ -1116,13 +1116,12 @@ function memberFor(sailNo, cls){
   return m ? m.member : 'Unknown';
 }
 
-function svgMenu(){ return `<i data-lucide="menu"></i>`;} 
-function svgBack(){ return `<i data-lucide="step-back"></i>`; } 
+function svgMenu(){ return `<i data-lucide="menu"></i>`; }
+function svgBack(){ return `<i data-lucide="step-back"></i>`; }
 function svgChevL(){ return `<i data-lucide="chevron-left"></i>`; }
 function svgChevR(){ return `<i data-lucide="chevron-right"></i>`; }
 function svgList(){ return `<i data-lucide="list"></i>`; }
 function svgTrophy(){ return `<i data-lucide="trophy"></i>`; }
-function svgTable(){ return `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M9 4v16" stroke="currentColor" stroke-width="1.8"/></svg>`; }
 function svgDownload(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
 function svgRestart(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M4.5 13a8 8 0 1 0 2-8.5L4 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
 function svgSend(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
@@ -1219,7 +1218,7 @@ function renderEventSelect(){
     <div class="panel glass panel-pad">
       <div class="section-title">Select a regatta</div>
       <div class="section-hint">Choose the calendar event you're capturing results for. This sets the event ID, date, class and regatta name automatically.</div>
-      <input class="search-box" id="eventSearchInput" placeholder=`<i data-lucide="search" class="search-icon"></i> Search by class, round or date…` value="${escapeHTML(state.eventSearch)}">
+      <input class="search-box" id="eventSearchInput" placeholder="Search by class, round or date…" value="${escapeHTML(state.eventSearch)}">
       <div>${rows || `<div class="empty-note">No matching events.</div>`}</div>
     </div>
   `;
@@ -1234,7 +1233,7 @@ function renderCompetitorSelect(){
   const rows = roster.map(m => {
     const checked = state.pendingSelection.has(m.sailNo);
     return `<div class="member-row" data-toggle-member="${m.sailNo}">
-      <div class="checkbox ${checked?'checked':''}"><i data-lucide="check"></i></div>
+      <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
       <div class="member-name">${escapeHTML(m.member)}</div>
       <div class="sail-tag">#${m.sailNo}</div>
     </div>`;
@@ -1255,7 +1254,7 @@ function renderCompetitorSelect(){
     <button class="btn btn-primary btn-block" ${state.pendingSelection.size < 2 ? 'disabled' : ''} data-confirm-entries="1">
       ${editing ? 'Save entries' : 'Confirm entries'}
     </button>
-    ${editing ? `<button class="btn btn-ghost btn-block" style="margin-top:10px" data-cancel-edit-entries="1"><i data-lucide="x"></i></button>` : ''}
+    ${editing ? `<button class="btn btn-ghost btn-block" style="margin-top:10px" data-cancel-edit-entries="1">Cancel</button>` : ''}
   `;
 }
 
@@ -1277,16 +1276,16 @@ function renderRaceCapture(){
         <div class="rtitle">Race ${r.raceNumber} — captured</div>
         <div class="rsub">${finishers} finisher${finishers===1?'':'s'}${issues?` · ${issues} DNS/DNF/RO`:''}</div>
       </div>
-      <div class="chevron"><i data-lucide="chevron-right"></i></div>
+      <div class="chevron">${svgChevR()}</div>
     </div>`;
   }).join('');
 
   const locked = entriesLocked();
   const toolbar = `<div class="toolbar-row">
     <div class="entries-pill ${locked?'':'editable'}" data-entries-pill="1">
-      ${locked ? `<i data-lucide="lock"></i> ${state.entries.length} entries locked` : `<i data-lucide="penx"></i> ${state.entries.length} entries — tap to edit`}
+      ${locked ? `🔒 ${state.entries.length} entries locked` : `✎ ${state.entries.length} entries — tap to edit`}
     </div>
-    <button class="btn btn-primary btn-sm" data-add-race="1"><i data-lucide="plus"></i> Add Race ${state.races.length+1}</button>
+    <button class="btn btn-primary btn-sm" data-add-race="1">+ Add Race ${state.races.length+1}</button>
   </div>`;
 
   return `
@@ -1336,14 +1335,14 @@ function renderDraftRace(){
 
   return `
     <div class="race-hero">
-      <button class="nav-arrow" disabled><i data-lucide="chevron-left"></i></button>
+      <button class="nav-arrow" disabled>${svgChevL()}</button>
       <div class="race-hero-title">
         <div class="rnum">Race ${d.raceNumber}</div>
         <div class="rstatus">${allPlaced ? 'All boats placed — ready' : `Capturing… ${placed.size}/${n} placed`}</div>
       </div>
       ${allPlaced
-        ? `<button class="nav-arrow action-ready" data-complete-and-next="1" title="Complete &amp; start next race"><i data-lucide="plus"></i></button>`
-        : `<button class="nav-arrow" data-cancel-draft="1" title="Cancel"><i data-lucide="x"></i></button>`
+        ? `<button class="nav-arrow action-ready" data-complete-and-next="1" title="Complete &amp; start next race">+</button>`
+        : `<button class="nav-arrow" data-cancel-draft="1" title="Cancel">✕</button>`
       }
     </div>
     <div class="race-grid">
@@ -1377,12 +1376,12 @@ function renderCapturedRaceView(idx){
 
   return `
     <div class="race-hero">
-      <button class="nav-arrow" ${canPrev?'':'disabled'} data-nav-race="${idx-1}"><i data-lucide="chevron-left"></i></button>
+      <button class="nav-arrow" ${canPrev?'':'disabled'} data-nav-race="${idx-1}">${svgChevL()}</button>
       <div class="race-hero-title">
         <div class="rnum">Race ${r.raceNumber}</div>
         <div class="rstatus">Captured ✓ · drag to reorder · hold to change</div>
       </div>
-      <button class="nav-arrow" ${canNext?'':'disabled'} data-nav-race="${idx+1}"><i data-lucide="chevron-right"></i>}</button>
+      <button class="nav-arrow" ${canNext?'':'disabled'} data-nav-race="${idx+1}">${svgChevR()}</button>
     </div>
     <div class="panel glass panel-pad" id="raceViewRows" data-race-idx="${idx}">
       ${rows.join('')}
@@ -1402,9 +1401,8 @@ function menuHTML(){
       <div class="mp-sub">${state.event ? state.event.date : ''} · Entries locked</div>
     </div>
     <div class="menu-item" data-open-overlay="entries">${svgList()} Regatta Entries</div>
-    <div class="menu-item" onclick="navigateTo('captureResults')"><i data-lucide="camera"></i><span>Capture Results</span></div>
-    <div class="menu-item ${state.races.length?'':'disabled'}" data-open-overlay="results">${svgTrophy()} Race Results</div>    
-    <div class="menu-item ${state.races.length?'':'disabled'}" data-open-overlay="scoresheet">${svgTable()} Scoresheet</div>
+    <div class="menu-item ${state.races.length?'':'disabled'}" data-open-overlay="results">${svgTrophy()} Race Results</div>
+    <div class="menu-item ${state.races.length?'':'disabled'}" data-open-overlay="scoresheet">${svgTable()} Scoresheet</div>   
     <div class="menu-sep"></div>
     <div class="menu-item" data-open-overlay="export">${svgSend()} Send for Race Processing</div>
     <div class="menu-sep"></div>
