@@ -1005,7 +1005,7 @@ let state = {
   eventSearch: '',
   pendingSelection: new Set(), // sail numbers ticked during competitor selection
   longPressTarget: null,      // {sailNo, mode:'draft'|'race', raceIdx} currently showing the code-change modal
-  drag: null,                  // active drag-to-reorder session, see bindDragHandle
+  drag: null,                 // active drag-to-reorder session, see bindDragHandle
 };
 
 // Entries lock the instant the first race exists — not before.
@@ -1219,7 +1219,7 @@ function renderEventSelect(){
     <div class="panel glass panel-pad">
       <div class="section-title">Select a regatta</div>
       <div class="section-hint">Choose the calendar event you're capturing results for. This sets the event ID, date, class and regatta name automatically.</div>
-      <input class="search-box" id="eventSearchInput" placeholder=<i data-lucide="search" class="search-icon"></i>"Search by class, round or date…" value="${escapeHTML(state.eventSearch)}">
+      <input class="search-box" id="eventSearchInput" placeholder=`<i data-lucide="search" class="search-icon"></i> Search by class, round or date…` value="${escapeHTML(state.eventSearch)}">
       <div>${rows || `<div class="empty-note">No matching events.</div>`}</div>
     </div>
   `;
@@ -1234,7 +1234,7 @@ function renderCompetitorSelect(){
   const rows = roster.map(m => {
     const checked = state.pendingSelection.has(m.sailNo);
     return `<div class="member-row" data-toggle-member="${m.sailNo}">
-      <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="checkbox ${checked?'checked':''}"><i data-lucide="check"></i></div>
       <div class="member-name">${escapeHTML(m.member)}</div>
       <div class="sail-tag">#${m.sailNo}</div>
     </div>`;
@@ -1255,7 +1255,7 @@ function renderCompetitorSelect(){
     <button class="btn btn-primary btn-block" ${state.pendingSelection.size < 2 ? 'disabled' : ''} data-confirm-entries="1">
       ${editing ? 'Save entries' : 'Confirm entries'}
     </button>
-    ${editing ? `<button class="btn btn-ghost btn-block" style="margin-top:10px" data-cancel-edit-entries="1">Cancel</button>` : ''}
+    ${editing ? `<button class="btn btn-ghost btn-block" style="margin-top:10px" data-cancel-edit-entries="1"><i data-lucide="x"></i></button>` : ''}
   `;
 }
 
@@ -1277,16 +1277,16 @@ function renderRaceCapture(){
         <div class="rtitle">Race ${r.raceNumber} — captured</div>
         <div class="rsub">${finishers} finisher${finishers===1?'':'s'}${issues?` · ${issues} DNS/DNF/RO`:''}</div>
       </div>
-      <div class="chevron">${svgChevR()}</div>
+      <div class="chevron"><i data-lucide="chevron-right"></i></div>
     </div>`;
   }).join('');
 
   const locked = entriesLocked();
   const toolbar = `<div class="toolbar-row">
     <div class="entries-pill ${locked?'':'editable'}" data-entries-pill="1">
-      ${locked ? `🔒 ${state.entries.length} entries locked` : `✎ ${state.entries.length} entries — tap to edit`}
+      ${locked ? `<i data-lucide="lock"></i> ${state.entries.length} entries locked` : `<i data-lucide="penx"></i> ${state.entries.length} entries — tap to edit`}
     </div>
-    <button class="btn btn-primary btn-sm" data-add-race="1">+ Add Race ${state.races.length+1}</button>
+    <button class="btn btn-primary btn-sm" data-add-race="1"><i data-lucide="plus"></i> Add Race ${state.races.length+1}</button>
   </div>`;
 
   return `
@@ -1342,8 +1342,8 @@ function renderDraftRace(){
         <div class="rstatus">${allPlaced ? 'All boats placed — ready' : `Capturing… ${placed.size}/${n} placed`}</div>
       </div>
       ${allPlaced
-        ? `<button class="nav-arrow action-ready" data-complete-and-next="1" title="Complete &amp; start next race"><i data-lucide="add"></i></button>`
-        : `<button class="nav-arrow" data-cancel-draft="1" title="Cancel"><i data-lucide="cancel"></i></button>`
+        ? `<button class="nav-arrow action-ready" data-complete-and-next="1" title="Complete &amp; start next race"><i data-lucide="plus"></i></button>`
+        : `<button class="nav-arrow" data-cancel-draft="1" title="Cancel"><i data-lucide="x"></i></button>`
       }
     </div>
     <div class="race-grid">
