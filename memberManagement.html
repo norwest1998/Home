@@ -21,7 +21,7 @@
     .panel-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
     .panel-toolbar .search-wrap { flex: 1; min-width: 200px; margin-bottom: 0; }
 
-    /* Dark select controls (native <select> ignores theme.css input styling otherwise) */
+    /* Dark select controls */
     select.mm-select {
         padding: 10px 38px 10px 14px;
         border-radius: 10px;
@@ -46,10 +46,8 @@
     select.mm-select.mm-select-wide { width: 100%; padding: 12px 40px 12px 16px; font-size: 14px; }
     select.mm-select.mm-select-inline { min-width: 160px; }
 
-    /* Small icon variant for use inside search inputs, pills, and compact buttons (nav-icon is 38px and too large here) */
     .inline-icon { width: 15px; height: 15px; flex-shrink: 0; vertical-align: -3px; }
 
-    /* Member row list (bulk paid + select member reuse this) — grows to fit content, page scrolls instead */
     .member-rows { display: flex; flex-direction: column; gap: 8px; }
     .member-row {
         display: flex; justify-content: space-between; align-items: center; gap: 12px;
@@ -64,19 +62,7 @@
     .checkbox-inline { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--foam); cursor: pointer; user-select: none; }
     .checkbox-inline input { width: 16px; height: 16px; accent-color: var(--glow, #00c6ff); cursor: pointer; }
 
-    .select-all-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-
     .action-btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
-
-    .preview-card {
-        margin-top: 14px; padding: 14px 16px; border-radius: 12px;
-        background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-        display: none;
-    }
-    .preview-card.visible { display: block; }
-    .preview-card p { display: flex; justify-content: space-between; font-size: 13px; color: var(--foam-dim); margin-bottom: 6px; }
-    .preview-card p strong { color: var(--foam); }
-    .preview-checks { display: flex; gap: 18px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--glass-border); flex-wrap: wrap; }
 
     .bulk-comm-card { display: flex; flex-direction: column; gap: 10px; padding: 18px; }
     .bulk-comm-card .bc-title { font-weight: 600; font-size: 14.5px; color: var(--foam); }
@@ -99,28 +85,6 @@
     .fn-message.success { color: var(--glow, #4ade80); }
     .fn-message.error { color: #ff6b6b; }
 
-    .member-search-results {
-        display: none;
-        position: static;
-        width: 100%;
-
-        background: var(--ocean-mid,#0f2030);
-        border: 1px solid var(--glass-border);
-        border-radius: 10px;
-        margin-top: 4px;
-    }
-
-    .member-search-row {
-        padding: 10px 14px;
-        cursor: pointer;
-        border-bottom: 1px solid var(--glass-border);
-    }
-
-    .member-search-row:hover {
-        background: rgba(255,255,255,0.08);
-    }
-
-    /* Member Actions: header row (select-all + bulk icons), per-row icons/checkbox */
     .list-header-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 14px 10px; }
     .row-actions { display: flex; align-items: center; gap: 6px; }
     .icon-btn {
@@ -135,33 +99,45 @@
     .member-row.clickable { cursor: pointer; }
     .member-row .m-left { flex-wrap: wrap; row-gap: 6px; }
 
-    /* Member modal */
+    /* Member modal styles */
     .modal-overlay {
         display: none; position: fixed; inset: 0; z-index: 1000;
-        background: rgba(0,10,20,0.65); align-items: center; justify-content: center; padding: 20px;
+        background: rgba(0,10,20,0.75); backdrop-filter: blur(4px);
+        align-items: center; justify-content: center; padding: 20px;
     }
     .modal-overlay.visible { display: flex; }
     .modal-box {
-        width: 100%; max-width: 580px; max-height: 85vh; overflow-y: auto;
+        width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto;
         background: var(--ocean-mid, #0f2030); border: 1px solid var(--glass-border);
-        border-radius: 14px; padding: 24px; position: relative;
+        border-radius: 16px; padding: 28px; position: relative;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     }
     .modal-close {
-        position: absolute; top: 14px; right: 14px; width: 30px; height: 30px;
+        position: absolute; top: 18px; right: 18px; width: 32px; height: 32px;
         display: flex; align-items: center; justify-content: center; border-radius: 8px;
-        background: none; border: none; cursor: pointer; color: var(--foam-dim);
+        background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+        cursor: pointer; color: var(--foam-dim); transition: all .15s ease;
     }
-    .modal-close:hover { background: rgba(255,255,255,0.08); color: var(--foam); }
-    .modal-title { font-size: 19px; font-weight: 600; color: var(--foam); margin-bottom: 2px; }
+    .modal-close:hover { background: rgba(255,255,255,0.12); color: var(--foam); }
+    .modal-title { font-size: 22px; font-weight: 700; color: var(--foam); margin-bottom: 2px; }
+    
+    .modal-section { margin-top: 20px; }
     .modal-section-title {
-        font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-        color: var(--foam-dim); margin: 18px 0 8px; padding-top: 12px; border-top: 1px solid var(--glass-border);
+        font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+        color: var(--glow, #00c6ff); font-weight: 600; margin-bottom: 8px;
+        padding-bottom: 4px; border-bottom: 1px solid var(--glass-border);
     }
-    .modal-field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px,1fr)); gap: 12px 16px; }
-    .modal-field span { display: block; font-size: 10.5px; color: var(--foam-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
-    .modal-field strong { color: var(--foam); font-weight: 500; font-size: 13px; }
-    .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--glass-border); }
+    .modal-field-grid { 
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px 14px; 
+        background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.04);
+    }
+    .modal-field span { display: block; font-size: 10px; color: var(--foam-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
+    .modal-field strong { color: var(--foam); font-weight: 500; font-size: 12.5px; word-break: break-word; }
+    
+    .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--glass-border); }
     .modal-actions button { display: flex; align-items: center; gap: 6px; }
+
     table.boat-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     table.boat-table th {
         text-align: left; padding: 6px 8px; color: var(--foam-dim); font-size: 10px;
@@ -196,7 +172,7 @@
             <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
         </div>
 
-        <!-- MEMBER ACTIONS (merged: Select Member + Member Lists + Update Paid Members) -->
+        <!-- MEMBER ACTIONS -->
         <div class="section-head" id="member-actions">
             <h2>Member Actions</h2>
             <p>Search, filter, and act on members — payments, update requests, and status changes.</p>
@@ -274,7 +250,7 @@
             </div>
         </div>
 
-        <!-- 3. BULK COMMUNICATIONS -->
+        <!-- BULK COMMUNICATIONS -->
         <div class="section-head" id="communications"><h2>Member Communications</h2><p>Send to every active member. These actions cannot be targeted or undone.</p></div>
         <div class="bulk-comm-grid">
             <div class="glass bulk-comm-card">
@@ -291,7 +267,7 @@
             </div>
         </div>
 
-        <!-- 4. AUDIT LOG -->
+        <!-- AUDIT LOG -->
         <div class="section-head" id="audit-log"><h2>Audit Log</h2><p>Every Member Management action, recorded to the AuditLog sheet.</p></div>
         <div class="panel">
             <div class="panel-header">
@@ -316,19 +292,21 @@
         </div>
     </main>
 
+    <!-- SECTIONED MEMBER MODAL -->
     <div class="modal-overlay" id="memberModalOverlay" onclick="if(event.target===this) closeMemberModal()">
         <div class="modal-box">
             <button type="button" class="modal-close" onclick="closeMemberModal()" title="Close">
                 <i class="inline-icon" data-lucide="x"></i>
             </button>
             <div class="modal-title" id="modalMemberName">—</div>
-            <p style="color:var(--foam-dim);font-size:12.5px;margin:0;" id="modalMemberSub"></p>
+            <p style="color:var(--foam-dim);font-size:12.5px;margin:0 0 10px;" id="modalMemberSub"></p>
 
-            <div class="modal-section-title" style="border-top:none;padding-top:0;">Member Details</div>
-            <div class="modal-field-grid" id="modalMemberFields"></div>
+            <div id="modalMemberFields"></div>
 
-            <div class="modal-section-title">Boats</div>
-            <div id="modalBoats"><div class="empty-state">Loading boats…</div></div>
+            <div class="modal-section">
+                <div class="modal-section-title">Boats</div>
+                <div id="modalBoats"><div class="empty-state">Loading boats…</div></div>
+            </div>
 
             <div class="modal-actions">
                 <button type="button" class="btn btn-ghost" onclick="handleModalAction('requestUpdate')"><i class="inline-icon" data-lucide="mail-plus"></i> Request Update</button>
@@ -345,9 +323,6 @@
     </footer>
 
     <script>
-        /* ============================================================
-        CONFIG — same Web App the rest of the admin site talks to
-        ============================================================ */
         const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
         const AUDIT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwDLWh4_GE_uRJFmNihhBfONT54fhyliEybq3tnrvticdtrekG1rn_iUvtTgxjDzlE/exec";
 
@@ -368,7 +343,6 @@
         }
 
         async function apiPost(action, payload) {
-            // No Content-Type header set intentionally — avoids a CORS preflight to the Apps Script Web App.
             const res = await fetch(CLB_WEBAPP_URL, {
                 method: "POST",
                 body: JSON.stringify({ action, ...payload })
@@ -389,9 +363,7 @@
             el.textContent = text;
             el.className = "fn-message visible " + (isError ? "error" : "success");
         }
-        /* ============================================================
-        MEMBER ACTIONS (search, filter, list, select, and act)
-        ============================================================ */
+
         let allMembers = [];
         let allBoats = [];
         let selectedMemberRows = new Set();
@@ -411,9 +383,6 @@
             return s === 'true' || s === 'yes' || s === 'active' || s === '1';
         }
 
-        // Members sheet columns: ID | Active | MemberName | Membership | Start Date | End Date | Paid up |
-        // Phone | email | WhatsApp | Duplicate | Address Line | Suburb | PCode | Emergency Contact Name |
-        // Emergency Contact Number | Calendar Subscription | Home Club | Committee
         function parseMembersSheet(values) {
             return (values || []).slice(1)
                 .map((r, i) => ({ r, sheetRow: i + 2 }))
@@ -442,7 +411,6 @@
                 }));
         }
 
-        // ClassMembers sheet columns: BoatID | Active | Member | Class | SailNo | Model | Handicap | HRN | GH | GH HCap
         function parseBoatsSheet(values) {
             return (values || []).slice(1)
                 .filter(r => r.some(c => c !== ''))
@@ -500,7 +468,6 @@
             if (types.includes(current)) select.value = current;
         }
 
-        // Members sheet stores Active as boolean or a status-like string
         function isActiveStatus(status) {
             if (status === true) return true;
             if (status === false || status === undefined || status === null || status === '') return false;
@@ -508,7 +475,6 @@
             return s === 'true' || s === 'yes' || s === 'active';
         }
 
-        // Membership type -> theme badge class (same classes admin.html uses)
         function getMembershipBadgeClass(type) {
             const t = String(type || '').trim().toLowerCase();
             if (t.includes('full')) return 'badge-full';
@@ -608,7 +574,6 @@
             });
         }
 
-        // Single source of truth for what each action calls server-side — used by row icons, bulk icons, and the modal.
         async function runMemberActionApi(action, member) {
             switch (action) {
                 case 'requestUpdate': return apiPost('sendUpdateRequest', { member });
@@ -665,7 +630,6 @@
             }
         }
 
-        // Copies the currently selected members if any are checked, otherwise every member currently in the list.
         function copyPhoneList() {
             const scoped = selectedMemberRows.size ? allMembers.filter(m => selectedMemberRows.has(m.row)) : allMembers;
             const phones = scoped.map(m => m.phone).filter(Boolean);
@@ -683,23 +647,61 @@
         }
 
         /* ============================================================
-        MEMBER MODAL (full member detail + boats + actions)
+        SECTIONED MEMBER MODAL LOGIC
         ============================================================ */
-        const MODAL_FIELD_LABELS = {
-            id: 'Member ID', status: 'Active', membershipType: 'Membership Type',
-            startDate: 'Start Date', endDate: 'End Date', isPaid: 'Paid Up',
-            phone: 'Phone', email: 'Email', whatsapp: 'WhatsApp', duplicate: 'Duplicate',
-            addressLine: 'Address', suburb: 'Suburb', postcode: 'Postcode',
-            emergencyContactName: 'Emergency Contact Name', emergencyContactNumber: 'Emergency Contact Number',
-            calendarSubscription: 'Calendar Subscription', homeClub: 'Home Club', committee: 'Committee'
-        };
+        const MODAL_SECTIONS = [
+            {
+                title: 'Membership & Status',
+                fields: [
+                    { key: 'id', label: 'Member ID' },
+                    { key: 'membershipType', label: 'Membership Type' },
+                    { key: 'status', label: 'Active Status', type: 'status' },
+                    { key: 'isPaid', label: 'Paid Up', type: 'boolean' },
+                    { key: 'startDate', label: 'Start Date', type: 'date' },
+                    { key: 'endDate', label: 'End Date', type: 'date' },
+                    { key: 'homeClub', label: 'Home Club' },
+                    { key: 'committee', label: 'Committee', type: 'boolean' }
+                ]
+            },
+            {
+                title: 'Contact Details',
+                fields: [
+                    { key: 'email', label: 'Email' },
+                    { key: 'phone', label: 'Phone' },
+                    { key: 'whatsapp', label: 'WhatsApp', type: 'boolean' },
+                    { key: 'calendarSubscription', label: 'Calendar Subscription', type: 'boolean' }
+                ]
+            },
+            {
+                title: 'Address Information',
+                fields: [
+                    { key: 'addressLine', label: 'Address' },
+                    { key: 'suburb', label: 'Suburb' },
+                    { key: 'postcode', label: 'Postcode' }
+                ]
+            },
+            {
+                title: 'Emergency Contact',
+                fields: [
+                    { key: 'emergencyContactName', label: 'Contact Name' },
+                    { key: 'emergencyContactNumber', label: 'Contact Phone' }
+                ]
+            }
+        ];
 
-        function humanizeKey(key) {
-            return key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+        function formatDate(val) {
+            if (!val) return '—';
+            const d = new Date(val);
+            if (isNaN(d.getTime())) return String(val);
+            return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
         }
 
-        function formatFieldValue(value) {
-            if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+        function formatFieldValue(value, type) {
+            if (type === 'date') return formatDate(value);
+            if (type === 'status') return isActiveStatus(value) ? 'Active' : 'Inactive';
+            if (typeof value === 'boolean' || type === 'boolean') {
+                return parseBoolLike(value) ? 'Yes' : 'No';
+            }
             return (value === null || value === undefined || value === '') ? '—' : String(value);
         }
 
@@ -708,20 +710,26 @@
             document.getElementById('modalMemberName').textContent = member.name || '—';
             document.getElementById('modalMemberSub').textContent = member.email || '';
 
-            document.getElementById('modalMemberFields').innerHTML = Object.keys(member)
-                .filter(k => k !== 'row' && k !== 'name')
-                .map(k => `
-                    <div class="modal-field">
-                        <span>${escapeHtml(MODAL_FIELD_LABELS[k] || humanizeKey(k))}</span>
-                        <strong>${escapeHtml(formatFieldValue(member[k]))}</strong>
-                    </div>`).join('');
+            const fieldsContainer = document.getElementById('modalMemberFields');
+            fieldsContainer.innerHTML = MODAL_SECTIONS.map(sec => `
+                <div class="modal-section">
+                    <div class="modal-section-title">${escapeHtml(sec.title)}</div>
+                    <div class="modal-field-grid">
+                        ${sec.fields.map(f => `
+                            <div class="modal-field">
+                                <span>${escapeHtml(f.label)}</span>
+                                <strong>${escapeHtml(formatFieldValue(member[f.key], f.type))}</strong>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
 
             if (!silentRefresh) {
                 document.getElementById('modalMsg').className = 'fn-message';
                 document.getElementById('memberModalOverlay').classList.add('visible');
             }
 
-            // Boats come from the ClassMembers sheet, already loaded in allBoats — matched by member name.
             const memberBoats = allBoats.filter(b =>
                 String(b.member || '').trim().toLowerCase() === String(member.name || '').trim().toLowerCase()
             );
@@ -772,7 +780,7 @@
         }
 
         /* ============================================================
-        3. BULK COMMUNICATIONS
+        BULK COMMUNICATIONS
         ============================================================ */
         const BULK_LABELS = {
             requestAllUpdates: "Request Members Update",
@@ -797,7 +805,7 @@
         }
 
         /* ============================================================
-        4. AUDIT LOG (reads the AuditLog sheet)
+        AUDIT LOG
         ============================================================ */
         let auditEntries = [];
 
@@ -812,8 +820,6 @@
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
                 const rows = data.values || [];
-                // Schema written by processForm()/logAudit(): [HexCode, Timestamp, MemberName, Field, OldValue, NewValue]
-                // Row 0 assumed header if present.
                 auditEntries = rows.slice(1).filter(r => r.some(c => c !== "")).map(r => ({
                     hexCode: r[0], timestamp: r[1], memberName: r[2], field: r[3], before: r[4], after: r[5]
                 })).reverse();
@@ -824,6 +830,7 @@
                 document.getElementById('auditEmpty').textContent = 'Error loading audit log: ' + err.message;
             }
         }
+
         function renderAuditLog() {
             const q = document.getElementById('auditSearch').value.trim().toLowerCase();
             let entries = auditEntries;
