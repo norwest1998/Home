@@ -767,6 +767,14 @@ button{ font-family: inherit; }
 .logo-img{ width:42px; height:42px; border-radius:50%; object-fit:cover; flex:none; background:#fff; padding:2px; }
 .brand-text strong{ font-size:16px; }
 .app-nav .nav-spacer{ flex:1; }
+.back-btn{
+  width:36px; height:36px; flex:none;
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:10px; border:1px solid var(--glass-border);
+  background:var(--glass-fill); color:var(--foam);
+  cursor:pointer; transition:background 0.15s ease;
+}
+.back-btn:hover{ background:var(--glass-fill-hi); }
 .icon-btn{
   width:40px; height:40px; border-radius:10px;
   background: var(--glass-fill); border:1px solid var(--glass-border); color: var(--foam);
@@ -1261,11 +1269,11 @@ function renderCompetitorSelect(){
 
 /* ---------------- Screen: Race Capture ---------------- */
 function renderRaceCapture(){
-  if(state.draft){
-    return renderDraftRace();
-  }
   if(state.viewRaceIdx !== null){
     return renderCapturedRaceView(state.viewRaceIdx);
+  }
+  if(state.draft){
+    return renderDraftRace();
   }
   // race list / add race screen
   const raceItems = state.races.map((r,i) => {
@@ -1336,7 +1344,7 @@ function renderDraftRace(){
 
   return `
     <div class="race-hero">
-      <button class="nav-arrow" disabled>${svgChevL()}</button>
+      <button class="nav-arrow" ${state.races.length ? '' : 'disabled'} data-nav-race="${state.races.length-1}">${svgChevL()}</button>
       <div class="race-hero-title">
         <div class="rnum">Race ${d.raceNumber}</div>
         <div class="rstatus">${allPlaced ? 'All boats placed — ready' : `Capturing… ${placed.size}/${n} placed`}</div>
@@ -1374,6 +1382,11 @@ function renderCapturedRaceView(idx){
 
   const canPrev = idx > 0;
   const canNext = idx < state.races.length - 1;
+  const nextBtn = canNext
+    ? `<button class="nav-arrow" data-nav-race="${idx+1}">${svgChevR()}</button>`
+    : state.draft
+      ? `<button class="nav-arrow" data-close-view="1" title="Back to current race">${svgChevR()}</button>`
+      : `<button class="btn btn-primary btn-sm" data-add-race="1">+ Add Race</button>`;
 
   return `
     <div class="race-hero">
@@ -1382,7 +1395,7 @@ function renderCapturedRaceView(idx){
         <div class="rnum">Race ${r.raceNumber}</div>
         <div class="rstatus">Captured ✓ · drag to reorder · hold to change</div>
       </div>
-      <button class="nav-arrow" ${canNext?'':'disabled'} data-nav-race="${idx+1}">${svgChevR()}</button>
+      ${nextBtn}
     </div>
     <div class="panel glass panel-pad" id="raceViewRows" data-race-idx="${idx}">
       ${rows.join('')}
@@ -1700,6 +1713,7 @@ function editEntries(){
 
 function addRace(){
   state.draft = { raceNumber: state.races.length + 1, positions: [], dns: [], dnf: [], ro: '' };
+  state.viewRaceIdx = null;
   render();
 }
 
