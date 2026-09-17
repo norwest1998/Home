@@ -139,8 +139,29 @@
         background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px;
         border: 1px solid rgba(255,255,255,0.04);
     }
-    .modal-field span { display: block; font-size: 10px; color: var(--foam-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
-    .modal-field strong { color: var(--foam); font-weight: 500; font-size: 12.5px; word-break: break-word; }
+    .modal-field span { display: block; font-size: 10px; color: var(--foam-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+    
+    /* Editable input controls inside modal */
+    .modal-input {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--glass-border);
+        color: var(--foam);
+        font-size: 12.5px;
+        font-family: inherit;
+        outline: none;
+        box-sizing: border-box;
+        transition: border-color .15s ease;
+    }
+    .modal-input:focus {
+        border-color: var(--glow, #00c6ff);
+    }
+    select.modal-input option {
+        background-color: var(--ocean-mid, #0f2030);
+        color: var(--foam, #eaf6ff);
+    }
 
     table.boat-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     table.boat-table th {
@@ -219,7 +240,7 @@
                             id="memberQuery"
                             class="search-input"
                             placeholder="e.g. DF65 sailors, unpaid members, affiliate members"
-                            onkeydown="if(event.key==='Enter') runMemberQuery()"
+                            onkeydown="handleQueryKeyDown(event)"
                         >
                     </div>
                     <button class="btn" style="flex-shrink:0;" onclick="runMemberQuery()">Run Query</button>
@@ -307,6 +328,7 @@
                 <div class="modal-header-actions">
                     <button type="button" class="btn btn-ghost" onclick="handleModalAction('requestUpdate')"><i class="inline-icon" data-lucide="mail-plus"></i> Request Update</button>
                     <button type="button" class="btn btn-ghost" onclick="handleModalAction('markPaid')"><i class="inline-icon" data-lucide="dollar-sign"></i> Mark Paid</button>
+                    <button type="button" class="btn" id="saveMemberBtn" onclick="saveMemberDetails()" style="display: none;"><i class="inline-icon" data-lucide="save"></i> Save Changes</button>
                     <button type="button" class="modal-close" onclick="closeMemberModal()" title="Close">
                         <i class="inline-icon" data-lucide="x"></i>
                     </button>
@@ -374,6 +396,7 @@
         let allBoats = [];
         let selectedMemberRows = new Set();
         let activeModalMember = null;
+        let lastSearchValue = '';
 
         const ACTION_LABELS = {
             requestUpdate: 'Request Update',
@@ -491,6 +514,9 @@
         }
 
         const filterMemberDirectory = debounce(function filterMemberDirectoryImpl() {
+            const searchInput = document.getElementById('memberListSearch');
+            lastSearchValue = searchInput.value;
+
             if (!hasMemberListActivity()) {
                 document.getElementById('memberListsResults').innerHTML =
                     '<div class="empty-state">Type a name above or choose a filter to see members.</div>';
@@ -498,7 +524,7 @@
                 return;
             }
 
-            const q = document.getElementById('memberListSearch').value.trim().toLowerCase();
+            const q = searchInput.value.trim().toLowerCase();
             const statusVal = document.getElementById('memberStatusFilter').value;
             const membershipVal = document.getElementById('memberMembershipFilter').value;
 
@@ -510,18 +536,29 @@
             if (membershipVal !== 'all') {
                 filtered = filtered.filter(m => (m.membershipType || '') === membershipVal);
             }
-            renderMemberDirectory(filtered);
+            renderMemberDirectory(filtered, false);
         }, 150);
+
+        function handleQueryKeyDown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const currentSearch = document.getElementById('memberListSearch').value;
+                if (currentSearch !== lastSearchValue) {
+                    filterMemberDirectory();
+                }
+            }
+        }
 
         document.getElementById('memberStatusFilter').addEventListener('change', filterMemberDirectory);
         document.getElementById('memberMembershipFilter').addEventListener('change', filterMemberDirectory);
 
-        function renderMemberDirectory(members) {
+        function renderMemberDirectory(members, isQuery = false) {
             const container = document.getElementById('memberListsResults');
             const header = document.getElementById('memberActionsHeader');
 
             if (!members.length) {
-                container.innerHTML = '<div class="empty-state">No members found.</div>';
+                const emptyMsg = isQuery ? 'Query found no results' : 'No members found.';
+                container.innerHTML = `<div class="empty-state">${escapeHtml(emptyMsg)}</div>`;
                 header.style.display = 'none';
                 return;
             }
@@ -630,7 +667,7 @@
             container.innerHTML = '<div class="empty-state">Generating list...</div>';
             try {
                 const result = await apiPost('query', { query: query });
-                renderMemberDirectory(result.members || []);
+                renderMemberDirectory(result.members || [], true);
             } catch (err) {
                 container.innerHTML = `<div class="empty-state">Error: ${escapeHtml(err.message)}</div>`;
             }
@@ -695,20 +732,71 @@
             }
         ];
 
-        function formatDate(val) {
-            if (!val) return '—';
-            const d = new Date(val);
-            if (isNaN(d.getTime())) return String(val);
-            return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+        function renderModalFieldInput(member, field) {
+            const rawVal = member[field.key];
+            const val = rawVal === null || rawVal === undefined ? '' : rawVal;
+            
+            if (field.type === 'status') {
+                const isActive = isActiveStatus(val);
+                return `
+                    <select class="modal-input modal-field-input" data-key="${field.key}" data-label="${escapeHtml(field.label)}" data-type="status">
+                        <option value="Active" ${isActive ? 'selected' : ''}>Active</option>
+                        <option value="Inactive" ${!isActive ? 'selected' : ''}>Inactive</option>
+                    </select>`;
+            }
+            
+            if (field.type === 'boolean') {
+                const isTrue = parseBoolLike(val);
+                return `
+                    <select class="modal-input modal-field-input" data-key="${field.key}" data-label="${escapeHtml(field.label)}" data-type="boolean">
+                        <option value="true" ${isTrue ? 'selected' : ''}>Yes</option>
+                        <option value="false" ${!isTrue ? 'selected' : ''}>No</option>
+                    </select>`;
+            }
+
+            if (field.type === 'date') {
+                let dateStr = '';
+                if (val) {
+                    const d = new Date(val);
+                    if (!isNaN(d.getTime())) {
+                        dateStr = d.toISOString().split('T')[0];
+                    } else {
+                        dateStr = val;
+                    }
+                }
+                return `<input type="date" class="modal-input modal-field-input" data-key="${field.key}" data-label="${escapeHtml(field.label)}" data-type="date" value="${escapeHtml(dateStr)}">`;
+            }
+
+            return `<input type="text" class="modal-input modal-field-input" data-key="${field.key}" data-label="${escapeHtml(field.label)}" data-type="text" value="${escapeHtml(val)}">`;
         }
 
-        function formatFieldValue(value, type) {
-            if (type === 'date') return formatDate(value);
-            if (type === 'status') return isActiveStatus(value) ? 'Active' : 'Inactive';
-            if (typeof value === 'boolean' || type === 'boolean') {
-                return parseBoolLike(value) ? 'Yes' : 'No';
+        function checkModalChanges() {
+            if (!activeModalMember) return;
+            const inputs = document.querySelectorAll('.modal-field-input');
+            let hasChanges = false;
+
+            inputs.forEach(input => {
+                const key = input.dataset.key;
+                const type = input.dataset.type;
+                let val = input.value;
+
+                if (type === 'boolean') {
+                    val = parseBoolLike(val);
+                }
+
+                const oldVal = activeModalMember[key];
+                const normalizedOld = oldVal !== undefined && oldVal !== null ? String(oldVal) : '';
+                const normalizedNew = String(val);
+
+                if (normalizedNew !== normalizedOld) {
+                    hasChanges = true;
+                }
+            });
+
+            const btn = document.getElementById('saveMemberBtn');
+            if (btn) {
+                btn.style.display = hasChanges ? 'inline-flex' : 'none';
             }
-            return (value === null || value === undefined || value === '') ? '—' : String(value);
         }
 
         function openMemberModal(member, silentRefresh) {
@@ -724,12 +812,20 @@
                         ${sec.fields.map(f => `
                             <div class="modal-field">
                                 <span>${escapeHtml(f.label)}</span>
-                                <strong>${escapeHtml(formatFieldValue(member[f.key], f.type))}</strong>
+                                ${renderModalFieldInput(member, f)}
                             </div>
                         `).join('')}
                     </div>
                 </div>
             `).join('');
+
+            const inputs = fieldsContainer.querySelectorAll('.modal-field-input');
+            inputs.forEach(input => {
+                input.addEventListener('input', checkModalChanges);
+                input.addEventListener('change', checkModalChanges);
+            });
+
+            checkModalChanges();
 
             if (!silentRefresh) {
                 document.getElementById('modalMsg').className = 'fn-message';
@@ -742,6 +838,71 @@
             renderModalBoats(memberBoats);
 
             if (window.lucide) lucide.createIcons();
+        }
+
+        async function saveMemberDetails() {
+            if (!activeModalMember) return;
+            const btn = document.getElementById('saveMemberBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+
+            const inputs = document.querySelectorAll('.modal-field-input');
+            const changes = [];
+            const updatedData = { ...activeModalMember };
+
+            inputs.forEach(input => {
+                const key = input.dataset.key;
+                const label = input.dataset.label;
+                const type = input.dataset.type;
+                let val = input.value;
+
+                if (type === 'boolean') {
+                    val = parseBoolLike(val);
+                }
+
+                const oldVal = activeModalMember[key];
+                
+                if (String(val) !== String(oldVal !== undefined && oldVal !== null ? oldVal : '')) {
+                    changes.push({
+                        field: label || key,
+                        key: key,
+                        before: oldVal,
+                        after: val
+                    });
+                    updatedData[key] = val;
+                }
+            });
+
+            if (changes.length === 0) {
+                showMsg('modalMsg', 'No changes detected to save.', false);
+                btn.disabled = false;
+                checkModalChanges();
+                if (window.lucide) lucide.createIcons();
+                return;
+            }
+
+            try {
+                await apiPost('updateMember', {
+                    row: activeModalMember.row,
+                    updatedData: updatedData,
+                    changes: changes,
+                    memberName: activeModalMember.name
+                });
+
+                showMsg('modalMsg', `Saved ${changes.length} change(s) successfully.`, false);
+                await loadMembers();
+                await loadAuditLog();
+
+                const refreshed = allMembers.find(m => m.row === activeModalMember.row) || updatedData;
+                await openMemberModal(refreshed, true);
+            } catch (err) {
+                showMsg('modalMsg', 'Error saving changes: ' + err.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="inline-icon" data-lucide="save"></i> Save Changes';
+                checkModalChanges();
+                if (window.lucide) lucide.createIcons();
+            }
         }
 
         function renderModalBoats(boats) {
