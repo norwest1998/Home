@@ -661,10 +661,25 @@
         }
 
         async function runMemberQuery() {
-            const query = document.getElementById('memberQuery').value.trim();
+            const queryInput = document.getElementById('memberQuery');
+            const query = queryInput.value.trim();
             if (!query) return;
+
+            // Reset searchbar, dropdown filters, and action messages
+            document.getElementById('memberListSearch').value = '';
+            document.getElementById('memberStatusFilter').value = 'all';
+            document.getElementById('memberMembershipFilter').value = 'all';
+            lastSearchValue = '';
+
+            const msgEl = document.getElementById('memberActionsMsg');
+            if (msgEl) {
+                msgEl.textContent = '';
+                msgEl.className = 'fn-message';
+            }
+
             const container = document.getElementById('memberListsResults');
             container.innerHTML = '<div class="empty-state">Generating list...</div>';
+
             try {
                 const result = await apiPost('query', { query: query });
                 renderMemberDirectory(result.members || [], true);
