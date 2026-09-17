@@ -1116,12 +1116,12 @@ function memberFor(sailNo, cls){
   return m ? m.member : 'Unknown';
 }
 
-function svgMenu(){ return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`; }
-function svgBack(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
-function svgChevL(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
-function svgChevR(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
-function svgList(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`; }
-function svgTrophy(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 01-10 0V4zM7 5H4a1 1 0 00-1 1v1a4 4 0 004 4M17 5h3a1 1 0 011 1v1a4 4 0 01-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
+function svgMenu(){ return `<i data-lucide="menu"></i>`;} 
+function svgBack(){ return `<i data-lucide="step-back"></i>`; } 
+function svgChevL(){ return `<i data-lucide="chevron-left"></i>`; }
+function svgChevR(){ return `<i data-lucide="chevron-right"></i>`; }
+function svgList(){ return `<i data-lucide="list"></i>`; }
+function svgTrophy(){ return `<i data-lucide="trophy"></i>`; }
 function svgTable(){ return `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M9 4v16" stroke="currentColor" stroke-width="1.8"/></svg>`; }
 function svgDownload(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
 function svgRestart(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M4.5 13a8 8 0 1 0 2-8.5L4 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
@@ -1402,8 +1402,9 @@ function menuHTML(){
       <div class="mp-sub">${state.event ? state.event.date : ''} · Entries locked</div>
     </div>
     <div class="menu-item" data-open-overlay="entries">${svgList()} Regatta Entries</div>
+    <div class="menu-item" onclick="navigateTo('captureResults')"><i data-lucide="camera"></i><span>Capture Results</span></div>
+    <div class="menu-item ${state.races.length?'':'disabled'}" data-open-overlay="results">${svgTrophy()} Race Results</div>    
     <div class="menu-item ${state.races.length?'':'disabled'}" data-open-overlay="scoresheet">${svgTable()} Scoresheet</div>
-    <div class="menu-item ${state.races.length?'':'disabled'}" data-open-overlay="results">${svgTrophy()} Race Results</div>
     <div class="menu-sep"></div>
     <div class="menu-item" data-open-overlay="export">${svgSend()} Send for Race Processing</div>
     <div class="menu-sep"></div>
