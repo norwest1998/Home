@@ -298,9 +298,10 @@
   table.standings tbody tr:nth-child(3) td:first-child{ color:var(--signal); font-weight:700; }
   
   .table-scroll{ 
-    overflow-x:visible; 
+    overflow-x:auto; 
     overflow-y:visible; 
     border-radius:12px; 
+    -webkit-overflow-scrolling:touch;
   }
 
   @media (max-width:640px){
@@ -893,6 +894,26 @@
     margin-left:auto;   /* pushes icon to the far right */
   }
 
+  /* =========================================================
+     MOBILE NAV MENU (toggle fix)
+     ========================================================= */
+  @media (max-width:900px){
+    .nav-links{
+      display:none;
+      position:absolute;
+      top:100%; left:0; right:0;
+      flex-direction:column;
+      gap:0;
+      background:rgba(15,53,80,0.97);
+      border-top:1px solid var(--glass-border);
+      padding:8px 16px 16px;
+      z-index:50;
+    }
+    .nav-links.nav-open{ display:flex; }
+    .nav-links .nav-item{ width:100%; }
+    .nav-links .dropdown-menu{ position:static; display:block; box-shadow:none; background:transparent; border:none; padding-left:12px; }
+    .nav-toggle{ display:inline-flex; }
+  }
 </style>
 </head>
 <body>
@@ -945,7 +966,7 @@
       </li>
     </ul>
 
-    <button class="nav-toggle" aria-label="Toggle Navigation">
+    <button class="nav-toggle" aria-label="Toggle Navigation" onclick="document.querySelector('.nav-links').classList.toggle('nav-open')">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
     </button>
   </header>
