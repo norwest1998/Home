@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>SMMC Race Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* =================== THEME.CSS (club design system) =================== */
+/* =================================================================
+   THEME.CSS — shared design system for SMMC pages (index.html, admin.html)
+   Design tokens, glass/panel primitives, nav, buttons, badges, tabs,
+   search, filter buttons, member/app drawers & lists, tile-grid, tag, footer.
+   Page-specific layout (hero, results, weather, calendar, etc.) stays
+   in each page's own <style> block.
+   ================================================================= */
+
+  /* =========================================================
+     DESIGN TOKENS — change these to re-skin every page at once
+     ========================================================= */
+  :root{     
+    --ocean-deep:   #071b2c;
+    --ocean-mid:    #0f3550;
+    --sea-teal:     #164a56;
+    --foam:         #eaf6f6;
+    --foam-dim:     rgba(234,246,246,0.62);
+    --signal:       #ff6a3d;   /* regatta / logo accent */
+    --glow:         #5eead4;   /* wake / bioluminescent accent */
+    --whatsapp:     #1a8139;
+
+    --glass-fill:   rgba(255,255,255,0.06);
+    --glass-fill-hi:rgba(255,255,255,0.11);
+    --glass-border: rgba(255,255,255,0.16);
+    --glass-blur:   18px;
+
+    --font-display: 'Inter', sans-serif;
+    --font-body:    'Inter', sans-serif;
+    --font-data:    'Inter', sans-serif;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html{ scroll-behavior:smooth; }
+
+  body{
+    font-family:var(--font-body);
+    color:var(--foam);
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(94,234,212,0.10), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(255,106,61,0.08), transparent 55%),
+      linear-gradient(180deg, var(--ocean-deep) 0%, var(--ocean-mid) 55%, var(--sea-teal) 100%);
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* Subtle moving caustic light — water without a hero photo */
+  body::before{
+    content:"";
+    position:fixed; inset:-20%;
+    background:
+      repeating-linear-gradient(115deg,
+        rgba(255,255,255,0.025) 0px,
+        rgba(255,255,255,0.025) 2px,
+        transparent 2px,
+        transparent 140px);
+    animation:drift 22s linear infinite;
+    pointer-events:none;
+    z-index:0;
+  }
+  @keyframes drift{
+    0%{ transform:translate(0,0); }
+    100%{ transform:translate(-140px,80px); }
+  }
+
+  /* =========================================================
+     GLASS PRIMITIVE — the one reusable surface every card uses
+     ========================================================= */
+  .glass{
+    background:linear-gradient(155deg, var(--glass-fill-hi), var(--glass-fill));
+    border:1px solid var(--glass-border);
+    border-radius:20px;
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(140%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(140%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.25) inset,
+      0 -1px 12px rgba(255,255,255,0.03) inset,
+      0 18px 40px rgba(2,10,18,0.35);
+    position:relative;
+  }
+  .glass::after{
+    content:"";
+    position:absolute; inset:0;
+    border-radius:inherit;
+    background:linear-gradient(120deg, rgba(255,255,255,0.14) 0%, transparent 30%);
+    pointer-events:none;
+  }
+  .nav-icon {
+    width: 35px;
+    height: 35px;
+  }
+
+  /* =========================================================
+     NAV & DROPDOWNS
+     ========================================================= */
+  .nav-glass{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px;
+    padding:14px 28px;
+    margin:0;
+    border-radius:0;
+    border-left:none; border-right:none; border-top:none;
+    -webkit-backdrop-filter:blur(20px) saturate(150%);
+    backdrop-filter:blur(20px) saturate(150%);
+    background:rgba(7,27,44,0.75);
+    border-bottom:1px solid var(--glass-border);
+  }
+  .nav-glass::after{ display:none; }
+
+  .brand{ display:flex; align-items:center; gap:12px; text-decoration:none; }
+  .logo{ width:38px; height:38px; flex:none; border-radius:20%; object-fit:cover; border:1px solid var(--glass-border); }
+
+  .brand-text{ display:flex; flex-direction:column; line-height:1.05; }
+  .brand-text strong{
+    font-family:var(--font-display); font-size:17px; letter-spacing:0.01em; color:var(--foam);
+  }
+  .brand-text span{
+    font-family:var(--font-data); font-size:10.5px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--glow);
+  }
+
+  .nav-links{ display:flex; gap:8px; align-items:center; list-style:none; }
+  .nav-item{ position:relative; }
+  .nav-link{
+    font-family:var(--font-body); font-size:13.5px; font-weight:500;
+    color:var(--foam-dim); text-decoration:none;
+    padding:8px 14px; border-radius:10px;
+    display:inline-flex; align-items:center; gap:6px;
+    transition:background 0.2s ease, color 0.2s ease;
+    cursor:pointer;
+  }
+  .nav-link:hover, .nav-item:hover > .nav-link{
+    background:var(--glass-fill-hi); color:var(--foam);
+  }
+  
+  /* Dropdown Menu styling */
+  .dropdown-menu{
+    position:absolute; top:100%; left:0;
+    min-width:200px;
+    padding:8px;
+    padding-top:14px;   /* visual gap, still inside the hoverable box */
+    margin-top:-6px;    /* pulls the box up so it touches .nav-link, no dead zone */
+    display:flex; flex-direction:column; gap:4px;
+    list-style:none;
+    opacity:0; transform:translateY(8px); pointer-events:none;
+    transition:opacity 0.2s ease, transform 0.2s ease;
+    z-index:60;
+  }
+  .nav-item:hover .dropdown-menu,
+  .nav-item:focus-within .dropdown-menu{
+    opacity:1; transform:translateY(0); pointer-events:auto;
+  }
+  .dropdown-menu a{
+    font-family:var(--font-body); font-size:13px; font-weight:500;
+    color:var(--foam-dim); text-decoration:none;
+    padding:8px 12px; border-radius:8px;
+    display:block;
+    transition:background 0.15s ease, color 0.15s ease;
+  }
+  .dropdown-menu a:hover{
+    background:var(--glass-fill-hi); color:var(--glow);
+  }
+
+  /* Mobile menu toggle button */
+  .nav-toggle{ display:none; background:none; border:none; color:var(--foam); cursor:pointer; }
+
+  @media (max-width:860px){
+    .nav-links{ display:none; }
+    .nav-toggle{ display:block; }
+  }
+
+  .btn{
+    font-family:var(--font-body); font-weight:600; font-size:14px;
+    padding:12px 22px; border-radius:12px; text-decoration:none;
+    display:inline-flex; align-items:center; gap:8px; border:none; cursor:pointer;
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn:hover{ transform:translateY(-1px); }
+  .btn-primary{
+    background:linear-gradient(135deg, var(--glow), #38bfa1);
+    color:var(--ocean-deep);
+    box-shadow:0 8px 24px rgba(94,234,212,0.25);
+  }
+  .btn-ghost{
+    background:var(--glass-fill); color:var(--foam);
+    border:1px solid var(--glass-border);
+  }
+  .btn-ghost:hover{ background:var(--glass-fill-hi); }
+
+  /* =========================================================
+     SECTION HEADERS & CONTAINERS
+     ========================================================= */
+  .container{ max-width:1180px; margin:0 auto; padding:0 28px; }
+
+  .section-head{
+    margin:54px auto 20px;
+    display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .section-head h2{
+    font-family:var(--font-display); font-size:24px; color:var(--foam); font-weight:600;
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-head p{ font-size:13.5px; color:var(--foam-dim); }
+
+  /* ── Panel shell ── */
+  .panel {
+    background: linear-gradient(155deg, var(--glass-fill-hi), var(--glass-fill));
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 18px 40px rgba(2,10,18,0.35);
+    overflow: hidden;
+  }
+ 
+  .panel-header {
+    padding: 20px 24px 0;
+    border-bottom: 1px solid var(--glass-border);
+  }
+ 
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+ 
+  .panel-title .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--signal);
+    box-shadow: 0 0 8px var(--signal);
+    animation: pulse 2.4s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+ 
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+ 
+  .panel-title h3 {
+    font-size: 18px; font-weight: 600; color: var(--foam);
+  }
+ 
+  /* ── Tabs ── */
+  .tab-row {
+    display: flex;
+    gap: 4px;
+  }
+ 
+  .tab {
+    font-family: var(--font-data);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    padding: 8px 16px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--foam-dim);
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+    bottom: -1px;
+  }
+ 
+  .tab:hover { color: var(--foam); background: var(--glass-fill); }
+ 
+  .tab.active {
+    background: var(--glass-fill-hi);
+    border-color: var(--glass-border);
+    border-bottom-color: transparent;
+    color: var(--glow);
+  }
+
+  .tab-row-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .add-app-pill {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-data);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    padding: 6px 14px;
+    margin-bottom: 8px;
+    border-radius: 999px;
+    cursor: pointer;
+    background: var(--glass-fill);
+    border: 1px solid var(--glow);
+    color: var(--glow);
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .add-app-pill.visible { display: inline-flex; }
+
+  .add-app-pill:hover {
+    background: var(--glow);
+    color: var(--ocean-deep);
+  }
+
+  /* ── Tab content ── */
+  .tab-content { display: none; padding: 20px 24px 24px; }
+  .tab-content.active { display: block; }
+
+  /* ── Search bar ── */
+  .search-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+ 
+  .search-icon {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--foam-dim);
+    pointer-events: none;
+  }
+ 
+  .search-input {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    padding: 10px 14px 10px 36px;
+    border-radius: 10px;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    color: var(--foam);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+ 
+  .search-input::placeholder { color: var(--foam-dim); }
+  .search-input:focus { border-color: rgba(94,234,212,0.45); }
+
+  .member-filter-btn {
+    font-family: var(--font-data);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    color: var(--foam-dim);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+.member-filter-btn:hover { color: var(--foam); background: var(--glass-fill-hi); }
+.member-filter-btn.active { background: var(--glass-fill-hi); border-color: var(--glow); color: var(--glow); }
+  .member-filter-select {
+    font-family: var(--font-data);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    color: var(--foam-dim);
+    outline: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .member-filter-select:focus,
+  .member-filter-select.active {
+    background: var(--glass-fill-hi);
+    border-color: var(--glow);
+    color: var(--glow);
+  }
+  .member-filter-select option {
+    background: var(--ocean-mid);
+    color: var(--foam);
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+ 
+  .badge-full     { background: rgba(94,234,212,0.15);  border: 1px solid rgba(94,234,212,0.35);  color: var(--glow); }
+  .badge-expired   { background: rgba(255,106,61,0.12);  border: 1px solid rgba(255,106,61,0.3);   color: var(--signal); }
+  .badge-affiliate   { background: rgba(96,165,250,0.12);  border: 1px solid rgba(96,165,250,0.3);   color: #93c5fd; }
+  .badge-admin     { background: rgba(90, 89, 88, 0.12); border: 1px solid rgba(255,209,102,0.3);  color: #63532d; }
+  .badge-default  { background: var(--glass-fill);      border: 1px solid var(--glass-border);    color: var(--foam-dim); }
+
+  /* ── Member detail drawer ── */
+  .drawer-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(7,27,44,0.65);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+ 
+  .drawer-overlay.open { display: flex; }
+ 
+  .drawer {
+    background: linear-gradient(155deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    box-shadow: 0 32px 64px rgba(2,10,18,0.55);
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+ 
+  .drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--glass-border);
+  }
+ 
+  .drawer-header h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--foam);
+  }
+ 
+  .drawer-close {
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--foam-dim);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 4px 8px;
+    transition: background 0.15s, color 0.15s;
+  }
+ 
+  .drawer-close:hover { background: var(--glass-fill-hi); color: var(--foam); }
+ 
+  .drawer-body { padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 14px; }
+ 
+  .drawer-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--glow), #38bfa1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700;
+    color: var(--ocean-deep);
+    flex-shrink: 0;
+  }
+ 
+  .drawer-name-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 4px;
+  }
+ 
+  .drawer-name-col { display: flex; flex-direction: column; gap: 4px; }
+  .drawer-name { font-size: 20px; font-weight: 700; color: var(--foam); }
+ 
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+ 
+  .detail-item {
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+ 
+  .detail-item.full-width { grid-column: 1 / -1; }
+ 
+  .detail-label {
+    font-family: var(--font-data);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--foam-dim);
+  }
+ 
+  .detail-value {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--foam);
+  }
+ 
+
+  /* ── Applications tab ── */
+  .app-filters {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+ 
+  .app-filter-btn {
+    font-family: var(--font-data);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    color: var(--foam-dim);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+ 
+  .app-filter-btn:hover { color: var(--foam); background: var(--glass-fill-hi); }
+ 
+  .app-filter-btn.active {
+    background: var(--glass-fill-hi);
+    border-color: var(--glow);
+    color: var(--glow);
+  }
+ 
+  .app-list { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; }
+  .app-list::-webkit-scrollbar { width: 6px; }
+  .app-list::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
+ 
+  .app-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.12s;
+  }
+ 
+  .app-row:hover {
+    background: var(--glass-fill-hi);
+    border-color: rgba(94,234,212,0.3);
+    transform: translateX(2px);
+  }
+ 
+  .app-name { font-weight: 600; font-size: 14px; color: var(--foam); }
+  .app-meta { font-size: 11.5px; color: var(--foam-dim); margin-top: 2px; }
+ 
+  .app-status {
+    display: inline-block;
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    padding: 4px 9px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+ 
+  .status-received  { background: rgba(96,165,250,0.15);  border: 1px solid rgba(96,165,250,0.35);  color: #93c5fd; }
+  .status-progress  { background: rgba(245,158,11,0.15);  border: 1px solid rgba(245,158,11,0.35);  color: #fbbf24; }
+  .status-awaiting  { background: rgba(255,106,61,0.15);  border: 1px solid rgba(255,106,61,0.35);  color: var(--signal); }
+  .status-processed { background: rgba(94,234,212,0.15);  border: 1px solid rgba(94,234,212,0.35);  color: var(--glow); }
+ 
+  .app-chevron { color: var(--foam-dim); font-size: 16px; }
+ 
+  /* Application detail placeholder drawer */
+  .app-drawer-placeholder {
+    padding: 32px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+ 
+  .app-drawer-placeholder .placeholder-icon {
+    font-size: 36px;
+    opacity: 0.5;
+  }
+ 
+  .app-drawer-placeholder p {
+    font-size: 13px;
+    color: var(--foam-dim);
+    max-width: 280px;
+    line-height: 1.5;
+  }
+ 
+  .app-drawer-placeholder .app-id-chip {
+    font-family: var(--font-data);
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    color: var(--glow);
+  }
+ 
+  /* Empty states */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--foam-dim);
+    font-size: 13px;
+  }
+ 
+  /* Loading spinner */
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--glass-border);
+    border-top-color: var(--glow);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 8px;
+  }
+
+  .tile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 680px) { .tile-grid { grid-template-columns: 1fr; } }
+
+  .tile {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tile-title {
+    display: flex;
+    align-items: center; /* Vertically aligns icon and text center-to-center */
+    gap: 12px;           /* Controls horizontal space between icon and text */
+  }
+
+  .tile-icon {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    color: var(--foam-dim);
+    width: fit-content;
+    margin-top: auto;
+  }
+
+  /* ── Application detail sections ── */
+  .app-detail-section {
+    background: var(--glass-fill); border: 1px solid var(--glass-border);
+    border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  }
+ 
+  .app-detail-section-title {
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--glow); padding-bottom: 8px;
+    border-bottom: 1px solid var(--glass-border);
+  }
+ 
+  .app-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .app-detail-grid .full-width { grid-column: 1 / -1; }
+ 
+  .app-detail-item { display: flex; flex-direction: column; gap: 3px; }
+ 
+  .app-detail-label {
+    font-family: var(--font-data); font-size: 9.5px;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--foam-dim);
+  }
+ 
+  .app-detail-value { font-size: 13px; font-weight: 500; color: var(--foam); line-height: 1.4; }
+ 
+  .votes-for   { color: #4ade80; font-weight: 700; font-size: 15px; }
+  .votes-against { color: #f87171; font-weight: 700; font-size: 15px; }
+ 
+  .log-box {
+    font-family: var(--font-data); font-size: 8px;
+    color: var(--foam-dim); line-height: 1;
+    white-space: pre-wrap; word-break: break-word;
+    background: rgba(0,0,0,0.2); border-radius: 8px;
+    padding: 8px; max-height: 160px; overflow-y: auto;
+  }
+ 
+  /* Status badge variants for app detail */
+  .app-status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-data); font-size: 11px;
+    letter-spacing: 0.05em; padding: 5px 12px;
+    border-radius: 8px; white-space: nowrap; width: fit-content;
+  }
+ 
+  .app-status-badge.status-received  { background: rgba(96,165,250,0.15);  border: 1px solid rgba(96,165,250,0.35);  color: #93c5fd; }
+  .app-status-badge.status-progress  { background: rgba(245,158,11,0.15);  border: 1px solid rgba(245,158,11,0.35);  color: #fbbf24; }
+  .app-status-badge.status-awaiting  { background: rgba(255,106,61,0.15);  border: 1px solid rgba(255,106,61,0.35);  color: var(--signal); }
+  .app-status-badge.status-processed { background: rgba(94,234,212,0.15);  border: 1px solid rgba(94,234,212,0.35);  color: var(--glow); }
+  .app-status-badge.status-urgent    { background: rgba(255,50,50,0.15);   border: 1px solid rgba(255,50,50,0.4);    color: #ff6b6b; }
+ 
+  .urgent-note {
+    font-size: 10px; color: #ff6b6b; display: block; margin-top: 4px;
+  }
+
+  /* =========================================================
+    FOOTER
+    ========================================================= */
+  footer{
+    border-top:1px solid var(--glass-border);
+    padding:28px; margin-top:70px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    font-size:12.5px; color:var(--foam-dim);
+    position:relative; z-index:1;
+  }
+  footer a{ color:var(--glow); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce){
+    body::before, .eyebrow .dot, .binnacle-needle{ animation:none !important; }
+    html{ scroll-behavior:auto; }
+  }
+
+  /* Loading spinner keyframe (used by .spinner) */
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+/* =================== APP-SPECIFIC STYLES (built on theme tokens) =================== */
+*{ -webkit-tap-highlight-color: transparent; }
+body{ font-family: var(--font-body); }
+button{ font-family: inherit; }
+.font-data-num{ font-variant-numeric: tabular-nums; }
+
+/* ---------- header ---------- */
+.app-nav{
+  display:flex; align-items:center; gap:12px; flex-wrap: wrap;
+}
+.logo-img{ width:42px; height:42px; border-radius:50%; object-fit:cover; flex:none; background:#fff; padding:2px; }
+.brand-text strong{ font-size:16px; }
+.app-nav .nav-spacer{ flex:1; }
+.icon-btn{
+  width:40px; height:40px; border-radius:10px;
+  background: var(--glass-fill); border:1px solid var(--glass-border); color: var(--foam);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.icon-btn:hover{ background: var(--glass-fill-hi); }
+.subheader{
+  margin-top:12px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; font-size:13px;
+}
+.subheader .badge{ font-size:11px; }
+.badge-brand{ background: rgba(255,106,61,0.15); border:1px solid rgba(255,106,61,0.35); color: var(--signal); }
+.class-roundel{
+  width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:800; background: var(--glow); color: var(--ocean-deep); margin-right:5px;
+}
+
+/* ---------- shell ---------- */
+.app-wrap{ max-width: 640px; margin:0 auto; padding: 18px 14px 90px; position:relative; z-index:1; }
+.section-title{ font-family:var(--font-display); font-size:16px; font-weight:700; color:var(--foam); margin-bottom:4px; }
+.section-hint{ font-size:12.5px; color: var(--foam-dim); margin-bottom:14px; line-height:1.5; }
+.panel-pad{ padding:18px; margin-bottom:16px; }
+
+/* ---------- toolbar row (entries pill + add race) ---------- */
+.toolbar-row{ display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+.entries-pill{
+  display:inline-flex; align-items:center; gap:7px;
+  background: var(--glass-fill); border:1px solid var(--glass-border);
+  padding:9px 14px; border-radius: 999px; font-size:13px; color: var(--foam); flex:1;
+  cursor: pointer;
+}
+.entries-pill.editable{ border-color: var(--glow); color: var(--glow); }
+.toolbar-row .btn-primary{ flex:none; white-space:nowrap; }
+.btn-block{ width:100%; justify-content:center; }
+.btn-sm{ padding:9px 14px; font-size:12.5px; border-radius:10px; }
+
+/* ---------- event list ---------- */
+.event-item{
+  display:flex; align-items:center; gap:12px;
+  padding:12px 8px; border-radius:12px; cursor:pointer;
+  border-bottom:1px solid var(--glass-border);
+}
+.event-item:last-child{ border-bottom:none; }
+.event-item:hover{ background: var(--glass-fill); }
+.event-date-block{
+  flex:none; width:50px; text-align:center; border-radius:10px; padding:6px 0;
+  background: rgba(255,255,255,0.06); border:1px solid var(--glass-border);
+}
+.event-date-block .dow{ font-size:9px; text-transform:uppercase; letter-spacing:.06em; color: var(--glow); }
+.event-date-block .dnum{ font-size:17px; font-weight:700; font-family: var(--font-display); color: var(--foam); line-height:1.1; }
+.event-date-block .mon{ font-size:9px; text-transform:uppercase; color: var(--foam-dim); }
+.event-main{ flex:1; min-width:0; }
+.event-name{ font-weight:600; font-size:14px; color: var(--foam); }
+.event-meta{ font-size:12px; color: var(--foam-dim); margin-top:2px; }
+.empty-note{ text-align:center; padding:30px 10px; color: var(--foam-dim); font-size:13.5px; }
+
+/* ---------- competitor selection ---------- */
+.member-row{ display:flex; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid var(--glass-border); }
+.member-row:last-child{ border-bottom:none; }
+.member-row:hover{ background: var(--glass-fill); border-radius:8px; }
+.checkbox{
+  width:23px; height:23px; border-radius:7px; border:2px solid var(--glass-border); flex:none;
+  display:flex; align-items:center; justify-content:center; background: transparent;
+}
+.checkbox.checked{ background: var(--glow); border-color: var(--glow); }
+.checkbox svg{ width:13px; height:13px; display:none; stroke: var(--ocean-deep); stroke-width:3; }
+.checkbox.checked svg{ display:block; }
+.member-name{ font-weight:600; font-size:14px; color: var(--foam); flex:1; }
+.sail-tag{ font-family: var(--font-data); font-weight:600; font-size:12.5px; background: var(--glass-fill); border:1px solid var(--glass-border); color: var(--glow); padding:4px 9px; border-radius:7px; }
+.select-all-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.select-all-row button{ background:none; border:none; color: var(--glow); font-weight:600; font-size:12.5px; cursor:pointer; padding:4px; }
+.count-banner{ font-size:12.5px; color: var(--foam-dim); margin-top:10px; text-align:center; }
+
+/* ---------- race capture ---------- */
+.race-hero{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.race-hero .nav-arrow{
+  width:38px; height:38px; border-radius:50%; border:1px solid var(--glass-border);
+  background: var(--glass-fill); color: var(--foam); display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.race-hero .nav-arrow:disabled{ opacity:.3; }
+.race-hero .nav-arrow.action-ready{ background: linear-gradient(135deg, var(--glow), #38bfa1); color: var(--ocean-deep); border-color: transparent; }
+.race-hero-title{ text-align:center; }
+.race-hero-title .rnum{ font-family: var(--font-display); font-size:20px; font-weight:700; color: var(--foam); }
+.race-hero-title .rstatus{ font-size:11.5px; color: var(--foam-dim); margin-top:2px; }
+
+.race-grid{ display:flex; gap:12px; }
+.positions-col{ flex:1.1; min-width:0; }
+.available-col{ flex:1; min-width:0; }
+.col-label{ font-family: var(--font-data); font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color: var(--foam-dim); margin-bottom:8px; padding-left:2px; }
+
+.pos-slot{
+  display:flex; align-items:center; gap:9px; padding:9px 10px; margin-bottom:7px; border-radius:12px; min-height:46px;
+  border:1.5px dashed var(--glass-border); background: rgba(255,255,255,0.03);
+}
+.pos-slot.filled{ border-style:solid; border-color: var(--glass-border); background: var(--glass-fill); }
+.pos-num{ font-family: var(--font-display); font-weight:700; font-size:14px; width:18px; text-align:center; color: var(--foam-dim); flex:none; }
+.pos-slot.filled .pos-num{ color: var(--glow); }
+.pos-fill{ flex:1; font-size:13px; color: var(--foam); }
+.pos-fill .p-sail{ font-family: var(--font-data); font-weight:700; font-size:13.5px; }
+.pos-fill .p-name{ font-size:11px; color: var(--foam-dim); }
+.drag-handle{
+  flex:none; width:22px; height:30px; display:flex; align-items:center; justify-content:center;
+  color: var(--foam-dim); cursor: grab; touch-action:none; font-size:16px; letter-spacing:-2px;
+}
+.drag-handle:active{ cursor:grabbing; color: var(--glow); }
+
+.pos-code-row{
+  display:flex; align-items:center; gap:10px; padding:9px 10px; margin-bottom:7px; border-radius:12px; min-height:46px;
+  background: rgba(255,106,61,0.10); border: 1px solid rgba(255,106,61,0.22);
+}
+.pos-code-row .code-badge{ font-family: var(--font-data); font-size:10.5px; font-weight:800; letter-spacing:.04em; color: var(--signal); background: rgba(255,106,61,0.16); padding:3px 8px; border-radius:6px; flex:none; }
+.pos-code-row.ro{ background: rgba(94,234,212,0.08); border-color: rgba(94,234,212,0.22); }
+.pos-code-row.ro .code-badge{ color: var(--glow); background: rgba(94,234,212,0.14); }
+.pos-code-row .p-sail{ font-family: var(--font-data); font-weight:700; font-size:13px; color: var(--foam); }
+
+.icon-wrap{ display:flex; flex-wrap:wrap; gap:8px; align-content:flex-start; }
+.sail-icon{
+  width:56px; height:56px; border-radius:14px;
+  background: linear-gradient(160deg, var(--ocean-mid), var(--ocean-deep));
+  border: 1px solid var(--glass-border);
+  color: var(--foam); display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; user-select:none; -webkit-user-select:none; position:relative;
+  box-shadow: 0 2px 8px rgba(2,10,18,0.35);
+}
+.sail-icon:active{ transform: scale(0.93); }
+.sail-icon .num{ font-family: var(--font-data); font-weight:700; font-size:14.5px; line-height:1; }
+.sail-icon .rank{ font-size:8px; color: var(--glow); margin-top:3px; font-weight:600; }
+.sail-icon .pennant{ position:absolute; top:-4px; right:-4px; width:13px; height:13px; border-radius:50%; background: var(--signal); border:2px solid var(--ocean-deep); }
+.icon-empty-note{ font-size:12.5px; color: var(--foam-dim); padding:10px 4px; }
+
+.race-list-item{ display:flex; align-items:center; gap:10px; padding:12px 6px; border-bottom:1px solid var(--glass-border); cursor:pointer; }
+.race-list-item:last-child{ border-bottom:none; }
+.race-list-item:hover{ background: var(--glass-fill); border-radius:8px; }
+.race-list-item .rbadge{ width:36px; height:36px; border-radius:10px; flex:none; background: linear-gradient(135deg, var(--glow), #38bfa1); color: var(--ocean-deep); display:flex; align-items:center; justify-content:center; font-weight:800; font-family:var(--font-display); }
+.race-list-item .rinfo{ flex:1; font-size:13px; }
+.race-list-item .rinfo .rtitle{ font-weight:600; color: var(--foam); }
+.race-list-item .rinfo .rsub{ color: var(--foam-dim); font-size:11.5px; margin-top:1px; }
+.chevron{ color: var(--foam-dim); }
+
+/* ---------- dropdown side menu ---------- */
+.menu-backdrop{ position:fixed; inset:0; background: rgba(2,10,18,0.6); z-index:50; opacity:0; pointer-events:none; transition: opacity .18s ease; }
+.menu-backdrop.open{ opacity:1; pointer-events:auto; }
+.menu-panel{
+  position:fixed; top:0; right:0; height:100%; width:min(300px,84vw); z-index:51;
+  background: linear-gradient(180deg, var(--ocean-mid), var(--ocean-deep));
+  border-left:1px solid var(--glass-border);
+  box-shadow: -12px 0 30px rgba(2,10,18,0.45);
+  transform: translateX(100%); transition: transform .22s ease; display:flex; flex-direction:column; padding: 18px 0;
+}
+.menu-panel.open{ transform: translateX(0); }
+.menu-panel-head{ padding: 4px 18px 14px; border-bottom:1px solid var(--glass-border); margin-bottom:6px; }
+.menu-panel-head .mp-title{ font-weight:700; font-size:14.5px; color: var(--foam); }
+.menu-panel-head .mp-sub{ font-size:11.5px; color: var(--foam-dim); margin-top:2px; }
+.menu-item{ display:flex; align-items:center; gap:12px; padding:14px 18px; cursor:pointer; font-size:14px; font-weight:500; color: var(--foam); }
+.menu-item:hover{ background: var(--glass-fill); }
+.menu-item svg{ width:18px; height:18px; flex:none; color: var(--glow); }
+.menu-item.disabled{ opacity:.35; pointer-events:none; }
+.menu-sep{ height:1px; background: var(--glass-border); margin:8px 0; }
+
+/* ---------- full screen overlay ---------- */
+.overlay{ position:fixed; inset:0; z-index:45; overflow-y:auto; display:none;
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(94,234,212,0.10), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 0%, rgba(255,106,61,0.08), transparent 55%),
+    linear-gradient(180deg, var(--ocean-deep) 0%, var(--ocean-mid) 55%, var(--sea-teal) 100%);
+}
+.overlay.open{ display:block; }
+.overlay-head{ position:sticky; top:0; z-index:2; background: rgba(7,27,44,0.85); backdrop-filter: blur(14px); padding:16px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--glass-border); }
+.overlay-head h2{ font-family: var(--font-display); font-size:16px; color: var(--foam); }
+.overlay-body{ padding:16px 14px 60px; max-width:700px; margin:0 auto; }
+
+table.data-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+table.data-table th, table.data-table td{ padding:8px 7px; text-align:center; border-bottom:1px solid var(--glass-border); white-space:nowrap; color: var(--foam); }
+table.data-table th{ font-size:10px; text-transform:uppercase; letter-spacing:.03em; color: var(--foam-dim); font-weight:700; }
+table.data-table td.name-cell, table.data-table th.name-cell{ text-align:left; font-weight:600; position:sticky; left:0; background: var(--ocean-mid); }
+table.data-table .discarded{ color: var(--foam-dim); text-decoration:line-through; opacity:.55; }
+table.data-table .dnf-cell{ color: var(--signal); font-weight:700; font-size:11px; }
+table.data-table .net-cell{ font-weight:800; color: var(--glow); }
+.table-scroll{ overflow-x:auto; padding:6px; }
+
+textarea.report-box{ width:100%; min-height:130px; padding:12px; border-radius:12px; border:1px solid var(--glass-border); font-family:inherit; font-size:13px; resize:vertical; background: var(--glass-fill); color: var(--foam); }
+textarea.report-box::placeholder{ color: var(--foam-dim); }
+.field-label{ font-family: var(--font-data); font-size:11px; font-weight:700; color: var(--foam-dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:.03em; }
+
+/* ---------- long-press modal ---------- */
+.modal-backdrop{ position:fixed; inset:0; background: rgba(2,10,18,0.65); z-index:60; display:none; align-items:flex-end; justify-content:center; }
+.modal-backdrop.open{ display:flex; }
+.modal-sheet{ background: linear-gradient(180deg, var(--ocean-mid), var(--ocean-deep)); border:1px solid var(--glass-border); border-top-left-radius:20px; border-top-right-radius:20px; width:100%; max-width:480px; padding:10px 16px 26px; animation: slideUp .18s ease; }
+@keyframes slideUp{ from{ transform: translateY(16px); opacity:0; } to{ transform:none; opacity:1; } }
+.modal-handle{ width:38px; height:4px; border-radius:2px; background: var(--glass-border); margin: 8px auto 14px; }
+.modal-title{ text-align:center; font-weight:700; color: var(--foam); margin-bottom:2px; }
+.modal-sub{ text-align:center; color: var(--foam-dim); font-size:12.5px; margin-bottom:16px; }
+.modal-opt{ display:flex; flex-direction:column; padding:14px; border-radius:12px; margin-bottom:8px; background: var(--glass-fill); border:1px solid var(--glass-border); cursor:pointer; font-weight:600; font-size:14px; color: var(--foam); }
+.modal-opt .tag-desc{ font-weight:400; font-size:11.5px; color: var(--foam-dim); margin-top:2px; }
+.modal-opt.dns, .modal-opt.dnf{ color: var(--signal); }
+.modal-opt.ro, .modal-opt.finish{ color: var(--glow); }
+.modal-cancel{ text-align:center; padding:14px; font-weight:600; color: var(--foam-dim); cursor:pointer; }
+
+.toast{
+  position:fixed; bottom:18px; left:50%; transform: translateX(-50%);
+  background: var(--ocean-deep); color: var(--foam); border:1px solid var(--glass-border);
+  padding:11px 18px; border-radius:999px; font-size:13px; font-weight:600;
+  box-shadow: 0 12px 30px rgba(2,10,18,0.5); z-index:70; opacity:0; pointer-events:none; transition: opacity .2s ease, bottom .2s ease;
+}
+.toast.show{ opacity:1; bottom:28px; }
+.helper-note{ font-size:11.5px; color: var(--foam-dim); margin-top:10px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+<script>
+/* ============ EMBEDDED DATA ============ */
+const LOGO_DATA_URI = "data:image/png;base64,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";
+const MEMBERS = [{"member":"John Wyatt","class":"DF65","sailNo":"36"},{"member":"John Wyatt","class":"DF95","sailNo":"36"},{"member":"Lew Gemell","class":"DF65","sailNo":"10"},{"member":"Graham Brown","class":"DF95","sailNo":"921"},{"member":"Nigel Brimble","class":"DF95","sailNo":"438"},{"member":"Allen Williams","class":"DF95","sailNo":"547"},{"member":"Paul Rushton","class":"DF95","sailNo":"690"},{"member":"Cameron Percival","class":"DF95","sailNo":"725"},{"member":"Peter Burton","class":"DF95","sailNo":"99"},{"member":"Neil Johnson","class":"DF95","sailNo":"584"},{"member":"Daryl Bates","class":"DF95","sailNo":"429"},{"member":"Lew Gemell","class":"IOM","sailNo":"53"},{"member":"Peter Lee","class":"DF95","sailNo":"710"},{"member":"Tim Ryan","class":"DF95","sailNo":"270"},{"member":"Chris Cuthbert","class":"DF95","sailNo":"771"},{"member":"Peter Burton","class":"DF65","sailNo":"223"},{"member":"Peter Burton","class":"IOM","sailNo":"69"},{"member":"Chris Cuthbert","class":"Soling","sailNo":"169"},{"member":"Peter Lee","class":"Soling","sailNo":"66"},{"member":"Gregory Gallagher","class":"DF95","sailNo":"699"},{"member":"David Jackson","class":"DF95","sailNo":"997"},{"member":"John Armstrong","class":"IOM","sailNo":"52"},{"member":"Robert Hales","class":"IOM","sailNo":"21"},{"member":"Dinah Hales","class":"IOM","sailNo":"78"},{"member":"Colin Court","class":"Marblehead","sailNo":"80"},{"member":"Chris Cuthbert","class":"IOM","sailNo":"35"},{"member":"David Bolton","class":"IOM","sailNo":"180"},{"member":"John Wyatt","class":"Marblehead","sailNo":"75"},{"member":"Nigel Brimble","class":"Soling","sailNo":"56"},{"member":"Larry Reedman","class":"DF95","sailNo":"382"},{"member":"David Bolton","class":"DF95","sailNo":"32"},{"member":"Steve Malone","class":"DF95","sailNo":"866"},{"member":"Colin Court","class":"DF65","sailNo":"80"},{"member":"Anthony Bolding","class":"DF65","sailNo":"86"},{"member":"Gregory Gallagher","class":"DF65","sailNo":"486"},{"member":"Jim Hand","class":"DF95","sailNo":"22"},{"member":"Anthony Bolding","class":"IOM","sailNo":"20"},{"member":"Nigel Brimble","class":"IOM","sailNo":"91"},{"member":"John Wyatt","class":"IOM","sailNo":"26"},{"member":"Colin Court","class":"IOM","sailNo":"80"},{"member":"Allen Williams","class":"DF65","sailNo":"428"},{"member":"Paul Rushton","class":"DF65","sailNo":"161"},{"member":"Neil Johnson","class":"DF65","sailNo":"584"},{"member":"Chris Cuthbert","class":"DF65","sailNo":"771"},{"member":"Nigel Brimble","class":"DF65","sailNo":"644"},{"member":"Gary Sommer","class":"DF95","sailNo":"194"},{"member":"Peter Dahl","class":"DF95","sailNo":"813"},{"member":"John Wyatt","class":"Soling","sailNo":"194"},{"member":"Peter Dahl","class":"Soling","sailNo":"13"},{"member":"Steve Malone","class":"Soling","sailNo":"94"},{"member":"Graham Brown","class":"IOM","sailNo":"29"},{"member":"Graham Brown","class":"DF65","sailNo":"106"},{"member":"Stewart Blundell","class":"DF95","sailNo":"52"},{"member":"Anthony Bolding","class":"General","sailNo":"201"},{"member":"John Pye","class":"DF65","sailNo":"913"}];
+const EVENTS = [{"id":"D0F23964","date":"01/02/2025","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"1","season":"2024-25","status":"Processed"},{"id":"39C37090","date":"01/02/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"1","season":"2024-25","status":"Processed"},{"id":"BD4A0500","date":"08/02/2025","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"1","season":"2024-25","status":"Processed"},{"id":"B2CA8A9F","date":"15/02/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"2","season":"2024-25","status":"Processed"},{"id":"A002B294","date":"22/02/2025","start":"11:00","end":"13:00","class":"DF95","regattaType":"Scratch","round":"1","season":"2024-25","status":"Processed"},{"id":"2C412421","date":"22/02/2025","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"1","season":"2024-25","status":"Processed"},{"id":"76E36C1F","date":"01/03/2025","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"2","season":"2024-25","status":"Processed"},{"id":"C4CE0A88","date":"01/03/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"3","season":"2024-25","status":"Processed"},{"id":"046F0006","date":"08/03/2025","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"2","season":"2024-25","status":"Processed"},{"id":"FCDC83EC","date":"15/03/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"4","season":"2024-25","status":"Processed"},{"id":"7D52D407","date":"22/03/2025","start":"11:00","end":"13:00","class":"DF95","regattaType":"Scratch","round":"2","season":"2024-25","status":"Processed"},{"id":"883C6522","date":"22/03/2025","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"2","season":"2024-25","status":"Processed"},{"id":"575F1AA5","date":"05/04/2025","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"3","season":"2024-25","status":"Processed"},{"id":"5C422934","date":"05/04/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"5","season":"2024-25","status":"Processed"},{"id":"08DEA16C","date":"12/04/2025","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"3","season":"2024-25","status":"Processed"},{"id":"4C3D2F2D","date":"19/04/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"6","season":"2024-25","status":"Processed"},{"id":"DB5FA7FB","date":"26/04/2025","start":"11:00","end":"13:00","class":"DF95","regattaType":"Scratch","round":"3","season":"2024-25","status":"Processed"},{"id":"346771D8","date":"26/04/2025","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"3","season":"2024-25","status":"Processed"},{"id":"25EE4EFD","date":"03/05/2025","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"4","season":"2024-25","status":"Processed"},{"id":"14D6A7FF","date":"03/05/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"7","season":"2024-25","status":"Processed"},{"id":"5D27B555","date":"10/05/2025","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"4","season":"2024-25","status":"Processed"},{"id":"58BDAA62","date":"17/05/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"8","season":"2024-25","status":"Processed"},{"id":"43CDD8A6","date":"24/05/2025","start":"11:00","end":"13:00","class":"DF95","regattaType":"Scratch","round":"4","season":"2024-25","status":"Processed"},{"id":"B3F7184E","date":"24/05/2025","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"4","season":"2024-25","status":"Processed"},{"id":"63298621","date":"05/07/2025","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"1","season":"2025-26","status":"Processed"},{"id":"FA8E94B4","date":"05/07/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"1","season":"2025-26","status":"Processed"},{"id":"BC883EF9","date":"12/07/2025","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"1","season":"2025-26","status":"Processed"},{"id":"49309818","date":"12/07/2025","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"1","season":"2025-26","status":"Processed"},{"id":"573876A5","date":"19/07/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"2","season":"2025-26","status":"Processed"},{"id":"08991E2C","date":"26/07/2025","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"1","season":"2025-26","status":"Processed"},{"id":"FDF4F24A","date":"26/07/2025","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"1","season":"2025-26","status":"Processed"},{"id":"1A82B769","date":"02/08/2025","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"2","season":"2025-26","status":"Processed"},{"id":"1A167DF4","date":"02/08/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"3","season":"2025-26","status":"Processed"},{"id":"EC78DCF5","date":"09/08/2025","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"2","season":"2025-26","status":"Processed"},{"id":"276C4A70","date":"09/08/2025","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"2","season":"2025-26","status":"Processed"},{"id":"40901887","date":"16/08/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"4","season":"2025-26","status":"Processed"},{"id":"191D9505","date":"23/08/2025","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"2","season":"2025-26","status":"Processed"},{"id":"A24D71A8","date":"23/08/2025","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"2","season":"2025-26","status":"Processed"},{"id":"4893D0DF","date":"06/09/2025","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"3","season":"2025-26","status":"Processed"},{"id":"947F2669","date":"06/09/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"5","season":"2025-26","status":"Processed"},{"id":"0AB63BEA","date":"13/09/2025","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"3","season":"2025-26","status":"Processed"},{"id":"2E260F5D","date":"13/09/2025","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"3","season":"2025-26","status":"Processed"},{"id":"B3E2CBA5","date":"20/09/2025","start":"11:00","end":"09:00","class":"IOM","regattaType":"IOM GP Registration","round":"1","season":"2025-26","status":"Processed"},{"id":"BB0561FD","date":"20/09/2025","start":"14:00","end":"16:00","class":"IOM","regattaType":"NSW IOM GP Rd 4","round":"1","season":"2025-26","status":"Processed"},{"id":"C80CF89E","date":"27/09/2025","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"3","season":"2025-26","status":"Processed"},{"id":"03497EDA","date":"27/09/2025","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"3","season":"2025-26","status":"Processed"},{"id":"A0C7CBB7","date":"04/10/2025","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"4","season":"2025-26","status":"Processed"},{"id":"B8D14B92","date":"04/10/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"6","season":"2025-26","status":"Processed"},{"id":"E41665AC","date":"11/10/2025","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"4","season":"2025-26","status":"Processed"},{"id":"A412CBCB","date":"18/10/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"7","season":"2025-26","status":"Processed"},{"id":"330F3DAE","date":"25/10/2025","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"4","season":"2025-26","status":"Processed"},{"id":"F6252459","date":"25/10/2025","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"4","season":"2025-26","status":"Processed"},{"id":"62112EAE","date":"01/11/2025","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"5","season":"2025-26","status":"Processed"},{"id":"00855ADE","date":"01/11/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"8","season":"2025-26","status":"Processed"},{"id":"B0ABEA13","date":"08/11/2025","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"5","season":"2025-26","status":"Processed"},{"id":"CBD1D8F1","date":"08/11/2025","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"5","season":"2025-26","status":"Processed"},{"id":"0213DDC1","date":"15/11/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"9","season":"2025-26","status":"Processed"},{"id":"57073119","date":"22/11/2025","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"5","season":"2025-26","status":"Processed"},{"id":"8037F4E0","date":"22/11/2025","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"5","season":"2025-26","status":"Processed"},{"id":"E1BB26E7","date":"06/12/2025","start":"11:00","end":"13:00","class":"Soling","regattaType":"Scratch","round":"6","season":"2025-26","status":"Processed"},{"id":"F553D2D0","date":"06/12/2025","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"10","season":"2025-26","status":"Processed"},{"id":"BC3E07E3","date":"31/01/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"6","season":"2025-26","status":"Processed"},{"id":"D1D48C31","date":"07/02/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"7","season":"2025-26","status":"Processed"},{"id":"0E692EB7","date":"07/02/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"11","season":"2025-26","status":"Processed"},{"id":"AB09E72C","date":"14/02/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"6","season":"2025-26","status":"Processed"},{"id":"984D3586","date":"14/02/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"6","season":"2025-26","status":"Processed"},{"id":"508AA408","date":"21/02/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"12","season":"2025-26","status":"Processed"},{"id":"2AA01AC0","date":"28/02/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"6","season":"2025-26","status":"Processed"},{"id":"7312C469","date":"28/02/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"7","season":"2025-26","status":"Processed"},{"id":"14FA5E65","date":"07/03/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"8","season":"2025-26","status":"Processed"},{"id":"0B4AA2BF","date":"07/03/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"13","season":"2025-26","status":"Processed"},{"id":"437C4AC8","date":"14/03/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"7","season":"2025-26","status":"Processed"},{"id":"44DBFE00","date":"14/03/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"7","season":"2025-26","status":"Processed"},{"id":"65B453A9","date":"21/03/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"14","season":"2025-26","status":"Processed"},{"id":"F2E899C6","date":"28/03/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"7","season":"2025-26","status":"Processed"},{"id":"F4B698A5","date":"28/03/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"8","season":"2025-26","status":"Processed"},{"id":"C83A65B0","date":"04/04/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"9","season":"2025-26","status":"Processed"},{"id":"5E1E827D","date":"04/04/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"15","season":"2025-26","status":"Processed"},{"id":"1307A509","date":"11/04/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"8","season":"2025-26","status":"Processed"},{"id":"F35E61EF","date":"11/04/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"8","season":"2025-26","status":"Processed"},{"id":"9885DB95","date":"18/04/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"16","season":"2025-26","status":"Processed"},{"id":"8B8D57F2","date":"25/04/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"8","season":"2025-26","status":"Processed"},{"id":"E9B25C18","date":"25/04/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"9","season":"2025-26","status":"Processed"},{"id":"A4A0B972","date":"02/05/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"10","season":"2025-26","status":"Processed"},{"id":"AA8AA71A","date":"02/05/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"17","season":"2025-26","status":"Processed"},{"id":"9FB78F93","date":"09/05/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"9","season":"2025-26","status":"Processed"},{"id":"A8718934","date":"09/05/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"9","season":"2025-26","status":"Processed"},{"id":"26391D84","date":"16/05/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"18","season":"2025-26","status":"Processed"},{"id":"F1C23982","date":"23/05/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"9","season":"2025-26","status":"Processed"},{"id":"696C3A05","date":"23/05/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"10","season":"2025-26","status":"Processed"},{"id":"2FE0623E","date":"30/05/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"11","season":"2025-26","status":"Processed"},{"id":"1E6BED26","date":"13/06/2026","start":"13:00","end":"16:00","class":"DF95","regattaType":"Winter Cup","round":"1","season":"2025-26","status":"Processed"},{"id":"370EF1BB","date":"27/06/2026","start":"13:00","end":"16:00","class":"DF95","regattaType":"Winter Cup","round":"2","season":"2025-26","status":"Processed"},{"id":"159142DB","date":"04/07/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"1","season":"2026-27","status":"Processed"},{"id":"86D02EF6","date":"04/07/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"1","season":"2026-27","status":"Processed"},{"id":"EEB77BF4","date":"11/07/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"1","season":"2026-27","status":"Processed"},{"id":"AC5BA019","date":"11/07/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"1","season":"2026-27","status":"Processed"},{"id":"3F0C4B13","date":"18/07/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"1","season":"2026-27","status":"Processed"},{"id":"AD187522","date":"25/07/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"1","season":"2026-27","status":"Processed"},{"id":"466407EB","date":"25/07/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"2","season":"2026-27","status":"Processed"},{"id":"ED4DB7E4","date":"01/08/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"","season":"2026-27","status":"Rescheduled"},{"id":"FCB2CF3F","date":"01/08/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"","season":"2026-27","status":"Rescheduled"},{"id":"7339EBDA","date":"08/08/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"2","season":"2026-27","status":"Processed"},{"id":"1876575D","date":"08/08/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"3","season":"2026-27","status":"Processed"},{"id":"D118E89B","date":"15/08/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"2","season":"2026-27","status":"Processed"},{"id":"08F2FC15","date":"22/08/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"2","season":"2026-27","status":"Rescheduled"},{"id":"BD8A0212","date":"22/08/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"4","season":"2026-27","status":"Processed"},{"id":"3EC2BCE7","date":"29/08/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"2","season":"2026-27","status":"Processed"},{"id":"CCB1F9D2","date":"05/09/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"3","season":"2026-27","status":"Processed"},{"id":"BAA64958","date":"05/09/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"3","season":"2026-27","status":"Not Started"},{"id":"543BB205","date":"12/09/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"3","season":"2026-27","status":"Processed"},{"id":"B64AB794","date":"12/09/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"3","season":"2026-27","status":"Processed"},{"id":"68FF593C","date":"19/09/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"3","season":"2026-27","status":"Not Started"},{"id":"C87D76CF","date":"26/09/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"3","season":"2026-27","status":"Not Started"},{"id":"37FEF84F","date":"26/09/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"6","season":"2026-27","status":"Not Started"},{"id":"AEAB98F7","date":"03/10/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"4","season":"2026-27","status":"Not Started"},{"id":"4EA65D6E","date":"03/10/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"4","season":"2026-27","status":"Not Started"},{"id":"04DAABA0","date":"10/10/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"4","season":"2026-27","status":"Not Started"},{"id":"02C75C89","date":"10/10/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"7","season":"2026-27","status":"Not Started"},{"id":"04055C78","date":"24/10/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"4","season":"2026-27","status":"Not Started"},{"id":"A828F590","date":"24/10/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"8","season":"2026-27","status":"Not Started"},{"id":"E14D1364","date":"31/10/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"4","season":"2026-27","status":"Rescheduled"},{"id":"F9E85F11","date":"07/11/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"5","season":"2026-27","status":"Not Started"},{"id":"61513739","date":"07/11/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"5","season":"2026-27","status":"Not Started"},{"id":"FAFB5678","date":"14/11/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"5","season":"2026-27","status":"Not Started"},{"id":"B884F027","date":"14/11/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"9","season":"2026-27","status":"Not Started"},{"id":"5BEA23A2","date":"21/11/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"5","season":"2026-27","status":"Not Started"},{"id":"3F16E665","date":"28/11/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"5","season":"2026-27","status":"Not Started"},{"id":"61D3198E","date":"28/11/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"10","season":"2026-27","status":"Not Started"},{"id":"CF50CF69","date":"06/02/2027","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"6","season":"2026-27","status":"Not Started"},{"id":"2E9B243A","date":"06/02/2027","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"6","season":"2026-27","status":"Not Started"},{"id":"930EC3E6","date":"13/02/2027","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"6","season":"2026-27","status":"Not Started"},{"id":"12F71654","date":"13/02/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"11","season":"2026-27","status":"Not Started"},{"id":"364AA299","date":"20/02/2027","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"6","season":"2026-27","status":"Not Started"},{"id":"E4E85FB7","date":"27/02/2027","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"6","season":"2026-27","status":"Not Started"},{"id":"D4C458A8","date":"27/02/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"12","season":"2026-27","status":"Not Started"},{"id":"33163C3A","date":"06/03/2027","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"7","season":"2026-27","status":"Not Started"},{"id":"32F0065F","date":"06/03/2027","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"7","season":"2026-27","status":"Not Started"},{"id":"92E4BED2","date":"13/03/2027","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"7","season":"2026-27","status":"Not Started"},{"id":"A3AF5E2C","date":"20/03/2027","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"7","season":"2026-27","status":"Not Started"},{"id":"FE1F82BF","date":"27/03/2027","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"7","season":"2026-27","status":"Not Started"},{"id":"429B1EE2","date":"27/03/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"13","season":"2026-27","status":"Not Started"},{"id":"81E748AD","date":"03/04/2027","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"8","season":"2026-27","status":"Not Started"},{"id":"495F856E","date":"03/04/2027","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"8","season":"2026-27","status":"Not Started"},{"id":"C18F3763","date":"10/04/2027","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"8","season":"2026-27","status":"Not Started"},{"id":"10811240","date":"10/04/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"14","season":"2026-27","status":"Not Started"},{"id":"AE950388","date":"17/04/2027","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"8","season":"2026-27","status":"Not Started"},{"id":"3C72E611","date":"24/04/2027","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"8","season":"2026-27","status":"Not Started"},{"id":"5A3A6B88","date":"24/04/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"15","season":"2026-27","status":"Not Started"},{"id":"054EE4C6","date":"01/05/2027","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"9","season":"2026-27","status":"Not Started"},{"id":"724F29D2","date":"01/05/2027","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"9","season":"2026-27","status":"Not Started"},{"id":"F17D684D","date":"08/05/2027","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"9","season":"2026-27","status":"Not Started"},{"id":"4EAECDC0","date":"08/05/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"16","season":"2026-27","status":"Not Started"},{"id":"ED94462A","date":"15/05/2027","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"9","season":"2026-27","status":"Not Started"},{"id":"A3811F45","date":"22/05/2027","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"9","season":"2026-27","status":"Not Started"},{"id":"6982234E","date":"22/05/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"17","season":"2026-27","status":"Not Started"},{"id":"0523109F","date":"05/06/2027","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"10","season":"2026-27","status":"Not Started"},{"id":"C3E2F6C3","date":"05/06/2027","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"10","season":"2026-27","status":"Not Started"},{"id":"BAF6DDE0","date":"12/06/2027","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"10","season":"2026-27","status":"Not Started"},{"id":"C1C9442E","date":"12/06/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"18","season":"2026-27","status":"Not Started"},{"id":"A2D3A210","date":"19/06/2027","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"10","season":"2026-27","status":"Not Started"},{"id":"6D2D21C6","date":"26/06/2027","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"10","season":"2026-27","status":"Not Started"},{"id":"AEC95B1D","date":"26/06/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"19","season":"2026-27","status":"Not Started"}];
+
+const CLASS_ABBR = { 'DF65':'65', 'DF95':'95', 'IOM':'IOM', 'Soling':'SOL', 'General':'GEN', 'Marblehead':'MB' };
+const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function parseDMY(d){ const [dd,mm,yyyy] = d.split('/').map(Number); return new Date(yyyy, mm-1, dd); }
+function fmtDate(d){ const dt = parseDMY(d); return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`; }
+
+/* ============ STATE ============ */
+let state = {
+  screen: 'select-event',   // select-event | select-competitors | race-capture
+  event: null,
+  entries: [],               // [{sailNo, member}]
+  races: [],                 // [{raceNumber, raceRO:'', positions:[], dnf:[], dns:[]}]
+  draft: null,               // {raceNumber, positions:[], dnf:[], dns:[], ro:''}
+  viewRaceIdx: null,         // index into races[] when reviewing a captured race
+  reportText: '',
+  menuOpen: false,
+  overlay: null,             // 'entries' | 'scoresheet' | 'results' | 'export'
+  eventSearch: '',
+  pendingSelection: new Set(), // sail numbers ticked during competitor selection
+  longPressTarget: null,      // {sailNo, mode:'draft'|'race', raceIdx} currently showing the code-change modal
+  drag: null,                  // active drag-to-reorder session, see bindDragHandle
+};
+
+// Entries lock the instant the first race exists — not before.
+function entriesLocked(){ return state.races.length > 0; }
+
+const STORE_PREFIX = 'smmc-race-';
+
+function storageKey(eventId){ return STORE_PREFIX + eventId; }
+
+function saveState(){
+  if(!state.event) return;
+  try{
+    const payload = {
+      event: state.event,
+      entries: state.entries,
+      races: state.races,
+      reportText: state.reportText
+    };
+    localStorage.setItem(storageKey(state.event.id), JSON.stringify(payload));
+  }catch(e){ console.error('save failed', e); }
+}
+
+function loadState(eventId){
+  try{
+    const raw = localStorage.getItem(storageKey(eventId));
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+
+function hasSavedProgress(eventId){
+  try{ return !!localStorage.getItem(storageKey(eventId)); }catch(e){ return false; }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=> t.classList.remove('show'), 2200);
+}
+
+/* ============ SCORING ENGINE ============ */
+function dropsForRaceCount(n){
+  if(n < 4) return 0;
+  let drops = 1;
+  let threshold = 8;
+  while(n >= threshold){ drops++; threshold += 8; }
+  return drops;
+}
+
+function computeStandings(entries, races){
+  const n = entries.length;
+  const results = entries.map(e => {
+    const raceScores = races.map(r => {
+      if(r.raceRO && r.raceRO === e.sailNo) return { race: r.raceNumber, points: null, code: 'RO' };
+      const posIdx = r.positions.indexOf(e.sailNo);
+      if(posIdx >= 0) return { race: r.raceNumber, points: posIdx+1, code: null };
+      if(r.dns.includes(e.sailNo)) return { race: r.raceNumber, points: n+1, code: 'DNS' };
+      if(r.dnf.includes(e.sailNo)) return { race: r.raceNumber, points: n+1, code: 'DNF' };
+      return { race: r.raceNumber, points: null, code: 'BYE' };
+    });
+    const counted = raceScores.filter(rs => rs.points !== null);
+    const totalRaces = counted.length;
+    const drops = dropsForRaceCount(totalRaces);
+    const sortedDesc = [...counted].sort((a,b) => b.points - a.points);
+    const discardSet = new Set();
+    for(let i=0;i<drops && i<sortedDesc.length;i++) discardSet.add(sortedDesc[i]);
+    const net = counted.reduce((sum, rs) => discardSet.has(rs) ? sum : sum + rs.points, 0);
+    const total = counted.reduce((sum, rs) => sum + rs.points, 0);
+    return { sailNo: e.sailNo, member: e.member, raceScores, discardSet, net, total, drops };
+  });
+
+  function tieBreak(a, b){
+    const ap = a.raceScores.filter(r=>r.points!==null).map(r=>r.points).sort((x,y)=>x-y);
+    const bp = b.raceScores.filter(r=>r.points!==null).map(r=>r.points).sort((x,y)=>x-y);
+    const len = Math.max(ap.length, bp.length);
+    for(let i=0;i<len;i++){
+      const av = ap[i] ?? Infinity, bv = bp[i] ?? Infinity;
+      if(av !== bv) return av - bv;
+    }
+    const aLast = [...a.raceScores].reverse().find(r=>r.points!==null);
+    const bLast = [...b.raceScores].reverse().find(r=>r.points!==null);
+    const av2 = aLast ? aLast.points : Infinity, bv2 = bLast ? bLast.points : Infinity;
+    return av2 - bv2;
+  }
+
+  results.sort((a,b) => (a.net - b.net) || tieBreak(a,b));
+  results.forEach((r,i) => r.pos = i+1);
+  return results;
+}
+
+function currentStandingsOrder(){
+  // returns sail numbers ordered by current standing (best first); before any race, by sail number asc
+  if(state.races.length === 0){
+    return [...state.entries].sort((a,b)=> Number(a.sailNo)-Number(b.sailNo)).map(e=>e.sailNo);
+  }
+  const standings = computeStandings(state.entries, state.races);
+  return standings.map(s=>s.sailNo);
+}
+
+
+/* ============ RENDERING ============ */
+const appEl = document.getElementById('app');
+
+function memberFor(sailNo, cls){
+  const m = MEMBERS.find(x => x.sailNo === sailNo && x.class === cls);
+  return m ? m.member : 'Unknown';
+}
+
+function svgMenu(){ return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`; }
+function svgBack(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
+function svgChevL(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
+function svgChevR(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
+function svgList(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`; }
+function svgTrophy(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 01-10 0V4zM7 5H4a1 1 0 00-1 1v1a4 4 0 004 4M17 5h3a1 1 0 011 1v1a4 4 0 01-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
+function svgTable(){ return `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M9 4v16" stroke="currentColor" stroke-width="1.8"/></svg>`; }
+function svgDownload(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
+function svgRestart(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M4.5 13a8 8 0 1 0 2-8.5L4 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
+function svgSend(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
+function svgDrag(){ return `<svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="6" r="1.5" fill="currentColor"/><circle cx="15" cy="6" r="1.5" fill="currentColor"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="18" r="1.5" fill="currentColor"/><circle cx="15" cy="18" r="1.5" fill="currentColor"/></svg>`; }
+
+function headerHTML(){
+  const ev = state.event;
+  let sub = '';
+  if(ev){
+    const dt = parseDMY(ev.date);
+    const dateStr = `${DOW[dt.getDay()]} ${dt.getDate()} ${MON[dt.getMonth()]} ${dt.getFullYear()}`;
+    sub = `<div class="subheader">
+      <span class="badge badge-default"><span class="class-roundel">${CLASS_ABBR[ev.class]||ev.class.slice(0,3)}</span>${escapeHTML(ev.regattaName)}</span>
+      <span class="badge badge-default">${dateStr}</span>
+      <span class="badge badge-default">${ev.start}–${ev.end}</span>
+      ${ev.round ? `<span class="badge badge-brand">Round ${ev.round}</span>` : ''}
+    </div>`;
+  }
+  const showMenu = !!ev;
+  return `
+  <nav class="nav-glass app-nav">
+    <a class="brand" style="cursor:default">
+      <img class="logo-img" src="${LOGO_DATA_URI}" alt="SMMC logo">
+      <div class="brand-text">
+        <strong>Sydney Maritime Modellers Club</strong>
+        <span>Race Results</span>
+      </div>
+    </a>
+    <div class="nav-spacer"></div>
+    ${showMenu ? `<button class="icon-btn" onclick="openMenu()">${svgMenu()}</button>` : ''}
+    ${sub ? `<div style="width:100%">${sub}</div>` : ''}
+  </nav>`;
+}
+
+function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function render(){
+  let body = '';
+  if(state.screen === 'select-event') body = renderEventSelect();
+  else if(state.screen === 'select-competitors') body = renderCompetitorSelect();
+  else if(state.screen === 'race-capture') body = renderRaceCapture();
+
+  appEl.innerHTML = headerHTML() + `<div class="app">${body}</div>` + menuHTML() + overlaysHTML() + longPressModalHTML();
+  attachDynamicHandlers();
+}
+
+/* ---------------- Screen: Event Select ---------------- */
+function renderEventSelect(){
+  const today = new Date(2026,8,16); // app "today" — Wed 16 Sep 2026
+  const q = state.eventSearch.trim().toLowerCase();
+  let list = EVENTS.map(e => ({...e, _dt: parseDMY(e.date)}));
+  if(q){
+    list = list.filter(e =>
+      e.class.toLowerCase().includes(q) ||
+      e.regattaType.toLowerCase().includes(q) ||
+      e.date.includes(q) ||
+      (e.round||'').includes(q) ||
+      `${e.class} ${e.regattaType}`.toLowerCase().includes(q)
+    );
+  }
+  list.sort((a,b) => a._dt - b._dt);
+  // find nearest to today, then window around it
+  let startIdx = list.findIndex(e => e._dt >= today);
+  if(startIdx === -1) startIdx = Math.max(0, list.length - 20);
+  const before = list.slice(Math.max(0,startIdx-6), startIdx).reverse();
+  const after = list.slice(startIdx, startIdx+40);
+  const ordered = q ? list : [...after, ...before];
+
+  const rows = ordered.map(e => {
+    const regattaName = `${e.class} ${e.regattaType}`;
+    const saved = hasSavedProgress(e.id);
+    let pill = '';
+    if(saved){
+      const st = loadState(e.id);
+      pill = st && st.entriesLocked
+        ? `<span class="event-status-pill pill-inprogress">In progress</span>`
+        : `<span class="event-status-pill pill-inprogress">Entries set</span>`;
+    }
+    return `<div class="event-item" data-select-event="${e.id}">
+      <div class="event-date-block">
+        <div class="dow">${DOW[e._dt.getDay()]}</div>
+        <div class="dnum">${e._dt.getDate()}</div>
+        <div class="mon">${MON[e._dt.getMonth()]}</div>
+      </div>
+      <div class="event-main">
+        <div class="event-name">${escapeHTML(regattaName)}</div>
+        <div class="event-meta">${e.start}–${e.end} · Round ${e.round||'–'} · ${e.season}</div>
+      </div>
+      ${pill}
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="panel glass panel-pad">
+      <div class="section-title">Select a regatta</div>
+      <div class="section-hint">Choose the calendar event you're capturing results for. This sets the event ID, date, class and regatta name automatically.</div>
+      <input class="search-box" id="eventSearchInput" placeholder="Search by class, round or date…" value="${escapeHTML(state.eventSearch)}">
+      <div>${rows || `<div class="empty-note">No matching events.</div>`}</div>
+    </div>
+  `;
+}
+
+/* ---------------- Screen: Competitor Select ---------------- */
+function renderCompetitorSelect(){
+  const ev = state.event;
+  const roster = MEMBERS.filter(m => m.class === ev.class).sort((a,b) => a.member.localeCompare(b.member));
+  const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(m.sailNo));
+
+  const rows = roster.map(m => {
+    const checked = state.pendingSelection.has(m.sailNo);
+    return `<div class="member-row" data-toggle-member="${m.sailNo}">
+      <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="member-name">${escapeHTML(m.member)}</div>
+      <div class="sail-tag">#${m.sailNo}</div>
+    </div>`;
+  }).join('');
+
+  const editing = state.entries.length > 0;
+  return `
+    <div class="panel glass panel-pad">
+      <div class="section-title">Regatta entries — ${escapeHTML(ev.class)}</div>
+      <div class="section-hint">Active ${escapeHTML(ev.class)} members from the club roster. Tick everyone racing today. Entries stay editable until the first race is captured.</div>
+      <div class="select-all-row">
+        <span style="font-size:12.5px;color:var(--foam-dim)">${roster.length} active ${escapeHTML(ev.class)} boats</span>
+        <button data-select-all="1">${allChecked ? 'Clear all' : 'Select all'}</button>
+      </div>
+      ${rows || `<div class="empty-note">No active members found for this class.</div>`}
+      <div class="count-banner">${state.pendingSelection.size} competitor${state.pendingSelection.size===1?'':'s'} selected</div>
+    </div>
+    <button class="btn btn-primary btn-block" ${state.pendingSelection.size < 2 ? 'disabled' : ''} data-confirm-entries="1">
+      ${editing ? 'Save entries' : 'Confirm entries'}
+    </button>
+    ${editing ? `<button class="btn btn-ghost btn-block" style="margin-top:10px" data-cancel-edit-entries="1">Cancel</button>` : ''}
+  `;
+}
+
+/* ---------------- Screen: Race Capture ---------------- */
+function renderRaceCapture(){
+  if(state.draft){
+    return renderDraftRace();
+  }
+  if(state.viewRaceIdx !== null){
+    return renderCapturedRaceView(state.viewRaceIdx);
+  }
+  // race list / add race screen
+  const raceItems = state.races.map((r,i) => {
+    const finishers = r.positions.length;
+    const issues = r.dnf.length + r.dns.length + (r.raceRO?1:0);
+    return `<div class="race-list-item" data-view-race="${i}">
+      <div class="rbadge">R${r.raceNumber}</div>
+      <div class="rinfo">
+        <div class="rtitle">Race ${r.raceNumber} — captured</div>
+        <div class="rsub">${finishers} finisher${finishers===1?'':'s'}${issues?` · ${issues} DNS/DNF/RO`:''}</div>
+      </div>
+      <div class="chevron">${svgChevR()}</div>
+    </div>`;
+  }).join('');
+
+  const locked = entriesLocked();
+  const toolbar = `<div class="toolbar-row">
+    <div class="entries-pill ${locked?'':'editable'}" data-entries-pill="1">
+      ${locked ? `🔒 ${state.entries.length} entries locked` : `✎ ${state.entries.length} entries — tap to edit`}
+    </div>
+    <button class="btn btn-primary btn-sm" data-add-race="1">+ Add Race ${state.races.length+1}</button>
+  </div>`;
+
+  return `
+    ${toolbar}
+    <div class="panel glass panel-pad">
+      <div class="section-title">Races</div>
+      <div class="section-hint">${state.races.length === 0 ? 'No races captured yet.' : `${state.races.length} race${state.races.length===1?'':'s'} captured.`}</div>
+      ${raceItems}
+    </div>
+  `;
+}
+
+function renderDraftRace(){
+  const d = state.draft;
+  const n = state.entries.length;
+  const placed = new Set([...d.positions, ...d.dns, ...d.dnf, d.ro].filter(Boolean));
+  const available = currentStandingsOrder().filter(sn => !placed.has(sn));
+
+  const posSlots = [];
+  for(let i=0;i<n;i++){
+    const sailNo = d.positions[i];
+    if(sailNo){
+      posSlots.push(`<div class="pos-slot filled" data-clear-position="${i}">
+        <div class="pos-num">${i+1}</div>
+        <div class="pos-fill"><span class="p-sail">#${sailNo}</span><br><span class="p-name">${escapeHTML(memberFor(sailNo, state.event.class))}</span></div>
+      </div>`);
+    } else {
+      posSlots.push(`<div class="pos-slot"><div class="pos-num">${i+1}</div><div class="pos-fill" style="color:var(--ink-soft)">—</div></div>`);
+    }
+  }
+  // DNS/DNF/RO rows appended below positions
+  const codeRows = [];
+  d.dns.forEach(sn => codeRows.push(`<div class="pos-code-row" data-clear-code="dns:${sn}"><span class="code-badge">DNS</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(sn,state.event.class))}</span></div>`));
+  d.dnf.forEach(sn => codeRows.push(`<div class="pos-code-row" data-clear-code="dnf:${sn}"><span class="code-badge">DNF</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(sn,state.event.class))}</span></div>`));
+  if(d.ro) codeRows.push(`<div class="pos-code-row ro" data-clear-code="ro:${d.ro}"><span class="code-badge">RO</span><span class="p-sail">#${d.ro}</span><span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(d.ro,state.event.class))}</span></div>`);
+
+  const icons = available.map((sn, idx) => {
+    const rank = state.races.length > 0 ? idx+1 : null;
+    return `<div class="sail-icon" data-sail-icon="${sn}">
+      ${rank ? `<div class="pennant"></div>` : ''}
+      <div class="num">#${sn}</div>
+      ${rank ? `<div class="rank">#${rank} o/a</div>` : ''}
+    </div>`;
+  }).join('');
+
+  const allPlaced = available.length === 0;
+
+  return `
+    <div class="race-hero">
+      <button class="nav-arrow" disabled>${svgChevL()}</button>
+      <div class="race-hero-title">
+        <div class="rnum">Race ${d.raceNumber}</div>
+        <div class="rstatus">${allPlaced ? 'All boats placed — ready' : `Capturing… ${placed.size}/${n} placed`}</div>
+      </div>
+      ${allPlaced
+        ? `<button class="nav-arrow action-ready" data-complete-and-next="1" title="Complete &amp; start next race">+</button>`
+        : `<button class="nav-arrow" data-cancel-draft="1" title="Cancel">✕</button>`
+      }
+    </div>
+    <div class="race-grid">
+      <div class="positions-col">
+        <div class="col-label">Finish order</div>
+        ${posSlots.join('')}
+        ${codeRows.join('')}
+      </div>
+      <div class="available-col">
+        <div class="col-label">Tap to place · hold for DNS/DNF/RO</div>
+        <div class="icon-wrap">${icons || `<div class="icon-empty-note">All boats placed — press + to finish.</div>`}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCapturedRaceView(idx){
+  const r = state.races[idx];
+  const rows = [];
+  r.positions.forEach((sn,i) => rows.push(`<div class="pos-slot filled" data-race-row="${sn}">
+      <div class="drag-handle" data-drag-handle="${sn}">${svgDrag()}</div>
+      <div class="pos-num">${i+1}</div>
+      <div class="pos-fill"><span class="p-sail">#${sn}</span><br><span class="p-name">${escapeHTML(memberFor(sn,state.event.class))}</span></div>
+    </div>`));
+  r.dns.forEach(sn => rows.push(`<div class="pos-code-row" data-race-row="${sn}"><span class="code-badge">DNS</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(sn,state.event.class))}</span></div>`));
+  r.dnf.forEach(sn => rows.push(`<div class="pos-code-row" data-race-row="${sn}"><span class="code-badge">DNF</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(sn,state.event.class))}</span></div>`));
+  if(r.raceRO) rows.push(`<div class="pos-code-row ro" data-race-row="${r.raceRO}"><span class="code-badge">RO</span><span class="p-sail">#${r.raceRO}</span><span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(r.raceRO,state.event.class))}</span></div>`);
+
+  const canPrev = idx > 0;
+  const canNext = idx < state.races.length - 1;
+
+  return `
+    <div class="race-hero">
+      <button class="nav-arrow" ${canPrev?'':'disabled'} data-nav-race="${idx-1}">${svgChevL()}</button>
+      <div class="race-hero-title">
+        <div class="rnum">Race ${r.raceNumber}</div>
+        <div class="rstatus">Captured ✓ · drag to reorder · hold to change</div>
+      </div>
+      <button class="nav-arrow" ${canNext?'':'disabled'} data-nav-race="${idx+1}">${svgChevR()}</button>
+    </div>
+    <div class="panel glass panel-pad" id="raceViewRows" data-race-idx="${idx}">
+      ${rows.join('')}
+    </div>
+    <button class="btn btn-ghost btn-block" data-close-view="1">Back to races</button>
+  `;
+}
+
+
+/* ---------------- Dropdown menu ---------------- */
+function menuHTML(){
+  return `
+  <div class="menu-backdrop ${state.menuOpen?'open':''}" data-close-menu="1"></div>
+  <div class="menu-panel ${state.menuOpen?'open':''}">
+    <div class="menu-panel-head">
+      <div class="mp-title">${state.event ? escapeHTML(state.event.regattaName) : ''}</div>
+      <div class="mp-sub">${state.event ? state.event.date : ''} · Entries locked</div>
+    </div>
+    <div class="menu-item" data-open-overlay="entries">${svgList()} Regatta Entries</div>
+    <div class="menu-item ${state.races.length?'':'disabled'}" data-open-overlay="scoresheet">${svgTable()} Scoresheet</div>
+    <div class="menu-item ${state.races.length?'':'disabled'}" data-open-overlay="results">${svgTrophy()} Race Results</div>
+    <div class="menu-sep"></div>
+    <div class="menu-item" data-open-overlay="export">${svgSend()} Send for Race Processing</div>
+    <div class="menu-sep"></div>
+    <div class="menu-item" data-new-event="1">${svgRestart()} Change regatta</div>
+  </div>`;
+}
+
+/* ---------------- Overlays: Entries / Scoresheet / Results / Export ---------------- */
+function overlaysHTML(){
+  if(!state.overlay) return '';
+  let title = '', body = '';
+  if(state.overlay === 'entries'){
+    title = 'Regatta Entries';
+    body = `<div class="panel glass panel-pad">
+      ${state.entries.map((e,i)=>`<div class="member-row"><div style="width:22px;color:var(--ink-soft);font-weight:700;font-size:12px">${i+1}</div><div class="member-name">${escapeHTML(e.member)}</div><div class="sail-tag">#${e.sailNo}</div></div>`).join('')}
+    </div>
+    <div class="helper-note">Entries are locked once the regatta has started and cannot be removed.</div>`;
+  } else if(state.overlay === 'scoresheet'){
+    title = 'Scoresheet';
+    body = renderScoresheet();
+  } else if(state.overlay === 'results'){
+    title = 'Race Results';
+    body = renderResultsTable();
+  } else if(state.overlay === 'export'){
+    title = 'Send for Race Processing';
+    body = renderExportPanel();
+  }
+  return `<div class="overlay open">
+    <div class="overlay-head">
+      <button class="back-btn" data-close-overlay="1">${svgBack()}</button>
+      <h2>${title}</h2>
+    </div>
+    <div class="overlay-body">${body}</div>
+  </div>`;
+}
+
+function renderScoresheet(){
+  if(state.races.length === 0) return `<div class="empty-note">No races captured yet.</div>`;
+  const n = state.entries.length;
+  const rows = state.races.map(r => {
+    const cells = [];
+    for(let i=0;i<n;i++){
+      cells.push(`<td>${r.positions[i] ? '#'+r.positions[i] : ''}</td>`);
+    }
+    const flags = [
+      ...r.dns.map(sn=>`DNS #${sn}`),
+      ...r.dnf.map(sn=>`DNF #${sn}`),
+      r.raceRO ? `RO #${r.raceRO}` : ''
+    ].filter(Boolean).join(' · ');
+    return `<tr><td class="name-cell">Race ${r.raceNumber}</td>${cells}<td class="dnf-cell" style="text-align:left">${flags}</td></tr>`;
+  }).join('');
+  let head = '<th class="name-cell">Race</th>';
+  for(let i=1;i<=n;i++) head += `<th>${i}${i===1?'st':i===2?'nd':i===3?'rd':'th'}</th>`;
+  head += '<th style="text-align:left">Notes</th>';
+  return `<div class="table-scroll"><table class="data-table"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="helper-note">Raw finishing order captured per race. See Race Results for computed standings.</div>`;
+}
+
+function renderResultsTable(){
+  if(state.races.length === 0) return `<div class="empty-note">No races captured yet.</div>`;
+  const standings = computeStandings(state.entries, state.races);
+  const raceCount = state.races.length;
+  let head = `<th>Pos</th><th class="name-cell">Sail</th><th class="name-cell">Name</th><th>Net</th>`;
+  for(let i=1;i<=raceCount;i++) head += `<th>R${i}</th>`;
+  head += `<th>Total</th><th>Drop</th>`;
+
+  const rows = standings.map(s => {
+    let raceCells = '';
+    s.raceScores.forEach(rs => {
+      let content = '–';
+      let cls = '';
+      if(rs.points !== null){
+        content = rs.code ? `${rs.points}<sup>${rs.code}</sup>` : String(rs.points);
+        if(s.discardSet.has(rs)) cls = 'discarded';
+      } else if(rs.code === 'RO'){
+        content = 'RO';
+      }
+      raceCells += `<td class="${cls}">${content}</td>`;
+    });
+    return `<tr>
+      <td>${s.pos}</td>
+      <td class="name-cell">#${s.sailNo}</td>
+      <td class="name-cell">${escapeHTML(s.member)}</td>
+      <td class="net-cell">${s.net}</td>
+      ${raceCells}
+      <td>${s.total}</td>
+      <td>${s.drops}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="table-scroll"><table class="data-table"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="helper-note">Low-point scoring: DNS/DNF score entries+1. RO (race officer) excludes a sailor from that race entirely. Drops: 1 after race 4, 2 after race 8, +1 every 8 races thereafter. Ties broken by countback (most bettered places, then most recent race).</div>`;
+}
+
+function renderExportPanel(){
+  return `
+  <div class="panel glass panel-pad">
+    <div class="field-label">Race report</div>
+    <div class="section-hint" style="margin-bottom:8px">Written separately in the race-report module — paste it in here if you have it, or leave blank and add it later.</div>
+    <textarea class="report-box" id="reportTextArea" placeholder="Paste or write the narrative race report here…">${escapeHTML(state.reportText)}</textarea>
+  </div>
+  <button class="btn btn-primary btn-block" data-save-report="1">Save report text</button>
+  <div class="panel glass panel-pad" style="margin-top:16px">
+    <div class="field-label">Send for race processing</div>
+    <div class="section-hint">Downloads the full regatta record — event details, entries and every race — in the standard SMMC results format, ready to hand off for processing.</div>
+    <button class="btn btn-primary btn-block" data-download-json="1">${svgSend()} Send for Race Processing</button>
+  </div>
+  `;
+}
+
+/* ---------------- Long-press modal (DNS/DNF/RO) ---------------- */
+function longPressModalHTML(){
+  if(!state.longPressTarget) return '';
+  const { sailNo: sn, mode, raceIdx } = state.longPressTarget;
+  const name = memberFor(sn, state.event.class);
+  const raceNumber = mode === 'draft' ? state.draft.raceNumber : state.races[raceIdx].raceNumber;
+
+  let options;
+  if(mode === 'draft'){
+    options = `
+      <div class="modal-opt dns" data-set-code="dns">DNS <span class="tag-desc">Did not start</span></div>
+      <div class="modal-opt dnf" data-set-code="dnf">DNF <span class="tag-desc">Did not finish</span></div>
+      <div class="modal-opt ro" data-set-code="ro">RO <span class="tag-desc">Race Officer this race</span></div>`;
+  } else {
+    options = `
+      <div class="modal-opt dns" data-set-code="dns">DNS <span class="tag-desc">Did not start</span></div>
+      <div class="modal-opt dnf" data-set-code="dnf">DNF <span class="tag-desc">Did not finish</span></div>
+      <div class="modal-opt finish" data-set-code="finish">Finished <span class="tag-desc">Move back to the end of the finish order</span></div>`;
+  }
+
+  return `<div class="modal-backdrop open" data-close-modal="1">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-title">#${sn} — ${escapeHTML(name)}</div>
+      <div class="modal-sub">Change this boat's result for Race ${raceNumber}</div>
+      ${options}
+      <div class="modal-cancel" data-close-modal="1">Cancel</div>
+    </div>
+  </div>`;
+}
+
+
+/* ============ EVENT HANDLERS ============ */
+function openMenu(){ state.menuOpen = true; render(); }
+function closeMenu(){ state.menuOpen = false; render(); }
+
+function selectEvent(id){
+  const ev = EVENTS.find(e => e.id === id);
+  if(!ev) return;
+  const regattaName = `${ev.class} ${ev.regattaType}`;
+  const full = { id: ev.id, regattaDate: fmtDate(ev.date), date: ev.date, startTime: ev.start, endTime: ev.end,
+                 regattaName, className: ev.class, class: ev.class, round: ev.round };
+  const saved = loadState(id);
+  state.event = full;
+  if(saved){
+    state.entries = saved.entries || [];
+    state.races = saved.races || [];
+    state.reportText = saved.reportText || '';
+    state.pendingSelection = new Set(state.entries.map(e=>e.sailNo));
+  } else {
+    state.entries = [];
+    state.races = [];
+    state.reportText = '';
+    state.pendingSelection = new Set();
+  }
+  state.draft = null;
+  state.viewRaceIdx = null;
+  state.screen = state.entries.length > 0 ? 'race-capture' : 'select-competitors';
+  render();
+}
+
+function toggleMember(sailNo){
+  if(state.pendingSelection.has(sailNo)) state.pendingSelection.delete(sailNo);
+  else state.pendingSelection.add(sailNo);
+  render();
+}
+
+function selectAllToggle(){
+  const roster = MEMBERS.filter(m => m.class === state.event.class);
+  const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(m.sailNo));
+  if(allChecked) state.pendingSelection.clear();
+  else roster.forEach(m => state.pendingSelection.add(m.sailNo));
+  render();
+}
+
+function confirmEntries(){
+  const roster = MEMBERS.filter(m => m.class === state.event.class);
+  const isFirstTime = state.entries.length === 0;
+  state.entries = roster.filter(m => state.pendingSelection.has(m.sailNo))
+                         .map(m => ({ sailNo: m.sailNo, member: m.member }));
+  state.screen = 'race-capture';
+  saveState();
+  showToast(isFirstTime ? 'Entries saved' : 'Entries updated');
+  render();
+}
+
+function editEntries(){
+  // Only permitted before the first race — entries lock automatically once racing starts.
+  if(entriesLocked()) return;
+  state.pendingSelection = new Set(state.entries.map(e => e.sailNo));
+  state.screen = 'select-competitors';
+  render();
+}
+
+function addRace(){
+  state.draft = { raceNumber: state.races.length + 1, positions: [], dns: [], dnf: [], ro: '' };
+  render();
+}
+
+function cancelDraft(){
+  state.draft = null;
+  render();
+}
+
+function placeSailNo(sailNo){
+  const d = state.draft;
+  if(!d) return;
+  if(d.positions.length >= state.entries.length) return;
+  d.positions.push(sailNo);
+  render();
+}
+
+function clearPosition(idx){
+  state.draft.positions.splice(idx,1);
+  render();
+}
+
+function clearCode(kind, sailNo){
+  const d = state.draft;
+  if(kind === 'dns') d.dns = d.dns.filter(x=>x!==sailNo);
+  else if(kind === 'dnf') d.dnf = d.dnf.filter(x=>x!==sailNo);
+  else if(kind === 'ro') d.ro = '';
+  render();
+}
+
+function setCode(kind){
+  const { sailNo: sn, mode, raceIdx } = state.longPressTarget;
+
+  if(mode === 'draft'){
+    const d = state.draft;
+    if(kind === 'dns') d.dns.push(sn);
+    else if(kind === 'dnf') d.dnf.push(sn);
+    else if(kind === 'ro') d.ro = sn;
+  } else {
+    // editing an already-captured race: remove sn from wherever it currently is, then re-place it
+    const r = state.races[raceIdx];
+    r.positions = r.positions.filter(x => x !== sn);
+    r.dns = r.dns.filter(x => x !== sn);
+    r.dnf = r.dnf.filter(x => x !== sn);
+    if(r.raceRO === sn) r.raceRO = '';
+    if(kind === 'dns') r.dns.push(sn);
+    else if(kind === 'dnf') r.dnf.push(sn);
+    else if(kind === 'finish') r.positions.push(sn);
+    saveState();
+  }
+  state.longPressTarget = null;
+  render();
+}
+
+function closeLongPressModal(){
+  state.longPressTarget = null;
+  render();
+}
+
+function completeRace(){
+  const d = state.draft;
+  state.races.push({ raceNumber: d.raceNumber, raceRO: d.ro || '', positions: [...d.positions], dnf: [...d.dnf], dns: [...d.dns] });
+  state.draft = null;
+  saveState();
+}
+
+function completeAndNext(){
+  completeRace();
+  showToast(`Race ${state.races.length} captured`);
+  addRace();
+}
+
+function viewRace(idx){
+  state.viewRaceIdx = idx;
+  render();
+}
+function navRace(idx){
+  state.viewRaceIdx = idx;
+  render();
+}
+function closeRaceView(){
+  state.viewRaceIdx = null;
+  render();
+}
+
+
+function openOverlay(name){
+  if(name === 'entries' && !entriesLocked()){
+    state.menuOpen = false;
+    editEntries();
+    return;
+  }
+  state.overlay = name;
+  state.menuOpen = false;
+  render();
+}
+
+function cancelEditEntries(){
+  state.pendingSelection = new Set(state.entries.map(e=>e.sailNo));
+  state.screen = 'race-capture';
+  render();
+}
+function closeOverlay(){
+  state.overlay = null;
+  render();
+}
+
+function saveReportText(){
+  const ta = document.getElementById('reportTextArea');
+  state.reportText = ta.value;
+  saveState();
+  showToast('Report text saved');
+}
+
+function buildExportObject(){
+  const ev = state.event;
+  return {
+    eventID: ev.id,
+    regattaDate: ev.regattaDate,
+    startTime: ev.startTime,
+    endTime: ev.endTime,
+    regattaName: ev.regattaName,
+    className: ev.className,
+    competitorCount: state.entries.length,
+    raceReport: state.reportText || '',
+    races: state.races.map(r => ({
+      raceNumber: r.raceNumber,
+      raceRO: r.raceRO || '',
+      positions: r.positions.map(Number),
+      dnf: r.dnf.map(Number),
+      dns: r.dns.map(Number)
+    }))
+  };
+}
+
+async function downloadJSON(){
+  const data = buildExportObject();
+  const json = JSON.stringify(data, null, 2);
+  const filename = `${state.event.id}-${state.event.regattaDate.replace(/\//g,'-')}.json`;
+  try{
+    const downloads = window.claude && await window.claude.use ? await window.claude.use('downloads') : null;
+    if(downloads){
+      await downloads.save({ filename, data: json });
+      showToast('Download started');
+      return;
+    }
+  }catch(e){ /* fall through to blob fallback */ }
+  try{
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Downloaded');
+  }catch(e){
+    showToast('Could not download — copy from console');
+    console.log(json);
+  }
+}
+
+function changeEvent(){
+  state.menuOpen = false;
+  state.screen = 'select-event';
+  state.event = null;
+  state.overlay = null;
+  render();
+}
+
+/* ---------------- Long press detection ---------------- */
+let pressTimer = null;
+let pressFired = false;
+const LONG_PRESS_MS = 480;
+
+function bindLongPress(el, sailNo, onShortTap, mode, raceIdx){
+  let localPressTimer = null;
+  let localFired = false;
+  const start = (e) => {
+    if(e.target && e.target.closest && e.target.closest('[data-drag-handle]')) return;
+    localFired = false;
+    localPressTimer = setTimeout(() => {
+      localFired = true;
+      state.longPressTarget = { sailNo, mode, raceIdx };
+      render();
+    }, LONG_PRESS_MS);
+  };
+  const cancel = () => { clearTimeout(localPressTimer); };
+  const end = (e) => {
+    clearTimeout(localPressTimer);
+    if(!localFired && onShortTap){
+      onShortTap(sailNo);
+    }
+  };
+  el.addEventListener('touchstart', start, {passive:true});
+  el.addEventListener('touchend', end);
+  el.addEventListener('touchmove', cancel);
+  el.addEventListener('touchcancel', cancel);
+  el.addEventListener('mousedown', start);
+  el.addEventListener('mouseup', end);
+  el.addEventListener('mouseleave', cancel);
+}
+
+/* ---------------- Drag-to-reorder finish positions ---------------- */
+function bindDragHandle(handleEl, containerEl, raceIdx){
+  handleEl.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const row = handleEl.closest('[data-race-row]');
+    if(!row || !row.classList.contains('pos-slot')) return; // only finish-order rows are reorderable
+    const positionRows = Array.from(containerEl.querySelectorAll('.pos-slot'));
+    const startIndex = positionRows.indexOf(row);
+    if(startIndex === -1) return;
+
+    handleEl.setPointerCapture(e.pointerId);
+    row.style.position = 'relative';
+    row.style.zIndex = '5';
+    row.style.boxShadow = '0 8px 20px rgba(2,10,18,0.5)';
+    const startY = e.clientY;
+    let currentIndex = startIndex;
+
+    const onMove = (ev) => {
+      const dy = ev.clientY - startY;
+      row.style.transform = `translateY(${dy}px)`;
+      // find sibling row we've crossed the midpoint of
+      const rows = Array.from(containerEl.querySelectorAll('.pos-slot'));
+      const rowRect = row.getBoundingClientRect();
+      const rowMidY = rowRect.top + rowRect.height/2;
+      rows.forEach((sib, i) => {
+        if(sib === row) return;
+        const r2 = sib.getBoundingClientRect();
+        const sibMid = r2.top + r2.height/2;
+        if(i < currentIndex && rowMidY < sibMid){
+          containerEl.insertBefore(row, sib);
+          currentIndex = i;
+          row.style.transform = 'translateY(0px)';
+        } else if(i > currentIndex && rowMidY > sibMid){
+          containerEl.insertBefore(row, sib.nextSibling);
+          currentIndex = i;
+          row.style.transform = 'translateY(0px)';
+        }
+      });
+    };
+
+    const onUp = () => {
+      handleEl.removeEventListener('pointermove', onMove);
+      handleEl.removeEventListener('pointerup', onUp);
+      row.style.transform = '';
+      row.style.position = '';
+      row.style.zIndex = '';
+      row.style.boxShadow = '';
+      // commit new order back into state from current DOM order
+      const newOrder = Array.from(containerEl.querySelectorAll('.pos-slot'))
+        .map(el => el.closest('[data-race-row]').getAttribute('data-race-row'));
+      if(newOrder.length){
+        state.races[raceIdx].positions = newOrder;
+        saveState();
+        render();
+      }
+    };
+
+    handleEl.addEventListener('pointermove', onMove);
+    handleEl.addEventListener('pointerup', onUp);
+  });
+}
+
+/* ---------------- Attach handlers after each render ---------------- */
+function attachDynamicHandlers(){
+  document.querySelectorAll('[data-select-event]').forEach(el=>{
+    el.addEventListener('click', ()=> selectEvent(el.getAttribute('data-select-event')));
+  });
+  const searchInput = document.getElementById('eventSearchInput');
+  if(searchInput){
+    searchInput.addEventListener('input', (e)=>{ state.eventSearch = e.target.value; render(); setTimeout(()=>{ const i=document.getElementById('eventSearchInput'); if(i){ i.focus(); i.setSelectionRange(i.value.length,i.value.length);} },0); });
+  }
+  document.querySelectorAll('[data-toggle-member]').forEach(el=>{
+    el.addEventListener('click', ()=> toggleMember(el.getAttribute('data-toggle-member')));
+  });
+  document.querySelectorAll('[data-select-all]').forEach(el=> el.addEventListener('click', selectAllToggle));
+  document.querySelectorAll('[data-confirm-entries]').forEach(el=> el.addEventListener('click', confirmEntries));
+  document.querySelectorAll('[data-cancel-edit-entries]').forEach(el=> el.addEventListener('click', cancelEditEntries));
+  document.querySelectorAll('[data-entries-pill]').forEach(el=> el.addEventListener('click', ()=> openOverlay('entries')));
+  document.querySelectorAll('[data-add-race]').forEach(el=> el.addEventListener('click', addRace));
+  document.querySelectorAll('[data-complete-and-next]').forEach(el=> el.addEventListener('click', completeAndNext));
+  document.querySelectorAll('[data-cancel-draft]').forEach(el=> el.addEventListener('click', cancelDraft));
+  document.querySelectorAll('[data-clear-position]').forEach(el=>{
+    el.addEventListener('click', ()=> clearPosition(Number(el.getAttribute('data-clear-position'))));
+  });
+  document.querySelectorAll('[data-clear-code]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const [kind, sn] = el.getAttribute('data-clear-code').split(':');
+      clearCode(kind, sn);
+    });
+  });
+  document.querySelectorAll('[data-sail-icon]').forEach(el=>{
+    bindLongPress(el, el.getAttribute('data-sail-icon'), placeSailNo, 'draft', null);
+  });
+  document.querySelectorAll('[data-view-race]').forEach(el=>{
+    el.addEventListener('click', ()=> viewRace(Number(el.getAttribute('data-view-race'))));
+  });
+  document.querySelectorAll('[data-nav-race]').forEach(el=>{
+    el.addEventListener('click', ()=> navRace(Number(el.getAttribute('data-nav-race'))));
+  });
+  document.querySelectorAll('[data-close-view]').forEach(el=> el.addEventListener('click', closeRaceView));
+  const raceRowsContainer = document.getElementById('raceViewRows');
+  if(raceRowsContainer){
+    const rIdx = Number(raceRowsContainer.getAttribute('data-race-idx'));
+    raceRowsContainer.querySelectorAll('[data-race-row]').forEach(el=>{
+      bindLongPress(el, el.getAttribute('data-race-row'), null, 'race', rIdx);
+    });
+    raceRowsContainer.querySelectorAll('[data-drag-handle]').forEach(el=>{
+      bindDragHandle(el, raceRowsContainer, rIdx);
+    });
+  }
+  document.querySelectorAll('[data-close-menu]').forEach(el=> el.addEventListener('click', closeMenu));
+  document.querySelectorAll('[data-open-overlay]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      if(el.classList.contains('disabled')) return;
+      openOverlay(el.getAttribute('data-open-overlay'));
+    });
+  });
+  document.querySelectorAll('[data-close-overlay]').forEach(el=> el.addEventListener('click', closeOverlay));
+  document.querySelectorAll('[data-save-report]').forEach(el=> el.addEventListener('click', saveReportText));
+  document.querySelectorAll('[data-download-json]').forEach(el=> el.addEventListener('click', downloadJSON));
+  document.querySelectorAll('[data-new-event]').forEach(el=> el.addEventListener('click', changeEvent));
+  document.querySelectorAll('[data-set-code]').forEach(el=>{
+    el.addEventListener('click', ()=> setCode(el.getAttribute('data-set-code')));
+  });
+  document.querySelectorAll('[data-close-modal]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ if(e.target === el) closeLongPressModal(); });
+  });
+}
+
+/* ============ BOOT ============ */
+render();
+
+</script>
+</body>
+</html>
