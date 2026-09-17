@@ -1025,6 +1025,45 @@
             document.getElementById('auditEmpty').style.display = entries.length ? 'none' : 'block';
         }
 
+        function checkModalChanges() {
+            if (!activeModalMember) return;
+            const inputs = document.querySelectorAll('.modal-field-input');
+            let hasChanges = false;
+
+            inputs.forEach(input => {
+                const key = input.dataset.key;
+                const type = input.dataset.type;
+                let newVal = input.value;
+                let rawOld = activeModalMember[key];
+
+                let normalizedOld = '';
+                let normalizedNew = String(newVal);
+
+                if (type === 'status') {
+                    normalizedOld = isActiveStatus(rawOld) ? 'Active' : 'Inactive';
+                } else if (type === 'boolean') {
+                    normalizedOld = String(parseBoolLike(rawOld));
+                    normalizedNew = String(parseBoolLike(newVal));
+                } else if (type === 'date') {
+                    if (rawOld) {
+                        const d = new Date(rawOld);
+                        normalizedOld = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : String(rawOld);
+                    }
+                } else {
+                    normalizedOld = rawOld !== undefined && rawOld !== null ? String(rawOld) : '';
+                }
+
+                if (normalizedNew !== normalizedOld) {
+                    hasChanges = true;
+                }
+            });
+
+            const btn = document.getElementById('saveMemberBtn');
+            if (btn) {
+                btn.style.display = hasChanges ? 'inline-flex' : 'none';
+            }
+        }
+
         document.getElementById('auditSearch').addEventListener('input', renderAuditLog);
         document.getElementById('refreshLogBtn').addEventListener('click', loadAuditLog);
 
