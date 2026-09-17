@@ -107,20 +107,27 @@
     }
     .modal-overlay.visible { display: flex; }
     .modal-box {
-        width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto;
+        width: 100%; max-width: 680px; max-height: 88vh; overflow-y: auto;
         background: var(--ocean-mid, #0f2030); border: 1px solid var(--glass-border);
         border-radius: 16px; padding: 28px; position: relative;
         box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     }
+    
+    .modal-header {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        gap: 16px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .modal-title-wrap { flex: 1; min-width: 200px; }
+    .modal-title { font-size: 22px; font-weight: 700; color: var(--foam); margin-bottom: 2px; }
+    .modal-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .modal-close {
-        position: absolute; top: 18px; right: 18px; width: 32px; height: 32px;
+        width: 32px; height: 32px;
         display: flex; align-items: center; justify-content: center; border-radius: 8px;
         background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-        cursor: pointer; color: var(--foam-dim); transition: all .15s ease;
+        cursor: pointer; color: var(--foam-dim); transition: all .15s ease; flex-shrink: 0;
     }
     .modal-close:hover { background: rgba(255,255,255,0.12); color: var(--foam); }
-    .modal-title { font-size: 22px; font-weight: 700; color: var(--foam); margin-bottom: 2px; }
-    
+
     .modal-section { margin-top: 20px; }
     .modal-section-title {
         font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
@@ -134,9 +141,6 @@
     }
     .modal-field span { display: block; font-size: 10px; color: var(--foam-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
     .modal-field strong { color: var(--foam); font-weight: 500; font-size: 12.5px; word-break: break-word; }
-    
-    .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--glass-border); }
-    .modal-actions button { display: flex; align-items: center; gap: 6px; }
 
     table.boat-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     table.boat-table th {
@@ -295,11 +299,21 @@
     <!-- SECTIONED MEMBER MODAL -->
     <div class="modal-overlay" id="memberModalOverlay" onclick="if(event.target===this) closeMemberModal()">
         <div class="modal-box">
-            <button type="button" class="modal-close" onclick="closeMemberModal()" title="Close">
-                <i class="inline-icon" data-lucide="x"></i>
-            </button>
-            <div class="modal-title" id="modalMemberName">—</div>
-            <p style="color:var(--foam-dim);font-size:12.5px;margin:0 0 10px;" id="modalMemberSub"></p>
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <div class="modal-title" id="modalMemberName">—</div>
+                    <p style="color:var(--foam-dim);font-size:12.5px;margin:0;" id="modalMemberSub"></p>
+                </div>
+                <div class="modal-header-actions">
+                    <button type="button" class="btn btn-ghost" onclick="handleModalAction('requestUpdate')"><i class="inline-icon" data-lucide="mail-plus"></i> Request Update</button>
+                    <button type="button" class="btn btn-ghost" onclick="handleModalAction('markPaid')"><i class="inline-icon" data-lucide="dollar-sign"></i> Mark Paid</button>
+                    <button type="button" class="modal-close" onclick="closeMemberModal()" title="Close">
+                        <i class="inline-icon" data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="fn-message" id="modalMsg" style="margin-bottom: 12px;"></div>
 
             <div id="modalMemberFields"></div>
 
@@ -307,14 +321,6 @@
                 <div class="modal-section-title">Boats</div>
                 <div id="modalBoats"><div class="empty-state">Loading boats…</div></div>
             </div>
-
-            <div class="modal-actions">
-                <button type="button" class="btn btn-ghost" onclick="handleModalAction('requestUpdate')"><i class="inline-icon" data-lucide="mail-plus"></i> Request Update</button>
-                <button type="button" class="btn btn-ghost" onclick="handleModalAction('markPaid')"><i class="inline-icon" data-lucide="dollar-sign"></i> Mark Paid</button>
-                <button type="button" class="btn btn-ghost" onclick="handleModalAction('inactivate')"><i class="inline-icon" data-lucide="user-x"></i> Inactivate</button>
-                <button type="button" class="btn btn-ghost" onclick="handleModalAction('expire')"><i class="inline-icon" data-lucide="shield-off"></i> Expire</button>
-            </div>
-            <div class="fn-message" id="modalMsg"></div>
         </div>
     </div>
 
