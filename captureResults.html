@@ -934,7 +934,7 @@ button{ font-family: inherit; }
 .menu-sep{ height:1px; background: var(--glass-border); margin:8px 0; }
 
 /* ---------- full screen overlay ---------- */
-.overlay{ position:fixed; inset:0; z-index:55; overflow-y:auto; display:none;
+.overlay{ position:fixed; left:0; right:0; bottom:0; top:var(--nav-h, 64px); z-index:45; overflow-y:auto; display:none;
   background:
     radial-gradient(ellipse 900px 500px at 15% -10%, rgba(94,234,212,0.10), transparent 60%),
     radial-gradient(ellipse 700px 500px at 100% 0%, rgba(255,106,61,0.08), transparent 55%),
@@ -1152,6 +1152,7 @@ function headerHTML(){
   const showMenu = !!ev;
   return `
   <nav class="nav-glass app-nav">
+    ${state.overlay ? `<button class="icon-btn" onclick="closeOverlay()" title="Back">${svgBack()}</button>` : ''}
     <a class="brand" style="cursor:default">
       <img class="logo-img" src="${LOGO_DATA_URI}" alt="SMMC logo">
       <div class="brand-text">
@@ -1160,7 +1161,7 @@ function headerHTML(){
       </div>
     </a>
     <div class="nav-spacer"></div>
-    ${showMenu ? `<button class="icon-btn" onclick="openMenu()">${svgMenu()}</button>` : ''}
+    ${showMenu && !state.overlay ? `<button class="icon-btn" onclick="openMenu()">${svgMenu()}</button>` : ''}
     ${sub ? `<div style="width:100%">${sub}</div>` : ''}
   </nav>`;
 }
@@ -1175,6 +1176,8 @@ function render(){
 
   appEl.innerHTML = headerHTML() + `<div class="app">${body}</div>` + menuHTML() + overlaysHTML() + longPressModalHTML();
   attachDynamicHandlers();
+  const navEl = document.querySelector('.app-nav');
+  if(navEl) document.documentElement.style.setProperty('--nav-h', navEl.offsetHeight + 'px');
 }
 
 /* ---------------- Screen: Event Select ---------------- */
@@ -1446,7 +1449,6 @@ function overlaysHTML(){
   }
   return `<div class="overlay open">
     <div class="overlay-head">
-      <button class="back-btn" data-close-overlay="1">${svgBack()}</button>
       <h2>${title}</h2>
     </div>
     <div class="overlay-body">${body}</div>
