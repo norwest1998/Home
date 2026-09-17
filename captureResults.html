@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
 /* =================== THEME.CSS (club design system) =================== */
 /* =================================================================
@@ -1218,7 +1219,7 @@ function renderEventSelect(){
     <div class="panel glass panel-pad">
       <div class="section-title">Select a regatta</div>
       <div class="section-hint">Choose the calendar event you're capturing results for. This sets the event ID, date, class and regatta name automatically.</div>
-      <input class="search-box" id="eventSearchInput" placeholder="Search by class, round or date…" value="${escapeHTML(state.eventSearch)}">
+      <input class="search-box" id="eventSearchInput" placeholder=<i data-lucide="search" class="search-icon"></i>"Search by class, round or date…" value="${escapeHTML(state.eventSearch)}">
       <div>${rows || `<div class="empty-note">No matching events.</div>`}</div>
     </div>
   `;
@@ -1335,14 +1336,14 @@ function renderDraftRace(){
 
   return `
     <div class="race-hero">
-      <button class="nav-arrow" disabled>${svgChevL()}</button>
+      <button class="nav-arrow" disabled><i data-lucide="chevron-left"></i></button>
       <div class="race-hero-title">
         <div class="rnum">Race ${d.raceNumber}</div>
         <div class="rstatus">${allPlaced ? 'All boats placed — ready' : `Capturing… ${placed.size}/${n} placed`}</div>
       </div>
       ${allPlaced
-        ? `<button class="nav-arrow action-ready" data-complete-and-next="1" title="Complete &amp; start next race">+</button>`
-        : `<button class="nav-arrow" data-cancel-draft="1" title="Cancel">✕</button>`
+        ? `<button class="nav-arrow action-ready" data-complete-and-next="1" title="Complete &amp; start next race"><i data-lucide="add"></i></button>`
+        : `<button class="nav-arrow" data-cancel-draft="1" title="Cancel"><i data-lucide="cancel"></i></button>`
       }
     </div>
     <div class="race-grid">
@@ -1376,12 +1377,12 @@ function renderCapturedRaceView(idx){
 
   return `
     <div class="race-hero">
-      <button class="nav-arrow" ${canPrev?'':'disabled'} data-nav-race="${idx-1}">${svgChevL()}</button>
+      <button class="nav-arrow" ${canPrev?'':'disabled'} data-nav-race="${idx-1}"><i data-lucide="chevron-left"></i></button>
       <div class="race-hero-title">
         <div class="rnum">Race ${r.raceNumber}</div>
         <div class="rstatus">Captured ✓ · drag to reorder · hold to change</div>
       </div>
-      <button class="nav-arrow" ${canNext?'':'disabled'} data-nav-race="${idx+1}">${svgChevR()}</button>
+      <button class="nav-arrow" ${canNext?'':'disabled'} data-nav-race="${idx+1}"><i data-lucide="chevron-right"></i>}</button>
     </div>
     <div class="panel glass panel-pad" id="raceViewRows" data-race-idx="${idx}">
       ${rows.join('')}
@@ -1940,6 +1941,19 @@ function attachDynamicHandlers(){
   });
 }
 
+// Initial load
+document.addEventListener("DOMContentLoaded", () => {
+  lucide.createIcons();
+});
+
+// Re-render helper for dynamic updates
+function renderApp() {
+  const app = document.getElementById("app");
+  app.innerHTML = generateAppHTML();
+  
+  // Convert all data-lucide elements into inline SVGs
+  lucide.createIcons();
+}
 /* ============ BOOT ============ */
 render();
 
