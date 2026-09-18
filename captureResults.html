@@ -1043,7 +1043,7 @@ let MEMBERS = [];
 async function getMembers(className) {
   try {
     const data = await apiGet("members", className); 
-    MEMBERS = Array.isArray(data.values) ? data.values : []; 
+    MEMBERS = Array.isArray(data.members) ? data.values : []; 
   } catch (error) {
     console.error("Failed to load member data:", error);
     MEMBERS = [];
@@ -1056,7 +1056,7 @@ async function getMembers(className) {
 async function getEvents() {
   try {
     const data = await apiGet("events");
-    EVENTS = Array.isArray(data.values) ? data.values : [];
+    EVENTS = Array.isArray(data.events) ? data.events : [];
   } catch (error) {
     console.error("Failed to load events:", error);
     EVENTS = [];
