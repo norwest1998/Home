@@ -1040,7 +1040,8 @@ async function getEvents() {
 }
 
 async function apiGet(action) {
-  const url = action = "members"
+  console.log("in apiGet action: " + action);
+  const url = action === "members"
       ? `${CLB_WEBAPP_URL}?action=ClassMembers`
       : `${CAL_WEBAPP_URL}?action=RegattaEvents`;
   const res = await fetch(url);
