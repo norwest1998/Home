@@ -1021,7 +1021,7 @@ let MEMBERS = [];
 
 async function getMembers() {
   try {
-    const data = await apiGet("ClassMembers"); 
+    const data = await apiGet("members"); 
     MEMBERS = data.values; 
   } catch (error) {
     console.error("Failed to load member data:", error);
@@ -1032,7 +1032,7 @@ async function getMembers() {
 */
 async function getEvents() {
   try {
-    const data = await apiGet("RegattaEvents"); 
+    const data = await apiGet("events"); 
     EVENTS = data.values; 
   } catch (error) {
     console.error("Failed to load events:", error);
@@ -1040,7 +1040,7 @@ async function getEvents() {
 }
 
 async function apiGet(action) {
-  const url = action = "Members"
+  const url = action = "members"
       ? `${CLB_WEBAPP_URL}?action=ClassMembers`
       : `${CAL_WEBAPP_URL}?action=RegattaEvents`;
   const res = await fetch(url);
