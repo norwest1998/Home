@@ -1016,12 +1016,13 @@ const CAL_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6h
 /* ======== create function to fetch Members ============= */
 /* const MEMBERS = [{"member":"John Wyatt","class":"DF65","sailNo":"36"},{"member":"John Wyatt","class":"DF95","sailNo":"36"},{"member":"Lew Gemell","class":"DF65","sailNo":"10"},{"member":"Graham Brown","class":"DF95","sailNo":"921"},{"member":"Nigel Brimble","class":"DF95","sailNo":"438"},{"member":"Allen Williams","class":"DF95","sailNo":"547"},{"member":"Paul Rushton","class":"DF95","sailNo":"690"},{"member":"Cameron Percival","class":"DF95","sailNo":"725"},{"member":"Peter Burton","class":"DF95","sailNo":"99"},{"member":"Neil Johnson","class":"DF95","sailNo":"584"},{"member":"Daryl Bates","class":"DF95","sailNo":"429"},{"member":"Lew Gemell","class":"IOM","sailNo":"53"},{"member":"Peter Lee","class":"DF95","sailNo":"710"},{"member":"Tim Ryan","class":"DF95","sailNo":"270"},{"member":"Chris Cuthbert","class":"DF95","sailNo":"771"},{"member":"Peter Burton","class":"DF65","sailNo":"223"},{"member":"Peter Burton","class":"IOM","sailNo":"69"},{"member":"Chris Cuthbert","class":"Soling","sailNo":"169"},{"member":"Peter Lee","class":"Soling","sailNo":"66"},{"member":"Gregory Gallagher","class":"DF95","sailNo":"699"},{"member":"David Jackson","class":"DF95","sailNo":"997"},{"member":"John Armstrong","class":"IOM","sailNo":"52"},{"member":"Robert Hales","class":"IOM","sailNo":"21"},{"member":"Dinah Hales","class":"IOM","sailNo":"78"},{"member":"Colin Court","class":"Marblehead","sailNo":"80"},{"member":"Chris Cuthbert","class":"IOM","sailNo":"35"},{"member":"David Bolton","class":"IOM","sailNo":"180"},{"member":"John Wyatt","class":"Marblehead","sailNo":"75"},{"member":"Nigel Brimble","class":"Soling","sailNo":"56"},{"member":"Larry Reedman","class":"DF95","sailNo":"382"},{"member":"David Bolton","class":"DF95","sailNo":"32"},{"member":"Steve Malone","class":"DF95","sailNo":"866"},{"member":"Colin Court","class":"DF65","sailNo":"80"},{"member":"Anthony Bolding","class":"DF65","sailNo":"86"},{"member":"Gregory Gallagher","class":"DF65","sailNo":"486"},{"member":"Jim Hand","class":"DF95","sailNo":"22"},{"member":"Anthony Bolding","class":"IOM","sailNo":"20"},{"member":"Nigel Brimble","class":"IOM","sailNo":"91"},{"member":"John Wyatt","class":"IOM","sailNo":"26"},{"member":"Colin Court","class":"IOM","sailNo":"80"},{"member":"Allen Williams","class":"DF65","sailNo":"428"},{"member":"Paul Rushton","class":"DF65","sailNo":"161"},{"member":"Neil Johnson","class":"DF65","sailNo":"584"},{"member":"Chris Cuthbert","class":"DF65","sailNo":"771"},{"member":"Nigel Brimble","class":"DF65","sailNo":"644"},{"member":"Gary Sommer","class":"DF95","sailNo":"194"},{"member":"Peter Dahl","class":"DF95","sailNo":"813"},{"member":"John Wyatt","class":"Soling","sailNo":"194"},{"member":"Peter Dahl","class":"Soling","sailNo":"13"},{"member":"Steve Malone","class":"Soling","sailNo":"94"},{"member":"Graham Brown","class":"IOM","sailNo":"29"},{"member":"Graham Brown","class":"DF65","sailNo":"106"},{"member":"Stewart Blundell","class":"DF95","sailNo":"52"},{"member":"Anthony Bolding","class":"General","sailNo":"201"},{"member":"John Pye","class":"DF65","sailNo":"913"}];
 */
+let EVENTS = [];
+let MEMBERS = [];
 
 async function getMembers() {
   try {
-    // 1. Call your API with the correct action name
-    const data = await apiGet("RegattaEvents"); 
-    const MEMBERS = data.values; 
+    const data = await apiGet("ClassMembers"); 
+    MEMBERS = data.values; 
   } catch (error) {
     console.error("Failed to load member data:", error);
   }
@@ -1031,9 +1032,8 @@ async function getMembers() {
 */
 async function getEvents() {
   try {
-    // 1. Call your API with the correct action name
     const data = await apiGet("RegattaEvents"); 
-    const EVENTS = data.values; 
+    EVENTS = data.values; 
   } catch (error) {
     console.error("Failed to load events:", error);
   }
