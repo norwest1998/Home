@@ -1080,7 +1080,7 @@ async function getEvents() {
   }
 }
 
-async function apiGet(action, param) {
+async function apiGet(action, className) {
   console.log("in apiGet action: " + action);
   const url = action === "members"
       ? `${CLB_WEBAPP_URL}?action=ClassMembers` + (className ? `&className=${encodeURIComponent(className)}` : "")
