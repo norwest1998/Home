@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira+Extra+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
 /* =================== THEME.CSS (club design system) =================== */
 /* =================================================================
@@ -1408,7 +1410,7 @@ function renderEventSelect(){
 /* ---------------- Screen: Competitor Select ---------------- */
 function renderCompetitorSelect(){
   const ev = state.event;
-  const roster = MEMBERS.filter(m => m.className === ev.class).sort((a,b) => a.member.localeCompare(b.member));
+  const roster = MEMBERS.slice().sort((a,b) => a.member.localeCompare(b.member));
   const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(m.sailNo));
 
   const rows = roster.map(m => {
