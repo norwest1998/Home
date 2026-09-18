@@ -1023,7 +1023,7 @@ function fmtDate(d){ const dt = parseDMY(d); return `${String(dt.getDate()).padS
 function classEmblem(className, size){
   const s = size || 20;
   const safe = escapeHTML(className);
-  return `<img class="class-emblem" style="width:${s}px;height:${s}px;" src="home/images/classes/${encodeURIComponent(className)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
+  return `<img class="class-emblem" style="width:${s}px;height:${s}px;" src="Home/images/classes/${encodeURIComponent(className)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
 }
 function classEmblemFallback(img){
   const cls = img.getAttribute('data-class');
