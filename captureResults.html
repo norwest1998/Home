@@ -1239,7 +1239,7 @@ function renderClassFilterBar(classes){
   return `<div class="class-filter-bar">
     ${options.map(cls => {
       const active = state.selectedClass === cls;
-      const icon = cls === 'ALL' ? `<span class="class-roundel class-roundel-all">${svgLayoutGrid()}</span>` : classEmblem(cls, 22);
+      const icon = cls === 'ALL' ? `<span class="class-roundel class-roundel-all">${svgLayoutGrid()}</span>` : classEmblem(cls, 16);
       return `<button type="button" class="class-filter-btn ${active?'active':''}" data-filter-class="${escapeHTML(cls)}">
         ${icon}<span>${cls === 'ALL' ? 'All' : escapeHTML(cls)}</span>
       </button>`;
