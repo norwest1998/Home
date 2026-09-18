@@ -1241,7 +1241,7 @@ function currentStandingsOrder(){
 const appEl = document.getElementById('app');
 
 function memberFor(sailNo, cls){
-  const m = MEMBERS.find(x => x.sailNo === sailNo && x.class === cls);
+  const m = MEMBERS.find(x => x.sailNo === sailNo && x.className === cls);
   return m ? m.member : 'Unknown';
 }
 
@@ -1408,7 +1408,7 @@ function renderEventSelect(){
 /* ---------------- Screen: Competitor Select ---------------- */
 function renderCompetitorSelect(){
   const ev = state.event;
-  const roster = MEMBERS.filter(m => m.class === ev.class).sort((a,b) => a.member.localeCompare(b.member));
+  const roster = MEMBERS.filter(m => m.className === ev.class).sort((a,b) => a.member.localeCompare(b.member));
   const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(m.sailNo));
 
   const rows = roster.map(m => {
@@ -1773,7 +1773,7 @@ function toggleMember(sailNo){
 }
 
 function selectAllToggle(){
-  const roster = MEMBERS.filter(m => m.class === state.event.class);
+  const roster = MEMBERS.filter(m => m.className === state.event.class);
   const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(m.sailNo));
   if(allChecked) state.pendingSelection.clear();
   else roster.forEach(m => state.pendingSelection.add(m.sailNo));
@@ -1781,7 +1781,7 @@ function selectAllToggle(){
 }
 
 function confirmEntries(){
-  const roster = MEMBERS.filter(m => m.class === state.event.class);
+  const roster = MEMBERS.filter(m => m.className === state.event.class);
   const isFirstTime = state.entries.length === 0;
   state.entries = roster.filter(m => state.pendingSelection.has(m.sailNo))
                          .map(m => ({ sailNo: m.sailNo, member: m.member }));
