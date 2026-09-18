@@ -1060,7 +1060,7 @@ let MEMBERS = [];
 async function getMembers(className) {
   try {
     const data = await apiGet("members", className); 
-    MEMBERS = Array.isArray(data.members) ? data.values : []; 
+    MEMBERS = Array.isArray(data.members) ? data.members : []; 
   } catch (error) {
     console.error("Failed to load member data:", error);
     MEMBERS = [];
@@ -1106,8 +1106,9 @@ function classEmblem(className, size){
   var emblem = className;
   if (emblem === "General") emblem = "smmc-logo";
   if (emblem === "Social") emblem = "SmileyFace";
-  return `<img class="class-emblem cal-filter-icon" style="width:${s}px;height:${s}px;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
+  return `<img class="class-emblem cal-filter-icon" style="width:${s}px;height:${s}px;padding:3px;border-radius:6px;background:rgba(255,255,255,0.85);flex-shrink:0;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
 }
+
 function classEmblemFallback(img){
   const cls = img.getAttribute('data-class');
   const span = document.createElement('span');
@@ -1331,7 +1332,7 @@ function renderClassFilterBar(classes){
       const active = state.selectedClass === cls;
       // Assign an empty string for 'ALL', otherwise render the class emblem
       const icon = cls === 'ALL'
-        ? `<div class="cal-filter-icon--all">All</div>`
+        ? ''
         : `<img class="cal-filter-icon" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(cls === 'General' ? 'smmc-logo' : cls)}.png" alt="${escapeHTML(cls)}">`;
 
       return `<button type="button" class="class-filter-btn ${active ? 'active' : ''}" data-filter-class="${escapeHTML(cls)}">
@@ -1395,7 +1396,10 @@ function renderEventSelect(){
       <div class="section-title">Select a regatta</div>
       <div class="section-hint">Showing upcoming races only. Filter by class or search below.</div>
       ${renderClassFilterBar(classes)}
-      <input class="search-box" id="eventSearchInput" placeholder="Search by class, round or date…" value="${escapeHTML(state.eventSearch)}">
+      <div class="search-wrap" style="margin-top:10px">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" id="eventSearchInput" placeholder="Search by class, round or date…" value="${escapeHTML(state.eventSearch)}">
+      </div><input class="search-box" id="eventSearchInput" placeholder="Search by class, round or date…" value="${escapeHTML(state.eventSearch)}">
       <div>${rows || `<div class="empty-note">No matching upcoming events.</div>`}</div>
     </div>
   `;
