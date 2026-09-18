@@ -1308,8 +1308,8 @@ function renderClassFilterBar(classes){
       // Assign an empty string for 'ALL', otherwise render the class emblem
       const icon = cls === 'ALL' ? '' : classEmblem(cls, 20);
       
-      return `<button type="button" class="class-filter-btn active?'active':''" data-filter-class="{escapeHTML(cls)}">
-        icon<span>{cls === 'ALL' ? 'All' : escapeHTML(cls)}</span>
+      return `<button type="button" class="class-filter-btn ${active ? 'active' : ''}" data-filter-class="${escapeHTML(cls)}">
+        ${icon}<span>${cls === 'ALL' ? 'All' : escapeHTML(cls)}</span>
       </button>`;
     }).join('')}
   </div>`;
@@ -2147,7 +2147,7 @@ function attachDynamicHandlers(){
 /* ============ BOOT ============ */
 document.getElementById('app-header').innerHTML = headerHTML();
 document.getElementById('app-subheader').innerHTML = subHeaderHTML();
-document.getElementById('app-body').innerHTML = '<div style="padding:40px;text-align:center;color:var(--foam-dim)">Loading…</div>';
+document.getElementById('app-body').innerHTML = '<div style="padding:40px;text-align:center;color:var(--foam-dim)">Loading events…</div>';
 (async () => {
   await getEvents();
   render();
