@@ -2116,9 +2116,11 @@ function attachDynamicHandlers(){
 }
 
 /* ============ BOOT ============ */
-getEvents();
-getMembers();
-render();
+document.getElementById('app').innerHTML = '<div style="padding:40px;text-align:center;color:var(--foam-dim)">Loading…</div>';
+(async () => {
+  await Promise.all([getEvents(), getMembers()]);
+  render();
+})();
 
 </script>
 </body>
