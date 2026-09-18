@@ -1037,7 +1037,7 @@ textarea.report-box::placeholder{ color: var(--foam-dim); }
 .helper-note{ font-size:11.5px; color: var(--foam-dim); margin-top:10px; line-height:1.5; }
 </style>
 </head>
-<body>  
+body>  
 <div id="app-header"></div>
 <div id="app-subheader"></div>
 <div id="app-body"></div>
@@ -1106,7 +1106,7 @@ function classEmblem(className, size){
   var emblem = className;
   if (emblem === "General") emblem = "smmc-logo";
   if (emblem === "Social") emblem = "SmileyFace";
-  return `<img class="class-emblem" style="width:${s}px;height:${s}px;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
+  return `<img class="class-emblem cal-filter-icon" style="width:${s}px;height:${s}px;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
 }
 function classEmblemFallback(img){
   const cls = img.getAttribute('data-class');
