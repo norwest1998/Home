@@ -781,6 +781,10 @@ button{ font-family: inherit; }
   display:flex; align-items:center; justify-content:center; cursor:pointer;
 }
 .icon-btn:hover{ background: var(--glass-fill-hi); }
+.btn svg{ width:16px; height:16px; flex:none; }
+.entries-pill svg{ width:15px; height:15px; flex:none; }
+.race-hero .nav-arrow svg{ width:16px; height:16px; }
+.drag-handle svg{ width:16px; height:16px; }
 .subheader{
   margin-top:12px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; font-size:13px;
 }
@@ -904,14 +908,31 @@ button{ font-family: inherit; }
 .sail-icon .pennant{ position:absolute; top:-4px; right:-4px; width:13px; height:13px; border-radius:50%; background: var(--signal); border:2px solid var(--ocean-deep); }
 .icon-empty-note{ font-size:12.5px; color: var(--foam-dim); padding:10px 4px; }
 
-.race-list-item{ display:flex; align-items:center; gap:10px; padding:12px 6px; border-bottom:1px solid var(--glass-border); cursor:pointer; }
+.race-list-item{ display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--glass-border); }
 .race-list-item:last-child{ border-bottom:none; }
-.race-list-item:hover{ background: var(--glass-fill); border-radius:8px; }
+.race-list-main{ display:flex; align-items:center; gap:10px; padding:12px 6px; flex:1; min-width:0; cursor:pointer; border-radius:8px; }
+.race-list-main:hover{ background: var(--glass-fill); }
 .race-list-item .rbadge{ width:36px; height:36px; border-radius:10px; flex:none; background: linear-gradient(135deg, var(--glow), #38bfa1); color: var(--ocean-deep); display:flex; align-items:center; justify-content:center; font-weight:800; font-family:var(--font-display); }
-.race-list-item .rinfo{ flex:1; font-size:13px; }
+.race-list-item .rinfo{ flex:1; font-size:13px; min-width:0; }
 .race-list-item .rinfo .rtitle{ font-weight:600; color: var(--foam); }
 .race-list-item .rinfo .rsub{ color: var(--foam-dim); font-size:11.5px; margin-top:1px; }
-.chevron{ color: var(--foam-dim); }
+.chevron{ color: var(--foam-dim); flex:none; }
+.icon-btn-sm{ width:32px; height:32px; flex:none; border-radius:8px; border:1px solid var(--glass-border); background:var(--glass-fill); color:var(--foam-dim); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.icon-btn-sm:hover{ background: rgba(255,106,61,0.15); color:var(--signal); border-color: rgba(255,106,61,0.35); }
+.icon-btn-sm svg{ width:16px; height:16px; }
+.race-insert-row{ display:flex; align-items:center; gap:6px; padding:5px 6px; cursor:pointer; color:var(--foam-dim); font-size:10.5px; font-weight:600; }
+.race-insert-row:hover{ color:var(--glow); }
+.race-insert-row .insert-line{ flex:1; height:1px; background: var(--glass-border); }
+.race-insert-row svg{ width:14px; height:14px; flex:none; }
+
+/* ---------- class emblem images + filter bar ---------- */
+.class-emblem{ border-radius:50%; object-fit:cover; background:#fff; flex:none; border:1px solid var(--glass-border); }
+.class-filter-bar{ display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:2px; }
+.class-filter-btn{ display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; border:1px solid var(--glass-border); background:var(--glass-fill); color:var(--foam-dim); font-size:12px; font-weight:700; cursor:pointer; flex:none; white-space:nowrap; }
+.class-filter-btn.active{ background: var(--glow); color: var(--ocean-deep); border-color: var(--glow); }
+.class-filter-btn .class-emblem, .class-filter-btn .class-roundel{ width:20px; height:20px; }
+.class-roundel-all{ background: var(--glass-fill-hi); color: var(--foam); }
+.class-roundel-all svg{ width:12px; height:12px; }
 
 /* ---------- dropdown side menu ---------- */
 .menu-backdrop{ position:fixed; inset:0; background: rgba(2,10,18,0.6); z-index:50; opacity:0; pointer-events:none; transition: opacity .18s ease; }
@@ -997,6 +1018,22 @@ const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','
 
 function parseDMY(d){ const [dd,mm,yyyy] = d.split('/').map(Number); return new Date(yyyy, mm-1, dd); }
 function fmtDate(d){ const dt = parseDMY(d); return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`; }
+
+/* Class emblem images live at home/images/classes/{className}.png — falls back to the text roundel if missing */
+function classEmblem(className, size){
+  const s = size || 20;
+  const safe = escapeHTML(className);
+  return `<img class="class-emblem" style="width:${s}px;height:${s}px;" src="home/images/classes/${encodeURIComponent(className)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
+}
+function classEmblemFallback(img){
+  const cls = img.getAttribute('data-class');
+  const span = document.createElement('span');
+  span.className = 'class-roundel';
+  span.style.width = img.style.width;
+  span.style.height = img.style.height;
+  span.textContent = CLASS_ABBR[cls] || cls.slice(0,3);
+  img.replaceWith(span);
+}
 
 /* ============ STATE ============ */
 let state = {
@@ -1124,17 +1161,25 @@ function memberFor(sailNo, cls){
   return m ? m.member : 'Unknown';
 }
 
-function svgMenu(){ return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`; }
-function svgBack(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
-function svgChevL(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
-function svgChevR(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
-function svgList(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`; }
-function svgTrophy(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 01-10 0V4zM7 5H4a1 1 0 00-1 1v1a4 4 0 004 4M17 5h3a1 1 0 011 1v1a4 4 0 01-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
-function svgTable(){ return `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M9 4v16" stroke="currentColor" stroke-width="1.8"/></svg>`; }
-function svgDownload(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
-function svgRestart(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M4.5 13a8 8 0 1 0 2-8.5L4 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
-function svgSend(){ return `<svg viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
-function svgDrag(){ return `<svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="6" r="1.5" fill="currentColor"/><circle cx="15" cy="6" r="1.5" fill="currentColor"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="18" r="1.5" fill="currentColor"/><circle cx="15" cy="18" r="1.5" fill="currentColor"/></svg>`; }
+/* ---- Lucide icons (exact paths from lucide-static) ---- */
+function svgMenu(){ return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></svg>`; }
+function svgBack(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`; }
+function svgChevL(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>`; }
+function svgChevR(){ return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`; }
+function svgList(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>`; }
+function svgTrophy(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2"/><path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2"/><path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3"/></svg>`; }
+function svgTable(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>`; }
+function svgDownload(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>`; }
+function svgRestart(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`; }
+function svgSend(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>`; }
+function svgDrag(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>`; }
+function svgTrash(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`; }
+function svgPlus(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`; }
+function svgPlusCircle(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>`; }
+function svgX(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`; }
+function svgLock(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`; }
+function svgPencil(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>`; }
+function svgLayoutGrid(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>`; }
 
 function headerHTML(){
   const ev = state.event;
@@ -1143,7 +1188,7 @@ function headerHTML(){
     const dt = parseDMY(ev.date);
     const dateStr = `${DOW[dt.getDay()]} ${dt.getDate()} ${MON[dt.getMonth()]} ${dt.getFullYear()}`;
     sub = `<div class="subheader">
-      <span class="badge badge-default"><span class="class-roundel">${CLASS_ABBR[ev.class]||ev.class.slice(0,3)}</span>${escapeHTML(ev.regattaName)}</span>
+      <span class="badge badge-default">${classEmblem(ev.class, 20)}${escapeHTML(ev.regattaName)}</span>
       <span class="badge badge-default">${dateStr}</span>
       <span class="badge badge-default">${ev.start}–${ev.end}</span>
       ${ev.round ? `<span class="badge badge-brand">Round ${ev.round}</span>` : ''}
@@ -1152,7 +1197,6 @@ function headerHTML(){
   const showMenu = !!ev;
   return `
   <nav class="nav-glass app-nav">
-    ${state.overlay ? `<button class="icon-btn" onclick="closeOverlay()" title="Back">${svgBack()}</button>` : ''}
     <a class="brand" style="cursor:default">
       <img class="logo-img" src="${LOGO_DATA_URI}" alt="SMMC logo">
       <div class="brand-text">
@@ -1161,7 +1205,9 @@ function headerHTML(){
       </div>
     </a>
     <div class="nav-spacer"></div>
-    ${showMenu && !state.overlay ? `<button class="icon-btn" onclick="openMenu()">${svgMenu()}</button>` : ''}
+    ${state.overlay
+      ? `<button class="icon-btn" onclick="closeOverlay()" title="Back">${svgBack()}</button>`
+      : (showMenu ? `<button class="icon-btn" onclick="openMenu()">${svgMenu()}</button>` : '')}
     ${sub ? `<div style="width:100%">${sub}</div>` : ''}
   </nav>`;
 }
@@ -1180,11 +1226,32 @@ function render(){
   if(navEl) document.documentElement.style.setProperty('--nav-h', navEl.offsetHeight + 'px');
 }
 
-/* ---------------- Screen: Event Select ---------------- */
+/* ---------------- Screen: Event Select (calendar) ---------------- */
+function renderClassFilterBar(classes){
+  const options = ['ALL', ...classes];
+  return `<div class="class-filter-bar">
+    ${options.map(cls => {
+      const active = state.selectedClass === cls;
+      const icon = cls === 'ALL' ? `<span class="class-roundel class-roundel-all">${svgLayoutGrid()}</span>` : classEmblem(cls, 22);
+      return `<button type="button" class="class-filter-btn ${active?'active':''}" data-filter-class="${escapeHTML(cls)}">
+        ${icon}<span>${cls === 'ALL' ? 'All' : escapeHTML(cls)}</span>
+      </button>`;
+    }).join('')}
+  </div>`;
+}
+
 function renderEventSelect(){
   const today = new Date(2026,8,16); // app "today" — Wed 16 Sep 2026
+  today.setHours(0,0,0,0);
   const q = state.eventSearch.trim().toLowerCase();
-  let list = EVENTS.map(e => ({...e, _dt: parseDMY(e.date)}));
+  const classes = [...new Set(EVENTS.map(e => e.class))].sort();
+
+  // Calendar only ever shows future/today events
+  let list = EVENTS.map(e => ({...e, _dt: parseDMY(e.date)})).filter(e => e._dt >= today);
+
+  if(state.selectedClass !== 'ALL'){
+    list = list.filter(e => e.class === state.selectedClass);
+  }
   if(q){
     list = list.filter(e =>
       e.class.toLowerCase().includes(q) ||
@@ -1195,14 +1262,8 @@ function renderEventSelect(){
     );
   }
   list.sort((a,b) => a._dt - b._dt);
-  // find nearest to today, then window around it
-  let startIdx = list.findIndex(e => e._dt >= today);
-  if(startIdx === -1) startIdx = Math.max(0, list.length - 20);
-  const before = list.slice(Math.max(0,startIdx-6), startIdx).reverse();
-  const after = list.slice(startIdx, startIdx+40);
-  const ordered = q ? list : [...after, ...before];
 
-  const rows = ordered.map(e => {
+  const rows = list.map(e => {
     const regattaName = `${e.class} ${e.regattaType}`;
     const saved = hasSavedProgress(e.id);
     let pill = '';
@@ -1218,6 +1279,7 @@ function renderEventSelect(){
         <div class="dnum">${e._dt.getDate()}</div>
         <div class="mon">${MON[e._dt.getMonth()]}</div>
       </div>
+      ${classEmblem(e.class, 34)}
       <div class="event-main">
         <div class="event-name">${escapeHTML(regattaName)}</div>
         <div class="event-meta">${e.start}–${e.end} · Round ${e.round||'–'} · ${e.season}</div>
@@ -1229,9 +1291,10 @@ function renderEventSelect(){
   return `
     <div class="panel glass panel-pad">
       <div class="section-title">Select a regatta</div>
-      <div class="section-hint">Choose the calendar event you're capturing results for. This sets the event ID, date, class and regatta name automatically.</div>
+      <div class="section-hint">Showing upcoming races only. Filter by class or search below.</div>
+      ${renderClassFilterBar(classes)}
       <input class="search-box" id="eventSearchInput" placeholder="Search by class, round or date…" value="${escapeHTML(state.eventSearch)}">
-      <div>${rows || `<div class="empty-note">No matching events.</div>`}</div>
+      <div>${rows || `<div class="empty-note">No matching upcoming events.</div>`}</div>
     </div>
   `;
 }
@@ -1282,22 +1345,28 @@ function renderRaceCapture(){
   const raceItems = state.races.map((r,i) => {
     const finishers = r.positions.length;
     const issues = r.dnf.length + r.dns.length + (r.raceRO?1:0);
-    return `<div class="race-list-item" data-view-race="${i}">
-      <div class="rbadge">R${r.raceNumber}</div>
-      <div class="rinfo">
-        <div class="rtitle">Race ${r.raceNumber} — captured</div>
-        <div class="rsub">${finishers} finisher${finishers===1?'':'s'}${issues?` · ${issues} DNS/DNF/RO`:''}</div>
+    return `<div class="race-insert-row" data-insert-race="${i}" title="Insert a race before Race ${r.raceNumber}">
+      <span class="insert-line"></span>${svgPlusCircle()}<span>Insert race</span><span class="insert-line"></span>
+    </div>
+    <div class="race-list-item">
+      <div class="race-list-main" data-view-race="${i}">
+        <div class="rbadge">R${r.raceNumber}</div>
+        <div class="rinfo">
+          <div class="rtitle">Race ${r.raceNumber} — captured</div>
+          <div class="rsub">${finishers} finisher${finishers===1?'':'s'}${issues?` · ${issues} DNS/DNF/RO`:''}</div>
+        </div>
+        <div class="chevron">${svgChevR()}</div>
       </div>
-      <div class="chevron">${svgChevR()}</div>
+      <button class="icon-btn-sm" data-delete-race="${i}" title="Delete Race ${r.raceNumber}">${svgTrash()}</button>
     </div>`;
   }).join('');
 
   const locked = entriesLocked();
   const toolbar = `<div class="toolbar-row">
     <div class="entries-pill ${locked?'':'editable'}" data-entries-pill="1">
-      ${locked ? `🔒 ${state.entries.length} entries locked` : `✎ ${state.entries.length} entries — tap to edit`}
+      ${locked ? `${svgLock()} ${state.entries.length} entries locked` : `${svgPencil()} ${state.entries.length} entries — tap to edit`}
     </div>
-    <button class="btn btn-primary btn-sm" data-add-race="1">+ Add Race ${state.races.length+1}</button>
+    <button class="btn btn-primary btn-sm" data-add-race="1">${svgPlus()} Add Race ${state.races.length+1}</button>
   </div>`;
 
   return `
@@ -1354,7 +1423,7 @@ function renderDraftRace(){
       </div>
       ${allPlaced
         ? `<button class="nav-arrow action-ready" data-complete-and-next="1" title="Complete &amp; start next race">+</button>`
-        : `<button class="nav-arrow" data-cancel-draft="1" title="Cancel">✕</button>`
+        : `<button class="nav-arrow" data-cancel-draft="1" title="Cancel">${svgX()}</button>`
       }
     </div>
     <div class="race-grid">
@@ -1389,7 +1458,7 @@ function renderCapturedRaceView(idx){
     ? `<button class="nav-arrow" data-nav-race="${idx+1}">${svgChevR()}</button>`
     : state.draft
       ? `<button class="nav-arrow" data-close-view="1" title="Back to current race">${svgChevR()}</button>`
-      : `<button class="btn btn-primary btn-sm" data-add-race="1">+ Add Race</button>`;
+      : `<button class="btn btn-primary btn-sm" data-add-race="1">${svgPlus()} Add Race</button>`;
 
   return `
     <div class="race-hero">
@@ -1453,96 +1522,6 @@ function overlaysHTML(){
     </div>
     <div class="overlay-body">${body}</div>
   </div>`;
-}
-
-function renderClassFilterIcons(events) {
-  // Extract unique classes from events
-  const classes = ['ALL', ...new Set(events.map(e => e.classCode || e.class))];
-
-  return `
-    <div class="class-filter-bar" style="display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px;">
-      ${classes.map(cls => {
-        const isActive = state.selectedClass === cls;
-        const activeStyle = isActive 
-          ? 'background: var(--glow); color: var(--ocean-deep); border-color: var(--glow);' 
-          : 'background: var(--glass-fill); color: var(--foam-dim); border-color: var(--glass-border);';
-        
-        return `
-          <button 
-            onclick="selectClassFilter('${cls}')" 
-            class="class-icon-btn"
-            style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; ${activeStyle}"
-          >
-            <span class="class-roundel" style="width: 18px; height: 18px; font-size: 8px;">${cls === 'ALL' ? '★' : cls.substring(0, 2)}</span>
-            <span>${cls}</span>
-          </button>
-        `;
-      }).join('')}
-    </div>
-  `;
-}
-
-function selectClassFilter(classCode) {
-  state.selectedClass = classCode;
-  renderEventSelection(); // Re-render the view
-}
-
-function renderEventSelection() {
-  const app = document.getElementById('app');
-  
-  // 1. Filter events: only future/today dates AND match selected class
-  const filteredEvents = eventsData.filter(event => {
-    const isFuture = isFutureOrToday(event.date);
-    const matchesClass = state.selectedClass === 'ALL' || (event.classCode || event.class) === state.selectedClass;
-    return isFuture && matchesClass;
-  });
-
-  // Sort chronologically (earliest upcoming date first)
-  filteredEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  // 2. Render UI
-  app.innerHTML = `
-    <div class="app-wrap">
-      <div class="section-title">Select Upcoming Event</div>
-      <div class="section-hint">Showing future scheduled races. Filter by class below.</div>
-
-      <!-- Class Icon Filter Bar -->
-      ${renderClassFilterIcons(eventsData)}
-
-      <!-- Event List Container -->
-      <div class="panel panel-pad">
-        ${filteredEvents.length === 0 ? `
-          <div class="empty-note">No upcoming events found for the selected class.</div>
-        ` : `
-          <div class="event-list">
-            ${filteredEvents.map(event => {
-              const d = new Date(event.date);
-              const dow = d.toLocaleDateString('en-US', { weekday: 'short' });
-              const dnum = d.getDate();
-              const mon = d.toLocaleDateString('en-US', { month: 'short' });
-              
-              return `
-                <div class="event-item" onclick="onSelectEvent('${event.id}')">
-                  <div class="event-date-block">
-                    <div class="dow">${dow}</div>
-                    <div class="dnum">${dnum}</div>
-                    <div class="mon">${mon}</div>
-                  </div>
-                  <div class="event-main">
-                    <div class="event-name">${event.title || event.name}</div>
-                    <div class="event-meta">
-                      <span class="class-roundel">${(event.classCode || event.class || 'RC').substring(0, 2)}</span>
-                      ${event.classCode || event.class || 'All Classes'} • ${event.location || 'Main Club'}
-                    </div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `}
-      </div>
-    </div>
-  `;
 }
 
 function renderScoresheet(){
@@ -1714,8 +1693,34 @@ function editEntries(){
 }
 
 function addRace(){
-  state.draft = { raceNumber: state.races.length + 1, positions: [], dns: [], dnf: [], ro: '' };
+  state.draft = { raceNumber: state.races.length + 1, positions: [], dns: [], dnf: [], ro: '', insertAt: null };
   state.viewRaceIdx = null;
+  render();
+}
+
+// Insert a new race before the race currently at position idx (idx===0 means "before the first race")
+function insertRaceAt(idx){
+  state.draft = { raceNumber: idx + 1, positions: [], dns: [], dnf: [], ro: '', insertAt: idx };
+  state.viewRaceIdx = null;
+  render();
+}
+
+function renumberRaces(){
+  state.races.forEach((r,i)=> r.raceNumber = i+1);
+}
+
+function deleteRace(idx){
+  const r = state.races[idx];
+  if(!r) return;
+  if(!confirm(`Delete Race ${r.raceNumber}? This cannot be undone.`)) return;
+  state.races.splice(idx,1);
+  renumberRaces();
+  if(state.viewRaceIdx !== null){
+    if(state.viewRaceIdx === idx) state.viewRaceIdx = null;
+    else if(state.viewRaceIdx > idx) state.viewRaceIdx -= 1;
+  }
+  saveState();
+  showToast('Race deleted — remaining races renumbered');
   render();
 }
 
@@ -1776,7 +1781,13 @@ function closeLongPressModal(){
 
 function completeRace(){
   const d = state.draft;
-  state.races.push({ raceNumber: d.raceNumber, raceRO: d.ro || '', positions: [...d.positions], dnf: [...d.dnf], dns: [...d.dns] });
+  const newRace = { raceNumber: 0, raceRO: d.ro || '', positions: [...d.positions], dnf: [...d.dnf], dns: [...d.dns] };
+  if(d.insertAt == null || d.insertAt >= state.races.length){
+    state.races.push(newRace);
+  } else {
+    state.races.splice(d.insertAt, 0, newRace);
+  }
+  renumberRaces();
   state.draft = null;
   saveState();
 }
@@ -1985,6 +1996,9 @@ function attachDynamicHandlers(){
   document.querySelectorAll('[data-select-event]').forEach(el=>{
     el.addEventListener('click', ()=> selectEvent(el.getAttribute('data-select-event')));
   });
+  document.querySelectorAll('[data-filter-class]').forEach(el=>{
+    el.addEventListener('click', ()=>{ state.selectedClass = el.getAttribute('data-filter-class'); render(); });
+  });
   const searchInput = document.getElementById('eventSearchInput');
   if(searchInput){
     searchInput.addEventListener('input', (e)=>{ state.eventSearch = e.target.value; render(); setTimeout(()=>{ const i=document.getElementById('eventSearchInput'); if(i){ i.focus(); i.setSelectionRange(i.value.length,i.value.length);} },0); });
@@ -1997,6 +2011,12 @@ function attachDynamicHandlers(){
   document.querySelectorAll('[data-cancel-edit-entries]').forEach(el=> el.addEventListener('click', cancelEditEntries));
   document.querySelectorAll('[data-entries-pill]').forEach(el=> el.addEventListener('click', ()=> openOverlay('entries')));
   document.querySelectorAll('[data-add-race]').forEach(el=> el.addEventListener('click', addRace));
+  document.querySelectorAll('[data-insert-race]').forEach(el=>{
+    el.addEventListener('click', ()=> insertRaceAt(Number(el.getAttribute('data-insert-race'))));
+  });
+  document.querySelectorAll('[data-delete-race]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); deleteRace(Number(el.getAttribute('data-delete-race'))); });
+  });
   document.querySelectorAll('[data-complete-and-next]').forEach(el=> el.addEventListener('click', completeAndNext));
   document.querySelectorAll('[data-cancel-draft]').forEach(el=> el.addEventListener('click', cancelDraft));
   document.querySelectorAll('[data-clear-position]').forEach(el=>{
@@ -2046,16 +2066,6 @@ function attachDynamicHandlers(){
     el.addEventListener('click', (e)=>{ if(e.target === el) closeLongPressModal(); });
   });
 }
-
-/* =============Helpers ==========*/
-// Helper: Check if date string (YYYY-MM-DD) is today or future
-function isFutureOrToday(dateStr) {
-  const eventDate = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Reset time to compare date only
-  return eventDate >= today;
-}
-
 
 /* ============ BOOT ============ */
 render();
