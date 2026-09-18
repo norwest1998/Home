@@ -1024,7 +1024,7 @@ function fmtDate(d){ const dt = parseDMY(d); return `${String(dt.getDate()).padS
 function classEmblem(className, size){
   const s = size || 20;
   const safe = escapeHTML(className);
-  const emblem = className;
+  var emblem = className;
   if (emblem === "General") emblem = "smmc-logo";
   if (emblem === "Social") emblem = "SmileyFace";
   return `<img class="class-emblem" style="width:${s}px;height:${s}px;" src=${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
