@@ -2856,7 +2856,7 @@ console.log(b.boatId);
           : (Array.isArray(boats) ? boats : []);
 
       const boat = source.find(
-          b => String(b.id) === String(boatId)
+          b => String(b.boatId) === String(boatId)
       );
 
       if (!boat) {
