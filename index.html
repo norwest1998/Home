@@ -2583,14 +2583,19 @@
         const boatModel = b.model || b.Model || 'Standard';
 
         return `
-          <div class="app-row">
+          <div class="app-row" style="justify-content:space-between; align-items:center;">
             <div class="sail-badge">${esc(sailNo)}</div>
-            <div>
+            <div style="flex:1; margin-left:10px;">
               <div class="app-name">${esc(owner)}</div>
               <div class="app-meta">${esc(boatClass)} · ${esc(boatModel)}</div>
             </div>
+            ${CLASS_IMAGE_MAP[boatClass] ? `
+              <img src="${esc(CLASS_IMAGE_MAP[boatClass])}" alt="${esc(boatClass)}"
+                  style="height:32px; width:auto; object-fit:contain; opacity:0.85;
+                          background:rgba(255,255,255,0.1); border-radius:4px; padding:3px; margin-left:10px;">
+            ` : ''}
           </div>
-        `;
+        `;          
       }).join('');
     }
 
