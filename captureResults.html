@@ -950,7 +950,7 @@ button{ font-family: inherit; }
 .race-insert-row svg{ width:14px; height:14px; flex:none; }
 
 /* ---------- class emblem images + filter bar ---------- */
-.class-emblem{ border-radius:15%; object-fit:cover; background:#fff; flex:none; border:1px solid var(--glass-border); }
+.class-emblem{ border-radius:6px; object-fit:contain; flex:none; background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); }
 .class-filter-bar {
   display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px;
 }
@@ -1114,7 +1114,7 @@ function classEmblem(className, size){
   var emblem = className;
   if (emblem === "General") emblem = "smmc-logo";
   if (emblem === "Social") emblem = "SmileyFace";
-  return `<img class="class-emblem cal-filter-icon" style="width:${s}px;height:${s}px;padding:3px;border-radius:6px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);flex-shrink:0;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
+  return `<img class="class-emblem" style="width:${s}px;height:${s}px;padding:3px;border-radius:6px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);flex-shrink:0;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
 }
 
 function classEmblemFallback(img){
@@ -1352,8 +1352,7 @@ function renderClassFilterBar(classes){
 
 
 function renderEventSelect(){
-  const today = new Date(2026,8,16); 
-  today.setDate(today.getDate() - 3); 
+  const today = new Date(2026,8,16) - 3; // app "today" — Wed 16 Sep 2026
   today.setHours(0,0,0,0);
   const q = state.eventSearch.trim().toLowerCase();
   const classes = [...new Set(EVENTS.map(e => e.class))].filter(c => c !== 'Social').sort();
