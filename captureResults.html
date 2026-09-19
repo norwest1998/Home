@@ -1074,7 +1074,9 @@ let MEMBERS = [];
 async function getMembers(className) {
   try {
     const data = await apiGet("members", className);
-    MEMBERS = Array.isArray(data.members) ? data.members : [];
+    MEMBERS = Array.isArray(data.members)
+      ? data.members.map(m => ({ ...m, className: m.class ?? m.className }))
+      : [];
     console.log(`getMembers(${className}): received ${MEMBERS.length} members`, MEMBERS.slice(0,3));
   } catch (error) {
     console.error("Failed to load member data:", error);
