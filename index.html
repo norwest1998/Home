@@ -1632,9 +1632,7 @@
       gh:     { label: 'General Handicap', className: 'General', spreadsheetId: '1xMKT7HapmqEIuqhQQxH1pfPkRWam5x88Pxaah1xayog', insignia: '/Home/images/classes/smmc-logo.png' },
       df65:   { label: 'DF65 Scratch',     className: 'DF65',    spreadsheetId: '1T5zgrZpJDmQKmkMlnOmnAb_ext18zx733mMuvh4akvg', insignia: '/Home/images/classes/DF65.png' },
       mhead:  { label: 'Marblehead',       className: 'M',       spreadsheetId: '', 
-                insignia: `<svg xmlns="http://w3.org" viewBox="0 0 35 35" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="miter" stroke-linecap="square" class="marblehead-icon">
-                              <path d="M 3.75 31.25 L 3.75 3.75 L 17.5 17.5 L 31.25 3.75 L 31.25 31.25" />
-                          </svg>` },
+                insignia: "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 35 35' fill='none' stroke='black' stroke-width='7' stroke-linejoin='miter' stroke-linecap='square'><path d='M 3.75 31.25 L 3.75 3.75 L 17.5 17.5 L 31.25 3.75 L 31.25 31.25' /></svg>" },
       social: { label: 'Social Sailing',   className: 'Social',  spreadsheetId: '', insignia: '/Home/images/classes/SmileyFace.png' },
     };
 
@@ -2800,7 +2798,7 @@
         const activePill = b.active 
         ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` 
         : `<span class="inactive-yes" style="margin-right: 8px;">Inactive</span>`;
-
+console.log(b.id)
         return `
           <div class="app-row" onclick="openBoatModal('${esc(b.id)}')">
             <div class="sail-badge">${esc(sailNo)}</div>
