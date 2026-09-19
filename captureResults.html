@@ -847,6 +847,7 @@ button{ font-family: inherit; }
 }
 .event-item:last-child{ border-bottom:none; }
 .event-item:hover{ background: var(--glass-fill); }
+.event-item.event-disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
 .event-date-block{
   flex:none; width:50px; text-align:center; border-radius:10px; padding:6px 0;
   background: rgba(255,255,255,0.06); border:1px solid var(--glass-border);
@@ -1397,18 +1398,18 @@ function renderEventSelect(){
   const rows = list.map(e => {
     const regattaName = `${e.class} ${e.regattaType}`;
     const saved = hasSavedProgress(e.id);
+    const selectable = e.status !== 'Processing';
     let pill = '';
-    if(saved){
+    if(!selectable){
+      const cls = e.status === 'Processed' ? 'pill-sent' : 'pill-inprogress';
+      pill = `<span class="event-status-pill ${cls}">${e.status}</span>`;
+    } else if(saved){
       const st = loadState(e.id);
-      if(st?.sent){
-        pill = `<span class="event-status-pill pill-sent">Processing</span>`;
-      } else if(st?.entriesLocked){
-        pill = `<span class="event-status-pill pill-inprogress">In progress</span>`;
-      } else {
-        pill = `<span class="event-status-pill pill-inprogress">Entries set</span>`;
-      }
+      if(st?.sent)       pill = `<span class="event-status-pill pill-sent">Processing</span>`;
+      else if(st?.entriesLocked) pill = `<span class="event-status-pill pill-inprogress">In progress</span>`;
+      else               pill = `<span class="event-status-pill pill-inprogress">Entries set</span>`;
     }
-    return `<div class="event-item" data-select-event="${e.id}">
+    return `<div class="event-item ${selectable ? '' : 'event-disabled'}" ${selectable ? `data-select-event="${e.id}"` : ''}>
       <div class="event-date-block">
         <div class="dow">${DOW[e._dt.getDay()]}</div>
         <div class="dnum">${e._dt.getDate()}</div>
