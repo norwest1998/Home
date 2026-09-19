@@ -2798,7 +2798,7 @@
         const activePill = b.active 
         ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` 
         : `<span class="inactive-yes" style="margin-right: 8px;">Inactive</span>`;
-console.log(b.boatId);
+
         return `
           <div class="app-row" onclick="openBoatModal('${esc(b.boatId)}')">
             <div class="sail-badge">${esc(sailNo)}</div>
@@ -2849,6 +2849,7 @@ console.log(b.boatId);
     }
 
     // Open Boat Modal Function
+    // BoatID	| Active | Member | Class |	SailNo | Model |	Handicap |	HRN |	GH	| GH HCap
     function openBoatModal(boatId) {
       // Retrieve boat object (adjust dataset source variable as needed)
       const source = Array.isArray(allBoats)
