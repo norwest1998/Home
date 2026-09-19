@@ -825,6 +825,15 @@
     font-size: 11px;
     color: var(--glow);
   }
+
+    /* Committee indicator */
+  .inactive-yes {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--signal);
+  }
  
   .committee-yes::before {
     content: '';
@@ -2593,7 +2602,7 @@
         const sailNo = b.sailNo || b.SailNo || 'N/A';
         const boatClass = b.class || b.Class || 'Unclassed';
         const boatModel = b.model || b.Model || 'Standard';
-        const activePill = b.active ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` : `<span class="badge-expired" style="margin-right: 8px;">Inactive</span>`;
+        const activePill = b.active ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` : `<span class="inactive-yes" style="margin-right: 8px;">Inactive</span>`;
 
         return `
           <div class="app-row" style="justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding:10px 0;">
