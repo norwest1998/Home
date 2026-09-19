@@ -1258,9 +1258,10 @@ function currentStandingsOrder(){
 const appEl = document.getElementById('app');
 
 function memberFor(sailNo, cls){
-  const m = MEMBERS.find(x => x.sailNo === sailNo && x.className === cls);
+  const m = MEMBERS.find(x => String(x.sailNo) === String(sailNo) && (x.className ?? x.class) === cls);
   return m ? m.member : 'Unknown';
 }
+
 
 /* ---- Lucide icons (exact paths from lucide-static) ---- */
 function svgMenu() { return `<i data-lucide="menu" width="20" height="20"></i>`; }
