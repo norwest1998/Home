@@ -1423,11 +1423,11 @@ today.setHours(0, 0, 0, 0);
 /* ---------------- Screen: Competitor Select ---------------- */
 function renderCompetitorSelect(){
   const ev = state.event;
-  const roster = MEMBERS.filter(m => m.className === state.event.class).sort((a,b) => a.member.localeCompare(b.member));
-  const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(m.sailNo));
+  const roster = MEMBERS.filter(m => m.class === state.event.class).sort((a,b) => a.member.localeCompare(b.member));
+  const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(String(m.sailNo)));
 
   const rows = roster.map(m => {
-    const checked = state.pendingSelection.has(m.sailNo);
+    const checked = state.pendingSelection.has(String(m.sailNo));
     return `<div class="member-row" data-toggle-member="${m.sailNo}">
       <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
       <div class="member-name">${escapeHTML(m.member)}</div>
@@ -1790,16 +1790,16 @@ function toggleMember(sailNo){
 
 function selectAllToggle(){
   const roster = MEMBERS.filter(m => m.class === state.event.class);
-  const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(m.sailNo));
+  const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(String(m.sailNo)));
   if(allChecked) state.pendingSelection.clear();
-  else roster.forEach(m => state.pendingSelection.add(m.sailNo));
+  else roster.forEach(m => state.pendingSelection.add(String(m.sailNo)));
   render();
 }
 
 function confirmEntries(){
   const roster = MEMBERS.filter(m => m.class === state.event.class);
   const isFirstTime = state.entries.length === 0;
-  state.entries = roster.filter(m => state.pendingSelection.has(m.sailNo))
+  state.entries = roster.filter(m => state.pendingSelection.has(String(m.sailNo)))
                          .map(m => ({ sailNo: String(m.sailNo), member: m.member }));
   state.screen = 'race-capture';
   saveState();
