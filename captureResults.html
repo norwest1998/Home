@@ -1327,6 +1327,7 @@ function render(){
   document.getElementById('app-body').innerHTML = `<div class="app">${body}</div>` + menuHTML() + overlaysHTML() + longPressModalHTML();
 
   attachDynamicHandlers();
+  lucide.createIcons();
   const navEl = document.querySelector('.app-nav');
   if(navEl) document.documentElement.style.setProperty('--nav-h', navEl.offsetHeight + 'px');
 }
