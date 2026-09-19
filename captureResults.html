@@ -1352,8 +1352,9 @@ function renderClassFilterBar(classes){
 
 
 function renderEventSelect(){
-  const today = new Date(2026,8,16) - 3; // app "today" — Wed 16 Sep 2026
-  today.setHours(0,0,0,0);
+let today = new Date();
+today.setDate(today.getDate() - 3);
+today.setHours(0, 0, 0, 0);
   const q = state.eventSearch.trim().toLowerCase();
   const classes = [...new Set(EVENTS.map(e => e.class))].filter(c => c !== 'Social').sort();
 
