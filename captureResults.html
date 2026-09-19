@@ -1287,14 +1287,10 @@ function headerHTML(){
     const dt = parseDMY(ev.date);
     const dateStr = `${DOW[dt.getDay()]} ${dt.getDate()} ${MON[dt.getMonth()]} ${dt.getFullYear()}`;
     sub = `<div class="subheader">
-      <span class="badge badge-default">
-        <span style="display:inline-flex;align-items:center;gap:6px;">
-          <img class="cal-filter-icon" style="width:18px;height:18px;padding:2px;border-radius:4px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);" 
-              src="${EMBLEM_IMAGE_URI}${encodeURIComponent(ev.class === 'General' ? 'smmc-logo' : ev.class)}.png" 
-              alt="${escapeHTML(ev.class)}">
-          ${escapeHTML(ev.regattaName)}
-        </span>
-      </span>
+      <img class="cal-filter-icon" style="width:22px;height:22px;padding:2px;border-radius:5px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);flex-shrink:0;" 
+          src="${EMBLEM_IMAGE_URI}${encodeURIComponent(ev.class === 'General' ? 'smmc-logo' : ev.class)}.png" 
+          alt="${escapeHTML(ev.class)}">
+      <span class="badge badge-default">${escapeHTML(ev.regattaName)}</span>
       <span class="badge badge-default">${dateStr}</span>
       <span class="badge badge-default">${ev.startTime}–${ev.endTime}</span>
       ${ev.round ? `<span class="badge badge-brand">Round ${ev.round}</span>` : ''}
@@ -1336,7 +1332,12 @@ function render(){
 }
 
 function subHeaderHTML(){
-  return `<div class="sub-header-bar">Add Race Results</div>`;
+  const labels = {
+    'select-event':       'Select Regatta',
+    'select-competitors': 'Select Competitors',
+    'race-capture':       'Capture Race Results',
+  };
+  return `<div class="sub-header-bar">${labels[state.screen] || 'Race Results'}</div>`;
 }
 
 /* ---------------- Screen: Event Select (calendar) ---------------- */
