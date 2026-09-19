@@ -150,6 +150,11 @@
     font-family:var(--font-data); font-size:10.5px; letter-spacing:0.14em;
     text-transform:uppercase; color:var(--glow);
   }
+  .sailing-norwest{
+    font-family:'Saira Extra Condensed', sans-serif;
+    font-weight:300; text-transform:uppercase; color:var(--glow);
+    margin:0; font-size:10.5px; letter-spacing:0.14em;
+  }
 
   .nav-links{ display:flex; gap:8px; align-items:center; list-style:none; }
   .nav-item{ position:relative; }
@@ -960,7 +965,8 @@ button{ font-family: inherit; }
 .class-filter-btn.active { background:var(--glass-fill-hi); border-color:var(--glow); color:var(--glow); }
 .class-filter-btn .cal-filter-icon {
   width:22px; height:22px; object-fit:contain; border-radius:5px; flex-shrink:0;
-  background:rgba(255,255,255,0.85); padding:3px;
+  background:rgba(255,255,255,0.15); padding:3px;
+  backdrop-filter:blur(4px);
 }
 .class-filter-btn .cal-filter-icon--all {
   width:22px; height:22px; border-radius:5px; flex-shrink:0;
@@ -1108,7 +1114,7 @@ function classEmblem(className, size){
   var emblem = className;
   if (emblem === "General") emblem = "smmc-logo";
   if (emblem === "Social") emblem = "SmileyFace";
-  return `<img class="class-emblem cal-filter-icon" style="width:${s}px;height:${s}px;padding:3px;border-radius:6px;background:rgba(255,255,255,0.85);flex-shrink:0;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
+  return `<img class="class-emblem cal-filter-icon" style="width:${s}px;height:${s}px;padding:3px;border-radius:6px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);flex-shrink:0;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
 }
 
 function classEmblemFallback(img){
@@ -1276,7 +1282,7 @@ function headerHTML(){
     sub = `<div class="subheader">
       <span class="badge badge-default">
         <span style="display:inline-flex;align-items:center;gap:6px;">
-          <img class="cal-filter-icon" style="width:18px;height:18px;padding:2px;border-radius:4px;" 
+          <img class="cal-filter-icon" style="width:18px;height:18px;padding:2px;border-radius:4px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);" 
               src="${EMBLEM_IMAGE_URI}${encodeURIComponent(ev.class === 'General' ? 'smmc-logo' : ev.class)}.png" 
               alt="${escapeHTML(ev.class)}">
           ${escapeHTML(ev.regattaName)}
@@ -1294,7 +1300,7 @@ function headerHTML(){
       <img class="logo-img" src="${LOGO_DATA_URI}" alt="SMMC logo">
       <div class="brand-text">
         <strong>Sydney Maritime Modellers Club</strong>
-        <span>Race Results</span>
+        <p class="sailing-norwest">SAILING@NORWEST</p>
       </div>
     </a>
     <div class="nav-spacer"></div>
@@ -1346,11 +1352,10 @@ function renderClassFilterBar(classes){
 
 
 function renderEventSelect(){
-  const today = new Date(2026,8,16); // app "today" — Wed 16 Sep 2026
-  today.setDate(today.getDate() - 3);
+  const today = new Date(2026,8,16) - 3; // app "today" — Wed 16 Sep 2026
   today.setHours(0,0,0,0);
   const q = state.eventSearch.trim().toLowerCase();
-  const classes = [...new Set(EVENTS.map(e => e.class))].sort();
+  const classes = [...new Set(EVENTS.map(e => e.class))].filter(c => c !== 'Social').sort();
 
   // Calendar only ever shows future/today events
   let list = EVENTS.map(e => ({...e, _dt: parseDMY(e.date)})).filter(e => e._dt >= today);
@@ -1402,7 +1407,7 @@ function renderEventSelect(){
       <div class="search-wrap" style="margin-top:10px">
         <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input class="search-input" id="eventSearchInput" placeholder="Search by class, round or date…" value="${escapeHTML(state.eventSearch)}">
-      </div><input class="search-box" id="eventSearchInput" placeholder="Search by class, round or date…" value="${escapeHTML(state.eventSearch)}">
+      </div>
       <div>${rows || `<div class="empty-note">No matching upcoming events.</div>`}</div>
     </div>
   `;
