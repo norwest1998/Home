@@ -1281,6 +1281,7 @@ function svgX() { return `<i data-lucide="x"></i>`; }
 function svgLock() { return `<i data-lucide="lock"></i>`; }
 function svgPencil() { return `<i data-lucide="pencil"></i>`; }
 function svgLayoutGrid() { return `<i data-lucide="layout-grid"></i>`; }
+function svgFlag(){ return `<i data-lucide="flag" width="16" height="16"></i>`; }
 
 function headerHTML(){
   const ev = state.event;
@@ -1492,6 +1493,7 @@ function renderRaceCapture(){
     <div class="entries-pill ${locked?'':'editable'}" data-entries-pill="1">
       ${locked ? `${svgLock()} ${state.entries.length} entries locked` : `${svgPencil()} ${state.entries.length} entries — tap to edit`}
     </div>
+    ${state.races.length > 0 ? `<button class="btn btn-ghost btn-sm" data-finish-race="1">${svgFlag()} Finish</button>` : ''}
     <button class="btn btn-primary btn-sm" data-add-race="1">${svgPlus()} Add Race ${state.races.length+1}</button>
   </div>`;
 
@@ -2121,6 +2123,13 @@ function bindDragHandle(handleEl, containerEl, raceIdx){
   });
 }
 
+function finishRace(){
+  completeRace();
+  showToast(`Race ${state.races.length} captured — racing complete`);
+  state.overlay = 'results';
+  render();
+}
+
 /* ---------------- Attach handlers after each render ---------------- */
 function attachDynamicHandlers(){
   document.querySelectorAll('[data-select-event]').forEach(el=>{
@@ -2195,6 +2204,9 @@ function attachDynamicHandlers(){
   document.querySelectorAll('[data-close-modal]').forEach(el=>{
     el.addEventListener('click', (e)=>{ if(e.target === el) closeLongPressModal(); });
   });
+  document.querySelectorAll('[data-finish-race]').forEach(el => el.addEventListener('click', () => {
+    if(confirm('End racing and view final results?')) finishRace();
+  }));
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
