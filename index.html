@@ -2876,81 +2876,130 @@
 
       const modalHtml = `
         <div id="boatDetailModalOverlay" class="boat-modal-overlay" onclick="onBoatModalOverlayClick(event)">
-          <div class="boat-modal-card">
-            <div class="boat-modal-header">
-              <div class="boat-modal-header-info">
-                <div
-                  class="sail-badge"
-                  style="
-                    font-size:1.1rem;
-                    padding:6px 12px;
-                    background-color:${boatColour};
-                    color:${isDarkColour(boatColour) ? '#fff' : '#000'};
-                    border:1px solid rgba(255,255,255,0.35);
-                    box-shadow:0 2px 8px rgba(0,0,0,0.25);
-                  "
-                >
-                  ${esc(boat.sailNo)}
-                </div>
-                <div>
-                  <h3 class="boat-modal-title">${esc(boat.memberName)}</h3>
-                  <p class="boat-modal-subtitle">${esc(boat.class)} Class</p>
-                </div>
-              </div>
-              <button type="button" class="boat-modal-close" onclick="closeBoatModal()">&times;</button>
-            </div>
-            
-            <div class="boat-modal-body">
-              <div class="boat-detail-grid">
-                <div class="boat-detail-item">
-                  <span class="boat-detail-label">Status</span>
-                  <div class="boat-detail-value">${activeStatus}</div>
-                </div>
-
-                <div class="boat-detail-item">
-                  <span class="boat-detail-label">Sail Number</span>
-                  <div class="boat-detail-value">${esc(boat.sailNo)}</div>
-                </div>
-
-                <div class="boat-detail-item">
-                  <span class="boat-detail-label">Class</span>
-                  <div class="boat-detail-value">
-                    ${classImg ? `<img src="${esc(classImg)}" alt="${esc(boat.class)}" style="width:20px; height:20px; object-fit:contain;">` : ''}
-                    ${esc(boat.class)}
+          <div class="drawer-header">
+              <div class="drawer-name-row">
+                  <div
+                    class="sail-badge"
+                    style="
+                      background-color:${boatColour};
+                      color:${isDarkColour(boatColour)?'#fff':'#000'};
+                    ">
+                    ${esc(boat.sailNo)}
                   </div>
-                </div>
 
-                <div class="boat-detail-item">
-                  <span class="boat-detail-label">Model</span>
-                  <div class="boat-detail-value">${esc(boat.model || 'N/A')}</div>
-                </div>
-
-                <div class="boat-detail-item full-width">
-                  <span class="boat-detail-label">Owner / Member</span>
-                  <div class="boat-detail-value">${esc(boat.memberName)}</div>
-                </div>
-
-                ${boat.handicap ? `
-                <div class="boat-detail-item">
-                  <span class="boat-detail-label">Handicap</span>
-                  <div class="boat-detail-value">${esc(boat.handicap)}</div>
-                </div>` : ''}
-
-                ${boat.gh ? `
-                <div class="boat-detail-item">
-                  <span class="boat-detail-label">GH</span>
-                  <div class="boat-detail-value">${esc(boat.gh)}</div>
-                </div>` : ''}
+                  <div class="drawer-name-col">
+                      <span class="drawer-name">${esc(boat.memberName)}</span>
+                      <span class="badge badge-default">${esc(boat.class)}</span>
+                  </div>
               </div>
 
-              ${boat.ghHcap ? `
-              <div class="boat-detail-item full-width">
-                <span class="boat-detail-label">GH Hcap</span>
-                <p class="boat-detail-notes">${esc(boat.ghcap)}</p>
-              </div>` : ''}
+              <button class="drawer-close" onclick="closeBoatModal()">✕</button>
+          </div>
+          <div class="app-detail-section">
+
+            <div class="app-detail-section-title">
+              Registration
             </div>
+
+            <div class="app-detail-grid">
+
+              <div class="app-detail-item">
+                <span class="app-detail-label">Boat ID</span>
+                <span class="app-detail-value">${esc(boat.boatId)}</span>
+              </div>
+
+              <div class="app-detail-item">
+                <span class="app-detail-label">Status</span>
+                <span class="app-detail-value">
+                  ${boat.active ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+
+              <div class="app-detail-item">
+                <span class="app-detail-label">Class</span>
+                <span class="app-detail-value">${esc(boat.class)}</span>
+              </div>
+
+              <div class="app-detail-item">
+                <span class="app-detail-label">Model</span>
+                <span class="app-detail-value">${esc(boat.model)}</span>
+              </div>
+
+              <div class="app-detail-item">
+                <span class="app-detail-label">Sail Number</span>
+                <span class="app-detail-value">${esc(boat.sailNo)}</span>
+              </div>
+
+              <div class="app-detail-item">
+                <span class="app-detail-label">Colour</span>
+                <span class="app-detail-value">${esc(boat.colour || 'White')}</span>
+              </div>
+
+            </div>
+
+          </div>
+          <div class="app-detail-section">
+
+            <div class="app-detail-section-title">
+              Ownership
+            </div>
+
+            <div class="app-detail-grid">
+
+              <div class="app-detail-item full-width">
+                <span class="app-detail-label">Member</span>
+                <span class="app-detail-value">${esc(boat.memberName)}</span>
+              </div>
+
+            </div>
+
+          </div>
+          <div class="app-detail-section">
+
+            <div class="app-detail-section-title">
+              Racing Configuration
+            </div>
+
+            <div class="app-detail-grid">
+
+              <div class="app-detail-item">
+                <span class="app-detail-label">Handicap</span>
+                <span class="app-detail-value">${esc(boat.handicap || '-')}</span>
+              </div>
+
+              <div class="app-detail-item">
+                <span class="app-detail-label">HRN</span>
+                <span class="app-detail-value">${esc(boat.hrn || '-')}</span>
+              </div>
+
+              <div class="app-detail-item">
+                <span class="app-detail-label">GH Eligible</span>
+                <span class="app-detail-value">${esc(boat.gh || '-')}</span>
+              </div>
+
+              <div class="app-detail-item">
+                <span class="app-detail-label">GH Handicap</span>
+                <span class="app-detail-value">${esc(boat.ghHcap || '-')}</span>
+              </div>
+
+            </div>
+
+          </div>
+          <div class="app-detail-section">
+
+            <div class="app-detail-section-title">
+              Documentation
+            </div>
+
+            <div class="app-detail-grid">
+
+                ...
+
+            </div>
+
           </div>
         </div>
+        
       `;
 
       // Remove any existing instance before injecting
