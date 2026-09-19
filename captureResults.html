@@ -2124,8 +2124,8 @@ function bindDragHandle(handleEl, containerEl, raceIdx){
 }
 
 function finishRace(){
-  completeRace();
-  showToast(`Race ${state.races.length} captured — racing complete`);
+  if(state.draft) completeRace();  // only commit if mid-draft
+  showToast(`Racing complete — ${state.races.length} race${state.races.length===1?'':'s'} captured`);
   state.overlay = 'results';
   render();
 }
