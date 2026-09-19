@@ -1262,7 +1262,6 @@ function memberFor(sailNo, cls){
   return m ? m.member : 'Unknown';
 }
 
-
 /* ---- Lucide icons (exact paths from lucide-static) ---- */
 function svgMenu() { return `<i data-lucide="menu" width="20" height="20"></i>`; }
 function svgBack() { return `<i data-lucide="arrow-left" width="18" height="18"></i>`; }
@@ -1471,7 +1470,7 @@ function renderRaceCapture(){
   // race list / add race screen
   const raceItems = state.races.map((r,i) => {
     const finishers = r.positions.length;
-    const issues = r.dnf.length + r.dns.length + (r.raceRO?1:0);
+    const dnsParts = [...(r.dns.length?[`${r.dns.length} DNS`]:[]), ...(r.dnf.length?[`${r.dnf.length} DNF`]:[]), ...(r.raceRO?['1 RO']:[])];
     return `<div class="race-insert-row" data-insert-race="${i}" title="Insert a race before Race ${r.raceNumber}">
       <span class="insert-line"></span>${svgPlusCircle()}<span>Insert race</span><span class="insert-line"></span>
     </div>
@@ -1480,7 +1479,7 @@ function renderRaceCapture(){
         <div class="rbadge">R${r.raceNumber}</div>
         <div class="rinfo">
           <div class="rtitle">Race ${r.raceNumber} — captured</div>
-          <div class="rsub">${finishers} finisher${finishers===1?'':'s'}${issues?` · ${issues} DNS/DNF/RO`:''}</div>
+          <div class="rsub">${finishers} finisher${finishers===1?'':'s'}${dnsParts.length?' · '+dnsParts.join(', '):''}</div>
         </div>
         <div class="chevron">${svgChevR()}</div>
       </div>
@@ -1687,10 +1686,12 @@ function renderResultsTable(){
       let content = '–';
       let cls = '';
       if(rs.points !== null){
-        content = rs.code ? `${rs.points}<sup>${rs.code}</sup>` : String(rs.points);
-        if(s.discardSet.has(rs)) cls = 'discarded';
-      } else if(rs.code === 'RO'){
-        content = 'RO';
+        if(rs.code) {
+          content = rs.code;  // show DNF/DNS, not the points
+        } else {
+          content = String(rs.points);
+          if(s.discardSet.has(rs)) cls = 'discarded';
+        }
       }
       raceCells += `<td class="${cls}">${content}</td>`;
     });
@@ -1701,7 +1702,7 @@ function renderResultsTable(){
       <td class="net-cell">${s.net}</td>
       ${raceCells}
       <td>${s.total}</td>
-      <td>${s.drops}</td>
+      <td>${[...s.discardSet].map(rs=>rs.points).join(', ') || '–'}</td>
     </tr>`;
   }).join('');
 
