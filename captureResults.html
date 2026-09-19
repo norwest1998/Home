@@ -338,6 +338,8 @@
     color: var(--ocean-deep);
   }
 
+  .pill-sent { background: rgba(99,190,123,0.18); color: #63be7b; border-color: rgba(99,190,123,0.35); }
+
   /* ── Tab content ── */
   .tab-content { display: none; padding: 20px 24px 24px; }
   .tab-content.active { display: block; }
@@ -1168,7 +1170,8 @@ function saveState(){
       event: state.event,
       entries: state.entries,
       races: state.races,
-      reportText: state.reportText
+      reportText: state.reportText,
+      sent: state.sent || false   // add this
     };
     localStorage.setItem(storageKey(state.event.id), JSON.stringify(payload));
   }catch(e){ console.error('save failed', e); }
@@ -1368,9 +1371,9 @@ function renderClassFilterBar(classes){
 
 
 function renderEventSelect(){
-let today = new Date();
-today.setDate(today.getDate() - 3);
-today.setHours(0, 0, 0, 0);
+  let today = new Date();
+  today.setDate(today.getDate() - 3);
+  today.setHours(0, 0, 0, 0);
   const q = state.eventSearch.trim().toLowerCase();
   const classes = [...new Set(EVENTS.map(e => e.class))].filter(c => c !== 'Social').sort();
 
@@ -1397,9 +1400,13 @@ today.setHours(0, 0, 0, 0);
     let pill = '';
     if(saved){
       const st = loadState(e.id);
-      pill = st && st.entriesLocked
-        ? `<span class="event-status-pill pill-inprogress">In progress</span>`
-        : `<span class="event-status-pill pill-inprogress">Entries set</span>`;
+      if(st?.sent){
+        pill = `<span class="event-status-pill pill-sent">Processing</span>`;
+      } else if(st?.entriesLocked){
+        pill = `<span class="event-status-pill pill-inprogress">In progress</span>`;
+      } else {
+        pill = `<span class="event-status-pill pill-inprogress">Entries set</span>`;
+      }
     }
     return `<div class="event-item" data-select-event="${e.id}">
       <div class="event-date-block">
@@ -1784,6 +1791,7 @@ async function selectEvent(id){
     state.races = saved.races || [];
     state.reportText = saved.reportText || '';
     state.pendingSelection = new Set(state.entries.map(e=>e.sailNo));
+    state.sent = saved.sent || false;
   } else {
     state.entries = [];
     state.races = [];
@@ -2001,7 +2009,9 @@ function buildExportObject(){
 
 async function saveAndSend(){
   await downloadJSON();
-  setTimeout(() => changeEvent(), 800); // small delay so toast is visible
+  state.sent = true;
+  saveState();
+  setTimeout(() => changeEvent(), 800);
 }
 
 async function downloadJSON(){
