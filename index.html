@@ -961,6 +961,132 @@
     font-size: 0.85rem;
     flex-shrink: 0;
   }
+
+  /* Boat Modal Styling */
+  .boat-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+
+  .boat-modal-card {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    animation: boatModalFadeIn 0.2s ease-out;
+  }
+
+  @keyframes boatModalFadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .boat-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .boat-modal-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .boat-modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .boat-modal-subtitle {
+    margin: 2px 0 0 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
+  .boat-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+  }
+
+  .boat-modal-close:hover {
+    color: #111827;
+    background: #f3f4f6;
+  }
+
+  .boat-modal-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .boat-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .boat-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: #f9fafb;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #f3f4f6;
+  }
+
+  .boat-detail-item.full-width {
+    grid-column: span 2;
+  }
+
+  .boat-detail-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+  }
+
+  .boat-detail-value {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .boat-detail-notes {
+    margin: 4px 0 0 0;
+    font-size: 0.875rem;
+    color: #374151;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
 </style>
 </head>
 <body>
@@ -2605,7 +2731,7 @@
         const activePill = b.active ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` : `<span class="inactive-yes" style="margin-right: 8px;">Inactive</span>`;
 
         return `
-          <div class="app-row" style="justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding:10px 0;">
+          <div class="app-row" onclick="openBoatModal('${esc(b.id)}')" style="justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding:10px 0;">
             <div class="sail-badge">${esc(sailNo)}</div>
             <div style="flex:1; margin-left:10px;">
               <div class="app-name">${esc(owner)}</div>
@@ -2645,6 +2771,109 @@
         console.warn('Boats API unavailable:', err.message);
         showError('boatList', 'Boat register temporarily unavailable');
         allBoats = [];
+      }
+    }
+
+    // Open Boat Modal Function
+    function openBoatModal(boatId) {
+      // Retrieve boat object (adjust dataset source variable as needed)
+      const boat = (typeof boats !== 'undefined' ? boats : []).find(b => String(b.id) === String(boatId));
+      if (!boat) return;
+
+      const classImg = getClassImage(boat.class);
+      const activeStatus = boat.active 
+        ? `<span class="committee-yes">Active</span>` 
+        : `<span class="committee-no">Inactive</span>`;
+
+      const modalHtml = `
+        <div id="boatDetailModalOverlay" class="boat-modal-overlay" onclick="onBoatModalOverlayClick(event)">
+          <div class="boat-modal-card">
+            <div class="boat-modal-header">
+              <div class="boat-modal-header-info">
+                <div class="sail-badge" style="font-size: 1.1rem; padding: 6px 12px;">${esc(boat.sailNo)}</div>
+                <div>
+                  <h3 class="boat-modal-title">${esc(boat.memberName)}</h3>
+                  <p class="boat-modal-subtitle">${esc(boat.class)} Class</p>
+                </div>
+              </div>
+              <button type="button" class="boat-modal-close" onclick="closeBoatModal()">&times;</button>
+            </div>
+            
+            <div class="boat-modal-body">
+              <div class="boat-detail-grid">
+                <div class="boat-detail-item">
+                  <span class="boat-detail-label">Status</span>
+                  <div class="boat-detail-value">${activeStatus}</div>
+                </div>
+
+                <div class="boat-detail-item">
+                  <span class="boat-detail-label">Sail Number</span>
+                  <div class="boat-detail-value">${esc(boat.sailNo)}</div>
+                </div>
+
+                <div class="boat-detail-item">
+                  <span class="boat-detail-label">Class</span>
+                  <div class="boat-detail-value">
+                    ${classImg ? `<img src="${esc(classImg)}" alt="${esc(boat.class)}" style="width:20px; height:20px; object-fit:contain;">` : ''}
+                    ${esc(boat.class)}
+                  </div>
+                </div>
+
+                <div class="boat-detail-item">
+                  <span class="boat-detail-label">Model / Design</span>
+                  <div class="boat-detail-value">${esc(boat.model || 'N/A')}</div>
+                </div>
+
+                <div class="boat-detail-item full-width">
+                  <span class="boat-detail-label">Owner / Member</span>
+                  <div class="boat-detail-value">${esc(boat.memberName)}</div>
+                </div>
+
+                ${boat.handicap ? `
+                <div class="boat-detail-item">
+                  <span class="boat-detail-label">Handicap</span>
+                  <div class="boat-detail-value">${esc(boat.handicap)}</div>
+                </div>` : ''}
+
+                ${boat.division ? `
+                <div class="boat-detail-item">
+                  <span class="boat-detail-label">Division</span>
+                  <div class="boat-detail-value">${esc(boat.division)}</div>
+                </div>` : ''}
+              </div>
+
+              ${boat.notes ? `
+              <div class="boat-detail-item full-width">
+                <span class="boat-detail-label">Notes</span>
+                <p class="boat-detail-notes">${esc(boat.notes)}</p>
+              </div>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Remove any existing instance before injecting
+      closeBoatModal();
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      document.addEventListener('keydown', onBoatModalEsc);
+    }
+
+    // Close Functions & Event Listeners
+    function closeBoatModal() {
+      const overlay = document.getElementById('boatDetailModalOverlay');
+      if (overlay) overlay.remove();
+      document.removeEventListener('keydown', onBoatModalEsc);
+    }
+
+    function onBoatModalOverlayClick(e) {
+      if (e.target.id === 'boatDetailModalOverlay') {
+        closeBoatModal();
+      }
+    }
+
+    function onBoatModalEsc(e) {
+      if (e.key === 'Escape') {
+        closeBoatModal();
       }
     }
 
