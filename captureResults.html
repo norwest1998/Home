@@ -1282,6 +1282,8 @@ function svgLock() { return `<i data-lucide="lock"></i>`; }
 function svgPencil() { return `<i data-lucide="pencil"></i>`; }
 function svgLayoutGrid() { return `<i data-lucide="layout-grid"></i>`; }
 function svgFlag(){ return `<i data-lucide="flag" width="16" height="16"></i>`; }
+function svgSave() { return `<i data-lucide="save"></i>`; }
+function svgExit() { return `<i data-lucide="power"></i>`; }
 
 function headerHTML(){
   const ev = state.event;
@@ -1310,9 +1312,11 @@ function headerHTML(){
       </div>
     </a>
     <div class="nav-spacer"></div>
-    ${state.overlay
-      ? `<button class="icon-btn" onclick="closeOverlay()" title="Back">${svgBack()}</button>`
-      : (showMenu ? `<button class="icon-btn" onclick="openMenu()">${svgMenu()}</button>` : '')}
+    ${state.overlay === 'results'
+      ? `<button class="btn btn-primary btn-sm" onclick="openOverlay('export')" style="margin-right:8px">${svgSave()} Save Results</button>`
+      : state.overlay
+        ? `<button class="icon-btn" onclick="closeOverlay()" title="Back">${svgBack()}</button>`
+        : (showMenu ? `<button class="icon-btn" onclick="openMenu()">${svgMenu()}</button>` : '')}
     ${sub ? `<div style="width:100%">${sub}</div>` : ''}
   </nav>`;
 }
@@ -1620,6 +1624,7 @@ function menuHTML(){
     <div class="menu-sep"></div>
     <div class="menu-item" data-open-overlay="export">${svgSend()} Send for Race Processing</div>
     <div class="menu-sep"></div>
+    <div class="menu-item" onclick="window.close()">${svgExit()} Exit</div>
     <div class="menu-item" data-new-event="1">${svgRestart()} Change regatta</div>
   </div>`;
 }
@@ -1646,6 +1651,7 @@ function overlaysHTML(){
   }
   return `<div class="overlay open">
     <div class="overlay-head">
+      ${state.overlay === 'export' ? `<button class="icon-btn" onclick="openOverlay('results')" title="Back">${svgBack()}</button>` : ''}
       <h2>${title}</h2>
     </div>
     <div class="overlay-body">${body}</div>
@@ -1993,6 +1999,11 @@ function buildExportObject(){
   };
 }
 
+async function saveAndSend(){
+  await downloadJSON();
+  setTimeout(() => changeEvent(), 800); // small delay so toast is visible
+}
+
 async function downloadJSON(){
   const data = buildExportObject();
   const json = JSON.stringify(data, null, 2);
@@ -2196,7 +2207,7 @@ function attachDynamicHandlers(){
   });
   document.querySelectorAll('[data-close-overlay]').forEach(el=> el.addEventListener('click', closeOverlay));
   document.querySelectorAll('[data-save-report]').forEach(el=> el.addEventListener('click', saveReportText));
-  document.querySelectorAll('[data-download-json]').forEach(el=> el.addEventListener('click', downloadJSON));
+  document.querySelectorAll('[data-download-json]').forEach(el => el.addEventListener('click', saveAndSend));
   document.querySelectorAll('[data-new-event]').forEach(el=> el.addEventListener('click', changeEvent));
   document.querySelectorAll('[data-set-code]').forEach(el=>{
     el.addEventListener('click', ()=> setCode(el.getAttribute('data-set-code')));
