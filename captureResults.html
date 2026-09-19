@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Saira+Extra+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.446.0/umd/lucide.min.js"></script>
 <style>
 /* =================== THEME.CSS (club design system) =================== */
 /* =================================================================
@@ -1051,6 +1050,7 @@ textarea.report-box::placeholder{ color: var(--foam-dim); }
 }
 </style>
 </head>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.446.0/dist/umd/lucide.min.js"></script>
 <body>  
 <div id="app-header"></div>
 <div id="app-subheader"></div>
@@ -1327,7 +1327,7 @@ function render(){
   document.getElementById('app-body').innerHTML = `<div class="app">${body}</div>` + menuHTML() + overlaysHTML() + longPressModalHTML();
 
   attachDynamicHandlers();
-  lucide.createIcons();
+  if (typeof lucide !== 'undefined') lucide.createIcons();
   const navEl = document.querySelector('.app-nav');
   if(navEl) document.documentElement.style.setProperty('--nav-h', navEl.offsetHeight + 'px');
 }
