@@ -2763,10 +2763,7 @@
           <div class="app-row" onclick="openBoatModal('${esc(b.boatId)}')">
             <div
               class="sail-badge"
-              style="
-                background-color: ${esc(b.colour || '#ffffff')};
-                color: ${isLightColour(b.colour) ? '#000000' : '#ffffff'};
-              "
+              style="background-color:${esc(b.colour || '#ffffff')}; color:#000;"
             >
               ${esc(sailNo)}
             </div>
@@ -2794,24 +2791,6 @@
           </div>
         `;        
       }).join('');
-    }
-
-    function isLightColour(colour) {
-      if (!colour) return true;
-
-      let hex = colour.replace('#', '');
-
-      if (hex.length === 3) {
-        hex = hex.split('').map(c => c + c).join('');
-      }
-
-      const r = parseInt(hex.substring(0, 2), 16);
-      const g = parseInt(hex.substring(2, 4), 16);
-      const b = parseInt(hex.substring(4, 6), 16);
-
-      const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-
-      return brightness > 155;
     }
 
     function clearBoatMemberFilter() {
@@ -2870,8 +2849,7 @@
                   style="
                     font-size:1.1rem;
                     padding:6px 12px;
-                    background-color:${esc(boat.colour || '#ffffff')};
-                    color:${isLightColour(boat.colour) ? '#000' : '#fff'};
+                    background-color:${esc(b.colour || '#ffffff')}; color:#000;
                   "
                 >
                   ${esc(boat.sailNo)}
