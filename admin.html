@@ -271,6 +271,7 @@
             calWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
             appWebAppUrl: "https://script.google.com/macros/s/AKfycbyWulPkIPBPaLA4f85ygVDpJUa-e3fWpY-XOYzTQ_2gF8h9EfuWinBdTiR1DtjYWSwl9g/exec",
             clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
+            notesWebAppUrl: "https://script.google.com/macros/s/AKfycbzq-iw5CGc59VbnJEviaD0wmT5CAWuxP5wqbVg6Ea03sSBfYuEp1uOaZuGvXyNkzGBnlw/exec",
             calendar: {
                 tabs: { eventData: "Event Data" }
             },
@@ -285,6 +286,9 @@
             },
             audit:{
                 tabs: {tracking: "Tracking", log: "AuditLog"}
+            },
+            note:{
+                tabs: {notes: "Notes", actions: "Actions"}
             }
         };
 
@@ -484,6 +488,33 @@
                             { label: "Draft", value: count("Draft"), className: "badge-default" },
                             { label: "In Review", value: count("In Review"), className: "badge-renewal" },
                             { label: "Signed Off", value: count("Signed Off"), className: "badge-full" }
+                        ]
+                    };
+                }
+            },
+            // Notes Management
+            {
+                id: "notes",
+                icon: '<i data-lucide="notebook-pen" color="#257fb6"></i>',
+                title: "Notes",
+                description: "Capture, manage and action meeting and topic notes.",
+                href: "notes.html",
+                status: async () => {
+                    const [noteRows, actionRows] = await Promise.all([
+                        fetchSheet(SHEETS.notesWebAppUrl, "Notes"),
+                        fetchSheet(SHEETS.notesWebAppUrl, "Actions")
+                    ]);
+                    const now = new Date();
+                    const open = actionRows.filter(a => getRowVal(a,["Status"]).toLowerCase() !== "done").length;
+                    const overdue = actionRows.filter(a => {
+                        const d = new Date(getRowVal(a,["By Date"]));
+                        return getRowVal(a,["Status"]).toLowerCase() !== "done" && !isNaN(d) && d < now;
+                    }).length;
+                    return {
+                        pills: [
+                            { label: "Notes",   value: noteRows.length, className: "badge-full" },
+                            { label: "Open Actions",    value: open,    className: "badge-renewal" },
+                            { label: "Overdue", value: overdue,         className: overdue > 0 ? "badge-expired" : "badge-default" }
                         ]
                     };
                 }

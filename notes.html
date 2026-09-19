@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes — Sydney Maritime Modellers Club</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="theme.css">
+    <style>
+    /* =========================================================
+       NOTES PAGE STYLES — matches admin.html conventions
+       ========================================================= */
+    .notes-header {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
+    }
+
+    /* Stats board */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+    .stat-card {
+        padding: 20px 18px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .stat-card .stat-val {
+        font-family: var(--font-display);
+        font-size: 32px;
+        color: var(--foam);
+        line-height: 1;
+    }
+    .stat-card .stat-val.warn { color: #ffb347; }
+    .stat-card .stat-val.accent { color: var(--signal); }
+    .stat-card .stat-label {
+        font-family: var(--font-data);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        color: var(--foam-dim);
+        text-transform: uppercase;
+    }
+    .stat-card .stat-sub { font-size: 11px; color: var(--foam-dim); }
+
+    /* Toolbar */
+    .notes-toolbar {
+        display: flex; gap: 10px; flex-wrap: wrap;
+        align-items: center; margin-bottom: 16px;
+    }
+    .notes-toolbar .search-wrap { flex: 1; min-width: 220px; margin-bottom: 0; }
+
+    /* Table */
+    .notes-table-wrap { max-height: 480px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+    table.notes-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .notes-table th {
+        position: sticky; top: 0; background: var(--ocean-mid);
+        text-align: left; padding: 8px 10px;
+        font-family: var(--font-data); font-size: 10px;
+        letter-spacing: 0.06em; text-transform: uppercase;
+        color: var(--foam-dim); border-bottom: 1px solid var(--glass-border);
+    }
+    .notes-table td {
+        padding: 8px 10px; border-bottom: 1px solid var(--glass-border);
+        color: var(--foam); vertical-align: top;
+    }
+    .notes-table tr:last-child td { border-bottom: none; }
+    .notes-table tr.clickable { cursor: pointer; }
+    .notes-table tr.clickable:hover td { background: rgba(255,255,255,0.04); }
+
+    /* Action badges in table */
+    .action-dot {
+        display: inline-block; width: 8px; height: 8px;
+        border-radius: 50%; margin-right: 4px;
+    }
+    .action-dot.due    { background: #ff6b6b; }
+    .action-dot.soon   { background: #ffb347; }
+    .action-dot.ok     { background: var(--glow); }
+
+    /* Modal overlay */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.65); z-index: 1000;
+        align-items: center; justify-content: center;
+        padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+        background: var(--ocean-mid);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        width: 100%; max-width: 800px;
+        max-height: 90vh; overflow-y: auto;
+        padding: 28px;
+        display: flex; flex-direction: column; gap: 20px;
+    }
+    .modal-header {
+        display: flex; align-items: center;
+        justify-content: space-between; gap: 12px;
+    }
+    .modal-header h3 { font-size: 18px; color: var(--foam); }
+    .modal-close {
+        background: none; border: none; color: var(--foam-dim);
+        cursor: pointer; padding: 4px; line-height: 1;
+        font-size: 20px; transition: color 0.15s;
+    }
+    .modal-close:hover { color: var(--foam); }
+
+    /* Form layout */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+    .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+    .form-row.full   { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label {
+        font-family: var(--font-data); font-size: 10px;
+        letter-spacing: 0.06em; text-transform: uppercase;
+        color: var(--foam-dim);
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        color: var(--foam);
+        font-family: var(--font-body, 'Inter', sans-serif);
+        font-size: 13px;
+        padding: 8px 12px;
+        width: 100%;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--foam);
+    }
+    .form-group select option { background: var(--ocean-mid); }
+    .form-group textarea { resize: vertical; min-height: 90px; }
+
+    /* Action list sub-section */
+    .action-list-section {
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        padding: 14px;
+        display: flex; flex-direction: column; gap: 12px;
+    }
+    .action-list-section h4 {
+        font-size: 12px; color: var(--foam-dim);
+        font-family: var(--font-data); letter-spacing: 0.05em;
+        text-transform: uppercase; margin: 0;
+    }
+    .action-item {
+        display: grid;
+        grid-template-columns: 1fr 140px 1fr 28px;
+        gap: 8px; align-items: center;
+    }
+    .action-remove {
+        background: none; border: none; color: #ff6b6b;
+        cursor: pointer; padding: 4px; font-size: 16px; line-height: 1;
+    }
+    .action-remove:hover { opacity: 0.7; }
+
+    /* Copy-in emails */
+    .copyin-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
+    .copyin-tag {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border);
+        border-radius: 6px; padding: 3px 8px; font-size: 12px; color: var(--foam);
+    }
+    .copyin-tag button {
+        background: none; border: none; color: var(--foam-dim);
+        cursor: pointer; padding: 0; font-size: 13px; line-height: 1;
+    }
+    .copyin-tag button:hover { color: #ff6b6b; }
+
+    /* Attachments */
+    .attach-list { display: flex; flex-direction: column; gap: 6px; }
+    .attach-item {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 12px; color: var(--foam);
+    }
+    .attach-item a { color: var(--glow); text-decoration: none; }
+    .attach-item a:hover { text-decoration: underline; }
+
+    /* Topic mgmt */
+    .topic-mgmt {
+        display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .topic-mgmt input { flex: 1; min-width: 140px; }
+
+    /* Modal footer */
+    .modal-footer {
+        display: flex; justify-content: flex-end;
+        gap: 10px; flex-wrap: wrap; padding-top: 4px;
+    }
+
+    /* Status message inside modal */
+    .modal-status { font-size: 12px; display: none; }
+    .modal-status.visible { display: block; }
+    .modal-status.success { color: var(--glow); }
+    .modal-status.error   { color: #ff6b6b; }
+
+    /* View-only mode */
+    .view-field {
+        font-size: 13px; color: var(--foam); line-height: 1.5;
+        padding: 8px 0; border-bottom: 1px solid var(--glass-border);
+    }
+    .view-field:last-child { border-bottom: none; }
+    .view-label {
+        font-family: var(--font-data); font-size: 10px;
+        letter-spacing: 0.06em; text-transform: uppercase;
+        color: var(--foam-dim); margin-bottom: 3px;
+    }
+    </style>
+</head>
+<body>
+    <!-- Shared Navigation Header -->
+    <header class="nav-glass">
+        <a href="index.html" class="brand">
+            <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+            <div class="brand-text">
+                <strong>Sydney Maritime Modellers Club</strong>
+                <span>ADMINISTRATION PORTAL</span>
+            </div>
+            <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
+            <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
+        </a>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="admin.html" class="nav-link">Admin Home</a></li>
+            <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
+        </ul>
+    </header>
+
+    <main class="container">
+
+        <div class="section-head">
+            <h2>Notes Overview</h2>
+            <p>Summary of recorded notes and outstanding actions.</p>
+        </div>
+
+        <!-- Stats board -->
+        <section class="stats-grid" id="statsGrid">
+            <div class="glass stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-label">Total Notes</div></div>
+            <div class="glass stat-card"><div class="stat-val" id="stat-topics">—</div><div class="stat-label">Topics</div></div>
+            <div class="glass stat-card"><div class="stat-val warn" id="stat-actions">—</div><div class="stat-label">Open Actions</div></div>
+            <div class="glass stat-card"><div class="stat-val accent" id="stat-overdue">—</div><div class="stat-label">Overdue Actions</div></div>
+            <div class="glass stat-card"><div class="stat-val" id="stat-this-month">—</div><div class="stat-label">This Month</div></div>
+            <div class="glass stat-card"><div class="stat-val" id="stat-attachments">—</div><div class="stat-label">Attachments</div></div>
+        </section>
+
+        <!-- Notes table -->
+        <div class="section-head">
+            <h2>All Notes</h2>
+            <p>Click a row to view or edit. Use the button to add a new note.</p>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title"><span class="dot"></span><h3>Notes</h3></div>
+                <div class="notes-toolbar">
+                    <div class="search-wrap">
+                        <span class="search-icon">🔍</span>
+                        <input class="search-input" id="notesSearch" placeholder="Search topic, subtopic, or note…">
+                    </div>
+                    <select class="btn btn-ghost" id="filterTopic" style="padding:5px 10px;font-size:12px;">
+                        <option value="">All Topics</option>
+                    </select>
+                    <select class="btn btn-ghost" id="filterAction" style="padding:5px 10px;font-size:12px;">
+                        <option value="">All Statuses</option>
+                        <option value="overdue">Overdue Actions</option>
+                        <option value="open">Open Actions</option>
+                        <option value="none">No Actions</option>
+                    </select>
+                    <button class="btn btn-ghost" id="refreshBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+                    <button class="btn btn-primary" id="newNoteBtn" style="padding:5px 14px;font-size:12px;">+ New Note</button>
+                </div>
+            </div>
+            <div class="tab-content active">
+                <div class="notes-table-wrap">
+                    <table class="notes-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Topic</th>
+                                <th>Sub Topic</th>
+                                <th>Note Preview</th>
+                                <th>Actions</th>
+                                <th>Attachments</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="notesBody"></tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="notesEmpty" style="display:none;">No notes found.</div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer>
+        <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+    </footer>
+
+    <!-- ===================== NOTE MODAL ===================== -->
+    <div class="modal-overlay" id="noteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">New Note</h3>
+                <button class="modal-close" id="modalClose" title="Close">✕</button>
+            </div>
+
+            <!-- Date + Topic + Sub Topic -->
+            <div class="form-row triple">
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="fDate">
+                </div>
+                <div class="form-group">
+                    <label>Topic *</label>
+                    <div class="topic-mgmt">
+                        <select id="fTopic">
+                            <option value="">— Select Topic —</option>
+                        </select>
+                        <button class="btn btn-ghost" id="addTopicBtn" style="padding:5px 10px;font-size:11px;white-space:nowrap;" title="Add new topic">+ Topic</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Sub Topic</label>
+                    <input type="text" id="fSubTopic" placeholder="Optional">
+                </div>
+            </div>
+
+            <!-- Note body -->
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Note *</label>
+                    <textarea id="fNote" placeholder="Enter note content…" style="min-height:120px;"></textarea>
+                </div>
+            </div>
+
+            <!-- Attachments -->
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Attachments (Google Drive links, comma-separated)</label>
+                    <input type="text" id="fAttachments" placeholder="https://drive.google.com/… , https://drive.google.com/…">
+                    <div class="attach-list" id="attachPreview"></div>
+                </div>
+            </div>
+
+            <!-- Action List -->
+            <div class="action-list-section">
+                <h4>Action List</h4>
+                <div id="actionItems"></div>
+                <button class="btn btn-ghost" id="addActionBtn" style="padding:5px 12px;font-size:11px;width:fit-content;">+ Add Action</button>
+            </div>
+
+            <!-- Copy-in members -->
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Copy In (email addresses)</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="email" id="fCopyInInput" placeholder="member@example.com" style="flex:1;">
+                        <button class="btn btn-ghost" id="addCopyInBtn" style="padding:5px 12px;font-size:11px;white-space:nowrap;">Add</button>
+                    </div>
+                    <div class="copyin-wrap" id="copyInTags"></div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer">
+                <span class="modal-status" id="modalStatus"></span>
+                <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+                <button class="btn btn-ghost" id="modalDelete" style="color:#ff6b6b;display:none;">Delete</button>
+                <button class="btn btn-primary" id="modalSave">Save Note</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== ADD TOPIC MODAL ===================== -->
+    <div class="modal-overlay" id="topicModal">
+        <div class="modal" style="max-width:420px;">
+            <div class="modal-header">
+                <h3>Manage Topics</h3>
+                <button class="modal-close" id="topicModalClose">✕</button>
+            </div>
+            <div class="form-group">
+                <label>New Topic Name</label>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="newTopicInput" placeholder="e.g. Finance, Events…" style="flex:1;">
+                    <button class="btn btn-primary" id="saveTopicBtn" style="padding:6px 14px;font-size:12px;">Add</button>
+                </div>
+            </div>
+            <div id="topicList" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;"></div>
+            <div class="modal-footer">
+                <span class="modal-status" id="topicStatus"></span>
+                <button class="btn btn-ghost" id="topicModalCancel">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    /* =========================================================
+       CONFIG — update notesWebAppUrl once Google Apps Script is deployed
+       ========================================================= */
+    const NOTES_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzq-iw5CGc59VbnJEviaD0wmT5CAWuxP5wqbVg6Ea03sSBfYuEp1uOaZuGvXyNkzGBnlw/exec"; // ← replace
+    const NOTES_SHEET      = "Notes";
+    const TOPICS_SHEET     = "Topics";
+    const ACTIONS_SHEET    = "Actions";
+
+    /* =========================================================
+       SHARED SHEETS HELPERS (mirrors admin.html pattern)
+       ========================================================= */
+    async function fetchSheet(url, sheet) {
+        const res  = await fetch(`${url}?action=fetch&sheet=${encodeURIComponent(sheet)}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        const rows = Array.isArray(data) ? data : (data.values || []);
+        if (!rows.length) return [];
+        let hi = rows.findIndex(r => Array.isArray(r) && r.some(c => {
+            const v = String(c||"").trim().toLowerCase();
+            return v === "rowid" || v === "noteid" || v === "topic";
+        }));
+        if (hi === -1) hi = rows.findIndex(r => Array.isArray(r) && r.filter(c => String(c||"").trim()).length > 2);
+        if (hi === -1) return [];
+        const headers = rows[hi].map(h => String(h||"").trim());
+        return rows.slice(hi+1).filter(r => r.some(c => String(c||"").trim())).map(r => {
+            const o = {}; headers.forEach((h,i) => { if(h) o[h] = r[i]??""});
+            return o;
+        });
+    }
+
+    async function appendSheet(url, sheet, rowData) {
+        const res  = await fetch(url, { method:"POST", body: JSON.stringify({ action:"append", sheet, rowData }) });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+
+    async function updateSheet(url, sheet, hexKey, updates) {
+        const res  = await fetch(url, { method:"POST", body: JSON.stringify({ action:"update", sheet, hexKey, updates }) });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+
+    async function deleteSheet(url, sheet, hexKey) {
+        const res  = await fetch(url, { method:"POST", body: JSON.stringify({ action:"delete", sheet, hexKey }) });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+
+    /* =========================================================
+       STATE
+       ========================================================= */
+    let notes   = [];
+    let topics  = [];
+    let actions = [];
+    let editingNoteId = null; // null = new note
+    let copyInEmails  = [];
+    let actionRows    = [];   // [{action, byDate, byMember}]
+
+    /* =========================================================
+       HELPERS
+       ========================================================= */
+    function gv(row, ...keys) {
+        for (const k of keys) {
+            const match = Object.keys(row).find(r => r.toLowerCase().trim() === k.toLowerCase());
+            if (match && row[match] !== undefined) return String(row[match]).trim();
+        }
+        return "";
+    }
+
+    function today() {
+        return new Date().toISOString().split("T")[0];
+    }
+
+    function fmtDate(iso) {
+        if (!iso) return "";
+        const d = new Date(iso);
+        return isNaN(d) ? iso : d.toLocaleDateString("en-AU", { day:"2-digit", month:"short", year:"numeric" });
+    }
+
+    function noteId() {
+        return Date.now().toString(36).toUpperCase();
+    }
+
+    /* =========================================================
+       LOAD DATA
+       ========================================================= */
+    async function loadAll() {
+        try {
+            [notes, topics, actions] = await Promise.all([
+                fetchSheet(NOTES_WEBAPP_URL, NOTES_SHEET),
+                fetchSheet(NOTES_WEBAPP_URL, TOPICS_SHEET),
+                fetchSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET)
+            ]);
+        } catch(e) {
+            console.error("Load error:", e);
+            notes = []; topics = []; actions = [];
+        }
+        renderStats();
+        renderTopicDropdowns();
+        renderTable();
+    }
+
+    /* =========================================================
+       STATS
+       ========================================================= */
+    function renderStats() {
+        const now  = new Date();
+        const mon0 = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        const openActions  = actions.filter(a => gv(a,"Status","Action Status").toLowerCase() !== "done");
+        const overdueActions = openActions.filter(a => {
+            const d = new Date(gv(a,"By Date","Action By Date","ActionByDate"));
+            return !isNaN(d) && d < now;
+        });
+        const thisMonth = notes.filter(n => {
+            const d = new Date(gv(n,"Date"));
+            return !isNaN(d) && d >= mon0;
+        });
+        const withAttach = notes.filter(n => gv(n,"Attachments").trim()).length;
+        const uniqueTopics = [...new Set(notes.map(n => gv(n,"Topic")).filter(Boolean))];
+
+        document.getElementById("stat-total").textContent      = notes.length;
+        document.getElementById("stat-topics").textContent     = uniqueTopics.length;
+        document.getElementById("stat-actions").textContent    = openActions.length;
+        document.getElementById("stat-overdue").textContent    = overdueActions.length;
+        document.getElementById("stat-this-month").textContent = thisMonth.length;
+        document.getElementById("stat-attachments").textContent = withAttach;
+    }
+
+    /* =========================================================
+       TOPIC DROPDOWNS
+       ========================================================= */
+    function renderTopicDropdowns() {
+        const topicNames = topics.map(t => gv(t,"Topic","Topic Name")).filter(Boolean).sort();
+
+        // Filter dropdown (add "All Topics" back)
+        const ft = document.getElementById("filterTopic");
+        const ftVal = ft.value;
+        ft.innerHTML = `<option value="">All Topics</option>` +
+            topicNames.map(t => `<option value="${t}">${t}</option>`).join("");
+        ft.value = ftVal;
+
+        // Modal select
+        const fs = document.getElementById("fTopic");
+        const fsVal = fs.value;
+        fs.innerHTML = `<option value="">— Select Topic —</option>` +
+            topicNames.map(t => `<option value="${t}">${t}</option>`).join("");
+        fs.value = fsVal;
+    }
+
+    /* =========================================================
+       TABLE
+       ========================================================= */
+    function renderTable() {
+        const q       = document.getElementById("notesSearch").value.trim().toLowerCase();
+        const topicF  = document.getElementById("filterTopic").value;
+        const actionF = document.getElementById("filterAction").value;
+        const now     = new Date();
+
+        let rows = [...notes];
+
+        if (q) rows = rows.filter(n =>
+            gv(n,"Topic").toLowerCase().includes(q) ||
+            gv(n,"SubTopic","Sub Topic").toLowerCase().includes(q) ||
+            gv(n,"Note").toLowerCase().includes(q)
+        );
+        if (topicF) rows = rows.filter(n => gv(n,"Topic") === topicF);
+        if (actionF === "overdue") {
+            const overdueIds = new Set(actions
+                .filter(a => {
+                    const d = new Date(gv(a,"By Date","ActionByDate"));
+                    return gv(a,"Status").toLowerCase() !== "done" && !isNaN(d) && d < now;
+                })
+                .map(a => gv(a,"NoteID","Note ID")));
+            rows = rows.filter(n => overdueIds.has(gv(n,"NoteID","Note ID")));
+        } else if (actionF === "open") {
+            const openIds = new Set(actions
+                .filter(a => gv(a,"Status").toLowerCase() !== "done")
+                .map(a => gv(a,"NoteID")));
+            rows = rows.filter(n => openIds.has(gv(n,"NoteID")));
+        } else if (actionF === "none") {
+            const withAction = new Set(actions.map(a => gv(a,"NoteID")));
+            rows = rows.filter(n => !withAction.has(gv(n,"NoteID")));
+        }
+
+        // Sort newest first
+        rows.sort((a,b) => {
+            const da = new Date(gv(a,"Date")), db = new Date(gv(b,"Date"));
+            return db - da;
+        });
+
+        const body = document.getElementById("notesBody");
+        const empty = document.getElementById("notesEmpty");
+
+        body.innerHTML = rows.map(n => {
+            const nid = gv(n,"NoteID","Note ID");
+            const noteActions = actions.filter(a => gv(a,"NoteID") === nid);
+            const openA = noteActions.filter(a => gv(a,"Status").toLowerCase() !== "done");
+            let dotClass = "ok";
+            if (openA.some(a => { const d = new Date(gv(a,"By Date")); return !isNaN(d) && d < now; })) dotClass = "due";
+            else if (openA.some(a => {
+                const d = new Date(gv(a,"By Date")); const diff = (d - now) / 86400000;
+                return !isNaN(d) && diff >= 0 && diff <= 7;
+            })) dotClass = "soon";
+
+            const attachCount = gv(n,"Attachments").split(",").filter(s => s.trim()).length;
+            const notePreview = gv(n,"Note").slice(0,80) + (gv(n,"Note").length > 80 ? "…" : "");
+
+            return `<tr class="clickable" data-id="${nid}">
+                <td>${fmtDate(gv(n,"Date"))}</td>
+                <td>${gv(n,"Topic")}</td>
+                <td>${gv(n,"SubTopic","Sub Topic")}</td>
+                <td style="max-width:260px;">${notePreview}</td>
+                <td>${openA.length > 0 ? `<span class="action-dot ${dotClass}"></span>${openA.length} open` : '<span style="color:var(--foam-dim)">—</span>'}</td>
+                <td>${attachCount > 0 ? `📎 ${attachCount}` : '—'}</td>
+                <td><span class="badge ${openA.length > 0 ? (dotClass==="due"?"badge-expired":"badge-renewal") : "badge-full"}">${openA.length > 0 ? (dotClass==="due"?"Overdue":"Active") : "Complete"}</span></td>
+            </tr>`;
+        }).join("");
+
+        empty.style.display = rows.length ? "none" : "block";
+
+        // Row click → open modal in view/edit mode
+        body.querySelectorAll("tr.clickable").forEach(tr => {
+            tr.addEventListener("click", () => openNoteModal(tr.dataset.id));
+        });
+    }
+
+    /* =========================================================
+       MODAL — OPEN
+       ========================================================= */
+    function openNoteModal(noteId = null) {
+        editingNoteId = noteId;
+        copyInEmails  = [];
+        actionRows    = [];
+
+        const isNew = !noteId;
+        document.getElementById("modalTitle").textContent = isNew ? "New Note" : "Edit Note";
+        document.getElementById("modalDelete").style.display = isNew ? "none" : "inline-flex";
+        document.getElementById("modalStatus").className = "modal-status";
+        document.getElementById("modalStatus").textContent = "";
+
+        if (isNew) {
+            document.getElementById("fDate").value = today();
+            document.getElementById("fTopic").value = "";
+            document.getElementById("fSubTopic").value = "";
+            document.getElementById("fNote").value = "";
+            document.getElementById("fAttachments").value = "";
+        } else {
+            const n = notes.find(n => gv(n,"NoteID","Note ID") === noteId);
+            if (!n) return;
+            document.getElementById("fDate").value      = gv(n,"Date");
+            document.getElementById("fTopic").value     = gv(n,"Topic");
+            document.getElementById("fSubTopic").value  = gv(n,"SubTopic","Sub Topic");
+            document.getElementById("fNote").value      = gv(n,"Note");
+            document.getElementById("fAttachments").value = gv(n,"Attachments");
+
+            // Load copy-ins
+            const ci = gv(n,"CopyIn","Copy In","CopyInMembers");
+            copyInEmails = ci ? ci.split(",").map(s=>s.trim()).filter(Boolean) : [];
+
+            // Load actions for this note
+            const noteActRows = actions.filter(a => gv(a,"NoteID") === noteId);
+            actionRows = noteActRows.map(a => ({
+                id:        gv(a,"ActionID"),
+                action:    gv(a,"Action"),
+                byDate:    gv(a,"By Date","ActionByDate"),
+                byMember:  gv(a,"By Member","ActionByMember"),
+                status:    gv(a,"Status")
+            }));
+        }
+
+        renderAttachPreview();
+        renderCopyInTags();
+        renderActionItems();
+        document.getElementById("noteModal").classList.add("open");
+    }
+
+    function closeNoteModal() {
+        document.getElementById("noteModal").classList.remove("open");
+        editingNoteId = null;
+    }
+
+    /* =========================================================
+       ATTACH PREVIEW
+       ========================================================= */
+    function renderAttachPreview() {
+        const raw   = document.getElementById("fAttachments").value;
+        const links = raw.split(",").map(s => s.trim()).filter(Boolean);
+        document.getElementById("attachPreview").innerHTML = links.map(l =>
+            `<div class="attach-item">📎 <a href="${l}" target="_blank" rel="noopener">${l.slice(0,60)}${l.length>60?"…":""}</a></div>`
+        ).join("");
+    }
+
+    /* =========================================================
+       COPY-IN TAGS
+       ========================================================= */
+    function renderCopyInTags() {
+        document.getElementById("copyInTags").innerHTML = copyInEmails.map((e,i) =>
+            `<span class="copyin-tag">${e}<button data-i="${i}" class="copyin-remove">✕</button></span>`
+        ).join("");
+        document.querySelectorAll(".copyin-remove").forEach(btn =>
+            btn.addEventListener("click", () => {
+                copyInEmails.splice(+btn.dataset.i, 1);
+                renderCopyInTags();
+            })
+        );
+    }
+
+    function addCopyIn() {
+        const inp = document.getElementById("fCopyInInput");
+        const v   = inp.value.trim();
+        if (v && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && !copyInEmails.includes(v)) {
+            copyInEmails.push(v);
+            renderCopyInTags();
+        }
+        inp.value = "";
+    }
+
+    /* =========================================================
+       ACTION ITEMS
+       ========================================================= */
+    function renderActionItems() {
+        const container = document.getElementById("actionItems");
+        container.innerHTML = actionRows.map((a, i) => `
+            <div class="action-item" data-i="${i}">
+                <input type="text"   class="act-action"   value="${a.action  || ""}" placeholder="Action description">
+                <input type="date"   class="act-bydate"   value="${a.byDate  || ""}">
+                <input type="text"   class="act-bymember" value="${a.byMember|| ""}" placeholder="Assigned member">
+                <button class="action-remove" data-i="${i}">✕</button>
+            </div>
+        `).join("");
+
+        container.querySelectorAll(".action-remove").forEach(btn =>
+            btn.addEventListener("click", () => {
+                actionRows.splice(+btn.dataset.i, 1);
+                renderActionItems();
+            })
+        );
+        // Sync changes back to actionRows on input
+        container.querySelectorAll(".action-item").forEach(row => {
+            const i = +row.dataset.i;
+            row.querySelector(".act-action").addEventListener("input",    e => { actionRows[i].action   = e.target.value; });
+            row.querySelector(".act-bydate").addEventListener("change",   e => { actionRows[i].byDate   = e.target.value; });
+            row.querySelector(".act-bymember").addEventListener("input",  e => { actionRows[i].byMember = e.target.value; });
+        });
+    }
+
+    function addActionRow() {
+        actionRows.push({ id:"", action:"", byDate:"", byMember:"", status:"Open" });
+        renderActionItems();
+    }
+
+    /* =========================================================
+       SAVE NOTE
+       ========================================================= */
+    async function saveNote() {
+        const date     = document.getElementById("fDate").value.trim();
+        const topic    = document.getElementById("fTopic").value.trim();
+        const note     = document.getElementById("fNote").value.trim();
+
+        if (!date || !topic || !note) {
+            showModalStatus("Date, Topic and Note are required.", "error");
+            return;
+        }
+
+        const btn = document.getElementById("modalSave");
+        btn.disabled = true;
+        btn.textContent = "Saving…";
+
+        try {
+            const nid = editingNoteId || noteId();
+            const rowData = {
+                NoteID:      nid,
+                Date:        date,
+                Topic:       topic,
+                SubTopic:    document.getElementById("fSubTopic").value.trim(),
+                Note:        note,
+                Attachments: document.getElementById("fAttachments").value.trim(),
+                CopyIn:      copyInEmails.join(", "),
+                LastUpdated: new Date().toISOString()
+            };
+
+            if (editingNoteId) {
+                await updateSheet(NOTES_WEBAPP_URL, NOTES_SHEET, editingNoteId, rowData);
+            } else {
+                rowData.CreatedAt = new Date().toISOString();
+                await appendSheet(NOTES_WEBAPP_URL, NOTES_SHEET, rowData);
+            }
+
+            // Save / update actions
+            for (const a of actionRows) {
+                if (!a.action.trim()) continue;
+                const aData = {
+                    ActionID:  a.id || noteId(),
+                    NoteID:    nid,
+                    Action:    a.action,
+                    "By Date": a.byDate,
+                    "By Member": a.byMember,
+                    Status:    a.status || "Open"
+                };
+                if (a.id) {
+                    await updateSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, a.id, aData);
+                } else {
+                    await appendSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, aData);
+                }
+            }
+
+            showModalStatus("Saved successfully.", "success");
+            await loadAll();
+            setTimeout(closeNoteModal, 800);
+        } catch(e) {
+            showModalStatus("Error: " + e.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Save Note";
+        }
+    }
+
+    /* =========================================================
+       DELETE NOTE
+       ========================================================= */
+    async function deleteNote() {
+        if (!editingNoteId) return;
+        if (!confirm("Delete this note and all its actions? This cannot be undone.")) return;
+        try {
+            await deleteSheet(NOTES_WEBAPP_URL, NOTES_SHEET, editingNoteId);
+            // delete related actions
+            const related = actions.filter(a => gv(a,"NoteID") === editingNoteId);
+            for (const a of related) await deleteSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, gv(a,"ActionID"));
+            await loadAll();
+            closeNoteModal();
+        } catch(e) {
+            showModalStatus("Delete failed: " + e.message, "error");
+        }
+    }
+
+    function showModalStatus(msg, type) {
+        const el = document.getElementById("modalStatus");
+        el.textContent = msg;
+        el.className   = `modal-status visible ${type}`;
+    }
+
+    /* =========================================================
+       TOPIC MODAL
+       ========================================================= */
+    function openTopicModal() { document.getElementById("topicModal").classList.add("open"); renderTopicList(); }
+    function closeTopicModal() { document.getElementById("topicModal").classList.remove("open"); }
+
+    function renderTopicList() {
+        const topicNames = topics.map(t => gv(t,"Topic","Topic Name")).filter(Boolean).sort();
+        document.getElementById("topicList").innerHTML = topicNames.length
+            ? topicNames.map(t => `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--glass-border);font-size:13px;color:var(--foam);">${t}</div>`).join("")
+            : `<div style="font-size:12px;color:var(--foam-dim);padding:8px;">No topics yet.</div>`;
+    }
+
+    async function saveTopic() {
+        const inp = document.getElementById("newTopicInput");
+        const v   = inp.value.trim();
+        if (!v) return;
+        const ts = document.getElementById("topicStatus");
+        try {
+            await appendSheet(NOTES_WEBAPP_URL, TOPICS_SHEET, { TopicID: noteId(), Topic: v, CreatedAt: new Date().toISOString() });
+            inp.value = "";
+            await loadAll();
+            renderTopicList();
+            ts.textContent = `"${v}" added.`; ts.className = "modal-status visible success";
+        } catch(e) {
+            ts.textContent = "Error: " + e.message; ts.className = "modal-status visible error";
+        }
+    }
+
+    /* =========================================================
+       EVENT WIRING
+       ========================================================= */
+    document.getElementById("newNoteBtn").addEventListener("click",  () => openNoteModal());
+    document.getElementById("modalClose").addEventListener("click",  closeNoteModal);
+    document.getElementById("modalCancel").addEventListener("click", closeNoteModal);
+    document.getElementById("modalSave").addEventListener("click",   saveNote);
+    document.getElementById("modalDelete").addEventListener("click",  deleteNote);
+    document.getElementById("addActionBtn").addEventListener("click", addActionRow);
+    document.getElementById("addCopyInBtn").addEventListener("click", addCopyIn);
+    document.getElementById("fCopyInInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addCopyIn(); } });
+    document.getElementById("fAttachments").addEventListener("input", renderAttachPreview);
+
+    document.getElementById("addTopicBtn").addEventListener("click", openTopicModal);
+    document.getElementById("topicModalClose").addEventListener("click", closeTopicModal);
+    document.getElementById("topicModalCancel").addEventListener("click", closeTopicModal);
+    document.getElementById("saveTopicBtn").addEventListener("click", saveTopic);
+    document.getElementById("newTopicInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveTopic(); } });
+
+    document.getElementById("refreshBtn").addEventListener("click", loadAll);
+    document.getElementById("notesSearch").addEventListener("input", renderTable);
+    document.getElementById("filterTopic").addEventListener("change", renderTable);
+    document.getElementById("filterAction").addEventListener("change", renderTable);
+
+    // Close modals on overlay click
+    document.getElementById("noteModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeNoteModal(); });
+    document.getElementById("topicModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeTopicModal(); });
+
+    /* =========================================================
+       INIT
+       ========================================================= */
+    loadAll().then(() => lucide.createIcons());
+    </script>
+</body>
+</html>
