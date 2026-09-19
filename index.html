@@ -1087,6 +1087,21 @@
     line-height: 1.5;
     white-space: pre-wrap;
   }
+
+  .member-chevron{
+      margin-left:auto;
+      width:16px;
+      height:16px;
+      color:var(--foam-dim);
+      opacity:.55;
+      flex-shrink:0;
+      transition:opacity .15s ease, transform .15s ease;
+  }
+
+  .app-row:hover .member-chevron{
+      opacity:.9;
+      transform:translateX(2px);
+  }
 </style>
 </head>
 <body>
@@ -2326,7 +2341,7 @@
                 ${flags}
               </div>
             </div>
-            <i data-lucide="chevron-right"></i>
+            <i data-lucide="chevron-right" class="member-chevron"></i>
           </div>`;
       }).join('');
 
@@ -2781,8 +2796,18 @@
     // Open Boat Modal Function
     function openBoatModal(boatId) {
       // Retrieve boat object (adjust dataset source variable as needed)
-      const boat = (typeof boats !== 'undefined' ? boats : []).find(b => String(b.id) === String(boatId));
-      if (!boat) return;
+      const source = Array.isArray(allBoats)
+          ? allBoats
+          : (Array.isArray(boats) ? boats : []);
+
+      const boat = source.find(
+          b => String(b.id) === String(boatId)
+      );
+
+      if (!boat) {
+          console.warn("Boat not found:", boatId);
+          return;
+      }
 
       const classImg = getClassImage(boat.class);
       const activeStatus = boat.active 
