@@ -2561,16 +2561,7 @@
     }
 
     function renderBoats() {
-      const searchInput = document.getElementById('boatSearch');
-      const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
-
-      const filtered = allBoats.filter(boat => {
-        const ownerName = getBoatOwner(boat).toLowerCase();
-        const sailNo = (boat.sailNo || boat.SailNo || '').toString().toLowerCase();
-        const boatModel = (boat.model || boat.class || boat.Class || '').toLowerCase();
-
-        return ownerName.includes(query) || sailNo.includes(query) || boatModel.includes(query);
-      });
+      const filtered = applyBoatFilters();   // ← use this instead of inline filter
 
       const container = document.getElementById('boatList');
       const countEl = document.getElementById('boatCount');
@@ -2580,7 +2571,8 @@
       }
 
       if (!filtered.length) {
-        container.innerHTML = `<div class="empty-state">No registered boats found matching "${esc(query)}".</div>`;
+        const q = (document.getElementById('boatSearch')?.value || '').trim();
+        container.innerHTML = `<div class="empty-state">No registered boats found${q ? ` matching "${esc(q)}"` : ''}.</div>`;
         return;
       }
 
