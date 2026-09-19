@@ -941,11 +941,34 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 8px 0;
+    padding: 8px 012px;
   }
   #boatList {
     display: flex;
     flex-direction: column;
+  }
+
+  .member-chevron,
+  .boat-chevron {
+      margin-left: auto;
+      margin-right: 4px;   /* keeps it away from the edge */
+      width: 16px;
+      height: 16px;
+      color: var(--foam-dim);
+      opacity: .55;
+      flex-shrink: 0;
+      transition: opacity .15s ease, transform .15s ease;
+  }
+
+  .app-row:hover .member-chevron,
+  .app-row:hover .boat-chevron {
+      opacity: .9;
+      transform: translateX(2px);
+  }
+
+  .member-avatar,
+  .member-icon {
+      margin-left: 2px;
   }
 
   .sail-badge {
@@ -960,6 +983,7 @@
     font-weight: 700;
     font-size: 0.85rem;
     flex-shrink: 0;
+    margin-left: 2px;
   }
 
   /* Boat Modal Styling */
