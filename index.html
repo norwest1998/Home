@@ -927,6 +927,27 @@
     .nav-links .dropdown-menu{ position:static; display:block; box-shadow:none; background:transparent; border:none; padding-left:12px; }
     .nav-toggle{ display:inline-flex; }
   }
+
+  .app-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+  }
+
+  .sail-badge {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
@@ -2571,8 +2592,9 @@
 
         return `
           <div class="app-row">
+            <div class="sail-badge">${esc(sailNo)}</div>
             <div>
-              <div class="app-name">${esc(owner)} — ${esc(sailNo)}</div>
+              <div class="app-name">${esc(owner)}</div>
               <div class="app-meta">${esc(boatClass)} · ${esc(boatModel)}</div>
             </div>
           </div>
