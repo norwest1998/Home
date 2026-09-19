@@ -2755,7 +2755,7 @@
         const sailNo = b.sailNo || b.SailNo || 'N/A';
         const boatClass = b.class || b.Class || 'Unclassed';
         const boatModel = b.model || b.Model || 'Standard';
-        const boatColour = b.colour || '#ffffff';
+        const boatColour = b.colour || 'white';
 
         const activePill = b.active
         ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` 
@@ -2766,8 +2766,10 @@
             <div
               class="sail-badge"
               style="
-                background:${hexToRgba(boatColour, 0.80)};
-                color:${isDarkColour(boatColour) ? '#ffffff' : '#000000'};
+                background-color:${boatColour};
+                color:${isDarkColour(boatColour) ? '#fff' : '#000'};
+                border:1px solid rgba(255,255,255,0.35);
+                box-shadow:0 2px 8px rgba(0,0,0,0.25);
               "
             >
               ${esc(sailNo)}
@@ -2798,43 +2800,31 @@
       }).join('');
     }
 
-    function hexToRgba(hex, alpha = 0.85) {
-      if (!hex) return `rgba(255,255,255,${alpha})`;
-
-      let h = hex.replace('#', '');
-
-      if (h.length === 3) {
-        h = h.split('').map(c => c + c).join('');
-      }
-
-      const r = parseInt(h.substring(0,2),16);
-      const g = parseInt(h.substring(2,4),16);
-      const b = parseInt(h.substring(4,6),16);
-
-      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
-
     function isDarkColour(colour) {
-      if (!colour) return false; // default white background
+      if (!colour) return false;
 
-      let hex = colour.replace('#', '').trim();
+      const darkColours = [
+        'black',
+        'navy',
+        'darkblue',
+        'blue',
+        'midnightblue',
+        'darkgreen',
+        'green',
+        'forestgreen',
+        'darkred',
+        'red',
+        'maroon',
+        'purple',
+        'indigo',
+        'brown',
+        'grey',
+        'gray',
+        'darkgrey',
+        'darkgray'
+      ];
 
-      // Convert 3-digit hex to 6-digit
-      if (hex.length === 3) {
-        hex = hex.split('').map(c => c + c).join('');
-      }
-
-      // Invalid colour
-      if (hex.length !== 6) return false;
-
-      const r = parseInt(hex.substring(0, 2), 16);
-      const g = parseInt(hex.substring(2, 4), 16);
-      const b = parseInt(hex.substring(4, 6), 16);
-
-      // Perceived brightness formula
-      const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-
-      return brightness < 128;
+      return darkColours.includes(colour.toLowerCase().trim());
     }
 
     function clearBoatMemberFilter() {
@@ -2894,8 +2884,10 @@
                   style="
                     font-size:1.1rem;
                     padding:6px 12px;
-                    background:${hexToRgba(boatColour, 0.80)};
-                    color:${isDarkColour(boatColour) ? '#ffffff' : '#000000'};
+                    background-color:${boatColour};
+                    color:${isDarkColour(boatColour) ? '#fff' : '#000'};
+                    border:1px solid rgba(255,255,255,0.35);
+                    box-shadow:0 2px 8px rgba(0,0,0,0.25);
                   "
                 >
                   ${esc(boat.sailNo)}
