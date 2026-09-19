@@ -1829,6 +1829,9 @@
         const overlay = document.getElementById("mrs-overlay");
         if (overlay) overlay.remove();
         document.removeEventListener("keydown", onEsc);
+        
+        // Clear boat search filter and rerender boats list
+        clearBoatMemberFilter();
       }
 
       function onEsc(e) {
@@ -2251,11 +2254,16 @@
       });
     });
 
-    document.getElementById('closeMemDrawer').addEventListener('click', () =>
-      document.getElementById('memberDrawer').classList.remove('open'));
+    document.getElementById('closeMemDrawer').addEventListener('click', () => {
+      document.getElementById('memberDrawer').classList.remove('open');
+      clearBoatMemberFilter();
+    });
+
     document.getElementById('memberDrawer').addEventListener('click', e => {
-      if (e.target === document.getElementById('memberDrawer'))
+      if (e.target === document.getElementById('memberDrawer')) {
         document.getElementById('memberDrawer').classList.remove('open');
+        clearBoatMemberFilter();
+      }
     });
  
     /* ── Tab switching ── */
@@ -2585,6 +2593,7 @@
         const sailNo = b.sailNo || b.SailNo || 'N/A';
         const boatClass = b.class || b.Class || 'Unclassed';
         const boatModel = b.model || b.Model || 'Standard';
+        const activePill = b.active ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` : `<span class="badge-expired" style="margin-right: 8px;">Inactive</span>`;
 
         return `
           <div class="app-row" style="justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding:10px 0;">
@@ -2593,14 +2602,25 @@
               <div class="app-name">${esc(owner)}</div>
               <div class="app-meta">${esc(boatClass)} · ${esc(boatModel)}</div>
             </div>
-            ${CLASS_IMAGE_MAP[boatClass] ? `
-              <img src="${esc(CLASS_IMAGE_MAP[boatClass])}" alt="${esc(boatClass)}"
-                  style="height:32px; width:40px; object-fit:contain; opacity:0.85;
-                          background:rgba(255,255,255,0.1); border-radius:4px; padding:3px; margin-left:10px;">
-            ` : ''}
+            <div style="display:flex; align-items:center; gap:8px;">
+              ${activePill}
+              ${CLASS_IMAGE_MAP[boatClass] ? `
+                <img src="${esc(CLASS_IMAGE_MAP[boatClass])}" alt="${esc(boatClass)}"
+                    style="height:32px; width:40px; object-fit:contain; opacity:0.85;
+                            background:rgba(255,255,255,0.1); border-radius:4px; padding:3px; margin-left:10px;">
+              ` : ''}
+            </div>
           </div>
         `;        
       }).join('');
+    }
+
+    function clearBoatMemberFilter() {
+      const boatSearch = document.getElementById('boatSearch');
+      if (boatSearch && boatSearch.value !== '') {
+        boatSearch.value = '';
+        boatSearch.dispatchEvent(new Event('input'));
+      }
     }
 
     async function loadBoats() {
