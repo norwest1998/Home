@@ -1000,15 +1000,15 @@
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background-color: #0d6efd;
-    color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
     font-size: 0.85rem;
     flex-shrink: 0;
-    margin-left: 2px;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
   }
 
   /* Boat Modal Styling */
@@ -2763,12 +2763,10 @@
 
         return `
           <div class="app-row" onclick="openBoatModal('${esc(b.boatId)}')">
-
-
             <div
               class="sail-badge"
               style="
-                background-color:${boatColour};
+                background:${hexToRgba(boatColour, 0.80)};
                 color:${isDarkColour(boatColour) ? '#ffffff' : '#000000'};
               "
             >
@@ -2798,6 +2796,22 @@
           </div>
         `;        
       }).join('');
+    }
+
+    function hexToRgba(hex, alpha = 0.85) {
+      if (!hex) return `rgba(255,255,255,${alpha})`;
+
+      let h = hex.replace('#', '');
+
+      if (h.length === 3) {
+        h = h.split('').map(c => c + c).join('');
+      }
+
+      const r = parseInt(h.substring(0,2),16);
+      const g = parseInt(h.substring(2,4),16);
+      const b = parseInt(h.substring(4,6),16);
+
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 
     function isDarkColour(colour) {
@@ -2880,7 +2894,7 @@
                   style="
                     font-size:1.1rem;
                     padding:6px 12px;
-                    background-color:${boatColour};
+                    background:${hexToRgba(boatColour, 0.80)};
                     color:${isDarkColour(boatColour) ? '#ffffff' : '#000000'};
                   "
                 >
