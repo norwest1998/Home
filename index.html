@@ -2730,7 +2730,9 @@
         const sailNo = b.sailNo || b.SailNo || 'N/A';
         const boatClass = b.class || b.Class || 'Unclassed';
         const boatModel = b.model || b.Model || 'Standard';
-        const activePill = b.active ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` : `<span class="inactive-yes" style="margin-right: 8px;">Inactive</span>`;
+        const activePill = b.active 
+        ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` 
+        : `<span class="inactive-yes" style="margin-right: 8px;">Inactive</span>`;
 
         return `
           <div class="app-row" onclick="openBoatModal('${esc(b.id)}')" style="justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding:10px 0;">
@@ -2822,7 +2824,7 @@
                 </div>
 
                 <div class="boat-detail-item">
-                  <span class="boat-detail-label">Model / Design</span>
+                  <span class="boat-detail-label">Model</span>
                   <div class="boat-detail-value">${esc(boat.model || 'N/A')}</div>
                 </div>
 
@@ -2837,17 +2839,17 @@
                   <div class="boat-detail-value">${esc(boat.handicap)}</div>
                 </div>` : ''}
 
-                ${boat.division ? `
+                ${boat.gh ? `
                 <div class="boat-detail-item">
-                  <span class="boat-detail-label">Division</span>
-                  <div class="boat-detail-value">${esc(boat.division)}</div>
+                  <span class="boat-detail-label">GH</span>
+                  <div class="boat-detail-value">${esc(boat.gh)}</div>
                 </div>` : ''}
               </div>
 
-              ${boat.notes ? `
+              ${boat.ghcap ? `
               <div class="boat-detail-item full-width">
-                <span class="boat-detail-label">Notes</span>
-                <p class="boat-detail-notes">${esc(boat.notes)}</p>
+                <span class="boat-detail-label">GH Hcap</span>
+                <p class="boat-detail-notes">${esc(boat.ghcap)}</p>
               </div>` : ''}
             </div>
           </div>
