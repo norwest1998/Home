@@ -1927,6 +1927,13 @@
           }
           renderMember(modal, match);
         });
+
+        // Filter Registered Boats by selected member
+        const boatSearch = document.getElementById('boatSearch');
+        if (boatSearch) {
+          boatSearch.value = memberName;
+          boatSearch.dispatchEvent(new Event('input'));
+        }
       };
     })();
 
@@ -2191,6 +2198,13 @@
           </div>
         </div>`;
       document.getElementById('memberDrawer').classList.add('open');
+
+      // Filter Registered Boats by selected member
+      const boatSearch = document.getElementById('boatSearch');
+      if (boatSearch) {
+        boatSearch.value = m.name;
+        boatSearch.dispatchEvent(new Event('input'));
+      }
     }
 
     // Filter wiring
@@ -2518,23 +2532,37 @@
       });
     }
 
+    document.getElementById('boatSearch').addEventListener('input', renderBoats);
+
     function renderBoats() {
-      const list = applyBoatFilters();
-      document.getElementById('boatCount').innerHTML =
-        `Showing <strong>${list.length}</strong> of <strong>${allBoats.length}</strong> boats`;
+      const query = (document.getElementById('boatSearch').value || '').trim().toLowerCase();
+      const filtered = allBoats.filter(boat => {
+        const nameMatch = (boat.memberName || boat.owner || '').toLowerCase().includes(query);
+        const sailMatch = (boat.sailNo || '').toString().toLowerCase().includes(query);
+        const modelMatch = (boat.model || boat.class || '').toLowerCase().includes(query);
+        return nameMatch || sailMatch || modelMatch;
+      });
+
       const container = document.getElementById('boatList');
-      container.innerHTML = list.length ? list.map(b => `
+      const countEl = document.getElementById('boatCount');
+      
+      if (countEl) {
+        countEl.innerHTML = `Showing <strong>${filtered.length}</strong> of <strong>${allBoats.length}</strong> boats`;
+      }
+
+      if (!filtered.length) {
+        container.innerHTML = `<div class="empty-state">No registered boats found matching "${query}".</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(b => `
         <div class="app-row">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <img src="${esc(getClassImage(b.class))}" alt="${esc(b.class)}"
-                style="width:28px;height:28px;object-fit:contain;background:rgba(255,255,255,0.85);border-radius:6px;padding:3px;flex-shrink:0;">
-            <div>
-              <div class="app-name">${esc(b.sailNo)} — ${esc(b.model)}</div>
-              <div class="app-meta">${esc(b.member)} · ${esc(b.class)}${b.gh ? ' · GH HCap ' + esc(b.ghHcap) : ''}</div>
-            </div>
+          <div>
+            <div class="app-name">${esc(b.memberName || b.owner)} - ${esc(b.sailNo)}</div>
+            <div class="app-meta">${esc(b.class)} · ${esc(b.model || 'Standard')}</div>
           </div>
-          <span class="badge ${b.active ? 'badge-full' : 'badge-expired'}">${b.active ? 'Active' : 'Inactive'}</span>
-        </div>`).join('') : `<div class="empty-state">No boats match the current filters.</div>`;
+        </div>
+      `).join('');
     }
 
     async function loadBoats() {
