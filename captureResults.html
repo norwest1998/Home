@@ -1782,6 +1782,7 @@ async function selectEvent(id){
 }
 
 function toggleMember(sailNo){
+  sailNo = String(sailNo); 
   if(state.pendingSelection.has(sailNo)) state.pendingSelection.delete(sailNo);
   else state.pendingSelection.add(sailNo);
   render();
@@ -1799,7 +1800,7 @@ function confirmEntries(){
   const roster = MEMBERS.filter(m => m.class === state.event.class);
   const isFirstTime = state.entries.length === 0;
   state.entries = roster.filter(m => state.pendingSelection.has(m.sailNo))
-                         .map(m => ({ sailNo: m.sailNo, member: m.member }));
+                         .map(m => ({ sailNo: String(m.sailNo), member: m.member }));
   state.screen = 'race-capture';
   saveState();
   showToast(isFirstTime ? 'Entries saved' : 'Entries updated');
