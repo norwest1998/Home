@@ -2755,15 +2755,22 @@
         const sailNo = b.sailNo || b.SailNo || 'N/A';
         const boatClass = b.class || b.Class || 'Unclassed';
         const boatModel = b.model || b.Model || 'Standard';
-        const activePill = b.active 
+        const boatColour = b.colour || '#ffffff';
+
+        const activePill = b.active
         ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` 
         : `<span class="inactive-yes" style="margin-right: 8px;">Inactive</span>`;
 
         return `
           <div class="app-row" onclick="openBoatModal('${esc(b.boatId)}')">
+
+
             <div
               class="sail-badge"
-              style="background-color:${esc(b.colour || '#ffffff')}; color:#000;"
+              style="
+                background-color:${boatColour};
+                color:${isDarkColour(boatColour) ? '#ffffff' : '#000000'};
+              "
             >
               ${esc(sailNo)}
             </div>
@@ -2791,6 +2798,29 @@
           </div>
         `;        
       }).join('');
+    }
+
+    function isDarkColour(colour) {
+      if (!colour) return false; // default white background
+
+      let hex = colour.replace('#', '').trim();
+
+      // Convert 3-digit hex to 6-digit
+      if (hex.length === 3) {
+        hex = hex.split('').map(c => c + c).join('');
+      }
+
+      // Invalid colour
+      if (hex.length !== 6) return false;
+
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+
+      // Perceived brightness formula
+      const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+
+      return brightness < 128;
     }
 
     function clearBoatMemberFilter() {
@@ -2835,6 +2865,7 @@
       }
 
       const classImg = getClassImage(boat.class);
+      const boatColour = boat.colour || '#ffffff';
       const activeStatus = boat.active 
         ? `<span class="committee-yes">Active</span>` 
         : `<span class="committee-no">Inactive</span>`;
@@ -2849,7 +2880,8 @@
                   style="
                     font-size:1.1rem;
                     padding:6px 12px;
-                    background-color:${esc(b.colour || '#ffffff')}; color:#000;
+                    background-color:${boatColour};
+                    color:${isDarkColour(boatColour) ? '#ffffff' : '#000000'};
                   "
                 >
                   ${esc(boat.sailNo)}
