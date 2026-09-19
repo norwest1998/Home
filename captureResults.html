@@ -1073,8 +1073,9 @@ let MEMBERS = [];
 */
 async function getMembers(className) {
   try {
-    const data = await apiGet("members", className); 
-    MEMBERS = Array.isArray(data.members) ? data.members : []; 
+    const data = await apiGet("members", className);
+    MEMBERS = Array.isArray(data.members) ? data.members : [];
+    console.log(`getMembers(${className}): received ${MEMBERS.length} members`, MEMBERS.slice(0,3));
   } catch (error) {
     console.error("Failed to load member data:", error);
     MEMBERS = [];
@@ -1423,7 +1424,7 @@ today.setHours(0, 0, 0, 0);
 /* ---------------- Screen: Competitor Select ---------------- */
 function renderCompetitorSelect(){
   const ev = state.event;
-  const roster = MEMBERS.filter(m => m.class === state.event.class).sort((a,b) => a.member.localeCompare(b.member));
+  const roster = MEMBERS.filter(m => m.className === state.event.class).sort((a,b) => a.member.localeCompare(b.member));
   const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(String(m.sailNo)));
 
   const rows = roster.map(m => {
@@ -1789,7 +1790,7 @@ function toggleMember(sailNo){
 }
 
 function selectAllToggle(){
-  const roster = MEMBERS.filter(m => m.class === state.event.class);
+  const roster = MEMBERS.filter(m => m.className === state.event.class);
   const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(String(m.sailNo)));
   if(allChecked) state.pendingSelection.clear();
   else roster.forEach(m => state.pendingSelection.add(String(m.sailNo)));
@@ -1797,7 +1798,7 @@ function selectAllToggle(){
 }
 
 function confirmEntries(){
-  const roster = MEMBERS.filter(m => m.class === state.event.class);
+  const roster = MEMBERS.filter(m => m.className === state.event.class);
   const isFirstTime = state.entries.length === 0;
   state.entries = roster.filter(m => state.pendingSelection.has(String(m.sailNo)))
                          .map(m => ({ sailNo: String(m.sailNo), member: m.member }));
