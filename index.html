@@ -2326,7 +2326,7 @@
                 ${flags}
               </div>
             </div>
-            <span class="app-chevron">›</span>
+            <i data-lucide="chevron-right"></i>
           </div>`;
       }).join('');
 
@@ -2369,9 +2369,9 @@
         boatSearch.dispatchEvent(new Event('input'));
       }
     }
-    
-    lucide.createIcons();
 
+    lucide.createIcons();
+    
     // Filter wiring
     document.getElementById('memberSearch').addEventListener('input', renderMembers);
 
