@@ -934,6 +934,10 @@
     gap: 12px;
     padding: 8px 0;
   }
+  #boatList {
+    display: flex;
+    flex-direction: column;
+  }
 
   .sail-badge {
     width: 42px;
@@ -2583,7 +2587,7 @@
         const boatModel = b.model || b.Model || 'Standard';
 
         return `
-          <div class="app-row" style="justify-content:space-between; align-items:center;">
+          <div class="app-row" style="justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding:10px 0;">
             <div class="sail-badge">${esc(sailNo)}</div>
             <div style="flex:1; margin-left:10px;">
               <div class="app-name">${esc(owner)}</div>
@@ -2591,11 +2595,11 @@
             </div>
             ${CLASS_IMAGE_MAP[boatClass] ? `
               <img src="${esc(CLASS_IMAGE_MAP[boatClass])}" alt="${esc(boatClass)}"
-                style="height:32px; width:40px; object-fit:contain; opacity:0.85;
-                  background:rgba(255,255,255,0.1); border-radius:4px; padding:3px; margin-left:10px;"
+                  style="height:32px; width:40px; object-fit:contain; opacity:0.85;
+                          background:rgba(255,255,255,0.1); border-radius:4px; padding:3px; margin-left:10px;">
             ` : ''}
           </div>
-        `;          
+        `;        
       }).join('');
     }
 
