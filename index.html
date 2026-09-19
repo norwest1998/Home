@@ -937,12 +937,36 @@
     .nav-toggle{ display:inline-flex; }
   }
 
-  .app-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 012px;
+  .app-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:10px 14px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      gap:12px;
   }
+
+  .app-row-content{
+      flex:1;
+      margin-left:10px;
+  }
+
+  .app-row-right{
+      display:flex;
+      align-items:center;
+      gap:8px;
+  }
+
+  .boat-class-icon{
+      height:32px;
+      width:40px;
+      object-fit:contain;
+      opacity:.85;
+      background:rgba(255,255,255,.1);
+      border-radius:4px;
+      padding:3px;
+  }
+
   #boatList {
     display: flex;
     flex-direction: column;
@@ -951,7 +975,7 @@
   .member-chevron,
   .boat-chevron {
       margin-left: auto;
-      margin-right: 4px;   /* keeps it away from the edge */
+      margin-right: 4px;
       width: 16px;
       height: 16px;
       color: var(--foam-dim);
@@ -2778,19 +2802,24 @@
         : `<span class="inactive-yes" style="margin-right: 8px;">Inactive</span>`;
 
         return `
-          <div class="app-row" onclick="openBoatModal('${esc(b.id)}')" style="justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding:10px 0;">
+          <div class="app-row" onclick="openBoatModal('${esc(b.id)}')">
             <div class="sail-badge">${esc(sailNo)}</div>
-            <div style="flex:1; margin-left:10px;">
+
+            <div class="app-row-content">
               <div class="app-name">${esc(owner)}</div>
               <div class="app-meta">${esc(boatClass)} · ${esc(boatModel)}</div>
             </div>
-            <div style="display:flex; align-items:center; gap:8px;">
+
+            <div class="app-row-right">
               ${activePill}
+
               ${CLASS_IMAGE_MAP[boatClass] ? `
-                <img src="${esc(CLASS_IMAGE_MAP[boatClass])}" alt="${esc(boatClass)}"
-                    style="height:32px; width:40px; object-fit:contain; opacity:0.85;
-                            background:rgba(255,255,255,0.1); border-radius:4px; padding:3px; margin-left:10px;">
+                <img class="boat-class-icon"
+                    src="${esc(CLASS_IMAGE_MAP[boatClass])}"
+                    alt="${esc(boatClass)}">
               ` : ''}
+
+              <i data-lucide="chevron-right" class="boat-chevron"></i>
             </div>
           </div>
         `;        
