@@ -2798,9 +2798,9 @@
         const activePill = b.active 
         ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` 
         : `<span class="inactive-yes" style="margin-right: 8px;">Inactive</span>`;
-console.log(b.id);
+console.log(b.boatId);
         return `
-          <div class="app-row" onclick="openBoatModal('${esc(b.BoatID)}')">
+          <div class="app-row" onclick="openBoatModal('${esc(b.boatId)}')">
             <div class="sail-badge">${esc(sailNo)}</div>
 
             <div class="app-row-content">
@@ -2926,7 +2926,7 @@ console.log(b.id);
                 </div>` : ''}
               </div>
 
-              ${boat.ghcap ? `
+              ${boat.ghHcap ? `
               <div class="boat-detail-item full-width">
                 <span class="boat-detail-label">GH Hcap</span>
                 <p class="boat-detail-notes">${esc(boat.ghcap)}</p>
