@@ -2536,7 +2536,7 @@
 
     // Helper function to safely extract the member's name from any key variant
     function getBoatOwner(boat) {
-      return boat.memberName || boat.MemberName || boat.owner || boat.ownerName || boat.Helm || boat.Skipper || 'Unknown Member';
+      return boat.member || boat.memberName || boat.MemberName || boat.owner || boat.ownerName || boat.Helm || boat.Skipper || 'Unknown Member';
     }
 
     function renderBoats() {
