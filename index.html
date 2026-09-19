@@ -2534,13 +2534,21 @@
 
     document.getElementById('boatSearch').addEventListener('input', renderBoats);
 
+    // Helper function to safely extract the member's name from any key variant
+    function getBoatOwner(boat) {
+      return boat.memberName || boat.MemberName || boat.owner || boat.ownerName || boat.Helm || boat.Skipper || 'Unknown Member';
+    }
+
     function renderBoats() {
-      const query = (document.getElementById('boatSearch').value || '').trim().toLowerCase();
+      const searchInput = document.getElementById('boatSearch');
+      const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+
       const filtered = allBoats.filter(boat => {
-        const nameMatch = (boat.memberName || boat.owner || '').toLowerCase().includes(query);
-        const sailMatch = (boat.sailNo || '').toString().toLowerCase().includes(query);
-        const modelMatch = (boat.model || boat.class || '').toLowerCase().includes(query);
-        return nameMatch || sailMatch || modelMatch;
+        const ownerName = getBoatOwner(boat).toLowerCase();
+        const sailNo = (boat.sailNo || boat.SailNo || '').toString().toLowerCase();
+        const boatModel = (boat.model || boat.class || boat.Class || '').toLowerCase();
+
+        return ownerName.includes(query) || sailNo.includes(query) || boatModel.includes(query);
       });
 
       const container = document.getElementById('boatList');
@@ -2551,18 +2559,25 @@
       }
 
       if (!filtered.length) {
-        container.innerHTML = `<div class="empty-state">No registered boats found matching "${query}".</div>`;
+        container.innerHTML = `<div class="empty-state">No registered boats found matching "${esc(query)}".</div>`;
         return;
       }
 
-      container.innerHTML = filtered.map(b => `
-        <div class="app-row">
-          <div>
-            <div class="app-name">${esc(b.memberName || b.owner)} - ${esc(b.sailNo)}</div>
-            <div class="app-meta">${esc(b.class)} · ${esc(b.model || 'Standard')}</div>
+      container.innerHTML = filtered.map(b => {
+        const owner = getBoatOwner(b);
+        const sailNo = b.sailNo || b.SailNo || 'N/A';
+        const boatClass = b.class || b.Class || 'Unclassed';
+        const boatModel = b.model || b.Model || 'Standard';
+
+        return `
+          <div class="app-row">
+            <div>
+              <div class="app-name">${esc(owner)} — ${esc(sailNo)}</div>
+              <div class="app-meta">${esc(boatClass)} · ${esc(boatModel)}</div>
+            </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     async function loadBoats() {
