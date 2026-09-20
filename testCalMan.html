@@ -305,6 +305,124 @@
 .season-op-msg.status-error {
   color: #f87171;
 }
+
+/* Filter Bar Ordering (Left to Right: Month -> Season -> Rescheduled -> Classes) */
+.filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.filter-select {
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* Modal Layout */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay.hidden {
+  display: none !important;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-surface, #1e293b);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.full-width {
+  grid-column: span 2;
+}
+
+.form-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: inherit;
+  font-size: 14px;
+}
+
+.form-input[readonly] {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Class Emblem Preview Container */
+.emblem-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+}
+
+.emblem-img {
+  max-height: 30px;
+  max-width: 30px;
+  object-fit: contain;
+}
+
+/* Conditional Field Hiding */
+.full-field-only.hidden-field {
+  display: none !important;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
 </style>
 </head>
 <body>
@@ -458,6 +576,21 @@
       
       <!-- Filter Bar with All Seasons Dropdown -->
       <div class="filter-bar">
+        <select id="filterMonth" class="filter-select">
+            <option value="">All Months</option>
+            <option value="Jan">Jan</option>
+            <option value="Feb">Feb</option>
+            <option value="Mar">Mar</option>
+            <option value="Apr">Apr</option>
+            <option value="May">May</option>
+            <option value="Jun">Jun</option>
+            <option value="Jul">Jul</option>
+            <option value="Aug">Aug</option>
+            <option value="Sep">Sep</option>
+            <option value="Oct">Oct</option>
+            <option value="Nov">Nov</option>
+            <option value="Dec">Dec</option>
+        </select>
         <div class="season-select-wrapper">
           <label for="seasonSelect">Season:</label>
           <select id="seasonSelect" class="season-dropdown"></select>
@@ -574,84 +707,135 @@
   </div>
 </div>
 
-<!-- Add Event Modal Dialog -->
-<div class="modal-overlay" id="addEventModal">
-  <div class="modal-card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h3 style="margin:0; color:var(--foam);">Add New Event</h3>
-      <button class="icon-btn" onclick="closeAddEventModal()"><i data-lucide="x"></i></button>
+<!-- Add / Edit Event Modal -->
+<div id="eventModal" class="modal-overlay hidden">
+  <div class="modal-card glass">
+    <div class="modal-header">
+      <h3 id="modalTitle">Add Event</h3>
+      <button type="button" id="closeModalBtn" class="btn-icon">&times;</button>
     </div>
-    <div class="app-detail-grid">
-      <div>
-        <label>Event Name</label>
-        <input type="text" id="addEventName" placeholder="e.g. Club Regatta / Working Bee">
-      </div>
-      <div>
-        <label>Event Type</label>
-        <select id="addEventType">
-          <option value="Competition">Competition (Regatta Types)</option>
-          <option value="Social">Social (Filler)</option>
-          <option value="Maintenance">Maintenance (Facilities upkeep)</option>
-          <option value="Club Meetings">Club Meetings</option>
-        </select>
-      </div>
-      <div>
-        <label>Class</label>
-        <select id="addEventClass"></select>
-      </div>
-      <div>
-        <label>Season</label>
-        <input type="text" id="addEventSeason" placeholder="e.g. 2026">
-      </div>
-      <div>
-        <label>Date</label>
-        <input type="date" id="addEventDate">
-      </div>
-      <div>
-        <label>Start Time</label>
-        <input type="time" id="addStartTime" value="11:00">
-      </div>
-      <div>
-        <label>Finish Time</label>
-        <input type="time" id="addFinishTime" value="16:00">
-      </div>
-    </div>
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-      <button class="btn btn-ghost" onclick="closeAddEventModal()">Cancel</button>
-      <button class="btn btn-approve" id="saveAddEventBtn">Create Event</button>
-    </div>
-  </div>
-</div>
 
-<!-- Edit Event Modal Dialog -->
-<div class="modal-overlay" id="editModal">
-  <div class="modal-card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h3 style="margin:0; color:var(--foam);">Edit Event Details</h3>
-      <button class="icon-btn" onclick="closeEditModal()"><i data-lucide="x"></i></button>
-    </div>
-    <div class="app-detail-grid">
-      <div>
-        <label>Event Name</label>
-        <input type="text" id="editEventName">
+    <form id="eventForm" class="modal-form">
+      <input type="hidden" id="modalMode" value="add">
+
+      <div class="form-grid">
+        <!-- Event Type -->
+        <div class="form-group">
+          <label for="modalEventType">Event Type</label>
+          <select id="modalEventType" class="form-input" required>
+            <option value="Competition">Competition</option>
+            <option value="Social">Social</option>
+            <option value="Meeting">Meeting</option>
+            <option value="Working Bee">Working Bee</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <!-- Class Emblem Display -->
+        <div class="form-group emblem-container full-field-only">
+          <label>Emblem</label>
+          <div class="emblem-preview">
+            <img id="modalEmblemImg" src="" alt="Emblem" class="emblem-img hidden">
+            <span id="modalEmblemPlaceholder" class="text-muted" style="font-size: 12px;">Select a Class</span>
+          </div>
+        </div>
+
+        <!-- Date (yyyy/MM/dd) -->
+        <div class="form-group">
+          <label for="modalDate">Date</label>
+          <input type="date" id="modalDate" class="form-input" required>
+        </div>
+
+        <!-- Month (MMM - Derived) -->
+        <div class="form-group full-field-only">
+          <label for="modalMonth">Month</label>
+          <input type="text" id="modalMonth" class="form-input" readonly placeholder="Auto (MMM)">
+        </div>
+
+        <!-- Start Time (hh:mm) -->
+        <div class="form-group">
+          <label for="modalStart">Start Time</label>
+          <input type="time" id="modalStart" class="form-input" required>
+        </div>
+
+        <!-- Finish Time (hh:mm) -->
+        <div class="form-group">
+          <label for="modalFinish">Finish Time</label>
+          <input type="time" id="modalFinish" class="form-input" required>
+        </div>
+
+        <!-- Class -->
+        <div class="form-group full-field-only">
+          <label for="modalClass">Class</label>
+          <select id="modalClass" class="form-input">
+            <option value="">Select Class...</option>
+          </select>
+        </div>
+
+        <!-- Regatta Type -->
+        <div class="form-group full-field-only">
+          <label for="modalRegattaType">Regatta Type</label>
+          <input type="text" id="modalRegattaType" class="form-input" placeholder="e.g. Club Championship">
+        </div>
+
+        <!-- Season -->
+        <div class="form-group full-field-only">
+          <label for="modalSeason">Season</label>
+          <input type="text" id="modalSeason" class="form-input" placeholder="e.g. 2026-27">
+        </div>
+
+        <!-- Round No -->
+        <div class="form-group full-field-only">
+          <label for="modalRoundNo">Round No</label>
+          <input type="text" id="modalRoundNo" class="form-input" placeholder="e.g. 1">
+        </div>
+
+        <!-- Results -->
+        <div class="form-group full-field-only">
+          <label for="modalResults">Results</label>
+          <select id="modalResults" class="form-input">
+            <option value="Not Started">Not Started</option>
+            <option value="Processed">Processed</option>
+            <option value="No Score">No Score</option>
+          </select>
+        </div>
+
+        <!-- Rescheduled Date -->
+        <div class="form-group full-field-only">
+          <label for="modalRescheduledDate">Rescheduled Date</label>
+          <input type="date" id="modalRescheduledDate" class="form-input">
+        </div>
+
+        <!-- HexKey (Not Editable) -->
+        <div class="form-group full-field-only">
+          <label for="modalHexKey">HexKey</label>
+          <input type="text" id="modalHexKey" class="form-input" readonly placeholder="Auto-generated">
+        </div>
+
+        <!-- Updated to Calendar (Calendar ID) -->
+        <div class="form-group full-field-only">
+          <label for="modalCalendarId">Updated to Calendar</label>
+          <input type="text" id="modalCalendarId" class="form-input" readonly placeholder="Class Calendar ID when synced">
+        </div>
+
+        <!-- Regional Conflicts (Read-only array/list) -->
+        <div class="form-group full-width full-field-only">
+          <label for="modalRegionalConflicts">Regional Conflicts</label>
+          <input type="text" id="modalRegionalConflicts" class="form-input" readonly placeholder="None">
+        </div>
+
+        <!-- Event Name (Freehand or Concatenated) -->
+        <div class="form-group full-width">
+          <label for="modalEvent" id="modalEventLabel">Event Name</label>
+          <input type="text" id="modalEvent" class="form-input" required placeholder="Event description">
+        </div>
       </div>
-      <div>
-        <label>Date</label>
-        <input type="date" id="editEventDate">
+
+      <div class="modal-footer">
+        <button type="button" id="cancelModalBtn" class="btn btn-ghost">Cancel</button>
+        <button type="submit" class="btn btn-approve">Save Event</button>
       </div>
-      <div>
-        <label>Start Time</label>
-        <input type="text" id="editStartTime">
-      </div>
-      <div>
-        <label>Finish Time</label>
-        <input type="text" id="editFinishTime">
-      </div>
-    </div>
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-      <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
-      <button class="btn btn-approve" id="saveEditBtn">Save Changes</button>
-    </div>
+    </form>
   </div>
 </div>
 
@@ -812,6 +996,33 @@ const lastActionLabel = document.getElementById("lastActionLabel");
 const regionalConflictBtn = document.getElementById("regionalConflictBtn");
 const generateSeasonBtn = document.getElementById("generateSeasonBtn");
 
+const filterMonth = document.getElementById("filterMonth");
+const eventModal = document.getElementById("eventModal");
+const eventForm = document.getElementById("eventForm");
+const modalTitle = document.getElementById("modalTitle");
+const modalMode = document.getElementById("modalMode");
+
+const modalHexKey = document.getElementById("modalHexKey");
+const modalMonth = document.getElementById("modalMonth");
+const modalDate = document.getElementById("modalDate");
+const modalStart = document.getElementById("modalStart");
+const modalFinish = document.getElementById("modalFinish");
+const modalClass = document.getElementById("modalClass");
+const modalRegattaType = document.getElementById("modalRegattaType");
+const modalEventType = document.getElementById("modalEventType");
+const modalSeason = document.getElementById("modalSeason");
+const modalRoundNo = document.getElementById("modalRoundNo");
+const modalResults = document.getElementById("modalResults");
+const modalRescheduledDate = document.getElementById("modalRescheduledDate");
+const modalCalendarId = document.getElementById("modalCalendarId");
+const modalRegionalConflicts = document.getElementById("modalRegionalConflicts");
+const modalEvent = document.getElementById("modalEvent");
+const modalEmblemImg = document.getElementById("modalEmblemImg");
+const modalEmblemPlaceholder = document.getElementById("modalEmblemPlaceholder");
+
+// Class Image Map lookup object (Populated during data load)
+let classImageMap = {};
+
 function logAction(msg) {
   const time = new Date().toLocaleTimeString();
   auditTrail.textContent = `[${time}] ${msg}\n` + (auditTrail.textContent === "No actions yet this session." ? "" : auditTrail.textContent);
@@ -824,6 +1035,13 @@ function logAction(msg) {
 function seasonEvents() {
   return eventData.filter(e => {
     if (e.Class === "M") return false; // Exclude Marblehead
+    if (selectedMonth) {
+      const eDate = new Date(event.Date);
+      if (!isNaN(eDate.getTime())) {
+        const monthStr = eDate.toLocaleString("en-US", { month: "short" });
+        if (monthStr !== selectedMonth) return false;
+      }
+    }
     if (selectedSeason && !String(e.Season).startsWith(String(selectedSeason))) return false;
     if (selectedClass && e.Class !== selectedClass) return false;
     if (rescheduledOnly && !(e["Rescheduled Date"] || "")) return false;
@@ -1171,89 +1389,180 @@ availableDates.addEventListener("change", renderNewEventPreview);
 /* =========================================================
    ADD EVENT MODAL & LOGIC
    ========================================================= */
-function openAddEventModal() {
-  const classSelect = document.getElementById("addEventClass");
-  const filteredClasses = classes.filter(c => c.ClassName !== "M");
-  
-  if (filteredClasses.length) {
-    classSelect.innerHTML = filteredClasses.map(c => `<option value="${c.ClassName}">${c.ClassName}</option>`).join("");
-  } else {
-    const defaultClasses = ["DF65", "DF95", "IOM", "10 Rater"];
-    classSelect.innerHTML = defaultClasses.map(c => `<option value="${c}">${c}</option>`).join("");
-  }
+function updateModalVisibility() {
+  const isAddMode = modalMode.value === "add";
+  const eventType = modalEventType.value;
+  const isCompOrSocial = ["Competition", "Social"].includes(eventType);
 
-  document.getElementById("addEventSeason").value = selectedSeason || CURRENT_SEASON_START;
-  document.getElementById("addEventDate").value = new Date().toISOString().split("T")[0];
-  document.getElementById("addEventModal").classList.add("active");
+  const fullFields = document.querySelectorAll(".full-field-only");
+
+  // Rule: When adding an Event, if Event Type is NOT 'Competition' or 'Social':
+  // Only show Date, Start, Finish, Event (Name freehand)
+  if (isAddMode && !isCompOrSocial) {
+    fullFields.forEach(el => el.classList.add("hidden-field"));
+    modalEvent.readOnly = false;
+  } else {
+    fullFields.forEach(el => el.classList.remove("hidden-field"));
+    if (isCompOrSocial) {
+      updateAutoEventName();
+    }
+  }
 }
+
+modalDate.addEventListener("change", () => {
+  const d = new Date(modalDate.value);
+  if (!isNaN(d.getTime())) {
+    modalMonth.value = d.toLocaleString("en-US", { month: "short" });
+  } else {
+    modalMonth.value = "";
+  }
+  updateAutoEventName();
+});
+
+// --- 4. Class -> Emblem Update ---
+modalClass.addEventListener("change", () => {
+  const selectedClass = modalClass.value;
+  const imageUrl = classImageMap[selectedClass] || classImageMap["General"] || "";
+
+  if (imageUrl) {
+    modalEmblemImg.src = imageUrl;
+    modalEmblemImg.classList.remove("hidden");
+    modalEmblemPlaceholder.classList.add("hidden");
+  } else {
+    modalEmblemImg.src = "";
+    modalEmblemImg.classList.add("hidden");
+    modalEmblemPlaceholder.classList.remove("hidden");
+  }
+  updateAutoEventName();
+});
+
+function updateAutoEventName() {
+  const eventType = modalEventType.value;
+  if (!["Competition", "Social"].includes(eventType)) return;
+
+  const start = modalStart.value || "";
+  const finish = modalFinish.value || "";
+  const cls = modalClass.value || "";
+  const regatta = modalRegattaType.value || "";
+  const round = modalRoundNo.value ? `Rd ${modalRoundNo.value}` : "";
+
+  const timeStr = start && finish ? `${start} - ${finish}` : (start || finish);
+  const parts = [timeStr, cls, regatta, round].filter(Boolean);
+
+  modalEvent.value = parts.join(" ").trim();
+}
+
+[modalStart, modalFinish, modalRegattaType, modalRoundNo, modalEventType].forEach(el => {
+  el.addEventListener("input", () => {
+    updateModalVisibility();
+    updateAutoEventName();
+  });
+  el.addEventListener("change", () => {
+    updateModalVisibility();
+    updateAutoEventName();
+  });
+});
+
+function openAddEventModal() {
+  modalTitle.textContent = "Add Event";
+  modalMode.value = "add";
+  eventForm.reset();
+
+  modalHexKey.value = "";
+  modalMonth.value = "";
+  modalCalendarId.value = "";
+  modalRegionalConflicts.value = "";
+  
+  modalEmblemImg.classList.add("hidden");
+  modalEmblemPlaceholder.classList.remove("hidden");
+
+  updateModalVisibility();
+  eventModal.classList.remove("hidden");
+}
+
+function openEditEventModal(hexKey) {
+  const event = eventData.find(e => e.HexKey === hexKey);
+  if (!event) return;
+
+  modalTitle.textContent = "Edit Event";
+  modalMode.value = "edit";
+
+  modalHexKey.value = event.HexKey || "";
+  modalDate.value = event.Date ? new Date(event.Date).toISOString().split("T")[0] : "";
+  modalMonth.value = event.Month || "";
+  modalStart.value = event.Start || "";
+  modalFinish.value = event.Finish || "";
+  modalClass.value = event.Class || "";
+  modalRegattaType.value = event["Regatta Type"] || "";
+  modalEventType.value = event["Event Type"] || "Competition";
+  modalSeason.value = event.Season || "";
+  modalRoundNo.value = event["Round no"] || "";
+  modalResults.value = event.Results || "Not Started";
+  modalRescheduledDate.value = event["Rescheduled Date"] ? new Date(event["Rescheduled Date"]).toISOString().split("T")[0] : "";
+  modalCalendarId.value = event["Updated to Calendar"] || "";
+  
+  const conflicts = Array.isArray(event["Regional Conflicts"]) 
+    ? event["Regional Conflicts"].join(", ") 
+    : (event["Regional Conflicts"] || "");
+  modalRegionalConflicts.value = conflicts;
+
+  modalEvent.value = event.Event || "";
+
+  // Trigger Class Emblem change
+  modalClass.dispatchEvent(new Event("change"));
+
+  updateModalVisibility();
+  eventModal.classList.remove("hidden");
+}
+
+document.getElementById("closeModalBtn")?.addEventListener("click", () => eventModal.classList.add("hidden"));
+document.getElementById("cancelModalBtn")?.addEventListener("click", () => eventModal.classList.add("hidden"));
 
 function closeAddEventModal() {
   document.getElementById("addEventModal").classList.remove("active");
 }
 
-document.getElementById("saveAddEventBtn").addEventListener("click", async () => {
-  const eventName = document.getElementById("addEventName").value.trim();
-  const eventType = document.getElementById("addEventType").value;
-  const eventClass = document.getElementById("addEventClass").value;
-  const eventSeason = document.getElementById("addEventSeason").value;
-  const eventDate = document.getElementById("addEventDate").value;
-  const startTime = document.getElementById("addStartTime").value;
-  const finishTime = document.getElementById("addFinishTime").value;
-
-  if (!eventName) {
-    alert("Please enter an Event Name.");
-    return;
-  }
-  if (!eventDate) {
-    alert("Please select a Date.");
-    return;
-  }
-
-  const saveBtn = document.getElementById("saveAddEventBtn");
-  saveBtn.disabled = true;
-
-  const hexKey = crypto.randomUUID();
-  const parsedD = parseLocalDate(eventDate);
-  const monthStr = parsedD ? parsedD.toLocaleString("en-AU", { month: "short" }) : "";
-  const dateFmt = formatDate(eventDate);
-
+eventForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const isAdd = modalMode.value === "add";
   const rowData = {
-    HexKey: hexKey,
-    Event: eventName,
-    Competition: eventType, // Saved in 'Competition' field as requested
-    "Event Type": eventType,
-    Class: eventClass,
-    Season: eventSeason,
-    Date: dateFmt,
-    Start: startTime ? formatTime(startTime) : "11:00 AM",
-    Finish: finishTime ? formatTime(finishTime) : "04:00 PM",
-    Month: monthStr
+    "Event Type": modalEventType.value,
+    "Date": modalDate.value,
+    "Start": modalStart.value,
+    "Finish": modalFinish.value,
+    "Event": modalEvent.value,
   };
 
-  try {
-    await appendSheet(SHEETS.calWebAppUrl, "Event Data", rowData);
-    eventData.push(rowData);
-    
-    AdminLog.add({
-      hexCode: hexKey,
-      name: eventClass,
-      field: "Event Added",
-      before: "",
-      after: `${eventName} (${eventType})`,
-      status: "success",
-      message: `Created event ${eventName} for ${eventClass}`
+  // Add remaining fields if Competition/Social or in Edit mode
+  if (!isAdd || ["Competition", "Social"].includes(modalEventType.value)) {
+    Object.assign(rowData, {
+      "Month": modalMonth.value,
+      "Class": modalClass.value,
+      "Regatta Type": modalRegattaType.value,
+      "Season": modalSeason.value,
+      "Round no": modalRoundNo.value,
+      "Results": modalResults.value,
+      "Rescheduled Date": modalRescheduledDate.value
     });
+    
+  }
 
-    logAction(`Added event: "${eventName}" [Type: ${eventType}] for ${eventClass} on ${dateFmt}`);
-    closeAddEventModal();
-    renderStats();
-    renderClassEventsPills();
-    renderTable();
+  try {
+    if (isAdd) {
+      logAction("Adding new event...");
+      await appendSheet(SHEETS.calWebAppUrl, "Event Data", rowData);
+      logAction("Event added successfully.");
+    } else {
+      logAction(`Updating event ${modalHexKey.value}...`);
+      await updateSheet(SHEETS.calWebAppUrl, "Event Data", modalHexKey.value, rowData);
+      logAction("Event updated successfully.");
+    }
+
+    eventModal.classList.add("hidden");
+    await loadData();
   } catch (err) {
-    alert("Failed to add event: " + err.message);
-    logAction(`Add Event Error: ${err.message}`);
-  } finally {
-    saveBtn.disabled = false;
+    logAction(`Save failed: ${err.message}`);
   }
 });
 
