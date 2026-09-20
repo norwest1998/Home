@@ -300,7 +300,7 @@
             
             const rows = Array.isArray(data) ? data : (data.values || []);
             if (!rows || rows.length === 0) return [];
-            console.log(sheetName, " Row: ", rows); 
+            // console.log(sheetName, " Row: ", rows); 
 
             // Dynamically locate the actual header row (contains 'RowID' or 'Status')
             let headerIndex = rows.findIndex(r => 
