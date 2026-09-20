@@ -17,18 +17,6 @@
         gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
     }
 
-    .admin-header {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 16px; margin: 36px auto 16px; flex-wrap: wrap;
-    }
-    .admin-title-group { display: flex; flex-direction: column; gap: 4px; }
-    .admin-title-group h1 { font-family: var(--font-display); font-size: 28px; color: var(--foam); }
-    .admin-badge {
-        display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-data);
-        font-size: 9px; color: var(--signal); padding: 4px 10px; border-radius: 4px;
-        background: rgba(255,106,61,0.12); border: 1px solid rgba(255,106,61,0.3); width: fit-content;
-    }
-
     /* Stats board */
     .stats-grid {
         display: grid;
@@ -66,6 +54,25 @@
         align-items: center; margin-bottom: 16px;
     }
     .notes-toolbar .search-wrap { flex: 1; min-width: 220px; margin-bottom: 0; }
+
+    /* Glass select — matches theme, readable text */
+    .glass-select {
+        appearance: none;
+        -webkit-appearance: none;
+        background: rgba(255,255,255,0.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0b8c8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        color: var(--foam);
+        font-family: var(--font-body, 'Inter', sans-serif);
+        font-size: 12px;
+        padding: 5px 30px 5px 12px;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+        min-width: 120px;
+    }
+    .glass-select:hover  { background-color: rgba(255,255,255,0.12); border-color: var(--foam-dim); }
+    .glass-select:focus  { outline: none; border-color: var(--foam); }
+    .glass-select option { background: #0f2535; color: var(--foam); }
 
     /* Table */
     .notes-table-wrap { max-height: 480px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
@@ -165,58 +172,23 @@
         border: 1px solid var(--glass-border);
         border-radius: 10px;
         padding: 14px;
-        display: flex; flex-direction: column; gap: 10px;
+        display: flex; flex-direction: column; gap: 12px;
     }
     .action-list-section h4 {
         font-size: 12px; color: var(--foam-dim);
         font-family: var(--font-data); letter-spacing: 0.05em;
         text-transform: uppercase; margin: 0;
     }
-    /* Pill row wraps all fields for one action */
     .action-item {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        align-items: center;
-        background: rgba(255,255,255,0.04);
-        border: 1px solid var(--glass-border);
-        border-radius: 999px;
-        padding: 5px 10px 5px 14px;
+        display: grid;
+        grid-template-columns: 1fr 140px 1fr 28px;
+        gap: 8px; align-items: center;
     }
-    /* Pill inputs — borderless, transparent, inline */
-    .action-item input,
-    .action-item select {
-        background: transparent;
-        border: none;
-        outline: none;
-        color: var(--foam);
-        font-family: var(--font-body, 'Inter', sans-serif);
-        font-size: 12.5px;
-        padding: 2px 4px;
-        min-width: 80px;
-    }
-    .action-item input::placeholder { color: var(--foam-dim); }
-    .action-item select option { background: var(--ocean-mid); }
-    /* Dividers between pill fields */
-    .action-pill-sep {
-        color: var(--glass-border);
-        font-size: 14px;
-        user-select: none;
-        flex-shrink: 0;
-    }
-    /* Date pill gets fixed width */
-    .act-bydate { width: 130px; flex-shrink: 0; color-scheme: dark; }
-    /* Action description grows */
-    .act-action { flex: 1; min-width: 120px; }
-    /* Member select */
-    .act-bymember { min-width: 130px; }
     .action-remove {
-        background: none; border: none; color: var(--foam-dim);
-        cursor: pointer; padding: 2px 4px; font-size: 15px; line-height: 1;
-        margin-left: auto; flex-shrink: 0; border-radius: 50%;
-        transition: color 0.15s;
+        background: none; border: none; color: #ff6b6b;
+        cursor: pointer; padding: 4px; font-size: 16px; line-height: 1;
     }
-    .action-remove:hover { color: #ff6b6b; }
+    .action-remove:hover { opacity: 0.7; }
 
     /* Copy-in emails */
     .copyin-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -287,6 +259,79 @@
         font-size: 12px;
         padding: 24px;
     }
+    /* Google Drive picker */
+    .attach-picker-row {
+        display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .attach-picker-row input { flex: 1; min-width: 200px; }
+    .drive-browse-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(255,255,255,0.07); border: 1px solid var(--glass-border);
+        border-radius: 8px; color: var(--foam); font-size: 12px;
+        padding: 7px 12px; cursor: pointer; white-space: nowrap;
+        transition: background 0.15s;
+    }
+    .drive-browse-btn:hover { background: rgba(255,255,255,0.13); }
+
+    /* Drive search modal */
+    .drive-modal {
+        background: var(--ocean-mid);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        width: 100%; max-width: 560px;
+        max-height: 80vh; overflow-y: auto;
+        padding: 24px;
+        display: flex; flex-direction: column; gap: 14px;
+    }
+    .drive-result-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 10px; border-radius: 8px; cursor: pointer;
+        border: 1px solid transparent; transition: all 0.15s;
+    }
+    .drive-result-item:hover { background: rgba(255,255,255,0.06); border-color: var(--glass-border); }
+    .drive-result-item .dr-icon { font-size: 20px; flex-shrink: 0; }
+    .drive-result-item .dr-name { font-size: 13px; color: var(--foam); flex: 1; word-break: break-word; }
+    .drive-result-item .dr-meta { font-size: 10px; color: var(--foam-dim); }
+
+    /* Action pills */
+    .action-list-section {
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        padding: 14px;
+        display: flex; flex-direction: column; gap: 10px;
+    }
+    .action-list-section h4 {
+        font-size: 12px; color: var(--foam-dim);
+        font-family: var(--font-data); letter-spacing: 0.05em;
+        text-transform: uppercase; margin: 0;
+    }
+    .action-item {
+        display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--glass-border);
+        border-radius: 999px;
+        padding: 5px 10px 5px 14px;
+    }
+    .action-item input,
+    .action-item select {
+        background: transparent; border: none; outline: none;
+        color: var(--foam);
+        font-family: var(--font-body, 'Inter', sans-serif);
+        font-size: 12.5px; padding: 2px 4px; min-width: 80px;
+    }
+    .action-item input::placeholder { color: var(--foam-dim); }
+    .action-item select option { background: #0f2535; color: var(--foam); }
+    .action-pill-sep { color: var(--glass-border); font-size: 14px; user-select: none; flex-shrink: 0; }
+    .act-bydate   { width: 130px; flex-shrink: 0; color-scheme: dark; }
+    .act-action   { flex: 1; min-width: 120px; }
+    .act-bymember { min-width: 130px; }
+    .action-remove {
+        background: none; border: none; color: var(--foam-dim);
+        cursor: pointer; padding: 2px 6px; font-size: 15px; line-height: 1;
+        margin-left: auto; flex-shrink: 0; border-radius: 50%;
+        transition: color 0.15s;
+    }
+    .action-remove:hover { color: #ff6b6b; }
 
     /* Audit Log */
     .log-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
@@ -301,8 +346,6 @@
     }
     .log-table td { padding: 8px 10px; border-bottom: 1px solid var(--glass-border); color: var(--foam); vertical-align: top; }
     .log-table tr:last-child td { border-bottom: none; }
-    .log-table .diff-before { color: #f87171; text-decoration: line-through; opacity: 0.8; }
-    .log-table .diff-after  { color: #4ade80; }
     .app-filter-btn {
         background: none; border: 1px solid var(--glass-border); border-radius: 6px;
         color: var(--foam-dim); cursor: pointer; font-size: 11px; padding: 4px 10px;
@@ -331,13 +374,6 @@
     </header>
 
     <main class="container">
-
-        <div class="admin-header">
-            <div class="admin-title-group">
-            <h1>Notes Management Console</h1>
-            </div>
-            <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
-        </div>
 
         <div class="section-head">
             <h2>Notes Overview</h2>
@@ -368,10 +404,10 @@
                         <span class="search-icon">🔍</span>
                         <input class="search-input" id="notesSearch" placeholder="Search topic, subtopic, or note…">
                     </div>
-                    <select class="btn btn-ghost" id="filterTopic" style="padding:5px 10px;font-size:12px;">
+                    <select class="glass-select" id="filterTopic">
                         <option value="">All Topics</option>
                     </select>
-                    <select class="btn btn-ghost" id="filterAction" style="padding:5px 10px;font-size:12px;">
+                    <select class="glass-select" id="filterAction">
                         <option value="">All Statuses</option>
                         <option value="overdue">Overdue Actions</option>
                         <option value="open">Open Actions</option>
@@ -402,23 +438,23 @@
             </div>
         </div>
 
-        <div class="section-head" id="audit-log">
-            <h2>Notes Audit Log</h2>
-            <p>Every create, update and delete action on notes, actions and topics.</p>
+        <div class="section-head">
+            <h2>Audit Log</h2>
+            <p>All create, update and delete activity on notes, actions and topics.</p>
         </div>
-
         <div class="panel">
             <div class="panel-header">
                 <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
                 <div class="log-toolbar">
                     <div class="search-wrap">
                         <span class="search-icon">🔍</span>
-                        <input class="search-input" id="logSearch" placeholder="Search by action, sheet, or record…">
+                        <input class="search-input" id="logSearch" placeholder="Search action, sheet, record…">
                     </div>
-                    <button type="button" class="app-filter-btn active" data-status="all">All</button>
-                    <button type="button" class="app-filter-btn" data-status="APPEND">Created</button>
-                    <button type="button" class="app-filter-btn" data-status="UPDATE">Updated</button>
-                    <button type="button" class="app-filter-btn" data-status="DELETE">Deleted</button>
+                    <button type="button" class="app-filter-btn active" data-logfilter="all">All</button>
+                    <button type="button" class="app-filter-btn" data-logfilter="APPEND">Created</button>
+                    <button type="button" class="app-filter-btn" data-logfilter="UPDATE">Updated</button>
+                    <button type="button" class="app-filter-btn" data-logfilter="DELETE">Deleted</button>
+                    <button type="button" class="app-filter-btn" data-logfilter="EMAIL">Emailed</button>
                     <button class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
                 </div>
             </div>
@@ -488,8 +524,13 @@
             <!-- Attachments -->
             <div class="form-row full">
                 <div class="form-group">
-                    <label>Attachments (Google Drive links, comma-separated)</label>
-                    <input type="text" id="fAttachments" placeholder="https://drive.google.com/… , https://drive.google.com/…">
+                    <label>Attachments — Google Drive</label>
+                    <div class="attach-picker-row">
+                        <input type="text" id="fAttachments" placeholder="Paste Drive link or use Browse…">
+                        <button type="button" class="drive-browse-btn" id="driveBrowseBtn">
+                            📁 Browse Drive
+                        </button>
+                    </div>
                     <div class="attach-list" id="attachPreview"></div>
                 </div>
             </div>
@@ -545,35 +586,54 @@
         </div>
     </div>
 
+    <!-- ===================== DRIVE PICKER MODAL ===================== -->
+    <div class="modal-overlay" id="driveModal">
+        <div class="drive-modal">
+            <div class="modal-header">
+                <h3>Browse Google Drive</h3>
+                <button class="modal-close" id="driveModalClose">✕</button>
+            </div>
+            <div class="form-group">
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="driveSearchInput" placeholder="Search files…" style="flex:1;">
+                    <button class="btn btn-primary" id="driveSearchBtn" style="padding:6px 14px;font-size:12px;">Search</button>
+                </div>
+            </div>
+            <div id="driveResults" style="display:flex;flex-direction:column;gap:4px;min-height:80px;"></div>
+            <div class="modal-footer">
+                <span class="modal-status" id="driveStatus"></span>
+                <button class="btn btn-ghost" id="driveModalCancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== AUDIT LOG ===================== -->
+    <div style="height:0;" id="audit-log"></div>
+
     <script>
     /* =========================================================
-       CONFIG — update notesWebAppUrl once Google Apps Script is deployed
+       CONFIG
        ========================================================= */
     const NOTES_WEBAPP_URL   = "https://script.google.com/macros/s/AKfycbzq-iw5CGc59VbnJEviaD0wmT5CAWuxP5wqbVg6Ea03sSBfYuEp1uOaZuGvXyNkzGBnlw/exec";
-    const MEMBERS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec"; // club webapp
-    const NOTES_SHEET        = "Notes";
-    const TOPICS_SHEET       = "Topics";
-    const ACTIONS_SHEET      = "Actions";
-    const MEMBERS_SHEET      = "Members";
+    const MEMBERS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
+    const NOTES_SHEET   = "Notes";
+    const TOPICS_SHEET  = "Topics";
+    const ACTIONS_SHEET = "Actions";
+    const MEMBERS_SHEET = "Members";
+    const AUDIT_SHEET   = "AuditLog";
 
     /* =========================================================
-       SHARED SHEETS HELPERS (mirrors admin.html pattern)
+       SHEET HELPERS
        ========================================================= */
     async function fetchSheet(url, sheet) {
         const res  = await fetch(`${url}?action=fetch&sheet=${encodeURIComponent(sheet)}`);
         const data = await res.json();
         if (!data || data.error) throw new Error(data?.error || "Fetch failed");
-
-        // Handle raw 2D array format { values: [[header,...],[data,...]] }
         const rows = Array.isArray(data) ? data : (data.values || []);
         if (!rows.length) return [];
-
-        // Find header row — first non-empty row
         const headerIdx = rows.findIndex(r => Array.isArray(r) && r.some(c => String(c).trim() !== ""));
         if (headerIdx === -1) return [];
-
         const headers = rows[headerIdx].map(h => String(h).trim());
-
         return rows.slice(headerIdx + 1)
             .filter(r => Array.isArray(r) && r.some(c => String(c).trim() !== ""))
             .map(r => {
@@ -582,21 +642,18 @@
                 return obj;
             });
     }
-
     async function appendSheet(url, sheet, rowData) {
         const res  = await fetch(url, { method:"POST", body: JSON.stringify({ action:"append", sheet, rowData }) });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         return true;
     }
-
     async function updateSheet(url, sheet, hexKey, updates) {
         const res  = await fetch(url, { method:"POST", body: JSON.stringify({ action:"update", sheet, hexKey, updates }) });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         return true;
     }
-
     async function deleteSheet(url, sheet, hexKey) {
         const res  = await fetch(url, { method:"POST", body: JSON.stringify({ action:"delete", sheet, hexKey }) });
         const data = await res.json();
@@ -610,10 +667,12 @@
     let notes   = [];
     let topics  = [];
     let actions = [];
-    let members = [];  // active members for dropdowns
+    let members = [];
+    let auditRows = [];
+    let logFilter = "all";
     let editingNoteId = null;
     let copyInEmails  = [];
-    let actionRows    = [];   // [{action, byDate, byMember, byMemberEmail}]
+    let actionRows    = [];
 
     /* =========================================================
        HELPERS
@@ -625,37 +684,30 @@
         }
         return "";
     }
-
-    function today() {
-        return new Date().toISOString().split("T")[0];
-    }
-
+    function today() { return new Date().toISOString().split("T")[0]; }
     function fmtDate(iso) {
         if (!iso) return "";
         const d = new Date(iso);
         return isNaN(d) ? iso : d.toLocaleDateString("en-AU", { day:"2-digit", month:"short", year:"numeric" });
     }
-
-    function noteId() {
-        return Date.now().toString(36).toUpperCase();
+    function fmtTime(val) {
+        if (!val) return "";
+        const d = new Date(val);
+        return isNaN(d) ? val : d.toLocaleString("en-AU", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" });
     }
+    function noteId() { return Date.now().toString(36).toUpperCase(); }
 
     /* =========================================================
-       LOAD DATA
+       LOAD ALL
        ========================================================= */
     async function loadAll() {
-        // Table spinner
         document.getElementById("notesBody").innerHTML =
             `<tr class="spinner-row"><td colspan="7"><span class="spinner"></span> Loading notes…</td></tr>`;
         document.getElementById("notesEmpty").style.display = "none";
-
-        // Stat placeholders
         ["stat-total","stat-topics","stat-actions","stat-overdue","stat-this-month","stat-attachments"]
             .forEach(id => document.getElementById(id).innerHTML = `<span class="spinner"></span>`);
-
-        // Topic dropdowns
         document.getElementById("filterTopic").innerHTML = `<option>Loading…</option>`;
-        document.getElementById("fTopic").innerHTML      = `<option>Loading…</option>`;
+        document.getElementById("fTopic").innerHTML = `<option>Loading…</option>`;
 
         try {
             [notes, topics, actions, members] = await Promise.all([
@@ -664,20 +716,18 @@
                 fetchSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET),
                 fetchSheet(MEMBERS_WEBAPP_URL, MEMBERS_SHEET).catch(() => [])
             ]);
-            // Keep only active members with a name
+            // Filter active members — boolean TRUE or string "TRUE"
             members = members.filter(m => {
-                const active = gv(m,"Active","Membership Status");
-                // Boolean TRUE from sheets comes through as true or "TRUE"
+                const active = m["Active"] ?? m["active"];
                 return active === true || String(active).toUpperCase() === "TRUE";
             }).filter(m => gv(m,"First Name","FirstName","Name","Full Name"));
         } catch(e) {
             console.error("Load error:", e);
-            notes = []; topics = []; actions = [];
+            notes = []; topics = []; actions = []; members = [];
             document.getElementById("notesBody").innerHTML =
-                `<tr class="spinner-row"><td colspan="7" style="color:#ff6b6b;">Failed to load data. Check connection.</td></tr>`;
+                `<tr class="spinner-row"><td colspan="7" style="color:#ff6b6b;">Failed to load. Check connection.</td></tr>`;
             return;
         }
-
         renderStats();
         renderTopicDropdowns();
         renderTable();
@@ -689,49 +739,35 @@
     function renderStats() {
         const now  = new Date();
         const mon0 = new Date(now.getFullYear(), now.getMonth(), 1);
-
-        const openActions  = actions.filter(a => gv(a,"Status","Action Status").toLowerCase() !== "done");
-        const overdueActions = openActions.filter(a => {
-            const d = new Date(gv(a,"By Date","Action By Date","ActionByDate"));
-            return !isNaN(d) && d < now;
-        });
-        const thisMonth = notes.filter(n => {
-            const d = new Date(gv(n,"Date"));
-            return !isNaN(d) && d >= mon0;
-        });
-        const withAttach = notes.filter(n => gv(n,"Attachments").trim()).length;
-        const uniqueTopics = [...new Set(notes.map(n => gv(n,"Topic")).filter(Boolean))];
-
-        document.getElementById("stat-total").textContent      = notes.length;
-        document.getElementById("stat-topics").textContent     = uniqueTopics.length;
-        document.getElementById("stat-actions").textContent    = openActions.length;
-        document.getElementById("stat-overdue").textContent    = overdueActions.length;
-        document.getElementById("stat-this-month").textContent = thisMonth.length;
+        const openActions    = actions.filter(a => gv(a,"Status").toLowerCase() !== "done");
+        const overdueActions = openActions.filter(a => { const d = new Date(gv(a,"By Date")); return !isNaN(d) && d < now; });
+        const thisMonth      = notes.filter(n => { const d = new Date(gv(n,"Date")); return !isNaN(d) && d >= mon0; });
+        const withAttach     = notes.filter(n => gv(n,"Attachments").trim()).length;
+        const uniqueTopics   = [...new Set(notes.map(n => gv(n,"Topic")).filter(Boolean))];
+        document.getElementById("stat-total").textContent       = notes.length;
+        document.getElementById("stat-topics").textContent      = uniqueTopics.length;
+        document.getElementById("stat-actions").textContent     = openActions.length;
+        document.getElementById("stat-overdue").textContent     = overdueActions.length;
+        document.getElementById("stat-this-month").textContent  = thisMonth.length;
         document.getElementById("stat-attachments").textContent = withAttach;
     }
 
     /* =========================================================
        TOPIC DROPDOWNS
        ========================================================= */
-        function renderTopicDropdowns() {
-            // Accept any key that contains "topic" (case-insensitive)
-            const topicNames = topics
-                .map(t => t["Topic"] || t["topic"] || "")
-                .filter(Boolean)
-                .sort();
-
-            const ft = document.getElementById("filterTopic");
-            const ftVal = ft.value;
-            ft.innerHTML = `<option value="">All Topics</option>` +
-                topicNames.map(t => `<option value="${t}">${t}</option>`).join("");
-            ft.value = ftVal;
-
-            const fs = document.getElementById("fTopic");
-            const fsVal = fs.value;
-            fs.innerHTML = `<option value="">— Select Topic —</option>` +
-                topicNames.map(t => `<option value="${t}">${t}</option>`).join("");
-            fs.value = fsVal;
-        }
+    function renderTopicDropdowns() {
+        const topicNames = topics.map(t => t["Topic"] || t["topic"] || "").filter(Boolean).sort();
+        const ft = document.getElementById("filterTopic");
+        const ftVal = ft.value;
+        ft.innerHTML = `<option value="">All Topics</option>` +
+            topicNames.map(t => `<option value="${t}">${t}</option>`).join("");
+        ft.value = ftVal;
+        const fs = document.getElementById("fTopic");
+        const fsVal = fs.value;
+        fs.innerHTML = `<option value="">— Select Topic —</option>` +
+            topicNames.map(t => `<option value="${t}">${t}</option>`).join("");
+        fs.value = fsVal;
+    }
 
     /* =========================================================
        TABLE
@@ -741,9 +777,7 @@
         const topicF  = document.getElementById("filterTopic").value;
         const actionF = document.getElementById("filterAction").value;
         const now     = new Date();
-
-        let rows = [...notes];
-
+        let rows = [...notes].filter(n => gv(n,"Status").toLowerCase() !== "archived");
         if (q) rows = rows.filter(n =>
             gv(n,"Topic").toLowerCase().includes(q) ||
             gv(n,"SubTopic","Sub Topic").toLowerCase().includes(q) ||
@@ -751,46 +785,28 @@
         );
         if (topicF) rows = rows.filter(n => gv(n,"Topic") === topicF);
         if (actionF === "overdue") {
-            const overdueIds = new Set(actions
-                .filter(a => {
-                    const d = new Date(gv(a,"By Date","ActionByDate"));
-                    return gv(a,"Status").toLowerCase() !== "done" && !isNaN(d) && d < now;
-                })
-                .map(a => gv(a,"NoteID","Note ID")));
-            rows = rows.filter(n => overdueIds.has(gv(n,"NoteID","Note ID")));
+            const ids = new Set(actions.filter(a => { const d = new Date(gv(a,"By Date")); return gv(a,"Status").toLowerCase() !== "done" && !isNaN(d) && d < now; }).map(a => gv(a,"NoteID")));
+            rows = rows.filter(n => ids.has(gv(n,"NoteID")));
         } else if (actionF === "open") {
-            const openIds = new Set(actions
-                .filter(a => gv(a,"Status").toLowerCase() !== "done")
-                .map(a => gv(a,"NoteID")));
-            rows = rows.filter(n => openIds.has(gv(n,"NoteID")));
+            const ids = new Set(actions.filter(a => gv(a,"Status").toLowerCase() !== "done").map(a => gv(a,"NoteID")));
+            rows = rows.filter(n => ids.has(gv(n,"NoteID")));
         } else if (actionF === "none") {
-            const withAction = new Set(actions.map(a => gv(a,"NoteID")));
-            rows = rows.filter(n => !withAction.has(gv(n,"NoteID")));
+            const ids = new Set(actions.map(a => gv(a,"NoteID")));
+            rows = rows.filter(n => !ids.has(gv(n,"NoteID")));
         }
+        rows.sort((a,b) => new Date(gv(b,"Date")) - new Date(gv(a,"Date")));
 
-        // Sort newest first
-        rows.sort((a,b) => {
-            const da = new Date(gv(a,"Date")), db = new Date(gv(b,"Date"));
-            return db - da;
-        });
-
-        const body = document.getElementById("notesBody");
+        const body  = document.getElementById("notesBody");
         const empty = document.getElementById("notesEmpty");
-
         body.innerHTML = rows.map(n => {
-            const nid = gv(n,"NoteID","Note ID");
+            const nid = gv(n,"NoteID");
             const noteActions = actions.filter(a => gv(a,"NoteID") === nid);
             const openA = noteActions.filter(a => gv(a,"Status").toLowerCase() !== "done");
             let dotClass = "ok";
             if (openA.some(a => { const d = new Date(gv(a,"By Date")); return !isNaN(d) && d < now; })) dotClass = "due";
-            else if (openA.some(a => {
-                const d = new Date(gv(a,"By Date")); const diff = (d - now) / 86400000;
-                return !isNaN(d) && diff >= 0 && diff <= 7;
-            })) dotClass = "soon";
-
+            else if (openA.some(a => { const d = new Date(gv(a,"By Date")); const diff = (d-now)/86400000; return !isNaN(d) && diff >= 0 && diff <= 7; })) dotClass = "soon";
             const attachCount = gv(n,"Attachments").split(",").filter(s => s.trim()).length;
             const notePreview = gv(n,"Note").slice(0,80) + (gv(n,"Note").length > 80 ? "…" : "");
-
             return `<tr class="clickable" data-id="${nid}">
                 <td>${fmtDate(gv(n,"Date"))}</td>
                 <td>${gv(n,"Topic")}</td>
@@ -801,65 +817,54 @@
                 <td><span class="badge ${openA.length > 0 ? (dotClass==="due"?"badge-expired":"badge-renewal") : "badge-full"}">${openA.length > 0 ? (dotClass==="due"?"Overdue":"Active") : "Complete"}</span></td>
             </tr>`;
         }).join("");
-
         empty.style.display = rows.length ? "none" : "block";
-
-        // Row click → open modal in view/edit mode
-        body.querySelectorAll("tr.clickable").forEach(tr => {
-            tr.addEventListener("click", () => openNoteModal(tr.dataset.id));
-        });
+        body.querySelectorAll("tr.clickable").forEach(tr =>
+            tr.addEventListener("click", () => openNoteModal(tr.dataset.id))
+        );
     }
 
     /* =========================================================
-       MODAL — OPEN
+       MODAL OPEN / CLOSE
        ========================================================= */
-    function openNoteModal(noteId = null) {
-        editingNoteId = noteId;
+    function openNoteModal(nid = null) {
+        editingNoteId = nid;
         copyInEmails  = [];
         actionRows    = [];
-
-        const isNew = !noteId;
-        document.getElementById("modalTitle").textContent = isNew ? "New Note" : "Edit Note";
-        document.getElementById("modalDelete").style.display = isNew ? "none" : "inline-flex";
-        document.getElementById("modalStatus").className = "modal-status";
-        document.getElementById("modalStatus").textContent = "";
-
+        const isNew   = !nid;
+        document.getElementById("modalTitle").textContent        = isNew ? "New Note" : "Edit Note";
+        document.getElementById("modalDelete").style.display     = isNew ? "none" : "inline-flex";
+        document.getElementById("modalStatus").className         = "modal-status";
+        document.getElementById("modalStatus").textContent       = "";
         if (isNew) {
-            document.getElementById("fDate").value = today();
-            document.getElementById("fTopic").value = "";
-            document.getElementById("fSubTopic").value = "";
-            document.getElementById("fNote").value = "";
+            document.getElementById("fDate").value      = today();
+            document.getElementById("fTopic").value     = "";
+            document.getElementById("fSubTopic").value  = "";
+            document.getElementById("fNote").value      = "";
             document.getElementById("fAttachments").value = "";
         } else {
-            const n = notes.find(n => gv(n,"NoteID","Note ID") === noteId);
+            const n = notes.find(n => gv(n,"NoteID") === nid);
             if (!n) return;
-            document.getElementById("fDate").value      = gv(n,"Date");
-            document.getElementById("fTopic").value     = gv(n,"Topic");
-            document.getElementById("fSubTopic").value  = gv(n,"SubTopic","Sub Topic");
-            document.getElementById("fNote").value      = gv(n,"Note");
+            document.getElementById("fDate").value        = gv(n,"Date");
+            document.getElementById("fTopic").value       = gv(n,"Topic");
+            document.getElementById("fSubTopic").value    = gv(n,"SubTopic","Sub Topic");
+            document.getElementById("fNote").value        = gv(n,"Note");
             document.getElementById("fAttachments").value = gv(n,"Attachments");
-
-            // Load copy-ins
-            const ci = gv(n,"CopyIn","Copy In","CopyInMembers");
+            const ci = gv(n,"CopyIn","Copy In");
             copyInEmails = ci ? ci.split(",").map(s=>s.trim()).filter(Boolean) : [];
-
-            // Load actions for this note
-            const noteActRows = actions.filter(a => gv(a,"NoteID") === noteId);
-            actionRows = noteActRows.map(a => ({
-                id:        gv(a,"ActionID"),
-                action:    gv(a,"Action"),
-                byDate:    gv(a,"By Date","ActionByDate"),
-                byMember:  gv(a,"By Member","ActionByMember"),
-                status:    gv(a,"Status")
+            actionRows = actions.filter(a => gv(a,"NoteID") === nid).map(a => ({
+                id:            gv(a,"ActionID"),
+                action:        gv(a,"Action"),
+                byDate:        gv(a,"By Date"),
+                byMember:      gv(a,"By Member"),
+                byMemberEmail: gv(a,"By Member Email"),
+                status:        gv(a,"Status")
             }));
         }
-
         renderAttachPreview();
         renderCopyInTags();
         renderActionItems();
         document.getElementById("noteModal").classList.add("open");
     }
-
     function closeNoteModal() {
         document.getElementById("noteModal").classList.remove("open");
         editingNoteId = null;
@@ -872,9 +877,100 @@
         const raw   = document.getElementById("fAttachments").value;
         const links = raw.split(",").map(s => s.trim()).filter(Boolean);
         document.getElementById("attachPreview").innerHTML = links.map(l =>
-            `<div class="attach-item">📎 <a href="${l}" target="_blank" rel="noopener">${l.slice(0,60)}${l.length>60?"…":""}</a></div>`
+            `<div class="attach-item">📎 <a href="${l}" target="_blank" rel="noopener">${l.slice(0,60)}${l.length>60?"…":""}</a>
+             <button type="button" onclick="removeAttachment('${l.replace(/'/g,"\\'")}');" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:12px;padding:0 4px;">✕</button>
+             </div>`
         ).join("");
     }
+    function removeAttachment(link) {
+        const inp  = document.getElementById("fAttachments");
+        const links = inp.value.split(",").map(s=>s.trim()).filter(s => s && s !== link);
+        inp.value = links.join(", ");
+        renderAttachPreview();
+    }
+
+    /* =========================================================
+       DRIVE PICKER
+       ========================================================= */
+    function openDriveModal() {
+        document.getElementById("driveModal").classList.add("open");
+        document.getElementById("driveSearchInput").value = "";
+        document.getElementById("driveResults").innerHTML = `<div style="font-size:12px;color:var(--foam-dim);padding:8px;">Type to search your Drive files.</div>`;
+        document.getElementById("driveStatus").textContent = "";
+        document.getElementById("driveSearchInput").focus();
+    }
+    function closeDriveModal() { document.getElementById("driveModal").classList.remove("open"); }
+
+    function driveFileIcon(mimeType) {
+        if (!mimeType) return "📄";
+        if (mimeType.includes("spreadsheet")) return "📊";
+        if (mimeType.includes("document"))    return "📝";
+        if (mimeType.includes("presentation"))return "📽️";
+        if (mimeType.includes("pdf"))         return "📕";
+        if (mimeType.includes("image"))       return "🖼️";
+        if (mimeType.includes("folder"))      return "📁";
+        return "📄";
+    }
+
+    async function searchDrive(query) {
+        const btn = document.getElementById("driveSearchBtn");
+        const res = document.getElementById("driveResults");
+        const st  = document.getElementById("driveStatus");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span>`;
+        res.innerHTML = `<div style="font-size:12px;color:var(--foam-dim);padding:8px;">Searching…</div>`;
+        st.textContent = "";
+
+        try {
+            const data = await fetch(
+                `${NOTES_WEBAPP_URL}?action=drivesearch&q=${encodeURIComponent(query)}`
+            ).then(r => r.json());
+
+            if (data.error) throw new Error(data.error);
+            const files = data.files || [];
+            if (!files.length) {
+                res.innerHTML = `<div style="font-size:12px;color:var(--foam-dim);padding:8px;">No files found for "${query}".</div>`;
+                return;
+            }
+            res.innerHTML = files.map(f => `
+                <div class="drive-result-item" data-url="${f.url}" data-name="${f.name.replace(/"/g,'&quot;')}">
+                    <span class="dr-icon">${driveFileIcon(f.mimeType)}</span>
+                    <div style="flex:1;">
+                        <div class="dr-name">${f.name}</div>
+                        <div class="dr-meta">${f.mimeType ? f.mimeType.split("/").pop().split(".").pop() : "file"}${f.modifiedTime ? " · " + fmtDate(f.modifiedTime) : ""}</div>
+                    </div>
+                </div>`).join("");
+
+            res.querySelectorAll(".drive-result-item").forEach(item => {
+                item.addEventListener("click", () => {
+                    const inp  = document.getElementById("fAttachments");
+                    const cur  = inp.value.trim();
+                    const url  = item.dataset.url;
+                    inp.value  = cur ? cur + ", " + url : url;
+                    renderAttachPreview();
+                    closeDriveModal();
+                });
+            });
+        } catch(e) {
+            st.textContent = "Search failed: " + e.message;
+            st.className   = "modal-status visible error";
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Search";
+        }
+    }
+
+    document.getElementById("driveBrowseBtn").addEventListener("click", openDriveModal);
+    document.getElementById("driveModalClose").addEventListener("click", closeDriveModal);
+    document.getElementById("driveModalCancel").addEventListener("click", closeDriveModal);
+    document.getElementById("driveSearchBtn").addEventListener("click", () => {
+        const q = document.getElementById("driveSearchInput").value.trim();
+        if (q) searchDrive(q);
+    });
+    document.getElementById("driveSearchInput").addEventListener("keydown", e => {
+        if (e.key === "Enter") { e.preventDefault(); const q = e.target.value.trim(); if (q) searchDrive(q); }
+    });
+    document.getElementById("driveModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeDriveModal(); });
 
     /* =========================================================
        COPY-IN TAGS
@@ -884,77 +980,66 @@
             `<span class="copyin-tag">${e}<button data-i="${i}" class="copyin-remove">✕</button></span>`
         ).join("");
         document.querySelectorAll(".copyin-remove").forEach(btn =>
-            btn.addEventListener("click", () => {
-                copyInEmails.splice(+btn.dataset.i, 1);
-                renderCopyInTags();
-            })
+            btn.addEventListener("click", () => { copyInEmails.splice(+btn.dataset.i,1); renderCopyInTags(); })
         );
     }
-
     function addCopyIn() {
         const inp = document.getElementById("fCopyInInput");
         const v   = inp.value.trim();
         if (v && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && !copyInEmails.includes(v)) {
-            copyInEmails.push(v);
-            renderCopyInTags();
+            copyInEmails.push(v); renderCopyInTags();
         }
         inp.value = "";
     }
 
     /* =========================================================
-       ACTION ITEMS — pill layout
+       ACTION ITEMS — pill layout with member dropdown
        ========================================================= */
     function memberOptions(selected) {
-        const names = members.map(m => {
-            const name = gv(m,"First Name","FirstName") + " " + gv(m,"Last Name","LastName","Surname");
+        const opts = members.map(m => {
+            const first = gv(m,"First Name","FirstName");
+            const last  = gv(m,"Last Name","LastName","Surname");
+            const name  = (first + " " + last).trim();
             const email = gv(m,"Email","Email Address");
-            return { name: name.trim(), email };
+            return { name, email };
         }).filter(m => m.name);
 
-        return `<option value="">— Assign member —</option>` +
-            names.map(m =>
+        return `<option value="">— Assign —</option>` +
+            opts.map(m =>
                 `<option value="${m.name}" data-email="${m.email}" ${selected === m.name ? "selected" : ""}>${m.name}</option>`
             ).join("");
     }
 
     function renderActionItems() {
         const container = document.getElementById("actionItems");
+        if (!actionRows.length) { container.innerHTML = ""; return; }
         container.innerHTML = actionRows.map((a, i) => `
             <div class="action-item" data-i="${i}">
                 <input type="text" class="act-action" value="${(a.action||"").replace(/"/g,'&quot;')}" placeholder="Describe the action…">
                 <span class="action-pill-sep">·</span>
                 <input type="date" class="act-bydate" value="${a.byDate || ""}">
                 <span class="action-pill-sep">·</span>
-                <select class="act-bymember">
-                    ${memberOptions(a.byMember || "")}
-                </select>
+                <select class="act-bymember">${memberOptions(a.byMember||"")}</select>
                 <button class="action-remove" data-i="${i}" title="Remove">✕</button>
-            </div>
-        `).join("");
+            </div>`
+        ).join("");
 
         container.querySelectorAll(".action-remove").forEach(btn =>
-            btn.addEventListener("click", () => {
-                actionRows.splice(+btn.dataset.i, 1);
-                renderActionItems();
-            })
+            btn.addEventListener("click", () => { actionRows.splice(+btn.dataset.i,1); renderActionItems(); })
         );
         container.querySelectorAll(".action-item").forEach(row => {
             const i = +row.dataset.i;
-            row.querySelector(".act-action").addEventListener("input", e => {
-                actionRows[i].action = e.target.value;
-            });
-            row.querySelector(".act-bydate").addEventListener("change", e => {
-                actionRows[i].byDate = e.target.value;
-            });
+            row.querySelector(".act-action").addEventListener("input", e => { actionRows[i].action = e.target.value; });
+            row.querySelector(".act-bydate").addEventListener("change", e => { actionRows[i].byDate = e.target.value; });
             row.querySelector(".act-bymember").addEventListener("change", e => {
                 const sel = e.target;
                 actionRows[i].byMember = sel.value;
-                const opt = sel.querySelector(`option[value="${sel.value}"]`);
-                actionRows[i].byMemberEmail = opt ? opt.dataset.email : "";
+                const opt = sel.querySelector(`option[value="${CSS.escape(sel.value)}"]`) ||
+                            [...sel.options].find(o => o.value === sel.value);
+                actionRows[i].byMemberEmail = opt ? (opt.dataset.email || "") : "";
             });
         });
     }
-
     function addActionRow() {
         actionRows.push({ id:"", action:"", byDate:"", byMember:"", byMemberEmail:"", status:"Open" });
         renderActionItems();
@@ -967,11 +1052,7 @@
         const date  = document.getElementById("fDate").value.trim();
         const topic = document.getElementById("fTopic").value.trim();
         const note  = document.getElementById("fNote").value.trim();
-
-        if (!date || !topic || !note) {
-            showModalStatus("Date, Topic and Note are required.", "error");
-            return;
-        }
+        if (!date || !topic || !note) { showModalStatus("Date, Topic and Note are required.", "error"); return; }
 
         const btn = document.getElementById("modalSave");
         btn.disabled = true;
@@ -989,7 +1070,6 @@
                 CopyIn:      copyInEmails.join(", "),
                 LastUpdated: new Date().toISOString()
             };
-
             if (editingNoteId) {
                 await updateSheet(NOTES_WEBAPP_URL, NOTES_SHEET, editingNoteId, rowData);
             } else {
@@ -997,36 +1077,29 @@
                 await appendSheet(NOTES_WEBAPP_URL, NOTES_SHEET, rowData);
             }
 
-            // Collect new actions that need email notifications
             const newActions = [];
             for (const a of actionRows) {
                 if (!a.action.trim()) continue;
                 const isNew = !a.id;
-                const aid = a.id || noteId();
+                const aid   = a.id || noteId();
                 const aData = {
-                    ActionID:         aid,
-                    NoteID:           nid,
-                    Action:           a.action,
-                    "By Date":        a.byDate,
-                    "By Member":      a.byMember,
-                    "By Member Email":a.byMemberEmail || "",
-                    Status:           a.status || "Open"
+                    ActionID:          aid,
+                    NoteID:            nid,
+                    Action:            a.action,
+                    "By Date":         a.byDate,
+                    "By Member":       a.byMember,
+                    "By Member Email": a.byMemberEmail || "",
+                    Status:            a.status || "Open"
                 };
-                if (a.id) {
-                    await updateSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, a.id, aData);
-                } else {
-                    await appendSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, aData);
-                    newActions.push({ ...aData, noteDate: date, noteTopic: topic, noteRef: nid });
-                }
+                if (a.id) { await updateSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, a.id, aData); }
+                else       { await appendSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, aData); if (isNew) newActions.push(aData); }
             }
 
-            // Send email notifications for newly assigned actions
-            if (newActions.length > 0) {
-                await sendActionEmails(newActions, nid, topic, date);
-            }
+            if (newActions.length) await sendActionEmails(newActions, nid, topic, date);
 
             showModalStatus("Saved successfully.", "success");
             await loadAll();
+            await loadAuditLog();
             setTimeout(closeNoteModal, 800);
         } catch(e) {
             showModalStatus("Error: " + e.message, "error");
@@ -1044,20 +1117,41 @@
         if (!confirm("Delete this note and all its actions? This cannot be undone.")) return;
         try {
             await deleteSheet(NOTES_WEBAPP_URL, NOTES_SHEET, editingNoteId);
-            // delete related actions
             const related = actions.filter(a => gv(a,"NoteID") === editingNoteId);
             for (const a of related) await deleteSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, gv(a,"ActionID"));
             await loadAll();
+            await loadAuditLog();
             closeNoteModal();
-        } catch(e) {
-            showModalStatus("Delete failed: " + e.message, "error");
-        }
+        } catch(e) { showModalStatus("Delete failed: " + e.message, "error"); }
     }
 
     function showModalStatus(msg, type) {
         const el = document.getElementById("modalStatus");
-        el.textContent = msg;
-        el.className   = `modal-status visible ${type}`;
+        el.textContent = msg; el.className = `modal-status visible ${type}`;
+    }
+
+    /* =========================================================
+       EMAIL NOTIFICATIONS
+       ========================================================= */
+    async function sendActionEmails(newActions, nid, topic, date) {
+        const byEmail = {};
+        for (const a of newActions) {
+            const email = (a["By Member Email"] || "").trim();
+            if (!email) continue;
+            if (!byEmail[email]) byEmail[email] = { name: a["By Member"], actions: [] };
+            byEmail[email].actions.push(a);
+        }
+        if (!Object.keys(byEmail).length) return;
+        const noteLink = `${location.origin}${location.pathname}?note=${nid}`;
+        try {
+            await fetch(NOTES_WEBAPP_URL, { method:"POST", body: JSON.stringify({
+                action: "sendActionEmails", noteId: nid, topic, date, noteLink,
+                recipients: Object.entries(byEmail).map(([email, d]) => ({
+                    email, name: d.name,
+                    actions: d.actions.map(a => ({ action: a.Action, byDate: a["By Date"], byMember: a["By Member"] }))
+                }))
+            })});
+        } catch(e) { console.warn("Email failed:", e.message); }
     }
 
     /* =========================================================
@@ -1067,9 +1161,9 @@
     function closeTopicModal() { document.getElementById("topicModal").classList.remove("open"); }
 
     function renderTopicList() {
-        const topicNames = topics.map(t => gv(t,"Topic","Topic Name")).filter(Boolean).sort();
+        const topicNames = topics.map(t => t["Topic"] || "").filter(Boolean).sort();
         document.getElementById("topicList").innerHTML = topicNames.length
-            ? topicNames.map(t => `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--glass-border);font-size:13px;color:var(--foam);">${t}</div>`).join("")
+            ? topicNames.map(t => `<div style="padding:6px 8px;border-bottom:1px solid var(--glass-border);font-size:13px;color:var(--foam);">${t}</div>`).join("")
             : `<div style="font-size:12px;color:var(--foam-dim);padding:8px;">No topics yet.</div>`;
     }
 
@@ -1079,197 +1173,83 @@
         const ts  = document.getElementById("topicStatus");
         const v   = inp.value.trim();
         if (!v) return;
-
-        btn.disabled = true;
-        btn.innerHTML = `<span class="spinner"></span>`;
-
+        btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
         try {
-            await appendSheet(NOTES_WEBAPP_URL, TOPICS_SHEET, { TopicID: noteId(), Topic: v, CreatedAt: new Date().toISOString(), NoteCount: "=countif(Notes!$C$2:$C,$B2)" });
+            await appendSheet(NOTES_WEBAPP_URL, TOPICS_SHEET, { TopicID: noteId(), Topic: v, CreatedAt: new Date().toISOString() });
             inp.value = "";
             await loadAll();
             renderTopicList();
             ts.textContent = `"${v}" added.`; ts.className = "modal-status visible success";
         } catch(e) {
             ts.textContent = "Error: " + e.message; ts.className = "modal-status visible error";
-        } finally {
-            btn.disabled = false;
-            btn.textContent = "Add";
-        }
+        } finally { btn.disabled = false; btn.textContent = "Add"; }
     }
-
-    /* =========================================================
-       EMAIL NOTIFICATIONS
-       ========================================================= */
-    async function sendActionEmails(newActions, noteId, topic, date) {
-        // Group actions by assignee email
-        const byEmail = {};
-        for (const a of newActions) {
-            const email = (a["By Member Email"] || "").trim();
-            if (!email) continue;
-            if (!byEmail[email]) byEmail[email] = { name: a["By Member"], actions: [] };
-            byEmail[email].actions.push(a);
-        }
-        if (!Object.keys(byEmail).length) return;
-
-        // Build a page anchor link for the note — links to notes.html with noteId param
-        const noteLink = `${location.origin}${location.pathname}?note=${noteId}`;
-
-        // POST to Apps Script to send emails server-side
-        try {
-            await fetch(NOTES_WEBAPP_URL, {
-                method: "POST",
-                body: JSON.stringify({
-                    action:   "sendActionEmails",
-                    noteId,
-                    topic,
-                    date,
-                    noteLink,
-                    recipients: Object.entries(byEmail).map(([email, data]) => ({
-                        email,
-                        name:    data.name,
-                        actions: data.actions.map(a => ({
-                            action:  a.Action,
-                            byDate:  a["By Date"],
-                            byMember: a["By Member"]
-                        }))
-                    }))
-                })
-            });
-        } catch(e) {
-            console.warn("Email notification failed:", e.message);
-            // Non-fatal — note is already saved
-        }
-    }
-
-    /* =========================================================
-       EVENT WIRING
-       ========================================================= */
-    document.getElementById("newNoteBtn").addEventListener("click",  () => openNoteModal());
-    document.getElementById("modalClose").addEventListener("click",  closeNoteModal);
-    document.getElementById("modalCancel").addEventListener("click", closeNoteModal);
-    document.getElementById("modalSave").addEventListener("click",   saveNote);
-    document.getElementById("modalDelete").addEventListener("click",  deleteNote);
-    document.getElementById("addActionBtn").addEventListener("click", addActionRow);
-    document.getElementById("addCopyInBtn").addEventListener("click", addCopyIn);
-    document.getElementById("fCopyInInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addCopyIn(); } });
-    document.getElementById("fAttachments").addEventListener("input", renderAttachPreview);
-
-    document.getElementById("addTopicBtn").addEventListener("click", openTopicModal);
-    document.getElementById("topicModalClose").addEventListener("click", closeTopicModal);
-    document.getElementById("topicModalCancel").addEventListener("click", closeTopicModal);
-    document.getElementById("saveTopicBtn").addEventListener("click", saveTopic);
-    document.getElementById("newTopicInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveTopic(); } });
-
-    document.getElementById("refreshBtn").addEventListener("click", async () => {
-        const btn = document.getElementById("refreshBtn");
-        btn.disabled = true;
-        btn.innerHTML = `<span class="spinner"></span>`;
-        await loadAll();
-        btn.disabled = false;
-        btn.textContent = "Refresh";
-    });
-    document.getElementById("notesSearch").addEventListener("input", renderTable);
-    document.getElementById("filterTopic").addEventListener("change", renderTable);
-    document.getElementById("filterAction").addEventListener("change", renderTable);
-
-    // Close modals on overlay click
-    document.getElementById("noteModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeNoteModal(); });
-    document.getElementById("topicModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeTopicModal(); });
 
     /* =========================================================
        AUDIT LOG
        ========================================================= */
-    const AUDIT_SHEET = "AuditLog";
-    let auditLog = [];
-    let logFilter = "all";
-
     async function loadAuditLog() {
         const btn = document.getElementById("refreshLogBtn");
-        btn.disabled = true;
-        btn.innerHTML = `<span class="spinner"></span>`;
+        btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
         try {
-            auditLog = await fetchSheet(NOTES_WEBAPP_URL, AUDIT_SHEET);
-            // Newest first
-            auditLog.reverse();
-        } catch(e) {
-            console.error("AuditLog fetch failed:", e);
-            auditLog = [];
-        }
+            auditRows = await fetchSheet(NOTES_WEBAPP_URL, AUDIT_SHEET);
+            auditRows.reverse(); // newest first
+        } catch(e) { console.error("AuditLog fetch failed:", e); auditRows = []; }
         renderLog();
-        btn.disabled = false;
-        btn.textContent = "Refresh";
-    }
-
-    function fmtTime(val) {
-        if (!val) return "";
-        const d = new Date(val);
-        return isNaN(d) ? val : d.toLocaleString("en-AU", {
-            day: "2-digit", month: "short",
-            hour: "2-digit", minute: "2-digit", second: "2-digit"
-        });
+        btn.disabled = false; btn.textContent = "Refresh";
     }
 
     function actionBadgeClass(action) {
-        switch ((action || "").toUpperCase()) {
+        switch ((action||"").toUpperCase()) {
             case "APPEND": return "badge-full";
             case "UPDATE": return "badge-renewal";
             case "DELETE": return "badge-expired";
+            case "EMAIL":  return "badge-default";
             default:       return "badge-default";
         }
     }
 
     function renderLog() {
-        const q    = document.getElementById("logSearch").value.trim().toLowerCase();
-        const body = document.getElementById("logBody");
+        const q     = document.getElementById("logSearch").value.trim().toLowerCase();
+        const body  = document.getElementById("logBody");
         const empty = document.getElementById("logEmpty");
-
-        let rows = [...auditLog];
-
-        if (logFilter !== "all") {
-            rows = rows.filter(r => gv(r,"Action").toUpperCase() === logFilter);
-        }
-        if (q) {
-            rows = rows.filter(r =>
-                gv(r,"Action").toLowerCase().includes(q)   ||
-                gv(r,"Sheet").toLowerCase().includes(q)    ||
-                gv(r,"RecordID").toLowerCase().includes(q) ||
-                gv(r,"User").toLowerCase().includes(q)     ||
-                gv(r,"Detail").toLowerCase().includes(q)
-            );
-        }
-
+        let rows = [...auditRows];
+        if (logFilter !== "all") rows = rows.filter(r => gv(r,"Action").toUpperCase() === logFilter);
+        if (q) rows = rows.filter(r =>
+            gv(r,"Action").toLowerCase().includes(q)   ||
+            gv(r,"Sheet").toLowerCase().includes(q)    ||
+            gv(r,"RecordID").toLowerCase().includes(q) ||
+            gv(r,"User").toLowerCase().includes(q)     ||
+            gv(r,"Detail").toLowerCase().includes(q)
+        );
         body.innerHTML = rows.map(r => {
             const action = gv(r,"Action");
             const detail = gv(r,"Detail");
-            // Parse detail JSON for a nicer display if possible
             let detailHtml = detail;
             try {
                 const parsed = JSON.parse(detail);
                 detailHtml = Object.entries(parsed)
                     .filter(([k]) => !["NoteID","ActionID","TopicID","CreatedAt","LastUpdated"].includes(k))
                     .map(([k,v]) => `<span style="color:var(--foam-dim)">${k}:</span> ${String(v).slice(0,60)}`)
-                    .join(" &nbsp;·&nbsp; ");
-            } catch(e) { /* not JSON, show raw */ }
-
+                    .join(" · ");
+            } catch(e) { /* raw text */ }
             return `<tr>
                 <td style="white-space:nowrap;">${fmtTime(gv(r,"Timestamp"))}</td>
-                <td>${gv(r,"User")}</td>
+                <td style="font-size:11px;">${gv(r,"User")}</td>
                 <td><span class="badge ${actionBadgeClass(action)}">${action}</span></td>
                 <td>${gv(r,"Sheet")}</td>
-                <td style="font-family:monospace;font-size:11px;">${gv(r,"RecordID").slice(0,12)}</td>
-                <td style="font-size:11.5px;max-width:320px;word-break:break-word;">${detailHtml}</td>
+                <td style="font-family:monospace;font-size:11px;">${gv(r,"RecordID").slice(0,14)}</td>
+                <td style="font-size:11.5px;max-width:300px;word-break:break-word;">${detailHtml}</td>
             </tr>`;
         }).join("");
-
         empty.style.display = rows.length ? "none" : "block";
     }
 
-    // Filter buttons
     document.querySelectorAll(".app-filter-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             document.querySelectorAll(".app-filter-btn").forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
-            logFilter = btn.dataset.status;
+            logFilter = btn.dataset.logfilter;
             renderLog();
         });
     });
@@ -1277,12 +1257,37 @@
     document.getElementById("refreshLogBtn").addEventListener("click", loadAuditLog);
 
     /* =========================================================
+       EVENT WIRING
+       ========================================================= */
+    document.getElementById("newNoteBtn").addEventListener("click", () => openNoteModal());
+    document.getElementById("modalClose").addEventListener("click", closeNoteModal);
+    document.getElementById("modalCancel").addEventListener("click", closeNoteModal);
+    document.getElementById("modalSave").addEventListener("click", saveNote);
+    document.getElementById("modalDelete").addEventListener("click", deleteNote);
+    document.getElementById("addActionBtn").addEventListener("click", addActionRow);
+    document.getElementById("addCopyInBtn").addEventListener("click", addCopyIn);
+    document.getElementById("fCopyInInput").addEventListener("keydown", e => { if (e.key==="Enter") { e.preventDefault(); addCopyIn(); } });
+    document.getElementById("fAttachments").addEventListener("input", renderAttachPreview);
+    document.getElementById("addTopicBtn").addEventListener("click", openTopicModal);
+    document.getElementById("topicModalClose").addEventListener("click", closeTopicModal);
+    document.getElementById("topicModalCancel").addEventListener("click", closeTopicModal);
+    document.getElementById("saveTopicBtn").addEventListener("click", saveTopic);
+    document.getElementById("newTopicInput").addEventListener("keydown", e => { if (e.key==="Enter") { e.preventDefault(); saveTopic(); } });
+    document.getElementById("refreshBtn").addEventListener("click", async () => {
+        const btn = document.getElementById("refreshBtn");
+        btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
+        await loadAll(); btn.disabled = false; btn.textContent = "Refresh";
+    });
+    document.getElementById("notesSearch").addEventListener("input", renderTable);
+    document.getElementById("filterTopic").addEventListener("change", renderTable);
+    document.getElementById("filterAction").addEventListener("change", renderTable);
+    document.getElementById("noteModal").addEventListener("click", e => { if (e.target===e.currentTarget) closeNoteModal(); });
+    document.getElementById("topicModal").addEventListener("click", e => { if (e.target===e.currentTarget) closeTopicModal(); });
+
+    /* =========================================================
        INIT
        ========================================================= */
-    loadAll().then(() => {
-        lucide.createIcons();
-        loadAuditLog();
-    });
+    loadAll().then(() => { lucide.createIcons(); loadAuditLog(); });
     </script>
 </body>
 </html>
