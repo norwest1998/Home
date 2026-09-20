@@ -414,23 +414,13 @@ const SHEETS = {
   ssnWebAppUrl: "https://script.google.com/macros/library/d/1UHhsKNh1mJntPZVUd5IXbgX1c6kSUCayrysJTZc5EeZtGGyxdrbptUnG/4"
 };
 
-async function fetchSheet(WEBAPP_URL, sheetName) {
-  const res = await fetch(`${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`);
-  const data = await res.json();
-
-  if (data.error) throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
-  const rows = data.values;
-  const headers = rows[0];
-  
-  return rows.slice(1).map(r => {
-    const obj = {};
-    const seen = {};
-    headers.forEach((h, i) => {
-      const key = seen[h] ? `${h}_${++seen[h]}` : (seen[h] = 1, h);
-      obj[key] = r[i] || "";
-    });
-    return obj;
-  });
+async function fetchSheet(url, sheet) {
+    const res  = await fetch(`${url}?action=fetch&sheet=${encodeURIComponent(sheet)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    if (!Array.isArray(data) || data.length === 0) return [];
+    // Data is already returned as [{header: value}] objects by the Apps Script
+    return data;
 }
 
 async function updateSheet(WEBAPP_URL, sheetName, hexKey, updates) {
