@@ -153,23 +153,58 @@
         border: 1px solid var(--glass-border);
         border-radius: 10px;
         padding: 14px;
-        display: flex; flex-direction: column; gap: 12px;
+        display: flex; flex-direction: column; gap: 10px;
     }
     .action-list-section h4 {
         font-size: 12px; color: var(--foam-dim);
         font-family: var(--font-data); letter-spacing: 0.05em;
         text-transform: uppercase; margin: 0;
     }
+    /* Pill row wraps all fields for one action */
     .action-item {
-        display: grid;
-        grid-template-columns: 1fr 140px 1fr 28px;
-        gap: 8px; align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--glass-border);
+        border-radius: 999px;
+        padding: 5px 10px 5px 14px;
     }
+    /* Pill inputs — borderless, transparent, inline */
+    .action-item input,
+    .action-item select {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--foam);
+        font-family: var(--font-body, 'Inter', sans-serif);
+        font-size: 12.5px;
+        padding: 2px 4px;
+        min-width: 80px;
+    }
+    .action-item input::placeholder { color: var(--foam-dim); }
+    .action-item select option { background: var(--ocean-mid); }
+    /* Dividers between pill fields */
+    .action-pill-sep {
+        color: var(--glass-border);
+        font-size: 14px;
+        user-select: none;
+        flex-shrink: 0;
+    }
+    /* Date pill gets fixed width */
+    .act-bydate { width: 130px; flex-shrink: 0; color-scheme: dark; }
+    /* Action description grows */
+    .act-action { flex: 1; min-width: 120px; }
+    /* Member select */
+    .act-bymember { min-width: 130px; }
     .action-remove {
-        background: none; border: none; color: #ff6b6b;
-        cursor: pointer; padding: 4px; font-size: 16px; line-height: 1;
+        background: none; border: none; color: var(--foam-dim);
+        cursor: pointer; padding: 2px 4px; font-size: 15px; line-height: 1;
+        margin-left: auto; flex-shrink: 0; border-radius: 50%;
+        transition: color 0.15s;
     }
-    .action-remove:hover { opacity: 0.7; }
+    .action-remove:hover { color: #ff6b6b; }
 
     /* Copy-in emails */
     .copyin-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -495,10 +530,12 @@
     /* =========================================================
        CONFIG — update notesWebAppUrl once Google Apps Script is deployed
        ========================================================= */
-    const NOTES_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzq-iw5CGc59VbnJEviaD0wmT5CAWuxP5wqbVg6Ea03sSBfYuEp1uOaZuGvXyNkzGBnlw/exec"; // ← replace
-    const NOTES_SHEET      = "Notes";
-    const TOPICS_SHEET     = "Topics";
-    const ACTIONS_SHEET    = "Actions";
+    const NOTES_WEBAPP_URL   = "https://script.google.com/macros/s/AKfycbzq-iw5CGc59VbnJEviaD0wmT5CAWuxP5wqbVg6Ea03sSBfYuEp1uOaZuGvXyNkzGBnlw/exec";
+    const MEMBERS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec"; // club webapp
+    const NOTES_SHEET        = "Notes";
+    const TOPICS_SHEET       = "Topics";
+    const ACTIONS_SHEET      = "Actions";
+    const MEMBERS_SHEET      = "Members";
 
     /* =========================================================
        SHARED SHEETS HELPERS (mirrors admin.html pattern)
@@ -554,9 +591,10 @@
     let notes   = [];
     let topics  = [];
     let actions = [];
-    let editingNoteId = null; // null = new note
+    let members = [];  // active members for dropdowns
+    let editingNoteId = null;
     let copyInEmails  = [];
-    let actionRows    = [];   // [{action, byDate, byMember}]
+    let actionRows    = [];   // [{action, byDate, byMember, byMemberEmail}]
 
     /* =========================================================
        HELPERS
@@ -601,11 +639,17 @@
         document.getElementById("fTopic").innerHTML      = `<option>Loading…</option>`;
 
         try {
-            [notes, topics, actions] = await Promise.all([
+            [notes, topics, actions, members] = await Promise.all([
                 fetchSheet(NOTES_WEBAPP_URL, NOTES_SHEET),
                 fetchSheet(NOTES_WEBAPP_URL, TOPICS_SHEET),
-                fetchSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET)
+                fetchSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET),
+                fetchSheet(MEMBERS_WEBAPP_URL, MEMBERS_SHEET).catch(() => [])
             ]);
+            // Keep only active members with a name
+            members = members.filter(m => {
+                const active = gv(m,"Active","Membership Status").toLowerCase();
+                return ["true","yes","active","paid"].includes(active) || active === "";
+            }).filter(m => gv(m,"First Name","FirstName","Name","Full Name"));
         } catch(e) {
             console.error("Load error:", e);
             notes = []; topics = []; actions = [];
@@ -838,16 +882,33 @@
     }
 
     /* =========================================================
-       ACTION ITEMS
+       ACTION ITEMS — pill layout
        ========================================================= */
+    function memberOptions(selected) {
+        const names = members.map(m => {
+            const name = gv(m,"First Name","FirstName") + " " + gv(m,"Last Name","LastName","Surname");
+            const email = gv(m,"Email","Email Address");
+            return { name: name.trim(), email };
+        }).filter(m => m.name);
+
+        return `<option value="">— Assign member —</option>` +
+            names.map(m =>
+                `<option value="${m.name}" data-email="${m.email}" ${selected === m.name ? "selected" : ""}>${m.name}</option>`
+            ).join("");
+    }
+
     function renderActionItems() {
         const container = document.getElementById("actionItems");
         container.innerHTML = actionRows.map((a, i) => `
             <div class="action-item" data-i="${i}">
-                <input type="text"   class="act-action"   value="${a.action  || ""}" placeholder="Action description">
-                <input type="date"   class="act-bydate"   value="${a.byDate  || ""}">
-                <input type="text"   class="act-bymember" value="${a.byMember|| ""}" placeholder="Assigned member">
-                <button class="action-remove" data-i="${i}">✕</button>
+                <input type="text" class="act-action" value="${(a.action||"").replace(/"/g,'&quot;')}" placeholder="Describe the action…">
+                <span class="action-pill-sep">·</span>
+                <input type="date" class="act-bydate" value="${a.byDate || ""}">
+                <span class="action-pill-sep">·</span>
+                <select class="act-bymember">
+                    ${memberOptions(a.byMember || "")}
+                </select>
+                <button class="action-remove" data-i="${i}" title="Remove">✕</button>
             </div>
         `).join("");
 
@@ -857,17 +918,25 @@
                 renderActionItems();
             })
         );
-        // Sync changes back to actionRows on input
         container.querySelectorAll(".action-item").forEach(row => {
             const i = +row.dataset.i;
-            row.querySelector(".act-action").addEventListener("input",    e => { actionRows[i].action   = e.target.value; });
-            row.querySelector(".act-bydate").addEventListener("change",   e => { actionRows[i].byDate   = e.target.value; });
-            row.querySelector(".act-bymember").addEventListener("input",  e => { actionRows[i].byMember = e.target.value; });
+            row.querySelector(".act-action").addEventListener("input", e => {
+                actionRows[i].action = e.target.value;
+            });
+            row.querySelector(".act-bydate").addEventListener("change", e => {
+                actionRows[i].byDate = e.target.value;
+            });
+            row.querySelector(".act-bymember").addEventListener("change", e => {
+                const sel = e.target;
+                actionRows[i].byMember = sel.value;
+                const opt = sel.querySelector(`option[value="${sel.value}"]`);
+                actionRows[i].byMemberEmail = opt ? opt.dataset.email : "";
+            });
         });
     }
 
     function addActionRow() {
-        actionRows.push({ id:"", action:"", byDate:"", byMember:"", status:"Open" });
+        actionRows.push({ id:"", action:"", byDate:"", byMember:"", byMemberEmail:"", status:"Open" });
         renderActionItems();
     }
 
@@ -908,21 +977,32 @@
                 await appendSheet(NOTES_WEBAPP_URL, NOTES_SHEET, rowData);
             }
 
+            // Collect new actions that need email notifications
+            const newActions = [];
             for (const a of actionRows) {
                 if (!a.action.trim()) continue;
+                const isNew = !a.id;
+                const aid = a.id || noteId();
                 const aData = {
-                    ActionID:    a.id || noteId(),
-                    NoteID:      nid,
-                    Action:      a.action,
-                    "By Date":   a.byDate,
-                    "By Member": a.byMember,
-                    Status:      a.status || "Open"
+                    ActionID:         aid,
+                    NoteID:           nid,
+                    Action:           a.action,
+                    "By Date":        a.byDate,
+                    "By Member":      a.byMember,
+                    "By Member Email":a.byMemberEmail || "",
+                    Status:           a.status || "Open"
                 };
                 if (a.id) {
                     await updateSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, a.id, aData);
                 } else {
                     await appendSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, aData);
+                    newActions.push({ ...aData, noteDate: date, noteTopic: topic, noteRef: nid });
                 }
+            }
+
+            // Send email notifications for newly assigned actions
+            if (newActions.length > 0) {
+                await sendActionEmails(newActions, nid, topic, date);
             }
 
             showModalStatus("Saved successfully.", "success");
@@ -994,6 +1074,50 @@
         } finally {
             btn.disabled = false;
             btn.textContent = "Add";
+        }
+    }
+
+    /* =========================================================
+       EMAIL NOTIFICATIONS
+       ========================================================= */
+    async function sendActionEmails(newActions, noteId, topic, date) {
+        // Group actions by assignee email
+        const byEmail = {};
+        for (const a of newActions) {
+            const email = (a["By Member Email"] || "").trim();
+            if (!email) continue;
+            if (!byEmail[email]) byEmail[email] = { name: a["By Member"], actions: [] };
+            byEmail[email].actions.push(a);
+        }
+        if (!Object.keys(byEmail).length) return;
+
+        // Build a page anchor link for the note — links to notes.html with noteId param
+        const noteLink = `${location.origin}${location.pathname}?note=${noteId}`;
+
+        // POST to Apps Script to send emails server-side
+        try {
+            await fetch(NOTES_WEBAPP_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action:   "sendActionEmails",
+                    noteId,
+                    topic,
+                    date,
+                    noteLink,
+                    recipients: Object.entries(byEmail).map(([email, data]) => ({
+                        email,
+                        name:    data.name,
+                        actions: data.actions.map(a => ({
+                            action:  a.Action,
+                            byDate:  a["By Date"],
+                            byMember: a["By Member"]
+                        }))
+                    }))
+                })
+            });
+        } catch(e) {
+            console.warn("Email notification failed:", e.message);
+            // Non-fatal — note is already saved
         }
     }
 
