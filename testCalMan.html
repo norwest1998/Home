@@ -776,7 +776,7 @@ function logAction(msg) {
    ========================================================= */
 function seasonEvents() {
   return eventData.filter(e => {
-    if (e.Class === "Marblehead") return false; // Exclude Marblehead
+    if (e.Class === "M") return false; // Exclude Marblehead
     if (selectedSeason && !String(e.Season).startsWith(String(selectedSeason))) return false;
     if (selectedClass && e.Class !== selectedClass) return false;
     if (rescheduledOnly && !(e["Rescheduled Date"] || "")) return false;
