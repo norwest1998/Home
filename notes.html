@@ -222,6 +222,24 @@
         letter-spacing: 0.06em; text-transform: uppercase;
         color: var(--foam-dim); margin-bottom: 3px;
     }
+    /* Spinner CSS */
+    .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-top-color: var(--foam);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .spinner-row td {
+        text-align: center;
+        color: var(--foam-dim);
+        font-size: 12px;
+        padding: 24px;
+    }
     </style>
 </head>
 <body>
@@ -489,6 +507,19 @@
        LOAD DATA
        ========================================================= */
     async function loadAll() {
+        // Table spinner
+        document.getElementById("notesBody").innerHTML =
+            `<tr class="spinner-row"><td colspan="7"><span class="spinner"></span> Loading notes…</td></tr>`;
+        document.getElementById("notesEmpty").style.display = "none";
+
+        // Stat placeholders
+        ["stat-total","stat-topics","stat-actions","stat-overdue","stat-this-month","stat-attachments"]
+            .forEach(id => document.getElementById(id).innerHTML = `<span class="spinner"></span>`);
+
+        // Topic dropdowns
+        document.getElementById("filterTopic").innerHTML = `<option>Loading…</option>`;
+        document.getElementById("fTopic").innerHTML      = `<option>Loading…</option>`;
+
         try {
             [notes, topics, actions] = await Promise.all([
                 fetchSheet(NOTES_WEBAPP_URL, NOTES_SHEET),
@@ -498,7 +529,11 @@
         } catch(e) {
             console.error("Load error:", e);
             notes = []; topics = []; actions = [];
+            document.getElementById("notesBody").innerHTML =
+                `<tr class="spinner-row"><td colspan="7" style="color:#ff6b6b;">Failed to load data. Check connection.</td></tr>`;
+            return;
         }
+
         renderStats();
         renderTopicDropdowns();
         renderTable();
@@ -760,9 +795,9 @@
        SAVE NOTE
        ========================================================= */
     async function saveNote() {
-        const date     = document.getElementById("fDate").value.trim();
-        const topic    = document.getElementById("fTopic").value.trim();
-        const note     = document.getElementById("fNote").value.trim();
+        const date  = document.getElementById("fDate").value.trim();
+        const topic = document.getElementById("fTopic").value.trim();
+        const note  = document.getElementById("fNote").value.trim();
 
         if (!date || !topic || !note) {
             showModalStatus("Date, Topic and Note are required.", "error");
@@ -771,7 +806,7 @@
 
         const btn = document.getElementById("modalSave");
         btn.disabled = true;
-        btn.textContent = "Saving…";
+        btn.innerHTML = `<span class="spinner"></span> Saving…`;
 
         try {
             const nid = editingNoteId || noteId();
@@ -793,16 +828,15 @@
                 await appendSheet(NOTES_WEBAPP_URL, NOTES_SHEET, rowData);
             }
 
-            // Save / update actions
             for (const a of actionRows) {
                 if (!a.action.trim()) continue;
                 const aData = {
-                    ActionID:  a.id || noteId(),
-                    NoteID:    nid,
-                    Action:    a.action,
-                    "By Date": a.byDate,
+                    ActionID:    a.id || noteId(),
+                    NoteID:      nid,
+                    Action:      a.action,
+                    "By Date":   a.byDate,
                     "By Member": a.byMember,
-                    Status:    a.status || "Open"
+                    Status:      a.status || "Open"
                 };
                 if (a.id) {
                     await updateSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, a.id, aData);
@@ -861,18 +895,25 @@
 
     async function saveTopic() {
         const inp = document.getElementById("newTopicInput");
+        const btn = document.getElementById("saveTopicBtn");
+        const ts  = document.getElementById("topicStatus");
         const v   = inp.value.trim();
         if (!v) return;
-        const ts = document.getElementById("topicStatus");
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span>`;
+
         try {
             await appendSheet(NOTES_WEBAPP_URL, TOPICS_SHEET, { TopicID: noteId(), Topic: v, CreatedAt: new Date().toISOString() });
             inp.value = "";
             await loadAll();
             renderTopicList();
-            console.log("Topics loaded:", topics);
             ts.textContent = `"${v}" added.`; ts.className = "modal-status visible success";
         } catch(e) {
             ts.textContent = "Error: " + e.message; ts.className = "modal-status visible error";
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Add";
         }
     }
 
@@ -895,7 +936,14 @@
     document.getElementById("saveTopicBtn").addEventListener("click", saveTopic);
     document.getElementById("newTopicInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveTopic(); } });
 
-    document.getElementById("refreshBtn").addEventListener("click", loadAll);
+    document.getElementById("refreshBtn").addEventListener("click", async () => {
+        const btn = document.getElementById("refreshBtn");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span>`;
+        await loadAll();
+        btn.disabled = false;
+        btn.textContent = "Refresh";
+    });
     document.getElementById("notesSearch").addEventListener("input", renderTable);
     document.getElementById("filterTopic").addEventListener("change", renderTable);
     document.getElementById("filterAction").addEventListener("change", renderTable);
