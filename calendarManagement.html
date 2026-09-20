@@ -194,7 +194,64 @@
     width: 100%; max-width: 500px; background: #0c2b42; border: 1px solid var(--glass-border);
     border-radius: 12px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   }
+  
+  /* =========================================================
+   SEASON OPERATIONS
+   ========================================================= */
+  .season-actions-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:18px;
+  }
 
+  .season-action-card{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:18px;
+    border-radius:16px;
+    background:var(--glass-fill);
+    border:1px solid var(--glass-border);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+  }
+
+  .season-action-icon{
+    width:54px;
+    height:54px;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(37,127,182,0.18);
+    border:1px solid rgba(37,127,182,0.25);
+    color:var(--glow);
+  }
+
+  .season-action-content{
+    flex:1;
+  }
+
+  .season-action-content h4{
+    margin:0 0 6px;
+    color:var(--foam);
+  }
+
+  .season-action-content p{
+    margin:0;
+    color:var(--foam-dim);
+    font-size:12px;
+    line-height:1.45;
+  }
+
+  .btn-busy{
+    opacity:.7;
+    pointer-events:none;
+  }
+
+  .season-operations-panel{
+    margin-bottom: 24px;
+  }
 </style>
 </head>
 <body>
