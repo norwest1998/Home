@@ -720,7 +720,7 @@
             members = members.filter(m => {
                 const active = m["Active"] ?? m["active"];
                 return active === true || String(active).toUpperCase() === "TRUE";
-            }).filter(m => gv(m,"First Name","FirstName","Name","Full Name"));
+            }).filter(m => gv(m,"First Name","FirstName","Name","Full Name","MemberName","Member", "Membername"));
         } catch(e) {
             console.error("Load error:", e);
             notes = []; topics = []; actions = []; members = [];
@@ -903,12 +903,12 @@
 
     function driveFileIcon(mimeType) {
         if (!mimeType) return "📄";
-        if (mimeType.includes("spreadsheet")) return "📊";
-        if (mimeType.includes("document"))    return "📝";
-        if (mimeType.includes("presentation"))return "📽️";
-        if (mimeType.includes("pdf"))         return "📕";
-        if (mimeType.includes("image"))       return "🖼️";
-        if (mimeType.includes("folder"))      return "📁";
+        if (mimeType.includes("spreadsheet")) return `<i class="nav-icon" data-lucide="file-spreadsheet" color="#b41d1d"></i>`;
+        if (mimeType.includes("document"))    return `<i class="nav-icon" data-lucide="file-text" color="#b41d1d"></i>`;
+        if (mimeType.includes("presentation"))return `<i class="nav-icon" data-lucide="presentation" color="#b41d1d"></i>`;
+        if (mimeType.includes("pdf"))         return `<i class="nav-icon" data-lucide="file-text" color="#b41d1d"></i>`;
+        if (mimeType.includes("image"))       return `<i class="nav-icon" data-lucide="image" color="#b41d1d"></i>`;
+        if (mimeType.includes("folder"))      return `<i class="nav-icon" data-lucide="folder" color="#b41d1d"></i>`;
         return "📄";
     }
 
@@ -1006,7 +1006,7 @@
 
         return `<option value="">— Assign —</option>` +
             opts.map(m =>
-                `<option value="${m.name}" data-email="${m.email}" ${selected === m.name ? "selected" : ""}>${m.name}</option>`
+                `<option value="${m.member}" data-email="${m.email}" ${selected === m.name ? "selected" : ""}>${m.name}</option>`
             ).join("");
     }
 
