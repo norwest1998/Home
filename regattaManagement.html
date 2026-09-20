@@ -190,6 +190,59 @@
   .season-operations-panel{
     margin-bottom: 24px;
   }
+
+  .stats-pill-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:24px;
+  }
+
+  .stats-pill{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    min-width:140px;
+    padding:10px 16px;
+    border-radius:999px;
+    background:var(--glass-fill);
+    border:1px solid var(--glass-border);
+    backdrop-filter:blur(18px);
+  }
+
+  .stats-pill .label{
+    font-family:var(--font-data);
+    font-size:9px;
+    text-transform:uppercase;
+    color:var(--foam-dim);
+    letter-spacing:.08em;
+  }
+
+  .stats-pill .value{
+    font-size:20px;
+    font-weight:700;
+    color:var(--foam);
+  }
+
+  #statCompetitionRegattas{
+    color:#4ade80;
+  }
+
+  #statSocialRegattas{
+    color:#fbbf24;
+  }
+
+  #statMaintenanceDays{
+    color:#60a5fa;
+  }
+
+  #statRescheduled{
+    color:var(--glow);
+  }
+
+  #statPending{
+    color:var(--signal);
+  }
 </style>
 </head>
 <body>
@@ -210,6 +263,45 @@
     <li class="nav-item"><a href="#audit-log" class="nav-link">Reschedule Log</a></li>
   </ul>
 </header>
+
+/* Stats */
+<div class="admin-stats-row"></div>
+<div class="stats-pill-bar">
+  <div class="stats-pill">
+    <span class="label">Total Regattas</span>
+    <span class="value" id="statTotalRegattas">0</span>
+  </div>
+
+  <div class="stats-pill">
+    <span class="label">Competition</span>
+    <span class="value" id="statCompetitionRegattas">0</span>
+  </div>
+
+  <div class="stats-pill">
+    <span class="label">Social</span>
+    <span class="value" id="statSocialRegattas">0</span>
+  </div>
+
+  <div class="stats-pill">
+    <span class="label">Maintenance</span>
+    <span class="value" id="statMaintenanceDays">0</span>
+  </div>
+
+  <div class="stats-pill">
+    <span class="label">Rescheduled</span>
+    <span class="value" id="statRescheduled">0</span>
+  </div>
+
+  <div class="stats-pill">
+    <span class="label">Pending</span>
+    <span class="value" id="statPending">0</span>
+  </div>
+
+  <div class="stats-pill">
+    <span class="label">Season</span>
+    <span class="value" id="statSeason">-</span>
+  </div>
+</div>
 
 <main class="container">
 
@@ -597,10 +689,68 @@ function seasonEvents(className, rescheduledOnly) {
 }
 
 function renderStats() {
-  document.getElementById("statSeason").textContent = `${CURRENT_SEASON_START}-${String(CURRENT_SEASON_START + 1).slice(-2)}`;
-  const seasonRows = eventData.filter(e => String(e.Season).startsWith(String(CURRENT_SEASON_START)));
-  document.getElementById("statRescheduled").textContent = seasonRows.filter(e => e.Results === "Rescheduled").length;
-  document.getElementById("statPending").textContent = seasonRows.filter(e => (e["Rescheduled Date"] || "").includes("Pending")).length;
+
+  const seasonRows = eventData.filter(e =>
+    String(e.Season).startsWith(String(CURRENT_SEASON_START))
+  );
+
+  const competitionCount = seasonRows.filter(e => {
+    const comp = String(e.Competition || "").trim();
+    return comp && comp !== "No";
+  }).length;
+
+  const socialCount = seasonRows.filter(e => {
+    const txt = (
+      String(e.Event || "") +
+      " " +
+      String(e["Regatta Type"] || "")
+    ).toLowerCase();
+
+    return txt.includes("social") ||
+           txt.includes("free sail") ||
+           txt.includes("practice") ||
+           txt.includes("open");
+  }).length;
+
+  const maintenanceCount = seasonRows.filter(e => {
+    const txt = (
+      String(e.Event || "") +
+      " " +
+      String(e["Regatta Type"] || "")
+    ).toLowerCase();
+
+    return txt.includes("maintenance");
+  }).length;
+
+  const rescheduledCount = seasonRows.filter(e =>
+    e.Results === "Rescheduled" ||
+    (e["Rescheduled Date"] || "").trim() !== ""
+  ).length;
+
+  const pendingCount = seasonRows.filter(e =>
+    (e["Rescheduled Date"] || "").includes("Pending")
+  ).length;
+
+  document.getElementById("statSeason").textContent =
+    `${CURRENT_SEASON_START}-${String(CURRENT_SEASON_START + 1).slice(-2)}`;
+
+  document.getElementById("statTotalRegattas").textContent =
+    seasonRows.length;
+
+  document.getElementById("statCompetitionRegattas").textContent =
+    competitionCount;
+
+  document.getElementById("statSocialRegattas").textContent =
+    socialCount;
+
+  document.getElementById("statMaintenanceDays").textContent =
+    maintenanceCount;
+
+  document.getElementById("statRescheduled").textContent =
+    rescheduledCount;
+
+  document.getElementById("statPending").textContent =
+    pendingCount;
 }
 
 function renderTable() {
