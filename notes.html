@@ -666,8 +666,9 @@
             ]);
             // Keep only active members with a name
             members = members.filter(m => {
-                const active = gv(m,"Active","Membership Status").toLowerCase();
-                return ["true","yes","active","paid"].includes(active) || active === "";
+                const active = gv(m,"Active","Membership Status");
+                // Boolean TRUE from sheets comes through as true or "TRUE"
+                return active === true || String(active).toUpperCase() === "TRUE";
             }).filter(m => gv(m,"First Name","FirstName","Name","Full Name"));
         } catch(e) {
             console.error("Load error:", e);
