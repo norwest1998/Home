@@ -1035,11 +1035,11 @@ function logAction(msg) {
 function seasonEvents() {
   return eventData.filter(e => {
     if (e.Class === "M") return false; // Exclude Marblehead
-    if (selectedMonth) {
+    if (filterMonth) {
       const eDate = new Date(event.Date);
       if (!isNaN(eDate.getTime())) {
         const monthStr = eDate.toLocaleString("en-US", { month: "short" });
-        if (monthStr !== selectedMonth) return false;
+        if (monthStr !== filterMonth) return false;
       }
     }
     if (selectedSeason && !String(e.Season).startsWith(String(selectedSeason))) return false;
