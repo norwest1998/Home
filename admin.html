@@ -394,15 +394,21 @@
                     };
                 }
             },
-            // Event Rescheduler
+            // Regatta management
             {
-                id: "event-rescheduler",
+                id: "regatta-management",
                 icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
-                title: "Reschedule event",
-                description: "Manage online applications through the process.",
-                href: "eventRescheduler.html",
+                title: "Regatta Management",
+                description: "Manage regatta schedule.",
+                href: "regattaManagement.html",
                 status: async () => {
                     const events = await fetchSheet(SHEETS.calWebAppUrl, SHEETS.calendar.tabs.eventData);
+
+                    // helper to pull Competition regattas
+                    const getCompVal = (row) => getRowVal(row, [
+                        "Competition", 
+                        "competition"
+                    ]).trim().toLowerCase();
 
                     // Helper to pull the Rescheduled Date field across header variations
                     const getReschedVal = (row) => getRowVal(row, [
@@ -410,6 +416,18 @@
                         "RescheduledDate", 
                         "Reschedule Date"
                     ]).trim().toLowerCase();
+
+                    // count competitions
+                    const compCount = events.filter(e => {
+                        const val = getCompVal(e);
+                        return val.includes("competition");
+                    }).length;
+
+                    // count maintenance days
+                    const maintCount = events.filter(e => {
+                        const val = getCompVal(e);
+                        return val.includes("maintenance");
+                    }).length;
 
                     // 1. Pending: Column contains "pending" (e.g., "Pending 15/10/2026")
                     const pendingCount = events.filter(e => {
@@ -426,15 +444,26 @@
                     return {
                         pills: [
                             {
+                                label: "Regattas",
+                                value: compCount,
+                                className: "badge-full"
+                            },{
+                                label: "Socials",
+                                value: events.length - compCount,
+                                className: "badge-full"
+                            },{
+                                label: "Maintenance",
+                                value: maintCount,
+                                className: "badge-full"
+                            },{
+                                label: "Rescheduled",
+                                value: rescheduledCount,
+                                className: "badge-full"
+                            },{
                                 label: "Pending",
                                 value: pendingCount,
                                 className: "badge-renewal"
                             },
-                            {
-                                label: "Rescheduled",
-                                value: rescheduledCount,
-                                className: "badge-full"
-                            }
                         ]
                     };
                 }
