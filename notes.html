@@ -240,6 +240,28 @@
         font-size: 12px;
         padding: 24px;
     }
+
+    /* Audit Log */
+    .log-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    .log-toolbar .search-wrap { flex: 1; min-width: 200px; margin-bottom: 0; }
+    .log-table-wrap { max-height: 420px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+    table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .log-table th {
+        position: sticky; top: 0; background: var(--ocean-mid); text-align: left;
+        padding: 8px 10px; font-family: var(--font-data); font-size: 10px;
+        letter-spacing: 0.06em; text-transform: uppercase; color: var(--foam-dim);
+        border-bottom: 1px solid var(--glass-border);
+    }
+    .log-table td { padding: 8px 10px; border-bottom: 1px solid var(--glass-border); color: var(--foam); vertical-align: top; }
+    .log-table tr:last-child td { border-bottom: none; }
+    .log-table .diff-before { color: #f87171; text-decoration: line-through; opacity: 0.8; }
+    .log-table .diff-after  { color: #4ade80; }
+    .app-filter-btn {
+        background: none; border: 1px solid var(--glass-border); border-radius: 6px;
+        color: var(--foam-dim); cursor: pointer; font-size: 11px; padding: 4px 10px;
+        transition: all 0.15s;
+    }
+    .app-filter-btn.active, .app-filter-btn:hover { background: rgba(255,255,255,0.08); color: var(--foam); }
     </style>
 </head>
 <body>
@@ -256,6 +278,7 @@
         </a>
         <ul class="nav-links">
             <li class="nav-item"><a href="admin.html" class="nav-link">Admin Home</a></li>
+            <li class="nav-item"><a href="#audit-log" class="nav-link">Audit Log</a></li>
             <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
         </ul>
     </header>
@@ -322,6 +345,46 @@
                     </table>
                 </div>
                 <div class="empty-state" id="notesEmpty" style="display:none;">No notes found.</div>
+            </div>
+        </div>
+
+        <div class="section-head" id="audit-log">
+            <h2>Notes Audit Log</h2>
+            <p>Every create, update and delete action on notes, actions and topics.</p>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
+                <div class="log-toolbar">
+                    <div class="search-wrap">
+                        <span class="search-icon">🔍</span>
+                        <input class="search-input" id="logSearch" placeholder="Search by action, sheet, or record…">
+                    </div>
+                    <button type="button" class="app-filter-btn active" data-status="all">All</button>
+                    <button type="button" class="app-filter-btn" data-status="APPEND">Created</button>
+                    <button type="button" class="app-filter-btn" data-status="UPDATE">Updated</button>
+                    <button type="button" class="app-filter-btn" data-status="DELETE">Deleted</button>
+                    <button class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+                </div>
+            </div>
+            <div class="tab-content active">
+                <div class="log-table-wrap">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Sheet</th>
+                                <th>Record ID</th>
+                                <th>Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logBody"></tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="logEmpty" style="display:none;">No activity yet.</div>
             </div>
         </div>
 
@@ -970,9 +1033,112 @@
     document.getElementById("topicModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeTopicModal(); });
 
     /* =========================================================
+       AUDIT LOG
+       ========================================================= */
+    const AUDIT_SHEET = "AuditLog";
+    let auditLog = [];
+    let logFilter = "all";
+
+    async function loadAuditLog() {
+        const btn = document.getElementById("refreshLogBtn");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span>`;
+        try {
+            auditLog = await fetchSheet(NOTES_WEBAPP_URL, AUDIT_SHEET);
+            // Newest first
+            auditLog.reverse();
+        } catch(e) {
+            console.error("AuditLog fetch failed:", e);
+            auditLog = [];
+        }
+        renderLog();
+        btn.disabled = false;
+        btn.textContent = "Refresh";
+    }
+
+    function fmtTime(val) {
+        if (!val) return "";
+        const d = new Date(val);
+        return isNaN(d) ? val : d.toLocaleString("en-AU", {
+            day: "2-digit", month: "short",
+            hour: "2-digit", minute: "2-digit", second: "2-digit"
+        });
+    }
+
+    function actionBadgeClass(action) {
+        switch ((action || "").toUpperCase()) {
+            case "APPEND": return "badge-full";
+            case "UPDATE": return "badge-renewal";
+            case "DELETE": return "badge-expired";
+            default:       return "badge-default";
+        }
+    }
+
+    function renderLog() {
+        const q    = document.getElementById("logSearch").value.trim().toLowerCase();
+        const body = document.getElementById("logBody");
+        const empty = document.getElementById("logEmpty");
+
+        let rows = [...auditLog];
+
+        if (logFilter !== "all") {
+            rows = rows.filter(r => gv(r,"Action").toUpperCase() === logFilter);
+        }
+        if (q) {
+            rows = rows.filter(r =>
+                gv(r,"Action").toLowerCase().includes(q)   ||
+                gv(r,"Sheet").toLowerCase().includes(q)    ||
+                gv(r,"RecordID").toLowerCase().includes(q) ||
+                gv(r,"User").toLowerCase().includes(q)     ||
+                gv(r,"Detail").toLowerCase().includes(q)
+            );
+        }
+
+        body.innerHTML = rows.map(r => {
+            const action = gv(r,"Action");
+            const detail = gv(r,"Detail");
+            // Parse detail JSON for a nicer display if possible
+            let detailHtml = detail;
+            try {
+                const parsed = JSON.parse(detail);
+                detailHtml = Object.entries(parsed)
+                    .filter(([k]) => !["NoteID","ActionID","TopicID","CreatedAt","LastUpdated"].includes(k))
+                    .map(([k,v]) => `<span style="color:var(--foam-dim)">${k}:</span> ${String(v).slice(0,60)}`)
+                    .join(" &nbsp;·&nbsp; ");
+            } catch(e) { /* not JSON, show raw */ }
+
+            return `<tr>
+                <td style="white-space:nowrap;">${fmtTime(gv(r,"Timestamp"))}</td>
+                <td>${gv(r,"User")}</td>
+                <td><span class="badge ${actionBadgeClass(action)}">${action}</span></td>
+                <td>${gv(r,"Sheet")}</td>
+                <td style="font-family:monospace;font-size:11px;">${gv(r,"RecordID").slice(0,12)}</td>
+                <td style="font-size:11.5px;max-width:320px;word-break:break-word;">${detailHtml}</td>
+            </tr>`;
+        }).join("");
+
+        empty.style.display = rows.length ? "none" : "block";
+    }
+
+    // Filter buttons
+    document.querySelectorAll(".app-filter-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".app-filter-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            logFilter = btn.dataset.status;
+            renderLog();
+        });
+    });
+    document.getElementById("logSearch").addEventListener("input", renderLog);
+    document.getElementById("refreshLogBtn").addEventListener("click", loadAuditLog);
+
+    /* =========================================================
        INIT
        ========================================================= */
-    loadAll().then(() => lucide.createIcons());
+    loadAll().then(() => {
+        lucide.createIcons();
+        loadAuditLog();
+    });
     </script>
 </body>
 </html>
