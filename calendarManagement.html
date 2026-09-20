@@ -283,6 +283,55 @@
     </div>
   </div>
 
+  <div class="season-operations-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="dot"></span>
+        <h3>Season Operations</h3>
+      </div>
+    </div>
+
+    <div class="tab-content active">
+      <div class="season-actions-grid">
+        <div class="season-action-card glass">
+          <div class="season-action-icon">
+            <i data-lucide="map-pinned"></i>
+          </div>
+          <div class="season-action-content">
+            <h4>Regional Conflict Scan</h4>
+            <p>
+              Check all regattas against Australian regional championship events
+              and update conflict references.
+            </p>
+          </div>
+          <button
+            id="regionalConflictBtn"
+            class="btn btn-ghost">
+            Run Scan
+          </button>
+        </div>
+
+        <div class="season-action-card glass">
+          <div class="season-action-icon">
+            <i data-lucide="calendar-range"></i>
+          </div>
+          <div class="season-action-content">
+            <h4>Schedule Next Season</h4>
+            <p>
+              Generate the next season fixture list using the Club Management
+              Regatta definitions.
+            </p>
+          </div>
+          <button
+            id="generateSeasonBtn"
+            class="btn btn-approve">
+            Generate Fixtures
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Events Table Queue -->
   <div class="panel" id="queue">
     <div class="panel-header">
@@ -432,7 +481,8 @@ const AdminLog = {
 
 const SHEETS = {
   calWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
-  clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec"
+  clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
+  ssnWebAppUrl: "https://script.google.com/macros/library/d/1UHhsKNh1mJntPZVUd5IXbgX1c6kSUCayrysJTZc5EeZtGGyxdrbptUnG/4"
 };
 
 async function fetchSheet(WEBAPP_URL, sheetName) {
@@ -564,6 +614,8 @@ const approveBtn = document.getElementById("approveRescheduleBtn");
 const btnBulkExport = document.getElementById("btnBulkExport");
 const auditTrail = document.getElementById("auditTrail");
 const lastActionLabel = document.getElementById("lastActionLabel");
+const regionalConflictBtn = document.getElementById("regionalConflictBtn");
+const generateSeasonBtn = document.getElementById("generateSeasonBtn");
 
 function logAction(msg) {
   const time = new Date().toLocaleTimeString();
@@ -994,6 +1046,79 @@ function renderClassPills() {
 }
 
 /* =========================================================
+   REGIONAL CONFLICT CHECK
+   ========================================================= */
+
+regionalConflictBtn?.addEventListener("click", async () => {
+  regionalConflictBtn.classList.add("btn-busy");
+
+  try {
+    logAction("Regional conflict scan started...");
+    const res = await fetch(SHEETS.calWebAppUrl, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "runRegionalConflicts"
+      })
+    });
+    const result = await res.json();
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    logAction(
+      `Conflict scan completed. ${result.totalConflictsFound} conflicts found across ${result.datesWithConflicts} event dates.`
+    );
+    await loadData();
+  } catch (err) {
+    logAction(
+      `Regional conflict scan failed: ${err.message}`
+    );
+  } finally {
+    regionalConflictBtn.classList.remove("btn-busy");
+  }
+
+});
+
+/* =========================================================
+   GENERATE NEXT SEASON
+   ========================================================= */
+
+generateSeasonBtn?.addEventListener("click", async () => {
+  const nextSeason =
+    `${CURRENT_SEASON_START + 1}-${String(
+      CURRENT_SEASON_START + 2
+    ).slice(-2)}`;
+  generateSeasonBtn.classList.add("btn-busy");
+
+  try {
+    logAction(
+      `Generating fixtures for season ${nextSeason}...`
+    );
+    const res = await fetch(SHEETS.ssnWebAppUrl, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "generateSeasonFixtures"
+      })
+    });
+    const result = await res.json();
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    logAction(
+      `${result.eventsCreated} fixtures generated ` +
+      `(${result.competitionEvents} regattas, ` +
+      `${result.socialEvents} social sailing events).`
+    );
+    await loadData();
+  } catch (err) {
+    logAction(
+      `Season generation failed: ${err.message}`
+    );
+  } finally {
+    generateSeasonBtn.classList.remove("btn-busy");
+  }
+});
+
+/* =========================================================
    INITIAL DATA LOAD
    ========================================================= */
 async function loadData() {
@@ -1008,6 +1133,7 @@ async function loadData() {
     renderTable();
     renderAvailableDates();
     renderSelectedEventDetails();
+    
   } catch (err) {
     eventsBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
   }
