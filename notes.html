@@ -546,23 +546,25 @@
     /* =========================================================
        TOPIC DROPDOWNS
        ========================================================= */
-    function renderTopicDropdowns() {
-        const topicNames = topics.map(t => gv(t,"Topic","Topic Name")).filter(Boolean).sort();
+        function renderTopicDropdowns() {
+            // Accept any key that contains "topic" (case-insensitive)
+            const topicNames = topics.map(t => {
+                const key = Object.keys(t).find(k => k.toLowerCase().trim() === "topic");
+                return key ? String(t[key]).trim() : "";
+            }).filter(Boolean).sort();
 
-        // Filter dropdown (add "All Topics" back)
-        const ft = document.getElementById("filterTopic");
-        const ftVal = ft.value;
-        ft.innerHTML = `<option value="">All Topics</option>` +
-            topicNames.map(t => `<option value="${t}">${t}</option>`).join("");
-        ft.value = ftVal;
+            const ft = document.getElementById("filterTopic");
+            const ftVal = ft.value;
+            ft.innerHTML = `<option value="">All Topics</option>` +
+                topicNames.map(t => `<option value="${t}">${t}</option>`).join("");
+            ft.value = ftVal;
 
-        // Modal select
-        const fs = document.getElementById("fTopic");
-        const fsVal = fs.value;
-        fs.innerHTML = `<option value="">— Select Topic —</option>` +
-            topicNames.map(t => `<option value="${t}">${t}</option>`).join("");
-        fs.value = fsVal;
-    }
+            const fs = document.getElementById("fTopic");
+            const fsVal = fs.value;
+            fs.innerHTML = `<option value="">— Select Topic —</option>` +
+                topicNames.map(t => `<option value="${t}">${t}</option>`).join("");
+            fs.value = fsVal;
+        }
 
     /* =========================================================
        TABLE
@@ -879,6 +881,7 @@
             inp.value = "";
             await loadAll();
             renderTopicList();
+            console.log("Topics loaded:", topics);
             ts.textContent = `"${v}" added.`; ts.className = "modal-status visible success";
         } catch(e) {
             ts.textContent = "Error: " + e.message; ts.className = "modal-status visible error";
