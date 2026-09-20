@@ -494,15 +494,29 @@
 
 </main>
 
-<!-- Class Specific Google Calendar Modal -->
+<!-- Class Specific Google Calendar Modal with Season Selector -->
 <div class="modal-overlay" id="calendarModal">
   <div class="modal-card" style="max-width: 800px; width: 90%;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h3 style="margin:0; color:var(--foam);" id="calendarModalTitle">Class Google Calendar</h3>
+      <h3 style="margin:0; color:var(--foam);" id="calendarModalTitle">Class Events</h3>
+      
+      <!-- Season Selector Controls (< CurrentSeason >) -->
+      <div id="modalSeasonSelector" style="display:flex; align-items:center; gap:8px;">
+        <button class="icon-btn" id="modalPrevSeason" onclick="shiftModalSeason(-1)" title="Previous Season">
+          <i data-lucide="chevron-left" size="18"></i>
+        </button>
+        <span id="modalSeasonDisplay" style="font-family:var(--font-data); font-weight:600; color:var(--glow); font-size:14px; min-width:80px; text-align:center;">
+          2026-27
+        </span>
+        <button class="icon-btn" id="modalNextSeason" onclick="shiftModalSeason(1)" title="Next Season">
+          <i data-lucide="chevron-right" size="18"></i>
+        </button>
+      </div>
+
       <button class="icon-btn" onclick="closeCalendarModal()"><i data-lucide="x"></i></button>
     </div>
     <div id="calendarModalBody" style="min-height: 380px;">
-      <!-- Google Calendar iframe or dynamic event table populated via JS -->
+      <!-- Filtered event table populated dynamically -->
     </div>
   </div>
 </div>
@@ -827,53 +841,100 @@ function renderClassEventsPills() {
   `).join("");
 }
 
+/* =========================================================
+   CLASS MODAL & SEASON FILTER CONTROL
+   ========================================================= */
+let modalCurrentClass = "";
+let modalSeasonIndex = 0;
+let modalSeasonsList = [];
+
 function openClassCalendarModal(className) {
-  // 1. Filter scheduled events table by class
+  modalCurrentClass = className;
+
+  // 1. Filter scheduled events table on main console by class
   selectedClass = className;
   renderClassPills();
   renderTable();
 
-  // 2. Open Google Calendar in Modal
-  const cls = classes.find(c => c.ClassName === className);
-  const calId = cls ? (cls.CalendarId || cls.GoogleCalendarId || cls.CalendarUrl) : null;
-  
-  document.getElementById("calendarModalTitle").textContent = `${className} — Class Google Calendar`;
-  const body = document.getElementById("calendarModalBody");
-
-  if (calId && calId.startsWith("http")) {
-    body.innerHTML = `<iframe src="${calId}" style="border:0; width:100%; height:450px; border-radius:8px;" frameborder="0" scrolling="no"></iframe>`;
-  } else if (calId) {
-    body.innerHTML = `<iframe src="https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calId)}&ctz=Australia%2FSydney" style="border:0; width:100%; height:450px; border-radius:8px;" frameborder="0" scrolling="no"></iframe>`;
+  // 2. Extract available seasons from season dropdown / Event Data (Sorted Chronologically)
+  const seasonSelectElem = document.getElementById("seasonSelect");
+  if (seasonSelectElem && seasonSelectElem.options.length > 0) {
+    modalSeasonsList = Array.from(seasonSelectElem.options).map(opt => opt.value).reverse();
   } else {
-    const classEvs = eventData.filter(e => e.Class === className);
-    body.innerHTML = `
-      <div style="margin-bottom:12px; color:var(--foam-dim); font-size:12px;">Events scheduled for <strong>${className}</strong>:</div>
-      <div class="admin-table-wrap" style="max-height: 380px; overflow-y: auto;">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Event Title</th>
-              <th>Event Type</th>
-              <th>Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${classEvs.length ? classEvs.map(e => `
-              <tr>
-                <td>${formatDate(e.Date)}</td>
-                <td>${e.Event || "—"}</td>
-                <td>${e.Competition || e["Event Type"] || e["Regatta Type"] || "—"}</td>
-                <td>${formatTime(e.Start)} -${formatTime(e.Finish)}</td>
-              </tr>
-            `).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--foam-dim);">No scheduled events found for this class.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    `;
+    modalSeasonsList = Array.from(new Set(eventData.map(e => e.Season).filter(Boolean))).sort();
   }
 
+  if (!modalSeasonsList.length) {
+    modalSeasonsList = ["2026-27"];
+  }
+
+  // 3. Default to '2026-27' or currently active dropdown season
+  const targetDefault = selectedSeason || "2026-27";
+  const defaultIdx = modalSeasonsList.findIndex(s => String(s).startsWith(String(targetDefault)));
+  modalSeasonIndex = defaultIdx !== -1 ? defaultIdx : 0;
+
+  document.getElementById("calendarModalTitle").textContent = `${className} — Class Events`;
   document.getElementById("calendarModal").classList.add("active");
+
+  renderModalSeasonView();
+}
+
+function shiftModalSeason(direction) {
+  const newIndex = modalSeasonIndex + direction;
+  if (newIndex >= 0 && newIndex < modalSeasonsList.length) {
+    modalSeasonIndex = newIndex;
+    renderModalSeasonView();
+  }
+}
+
+function renderModalSeasonView() {
+  const currentSeason = modalSeasonsList[modalSeasonIndex];
+
+  // Update Season display label
+  document.getElementById("modalSeasonDisplay").textContent = currentSeason;
+
+  // Show/Hide Chevrons based on boundary conditions
+  const prevBtn = document.getElementById("modalPrevSeason");
+  const nextBtn = document.getElementById("modalNextSeason");
+
+  if (prevBtn) prevBtn.style.visibility = modalSeasonIndex > 0 ? "visible" : "hidden";
+  if (nextBtn) nextBtn.style.visibility = modalSeasonIndex < modalSeasonsList.length - 1 ? "visible" : "hidden";
+
+  // Filter events by selected Class AND active Modal Season
+  const classEvs = eventData.filter(e => 
+    e.Class === modalCurrentClass && 
+    String(e.Season).startsWith(String(currentSeason))
+  );
+
+  const body = document.getElementById("calendarModalBody");
+  body.innerHTML = `
+    <div style="margin-bottom:12px; color:var(--foam-dim); font-size:12px;">
+      Showing scheduled events for <strong>${modalCurrentClass}</strong> in season <strong>${currentSeason}</strong>:
+    </div>
+    <div class="admin-table-wrap" style="max-height: 380px; overflow-y: auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Event Title</th>
+            <th>Event Type</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${classEvs.length ? classEvs.map(e => `
+            <tr>
+              <td>${formatDate(e.Date)}</td>
+              <td>${e.Event || e.Competition || "—"}</td>
+              <td>${e.Competition || e["Event Type"] || e["Regatta Type"] || "—"}</td>
+              <td>${formatTime(e.Start)} –${formatTime(e.Finish)}</td>
+            </tr>
+          `).join('') : `<tr><td colspan="4" style="text-align:center;color:var(--foam-dim);">No events scheduled for ${modalCurrentClass} in season${currentSeason}.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+
   if (window.lucide) lucide.createIcons();
 }
 
