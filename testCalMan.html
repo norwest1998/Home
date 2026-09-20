@@ -1645,26 +1645,6 @@ function closeEditModal() {
   editingHex = null;
 }
 
-document.getElementById("saveEditBtn").addEventListener("click", async () => {
-  if (!editingHex) return;
-  const name = document.getElementById("editEventName").value;
-  const date = document.getElementById("editEventDate").value;
-  const start = document.getElementById("editStartTime").value;
-  const finish = document.getElementById("editFinishTime").value;
-
-  try {
-    await updateSheet(SHEETS.calWebAppUrl, "Event Data", editingHex, { Event: name, Date: date, Start: start, Finish: finish });
-    const ev = eventData.find(e => e.HexKey === editingHex);
-    if (ev) { ev.Event = name; ev.Date = date; ev.Start = start; ev.Finish = finish; }
-    
-    logAction(`Updated Event: ${name} (${date})`);
-    closeEditModal();
-    renderTable();
-  } catch (err) {
-    alert("Failed to save changes: " + err.message);
-  }
-});
-
 /* --- Request Reschedule --- */
 requestBtn.addEventListener("click", async () => {
   if (!selectedHex) { logAction("No event selected."); return; }
