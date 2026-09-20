@@ -332,7 +332,7 @@
   <!-- Class Events Scheduled Row -->
   <div class="class-events-section">
     <div class="class-events-header">
-      <i data-lucide="badge" size="14"></i> Class Events Scheduled
+      <i data-lucide="shield" size="14"></i> Class Events Scheduled
     </div>
     <div class="class-pill-list" id="classEventsPills">
       <span style="color: var(--foam-dim); font-size: 12px;">Loading class events…</span>
@@ -1391,8 +1391,7 @@ function renderClassPills() {
 
 /* =========================================================
    REGIONAL CONFLICT CHECK
-   ========================================================= */
-
+========================================================= */
 regionalConflictBtn?.addEventListener("click", async () => {
   regionalConflictBtn.classList.add("btn-busy");
   try {
@@ -1415,8 +1414,7 @@ regionalConflictBtn?.addEventListener("click", async () => {
 
 /* =========================================================
    GENERATE NEXT SEASON
-   ========================================================= */
-
+========================================================= */
 generateSeasonBtn?.addEventListener("click", async () => {
   const nextSeason = `${CURRENT_SEASON_START + 1}-${String(CURRENT_SEASON_START + 2).slice(-2)}`;
   generateSeasonBtn.classList.add("btn-busy");
@@ -1440,7 +1438,7 @@ generateSeasonBtn?.addEventListener("click", async () => {
 
 /* =========================================================
    INITIAL DATA LOAD
-   ========================================================= */
+========================================================= */
 async function loadData() {
   try {
     eventData = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
