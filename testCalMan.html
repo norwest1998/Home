@@ -264,6 +264,47 @@
     background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border);
     border-radius: 12px; padding: 14px 18px; margin-bottom: 24px;
   }
+
+  /* Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--glow, #38bdf8);
+  animation: spin 0.75s linear infinite;
+}
+
+/* Season Operation Response Messages */
+.season-op-msg {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  display: none;
+}
+
+.season-op-msg.active {
+  display: block;
+}
+
+.season-op-msg.status-loading {
+  color: var(--glow, #38bdf8);
+}
+
+.season-op-msg.status-success {
+  color: #4ade80;
+}
+
+.season-op-msg.status-error {
+  color: #f87171;
+}
 </style>
 </head>
 <body>
@@ -340,69 +381,72 @@
   </div>
 
 
-  <!-- Season Operations Panel (3 Columns) -->
-  <div class="season-operations-panel" id="season-operations">
-    <div class="panel-header">
-      <div class="panel-title">
-        <span class="dot"></span>
-        <h3>Season Operations</h3>
-      </div>
-    </div>
-
-    <div class="tab-content active">
-      <div class="season-actions-grid">
-        
-        <!-- Operation 1: Export Events -->
-        <div class="season-action-card glass">
-          <div class="season-action-icon">
-            <i data-lucide="calendar-plus" color="#38bdf8"></i>
-          </div>
-          <div class="season-action-content">
-            <h4>Export to Google Calendar</h4>
-            <p>
-              Publish all pending and rescheduled events directly into class-specific Google Calendars.
-            </p>
-          </div>
-          <button id="btnBulkExport" class="btn btn-approve">
-            <i data-lucide="cloud-upload" size="16"></i> Bulk Add All
-          </button>
-        </div>
-
-        <!-- Operation 2: Regional Conflict Scan -->
-        <div class="season-action-card glass">
-          <div class="season-action-icon">
-            <i data-lucide="map-pinned"></i>
-          </div>
-          <div class="season-action-content">
-            <h4>Regional Conflict Scan</h4>
-            <p>
-              Check all regattas against Australian regional championship events and update conflict references.
-            </p>
-          </div>
-          <button id="regionalConflictBtn" class="btn btn-ghost">
-            Run Scan
-          </button>
-        </div>
-
-        <!-- Operation 3: Schedule Next Season -->
-        <div class="season-action-card glass">
-          <div class="season-action-icon">
-            <i data-lucide="calendar-range"></i>
-          </div>
-          <div class="season-action-content">
-            <h4>Schedule Next Season</h4>
-            <p>
-              Generate the next season fixture list using the Club Management Regatta definitions.
-            </p>
-          </div>
-          <button id="generateSeasonBtn" class="btn btn-approve">
-            Generate Fixtures
-          </button>
-        </div>
-
-      </div>
+<!-- Season Operations Panel (3 Columns) -->
+<div class="season-operations-panel" id="season-operations">
+  <div class="panel-header">
+    <div class="panel-title">
+      <span class="dot"></span>
+      <h3>Season Operations</h3>
     </div>
   </div>
+
+  <div class="tab-content active">
+    <div class="season-actions-grid">
+      
+      <!-- Operation 1: Export Events -->
+      <div class="season-action-card glass">
+        <div class="season-action-icon">
+          <i data-lucide="calendar-plus" color="#38bdf8"></i>
+        </div>
+        <div class="season-action-content">
+          <h4>Export to Google Calendar</h4>
+          <p>
+            Publish all pending and rescheduled events directly into class-specific Google Calendars.
+          </p>
+          <div class="season-op-msg" id="msgBulkExport"></div>
+        </div>
+        <button id="btnBulkExport" class="btn btn-approve">
+          <i data-lucide="cloud-upload" size="16"></i> Bulk Add All
+        </button>
+      </div>
+
+      <!-- Operation 2: Regional Conflict Scan -->
+      <div class="season-action-card glass">
+        <div class="season-action-icon">
+          <i data-lucide="map-pinned"></i>
+        </div>
+        <div class="season-action-content">
+          <h4>Regional Conflict Scan</h4>
+          <p>
+            Check all regattas against Australian regional championship events and update conflict references.
+          </p>
+          <div class="season-op-msg" id="msgRegionalConflict"></div>
+        </div>
+        <button id="regionalConflictBtn" class="btn btn-ghost">
+          Run Scan
+        </button>
+      </div>
+
+      <!-- Operation 3: Schedule Next Season -->
+      <div class="season-action-card glass">
+        <div class="season-action-icon">
+          <i data-lucide="calendar-range"></i>
+        </div>
+        <div class="season-action-content">
+          <h4>Schedule Next Season</h4>
+          <p>
+            Generate the next season fixture list using the Club Management Regatta definitions.
+          </p>
+          <div class="season-op-msg" id="msgGenerateSeason"></div>
+        </div>
+        <button id="generateSeasonBtn" class="btn btn-approve">
+          Generate Fixtures
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
 
   <!-- Main Events Table Queue -->
   <div class="panel" id="queue">
@@ -1252,25 +1296,25 @@ async function addToCalendar(hexKey) {
 }
 
 /* --- Bulk Calendar Export --- */
-btnBulkExport.addEventListener("click", async () => {
-  btnBulkExport.disabled = true;
-  logAction("Initiating bulk export to Google Calendar...");
-  try {
-    const res = await fetch(SHEETS.calWebAppUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "exportToCalendar", hexKey: null })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-
-    logAction(`Bulk Sync Complete: ${data.count || 0} events added to Google Calendar.`);
-    await loadData();
-  } catch (err) {
-    logAction(`Bulk export error: ${err.message}`);
-  } finally {
-    btnBulkExport.disabled = false;
-  }
+btnBulkExport.addEventListener("click", () => {
+  const msgElem = document.getElementById("msgBulkExport");
+  runSeasonOp({
+    btn: btnBulkExport,
+    msgElem: msgElem,
+    loadingMsg: "Syncing events with Google Calendar...",
+    actionFn: async () => {
+      const res = await fetch(SHEETS.calWebAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "exportToCalendar", hexKey: null })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      
+      await loadData();
+      return `Bulk Sync Complete: ${data.count || 0} events added to Google Calendar.`;
+    }
+  });
 });
 
 /* Modal Controls */
@@ -1389,51 +1433,80 @@ function renderClassPills() {
   );
 }
 
+async function runSeasonOp({ btn, msgElem, loadingMsg, actionFn }) {
+  const originalBtnHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>`;
+
+  msgElem.className = "season-op-msg active status-loading";
+  msgElem.textContent = loadingMsg;
+
+  try {
+    const successMsg = await actionFn();
+    msgElem.className = "season-op-msg active status-success";
+    msgElem.textContent = successMsg;
+    logAction(successMsg);
+  } catch (err) {
+    const errorMsg = `Failed: ${err.message}`;
+    msgElem.className = "season-op-msg active status-error";
+    msgElem.textContent = errorMsg;
+    logAction(errorMsg);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalBtnHTML;
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
 /* =========================================================
    REGIONAL CONFLICT CHECK
 ========================================================= */
-regionalConflictBtn?.addEventListener("click", async () => {
-  regionalConflictBtn.classList.add("btn-busy");
-  try {
-    logAction("Regional conflict scan started...");
-    const res = await fetch(SHEETS.calWebAppUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "runRegionalConflicts" })
-    });
-    const result = await res.json();
-    if (result.error) throw new Error(result.error);
-    logAction(`Conflict scan completed. ${result.totalConflictsFound} conflicts found across ${result.datesWithConflicts} event dates.`);
-    await loadData();
-  } catch (err) {
-    logAction(`Regional conflict scan failed: ${err.message}`);
-  } finally {
-    regionalConflictBtn.classList.remove("btn-busy");
-  }
+regionalConflictBtn?.addEventListener("click", () => {
+  const msgElem = document.getElementById("msgRegionalConflict");
+  runSeasonOp({
+    btn: regionalConflictBtn,
+    msgElem: msgElem,
+    loadingMsg: "Scanning regional championship calendars...",
+    actionFn: async () => {
+      const res = await fetch(SHEETS.calWebAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "runRegionalConflicts" })
+      });
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+      if (result.success === false) throw new Error(result.error || "Conflict scan failed");
+
+      await loadData();
+      return `Conflict scan completed. ${result.totalConflictsFound ?? 0} conflicts found across ${result.datesWithConflicts ?? 0} event dates.`;
+    }
+  });
 });
 
 /* =========================================================
    GENERATE NEXT SEASON
 ========================================================= */
-generateSeasonBtn?.addEventListener("click", async () => {
+generateSeasonBtn?.addEventListener("click", () => {
   const nextSeason = `${CURRENT_SEASON_START + 1}-${String(CURRENT_SEASON_START + 2).slice(-2)}`;
-  generateSeasonBtn.classList.add("btn-busy");
-  try {
-    logAction(`Generating fixtures for season ${nextSeason}...`);
-    const res = await fetch(SHEETS.ssnWebAppUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "generateSeasonFixtures" })
-    });
-    const result = await res.json();
-    if (result.error) throw new Error(result.error);
-    logAction(`${result.eventsCreated} fixtures generated (${result.competitionEvents} regattas, ${result.socialEvents} social sailing events).`);
-    await loadData();
-  } catch (err) {
-    logAction(`Season generation failed: ${err.message}`);
-  } finally {
-    generateSeasonBtn.classList.remove("btn-busy");
-  }
+  const msgElem = document.getElementById("msgGenerateSeason");
+  
+  runSeasonOp({
+    btn: generateSeasonBtn,
+    msgElem: msgElem,
+    loadingMsg: `Generating fixtures for season ${nextSeason}...`,
+    actionFn: async () => {
+      const res = await fetch(SHEETS.ssnWebAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "generateSeasonFixtures" })
+      });
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+
+      await loadData();
+      return `${result.eventsCreated} fixtures generated (${result.competitionEvents} regattas, ${result.socialEvents} social sailing events).`;
+    }
+  });
 });
 
 /* =========================================================
