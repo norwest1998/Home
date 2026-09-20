@@ -904,7 +904,7 @@
         btn.innerHTML = `<span class="spinner"></span>`;
 
         try {
-            await appendSheet(NOTES_WEBAPP_URL, TOPICS_SHEET, { TopicID: noteId(), Topic: v, CreatedAt: new Date().toISOString() });
+            await appendSheet(NOTES_WEBAPP_URL, TOPICS_SHEET, { TopicID: noteId(), Topic: v, CreatedAt: new Date().toISOString(), NoteCount: "=countif(Notes!$C$2:$C,$B2)" });
             inp.value = "";
             await loadAll();
             renderTopicList();

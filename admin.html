@@ -300,6 +300,7 @@
             
             const rows = Array.isArray(data) ? data : (data.values || []);
             if (!rows || rows.length === 0) return [];
+            console.log("Row: ", rows);
 
             // Dynamically locate the actual header row (contains 'RowID' or 'Status')
             let headerIndex = rows.findIndex(r => 
@@ -530,8 +531,8 @@
                 href: "notes.html",
                 status: async () => {
                     const [noteRows, actionRows] = await Promise.all([
-                        fetchSheet(SHEETS.notesWebAppUrl, "Notes"),
-                        fetchSheet(SHEETS.notesWebAppUrl, "Actions")
+                        fetchSheet(SHEETS.notesWebAppUrl, SHEETS.note.tabs.notes),
+                        fetchSheet(SHEETS.notesWebAppUrl, SHEETS.note.tabs.actions)
                     ]);
                     const now = new Date();
                     const open = actionRows.filter(a => getRowVal(a,["Status"]).toLowerCase() !== "done").length;
@@ -541,9 +542,9 @@
                     }).length;
                     return {
                         pills: [
-                            { label: "Notes",   value: noteRows.length, className: "badge-full" },
-                            { label: "Open Actions",    value: open,    className: "badge-renewal" },
-                            { label: "Overdue", value: overdue,         className: overdue > 0 ? "badge-expired" : "badge-default" }
+                            { label: "Notes",           value: noteRows.length, className: "badge-full" },
+                            { label: "Open Actions",    value: open,            className: "badge-renewal" },
+                            { label: "Overdue",         value: overdue,         className: overdue > 0 ? "badge-expired" : "badge-default" }
                         ]
                     };
                 }
