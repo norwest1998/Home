@@ -444,7 +444,24 @@
         const res  = await fetch(`${url}?action=fetch&sheet=${encodeURIComponent(sheet)}`);
         const data = await res.json();
         if (!data || data.error) throw new Error(data?.error || "Fetch failed");
-        return Array.isArray(data) ? data : [];
+
+        // Handle raw 2D array format { values: [[header,...],[data,...]] }
+        const rows = Array.isArray(data) ? data : (data.values || []);
+        if (!rows.length) return [];
+
+        // Find header row — first non-empty row
+        const headerIdx = rows.findIndex(r => Array.isArray(r) && r.some(c => String(c).trim() !== ""));
+        if (headerIdx === -1) return [];
+
+        const headers = rows[headerIdx].map(h => String(h).trim());
+
+        return rows.slice(headerIdx + 1)
+            .filter(r => Array.isArray(r) && r.some(c => String(c).trim() !== ""))
+            .map(r => {
+                const obj = {};
+                headers.forEach((h, i) => { if (h) obj[h] = r[i] !== undefined ? r[i] : ""; });
+                return obj;
+            });
     }
 
     async function appendSheet(url, sheet, rowData) {

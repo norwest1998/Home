@@ -1399,7 +1399,7 @@ function renderEventSelect(){
     const regattaName = `${e.class} ${e.regattaType}`;
     const saved = hasSavedProgress(e.id);
     const selectable = e.status !== 'Processing';
-    let pill = '';
+    let pill = '';  
     if(!selectable){
       const cls = e.status === 'Processed' ? 'pill-sent' : 'pill-inprogress';
       pill = `<span class="event-status-pill ${cls}">${e.status}</span>`;
