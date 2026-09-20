@@ -654,6 +654,7 @@ async function fetchSheet(WEBAPP_URL, sheetName) {
 async function updateSheet(WEBAPP_URL, sheetName, hexKey, updates) {
   const res = await fetch(WEBAPP_URL, {
     method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action: "update", sheet: sheetName, hexKey, updates })
   });
   const data = await res.json();
@@ -664,6 +665,7 @@ async function updateSheet(WEBAPP_URL, sheetName, hexKey, updates) {
 async function appendSheet(WEBAPP_URL, sheetName, rowData) {
   const res = await fetch(WEBAPP_URL, {
     method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action: "append", sheet: sheetName, rowData })
   });
   const data = await res.json();
@@ -1224,6 +1226,7 @@ async function addToCalendar(hexKey) {
   try {
     const res = await fetch(SHEETS.calWebAppUrl, {
       method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ action: "exportToCalendar", hexKey: hexKey })
     });
     const data = await res.json();
@@ -1255,6 +1258,7 @@ btnBulkExport.addEventListener("click", async () => {
   try {
     const res = await fetch(SHEETS.calWebAppUrl, {
       method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ action: "exportToCalendar", hexKey: null })
     });
     const data = await res.json();
@@ -1391,31 +1395,22 @@ function renderClassPills() {
 
 regionalConflictBtn?.addEventListener("click", async () => {
   regionalConflictBtn.classList.add("btn-busy");
-
   try {
     logAction("Regional conflict scan started...");
     const res = await fetch(SHEETS.calWebAppUrl, {
       method: "POST",
-      body: JSON.stringify({
-        action: "runRegionalConflicts"
-      })
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "runRegionalConflicts" })
     });
     const result = await res.json();
-    if (result.error) {
-      throw new Error(result.error);
-    }
-    logAction(
-      `Conflict scan completed. ${result.totalConflictsFound} conflicts found across ${result.datesWithConflicts} event dates.`
-    );
+    if (result.error) throw new Error(result.error);
+    logAction(`Conflict scan completed. ${result.totalConflictsFound} conflicts found across ${result.datesWithConflicts} event dates.`);
     await loadData();
   } catch (err) {
-    logAction(
-      `Regional conflict scan failed: ${err.message}`
-    );
+    logAction(`Regional conflict scan failed: ${err.message}`);
   } finally {
     regionalConflictBtn.classList.remove("btn-busy");
   }
-
 });
 
 /* =========================================================
@@ -1423,36 +1418,21 @@ regionalConflictBtn?.addEventListener("click", async () => {
    ========================================================= */
 
 generateSeasonBtn?.addEventListener("click", async () => {
-  const nextSeason =
-    `${CURRENT_SEASON_START + 1}-${String(
-      CURRENT_SEASON_START + 2
-    ).slice(-2)}`;
+  const nextSeason = `${CURRENT_SEASON_START + 1}-${String(CURRENT_SEASON_START + 2).slice(-2)}`;
   generateSeasonBtn.classList.add("btn-busy");
-
   try {
-    logAction(
-      `Generating fixtures for season ${nextSeason}...`
-    );
+    logAction(`Generating fixtures for season ${nextSeason}...`);
     const res = await fetch(SHEETS.ssnWebAppUrl, {
       method: "POST",
-      body: JSON.stringify({
-        action: "generateSeasonFixtures"
-      })
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "generateSeasonFixtures" })
     });
     const result = await res.json();
-    if (result.error) {
-      throw new Error(result.error);
-    }
-    logAction(
-      `${result.eventsCreated} fixtures generated ` +
-      `(${result.competitionEvents} regattas, ` +
-      `${result.socialEvents} social sailing events).`
-    );
+    if (result.error) throw new Error(result.error);
+    logAction(`${result.eventsCreated} fixtures generated (${result.competitionEvents} regattas, ${result.socialEvents} social sailing events).`);
     await loadData();
   } catch (err) {
-    logAction(
-      `Season generation failed: ${err.message}`
-    );
+    logAction(`Season generation failed: ${err.message}`);
   } finally {
     generateSeasonBtn.classList.remove("btn-busy");
   }
