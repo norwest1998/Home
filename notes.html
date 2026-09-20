@@ -425,20 +425,8 @@
     async function fetchSheet(url, sheet) {
         const res  = await fetch(`${url}?action=fetch&sheet=${encodeURIComponent(sheet)}`);
         const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        const rows = Array.isArray(data) ? data : (data.values || []);
-        if (!rows.length) return [];
-        let hi = rows.findIndex(r => Array.isArray(r) && r.some(c => {
-            const v = String(c||"").trim().toLowerCase();
-            return v === "rowid" || v === "noteid" || v === "topic";
-        }));
-        if (hi === -1) hi = rows.findIndex(r => Array.isArray(r) && r.filter(c => String(c||"").trim()).length > 2);
-        if (hi === -1) return [];
-        const headers = rows[hi].map(h => String(h||"").trim());
-        return rows.slice(hi+1).filter(r => r.some(c => String(c||"").trim())).map(r => {
-            const o = {}; headers.forEach((h,i) => { if(h) o[h] = r[i]??""});
-            return o;
-        });
+        if (!data || data.error) throw new Error(data?.error || "Fetch failed");
+        return Array.isArray(data) ? data : [];
     }
 
     async function appendSheet(url, sheet, rowData) {
@@ -548,10 +536,10 @@
        ========================================================= */
         function renderTopicDropdowns() {
             // Accept any key that contains "topic" (case-insensitive)
-            const topicNames = topics.map(t => {
-                const key = Object.keys(t).find(k => k.toLowerCase().trim() === "topic");
-                return key ? String(t[key]).trim() : "";
-            }).filter(Boolean).sort();
+            const topicNames = topics
+                .map(t => t["Topic"] || t["topic"] || "")
+                .filter(Boolean)
+                .sort();
 
             const ft = document.getElementById("filterTopic");
             const ftVal = ft.value;
