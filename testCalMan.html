@@ -200,13 +200,19 @@
     border-radius: 12px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   }
 
-  /* =========================================================
-   SEASON OPERATIONS
+   /* =========================================================
+   SEASON OPERATIONS (3-Column Layout)
    ========================================================= */
-  .season-actions-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-    gap:18px;
+  .season-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+
+  @media (max-width: 1024px) {
+    .season-actions-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   .season-action-card{
@@ -333,20 +339,8 @@
     </div>
   </div>
 
-  <!-- Add Scheduled Events to Calendars (Bulk & Sync Section) -->
-  <div class="calendar-sync-banner" id="calendar-sync">
-    <div class="sync-info">
-      <h4><i data-lucide="calendar-plus" color="#38bdf8"></i> Export Events to Google Calendar</h4>
-      <p>Publish all pending and rescheduled events directly into class-specific Google Calendars.</p>
-    </div>
-    <div style="display:flex; gap:10px;">
-      <button class="btn btn-approve" id="btnBulkExport">
-        <i data-lucide="cloud-upload" size="16"></i> Bulk Add All Pending
-      </button>
-    </div>
-  </div>
-
-  <div class="season-operations-panel">
+<!-- Season Operations Panel (3 Columns) -->
+  <div class="season-operations-panel" id="season-operations">
     <div class="panel-header">
       <div class="panel-title">
         <span class="dot"></span>
@@ -356,6 +350,24 @@
 
     <div class="tab-content active">
       <div class="season-actions-grid">
+        
+        <!-- Operation 1: Export Events -->
+        <div class="season-action-card glass">
+          <div class="season-action-icon">
+            <i data-lucide="calendar-plus" color="#38bdf8"></i>
+          </div>
+          <div class="season-action-content">
+            <h4>Export to Google Calendar</h4>
+            <p>
+              Publish all pending and rescheduled events directly into class-specific Google Calendars.
+            </p>
+          </div>
+          <button id="btnBulkExport" class="btn btn-approve">
+            <i data-lucide="cloud-upload" size="16"></i> Bulk Add All
+          </button>
+        </div>
+
+        <!-- Operation 2: Regional Conflict Scan -->
         <div class="season-action-card glass">
           <div class="season-action-icon">
             <i data-lucide="map-pinned"></i>
@@ -363,17 +375,15 @@
           <div class="season-action-content">
             <h4>Regional Conflict Scan</h4>
             <p>
-              Check all regattas against Australian regional championship events
-              and update conflict references.
+              Check all regattas against Australian regional championship events and update conflict references.
             </p>
           </div>
-          <button
-            id="regionalConflictBtn"
-            class="btn btn-ghost">
+          <button id="regionalConflictBtn" class="btn btn-ghost">
             Run Scan
           </button>
         </div>
 
+        <!-- Operation 3: Schedule Next Season -->
         <div class="season-action-card glass">
           <div class="season-action-icon">
             <i data-lucide="calendar-range"></i>
@@ -381,16 +391,14 @@
           <div class="season-action-content">
             <h4>Schedule Next Season</h4>
             <p>
-              Generate the next season fixture list using the Club Management
-              Regatta definitions.
+              Generate the next season fixture list using the Club Management Regatta definitions.
             </p>
           </div>
-          <button
-            id="generateSeasonBtn"
-            class="btn btn-approve">
+          <button id="generateSeasonBtn" class="btn btn-approve">
             Generate Fixtures
           </button>
         </div>
+
       </div>
     </div>
   </div>
