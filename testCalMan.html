@@ -339,7 +339,8 @@
     </div>
   </div>
 
-<!-- Season Operations Panel (3 Columns) -->
+
+  <!-- Season Operations Panel (3 Columns) -->
   <div class="season-operations-panel" id="season-operations">
     <div class="panel-header">
       <div class="panel-title">
@@ -801,7 +802,7 @@ function renderSeasonDropdown() {
 }
 
 function renderStats() {
-  const activeEvents = eventData.filter(e => e.Class !== "Marblehead" && String(e.Season).startsWith(String(selectedSeason)));
+  const activeEvents = eventData.filter(e => e.Class !== "M" && String(e.Season).startsWith(String(selectedSeason)));
   document.getElementById("statSeason").textContent = selectedSeason;
   document.getElementById("statTotalEvents").textContent = activeEvents.length;
   document.getElementById("statRescheduled").textContent = activeEvents.filter(e => e.Results === "Rescheduled" || (e["Rescheduled Date"] && !e["Rescheduled Date"].includes("Pending"))).length;
@@ -828,7 +829,7 @@ function renderStats() {
 
 function renderClassEventsPills() {
   const classEventsContainer = document.getElementById("classEventsPills");
-  const seasonRows = eventData.filter(e => e.Class !== "Marblehead" && String(e.Season).startsWith(String(selectedSeason)));
+  const seasonRows = eventData.filter(e => e.Class !== "M" && String(e.Season).startsWith(String(selectedSeason)));
   
   const classCounts = {};
   seasonRows.forEach(e => {
@@ -1126,7 +1127,7 @@ availableDates.addEventListener("change", renderNewEventPreview);
    ========================================================= */
 function openAddEventModal() {
   const classSelect = document.getElementById("addEventClass");
-  const filteredClasses = classes.filter(c => c.ClassName !== "Marblehead");
+  const filteredClasses = classes.filter(c => c.ClassName !== "M");
   
   if (filteredClasses.length) {
     classSelect.innerHTML = filteredClasses.map(c => `<option value="${c.ClassName}">${c.ClassName}</option>`).join("");
@@ -1368,7 +1369,7 @@ rescheduledToggle.addEventListener("click", () => {
 
 function renderClassPills() {
   classPillGroup.innerHTML = classes
-  .filter(c => c.ClassName !== "Marblehead")
+  .filter(c => c.ClassName !== "M")
   .map(c => `
     <button class="class-pill ${c.ClassName === selectedClass ? 'active' : ''}" data-class="${c.ClassName}" title="${c.ClassName}">
       ${classInsignia(c.ClassName)}
