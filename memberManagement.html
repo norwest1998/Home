@@ -507,8 +507,8 @@
                     fetchSheet(CLB_WEBAPP_URL, "Members"),
                     fetchSheet(CLB_WEBAPP_URL, "ClassMembers")
                 ]);
-                allMembers = parseMembersSheet(membersData.values);
-                allBoats = parseBoatsSheet(boatsData.values);
+                allMembers = parseMembersSheet(membersData);
+                allBoats = parseBoatsSheet(boatsData);
                 populateMembershipFilterOptions();
                 filterMemberDirectory();
             } catch (err) {

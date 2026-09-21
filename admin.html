@@ -23,7 +23,7 @@
     .admin-badge {
         display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-data);
         font-size: 11px; color: var(--signal); padding: 4px 10px; border-radius: 6px;
-        background: rgba(255,106,61,0.12); border: 1px solid rgba(255,106,61,0.3); width: fit-content;
+        background: var(--signal); border: 1px solid var(--alert); width: fit-content;
     }
 
     /* Member Health stat board */
@@ -46,8 +46,10 @@
         color: var(--foam);
         line-height: 1;
     }
-    .health-stat .health-pct.warn { color: #ffb347; }
-    .health-stat .health-pct.bad { color: #ff6b6b; }
+    .health-stat .health-pct.whatsapp { color: var(--whatsapp); }
+    .health-stat .health-pct.glow { color: var(--glow); }
+    .health-stat .health-pct.amber { color: var(--foam-dim); }
+    .health-stat .health-pct.signal { color: var(--signal); }
     .health-stat .health-label {
         font-family: var(--font-data);
         font-size: 11px;
@@ -746,9 +748,10 @@
         MEMBER HEALTH BOARD
         ============================================================ */
         function pctClass(pct){
-            if (pct >= 90) return "";
-            if (pct >= 70) return "warn";
-            return "bad";
+            if (pct === 100) return "whatsapp";
+            if (pct >= 96)  return "glow";
+            if (pct >= 80)  return "amber";
+            return "signal";
         }
 
         async function loadMemberHealth(){
