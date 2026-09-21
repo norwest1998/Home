@@ -294,39 +294,53 @@
 
         // Case-insensitive & trimmed fetch helper
         async function fetchSheet(WEBAPP_URL, sheetName) {
-            const res = await fetch(`${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`);
-            const data = await res.json();
-            if (data.error) throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
-            
-            const rows = Array.isArray(data) ? data : (data.values || []);
-            if (!rows || rows.length === 0) return [];
-            // console.log(sheetName, " Row: ", rows); 
 
-            // Dynamically locate the actual header row (contains 'RowID' or 'Status')
-            let headerIndex = rows.findIndex(r => 
-                Array.isArray(r) && r.some(cell => {
+            const res = await fetch(
+                `${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`
+            );
+
+            const data = await res.json();
+
+            if (data.error) {
+                throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
+            }
+
+            // Format 1: already an array of objects
+            if (Array.isArray(data)) {
+                return data;
+            }
+
+            // Format 2: Google Sheets values[][]
+            const rows = data.values || [];
+            if (!rows.length) return [];
+
+            let headerIndex = rows.findIndex(r =>
+                Array.isArray(r) &&
+                r.some(cell => {
                     const val = String(cell || "").trim().toLowerCase();
                     return val === "rowid" || val === "status";
                 })
             );
 
-            // Fallback: pick the first row with more than 3 non-empty values
             if (headerIndex === -1) {
-                headerIndex = rows.findIndex(r => Array.isArray(r) && r.filter(c => String(c || "").trim() !== "").length > 3);
+                headerIndex = rows.findIndex(r =>
+                    Array.isArray(r) &&
+                    r.filter(c => String(c || "").trim() !== "").length > 3
+                );
             }
 
             if (headerIndex === -1) return [];
 
             const headers = rows[headerIndex].map(h => String(h || "").trim());
 
-            // Map rows starting after the detected header row
-            return rows.slice(headerIndex + 1).filter(r => r.some(cell => String(cell || "").trim() !== "")).map(r => {
-                const obj = {};
-                headers.forEach((h, i) => {
-                    if (h) obj[h] = r[i] !== undefined ? r[i] : "";
+            return rows
+                .slice(headerIndex + 1)
+                .filter(r => r.some(c => String(c || "").trim() !== ""))
+                .map(r => {
+                    const obj = {};
+                    headers.forEach((h, i) => obj[h] = r[i] ?? "");
+                    return obj;
                 });
-                return obj;
-            });
         }
 
         async function updateSheet(WEBAPP_URL, sheetName, hexKey, updates) {
