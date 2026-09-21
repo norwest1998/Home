@@ -447,15 +447,23 @@ border-radius: 8px; margin-bottom: 12px; flex-wrap: wrap;
 }
 .bulk-actions-label { font-family: var(--font-data); font-size: 11px; color: var(--glow); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px; }
 .bulk-icon-btn {
-display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+width: 32px; height: 32px; padding: 0;
+display: inline-flex; align-items: center; justify-content: center;
 border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);
-color: var(--glow); font-family: var(--font-data); font-size: 11px; cursor: pointer;
-transition: all 0.15s ease; text-transform: uppercase; letter-spacing: 0.04em;
+color: var(--glow); cursor: pointer; transition: all 0.15s ease;
 }
 .bulk-icon-btn:hover { background: var(--glass-fill-hi); border-color: var(--glow); color: var(--foam); }
 .bulk-icon-btn.bulk-cal:hover { color: #38bdf8; border-color: rgba(56,189,248,0.4); }
 .bulk-icon-btn.bulk-resched:hover { color: #f59e0b; border-color: rgba(245,158,11,0.4); }
 .bulk-icon-btn.bulk-del:hover { color: #f87171; border-color: rgba(248,113,113,0.4); }
+
+/* Select All Wrap in filter bar */
+.select-all-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.select-all-wrap input[type="checkbox"] {
+  width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
+}
 </style>
 </head>
 <body>
@@ -627,11 +635,13 @@ transition: all 0.15s ease; text-transform: uppercase; letter-spacing: 0.04em;
             <button class="bulk-icon-btn bulk-resched" id="bulkReschedBtn" title="Reschedule selected">
             <i data-lucide="calendar-sync" size="15"></i>
             </button>
-            <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Edit selected">
+            <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Delete selected">
             <i data-lucide="trash-2" size="15"></i>
             </button>
-            <input type="checkbox" id="selectAllChk">
-            <label for="selectAllChk" class="select-all-label">Select All</label>
+            <div class="select-all-wrap">
+              <label for="selectAllChk" class="select-all-label">Select</label>
+              <input type="checkbox" id="selectAllChk">
+            </div>
 
         </div>
       </div>
@@ -646,10 +656,11 @@ transition: all 0.15s ease; text-transform: uppercase; letter-spacing: 0.04em;
               <th>Calendar Status</th>
               <th>Reschedule Status</th>
               <th style="text-align: right;">Actions</th>
+              <th style="text-align: center;">Select</th>
             </tr>
           </thead>
           <tbody id="eventsBody">
-            <tr><td colspan="6" style="text-align:center;color:var(--foam-dim);">Loading events…</td></tr>
+            <tr><td colspan="7" style="text-align:center;color:var(--foam-dim);">Loading events…</td></tr>
           </tbody>
         </table>
       </div>
@@ -1945,7 +1956,7 @@ async function loadData() {
     renderSelectedEventDetails();
     
   } catch (err) {
-    eventsBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
+    eventsBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
   }
 }
 
