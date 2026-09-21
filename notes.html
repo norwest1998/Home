@@ -402,7 +402,7 @@
                 <div class="panel-title"><span class="dot"></span><h3>Notes</h3></div>
                 <div class="notes-toolbar">
                     <div class="search-wrap">
-                        <span class="search-icon">🔍</span>
+                        <span class="search-icon"><i class="nav-icon" data-lucide="search" color="#b41d1d"></i></span>
                         <input class="search-input" id="notesSearch" placeholder="Search topic, subtopic, or note…">
                     </div>
                     <select class="glass-select" id="filterTopic">
@@ -449,7 +449,7 @@
                 <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
                 <div class="log-toolbar">
                     <div class="search-wrap">
-                        <span class="search-icon">🔍</span>
+                        <i class="nav-icon" data-lucide="search" color="#b41d1d"></i>
                         <input class="search-input" id="logSearch" placeholder="Search action, sheet, record…">
                     </div>
                     <button type="button" class="app-filter-btn active" data-logfilter="all">All</button>
@@ -530,7 +530,7 @@
                     <div class="attach-picker-row">
                         <input type="text" id="fAttachments" placeholder="Paste Drive link or use Browse…">
                         <button type="button" class="drive-browse-btn" id="driveBrowseBtn">
-                            📁 Browse Drive
+                            <i class="nav-icon" data-lucide="folder" color="#b41d1d"></i> Browse Drive
                         </button>
                     </div>
                     <div class="attach-list" id="attachPreview"></div>
@@ -753,10 +753,6 @@
                 fetchSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET),
                 fetchSheet(MEMBERS_WEBAPP_URL, MEMBERS_SHEET).catch(() => [])
             ]);
-console.log("notes", notes.length);
-console.log("topics", topics.length);
-console.log("actions", actions.length);
-console.log("members", members.length);
             // Filter active members — boolean TRUE or string "TRUE"
             members = members.filter(m => {
                 const active = m["Active"] ?? m["active"];
@@ -952,14 +948,17 @@ console.log("members", members.length);
     function closeDriveModal() { document.getElementById("driveModal").classList.remove("open"); }
 
     function driveFileIcon(mimeType) {
-        if (!mimeType) return "📄";
+        const defaultIcon = `<i class="nav-icon" data-lucide="file" color="#b41d1d"></i>`;
+        
+        if (!mimeType) return defaultIcon;
         if (mimeType.includes("spreadsheet")) return `<i class="nav-icon" data-lucide="file-spreadsheet" color="#b41d1d"></i>`;
-        if (mimeType.includes("document"))    return `<i class="nav-icon" data-lucide="file-text" color="#b41d1d"></i>`;
-        if (mimeType.includes("presentation"))return `<i class="nav-icon" data-lucide="presentation" color="#b41d1d"></i>`;
-        if (mimeType.includes("pdf"))         return `<i class="nav-icon" data-lucide="file-text" color="#b41d1d"></i>`;
-        if (mimeType.includes("image"))       return `<i class="nav-icon" data-lucide="image" color="#b41d1d"></i>`;
-        if (mimeType.includes("folder"))      return `<i class="nav-icon" data-lucide="folder" color="#b41d1d"></i>`;
-        return "📄";
+        if (mimeType.includes("document")) return `<i class="nav-icon" data-lucide="file-text" color="#b41d1d"></i>`;
+        if (mimeType.includes("presentation")) return `<i class="nav-icon" data-lucide="presentation" color="#b41d1d"></i>`;
+        if (mimeType.includes("pdf")) return `<i class="nav-icon" data-lucide="file-text" color="#b41d1d"></i>`;
+        if (mimeType.includes("image")) return `<i class="nav-icon" data-lucide="image" color="#b41d1d"></i>`;
+        if (mimeType.includes("folder")) return `<i class="nav-icon" data-lucide="folder" color="#b41d1d"></i>`;
+        
+        return defaultIcon;
     }
 
     async function searchDrive(query) {
