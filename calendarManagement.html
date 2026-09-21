@@ -819,11 +819,11 @@ function renderSeasonDropdown() {
   });
 }
 
+let _monthDropdownBound = false;
 function renderMonthDropdown() {
   const monthSelect = document.getElementById("monthSelect");
   if (!monthSelect) return;
 
-  // Get months from current season events
   const seasonRows = eventData.filter(e => !selectedSeason || String(e.Season).startsWith(String(selectedSeason)));
   const monthsSet = new Set();
   seasonRows.forEach(e => {
@@ -831,20 +831,19 @@ function renderMonthDropdown() {
     if (d) monthsSet.add(d.toLocaleString("en-AU", { month: "short" }));
   });
 
-  // Order by calendar month
   const monthOrder = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const months = monthOrder.filter(m => monthsSet.has(m));
 
   monthSelect.innerHTML = `<option value="">All Months</option>` +
     months.map(m => `<option value="${m}" ${m === selectedMonth ? 'selected' : ''}>${m}</option>`).join("");
 
-  // Remove old listener to avoid duplicates
-  const newSelect = monthSelect.cloneNode(true);
-  monthSelect.parentNode.replaceChild(newSelect, monthSelect);
-  newSelect.addEventListener("change", (e) => {
-    selectedMonth = e.target.value;
-    renderTable();
-  });
+  if (!_monthDropdownBound) {
+    monthSelect.addEventListener("change", (e) => {
+      selectedMonth = e.target.value;
+      renderTable();
+    });
+    _monthDropdownBound = true;
+  }
 }
 
 function renderStats() {
@@ -983,8 +982,9 @@ function renderAvailableDates(extraDate = null) {
   let dates = getAvailableDates();
   const uniqueDatesMap = new Map();
   dates.forEach(e => {
+    if (!e || !e.Date) return;
     const dateKey = formatDate(e.Date);
-    if (!uniqueDatesMap.has(dateKey)) uniqueDatesMap.set(dateKey, e);
+    if (dateKey && dateKey !== "—" && !uniqueDatesMap.has(dateKey)) uniqueDatesMap.set(dateKey, e);
   });
 
   if (extraDate) {
