@@ -304,6 +304,8 @@
     notes:     "notes",
     tracking:  "tracking"
     };
+    
+    let allApplications = [];
 
     async function fetchSheet(domain, sheetName, hexKey = null) {
         const action = hexKey ? "display" : "fetch";
@@ -510,7 +512,7 @@
 
     async function loadApplications() {
       try {
-        const allApplications = await fetchSheet(DOMAIN.apps, "Membership Applications");
+        allApplications = await fetchSheet(DOMAIN.apps, "Membership Applications");
         renderTable();
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
