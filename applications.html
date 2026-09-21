@@ -511,10 +511,8 @@
 
     async function loadApplications() {
       try {
-        const res  = await fetch(DOMAIN.apps, "Membership Applications");
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        allApplications = data.applications || [];
+        const allApplications  = await fetch(DOMAIN.apps, "Membership Applications");
+
         renderTable();
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
@@ -601,7 +599,7 @@
         document.getElementById('reviewContent').innerHTML = `
           <div class="app-status-badge ${badge.cls}">
             ${esc(badge.label) || '—'}
-            ${d.statusClass === 'status-urgent' ? `<span class="urgent-note">⚠️ Requires attention — last updated: ${esc(d.lastUpdatedStr)}</span>` : ''}
+            ${d.statusClass === 'status-urgent' ? `<span class="urgent-note"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"> Requires attention — last updated: ${esc(d.lastUpdatedStr)}</span>` : ''}
           </div>
 
           <div class="app-detail-section">
@@ -714,7 +712,7 @@
         if (window.lucide) lucide.createIcons();
       } catch (err) {
         document.getElementById('reviewContent').innerHTML =
-          `<div class="empty-state" style="color:var(--signal);">⚠️ Could not load application — ${esc(err.message)}</div>`;
+          `<div class="empty-state" style="color:var(--signal);"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"></i> Could not load application — ${esc(err.message)}</div>`;
         document.getElementById('auditContent').innerHTML = '';
       }
     }
