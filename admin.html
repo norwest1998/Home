@@ -158,6 +158,11 @@
                 <div class="health-label">WITH WHATSAPP</div>
                 <div class="health-sub">Loading…</div>
             </div>
+            <div class="glass health-stat" id="health-financial">
+                <div class="health-pct">—</div>
+                <div class="health-label">PAID UP</div>
+                <div class="health-sub">Loading…</div>
+            </div>
         </section>
 
         <div class="section-head">
@@ -756,11 +761,13 @@
                 const withPhone = members.filter(m => hasVal(m, ["Telephone", "Phone", "Mobile", "Telephone Number", "Phone Number"])).length;
                 const withEmail = members.filter(m => hasVal(m, ["Email", "Email Address"])).length;
                 const withWhatsapp = members.filter(m => hasVal(m, ["WhatsApp", "Whatsapp Number", "WhatsApp Number"])).length;
+                const withPaidUp = members.filter(m => hasVal(m, ["Paid Up", "PaidUp"])).length;
 
                 const stats = [
                     { id: "health-phone", count: withPhone },
                     { id: "health-email", count: withEmail },
-                    { id: "health-whatsapp", count: withWhatsapp }
+                    { id: "health-whatsapp", count: withWhatsapp },
+                    { id: "health-financial", count: withPaidUp },
                 ];
 
                 stats.forEach(s => {
