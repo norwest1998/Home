@@ -370,7 +370,6 @@
     const HOME_DATA_API = "https://script.google.com/macros/s/AKfycbzGgNMh8KNWYquGuOoGvmrasDR5npiPoNXTouuzVeY9sRwrhDo29BVDbWGrh_FfgoieXQ/exec";
     const APP_DETAIL_API = 'https://script.google.com/macros/s/AKfycbyWulPkIPBPaLA4f85ygVDpJUa-e3fWpY-XOYzTQ_2gF8h9EfuWinBdTiR1DtjYWSwl9g/exec';
 
-    let allApplications = [];
     let selectedRowId = null;
 
     function esc(s) {
@@ -511,7 +510,7 @@
 
     async function loadApplications() {
       try {
-        allApplications  = await fetchSheet(DOMAIN.apps, "Membership Applications");
+        const allApplications = await fetchSheet(DOMAIN.apps, "Membership Applications");
         renderTable();
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
