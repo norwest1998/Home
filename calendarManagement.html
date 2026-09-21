@@ -70,6 +70,10 @@
     display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px;
     border-radius: 999px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);
     color: var(--foam); font-size: 12px; font-family: var(--font-data); transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .class-stat-pill:hover {
+    background: rgba(255,106,61,0.15); border-color: rgba(255,106,61,0.4);
   }
   .class-stat-pill img { width: 20px; height: 20px; object-fit: contain; }
   .class-stat-pill .count {
@@ -87,9 +91,10 @@
   .sync-info h4 { margin: 0; color: var(--foam); font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
   .sync-info p { margin: 0; color: var(--foam-dim); font-size: 12px; }
 
-  /* Filter Bar (Season Dropdown + Month Dropdown + Rescheduled toggle + class pills) */
+  /* Filter Bar (Season Dropdown + Rescheduled toggle + class pills) */
   .filter-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
   .season-select-wrapper { display: flex; align-items: center; gap: 8px; }
+  .season-select-wrapper label { font-family: var(--font-data); font-size: 11px; text-transform: uppercase; color: var(--foam-dim); }
   .season-dropdown {
     padding: 8px 12px; border-radius: 8px; border: 1px solid var(--glass-border);
     background: rgba(0,0,0,0.4); color: var(--foam); font-size: 13px; font-family: var(--font-data);
@@ -137,45 +142,13 @@
   .row-actions { display: flex; align-items: center; gap: 6px; }
   .icon-btn {
     width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--glass-border);
-    background: rgba(0,0,0,0.3); color: var(--glow); display: inline-flex;
+    background: rgba(0,0,0,0.3); color: var(--foam-dim); display: inline-flex;
     align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease;
   }
   .icon-btn:hover { color: var(--foam); background: var(--glass-fill-hi); border-color: var(--glow); }
   .icon-btn.btn-cal:hover { color: #38bdf8; border-color: rgba(56,189,248,0.5); }
   .icon-btn.btn-resched:hover { color: #f59e0b; border-color: rgba(245,158,11,0.5); }
   .icon-btn.btn-edit:hover { color: #4ade80; border-color: rgba(74,222,128,0.5); }
-
-  /* Row Checkbox */
-  .row-check { display: flex; align-items: center; justify-content: center; }
-  .row-check input[type="checkbox"] {
-    width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
-    background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 3px;
-  }
-
-  /* Select All Header */
-  .select-all-wrap { display: flex; align-items: center; gap: 8px; }
-  .select-all-wrap input[type="checkbox"] {
-    width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
-  }
-  .select-all-label { font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--glow); }
-
-  /* Bulk Actions Bar */
-  .bulk-actions-bar {
-    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-    background: rgba(94,234,212,0.06); border: 1px solid rgba(94,234,212,0.2);
-    border-radius: 8px; margin-bottom: 12px; flex-wrap: wrap;
-  }
-  .bulk-actions-label { font-family: var(--font-data); font-size: 11px; color: var(--glow); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px; }
-  .bulk-icon-btn {
-    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
-    border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);
-    color: var(--glow); font-family: var(--font-data); font-size: 11px; cursor: pointer;
-    transition: all 0.15s ease; text-transform: uppercase; letter-spacing: 0.04em;
-  }
-  .bulk-icon-btn:hover { background: var(--glass-fill-hi); border-color: var(--glow); color: var(--foam); }
-  .bulk-icon-btn.bulk-cal:hover { color: #38bdf8; border-color: rgba(56,189,248,0.4); }
-  .bulk-icon-btn.bulk-resched:hover { color: #f59e0b; border-color: rgba(245,158,11,0.4); }
-  .bulk-icon-btn.bulk-del:hover { color: #f87171; border-color: rgba(248,113,113,0.4); }
 
   /* Action Panel Grid */
   .action-panel-grid {
@@ -201,6 +174,7 @@
     width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--glass-border);
     background: rgba(0,0,0,0.25); color: var(--foam); font-size: 13px; margin-bottom: 14px;
   }
+  .app-detail-grid select option { background: #0f3550; color: #fff; }
 
   .event-details-card {
     padding: 14px 16px; border-radius: 8px;
@@ -213,7 +187,7 @@
   .event-detail-item .lbl { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; color: var(--foam-dim); }
   .event-detail-item .val { font-size: 13px; color: var(--foam); font-weight: 600; }
 
-  /* Edit Event Modal */
+  /* Modals */
   .modal-overlay {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
@@ -226,13 +200,19 @@
     border-radius: 12px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   }
 
-  /* =========================================================
-   SEASON OPERATIONS
+   /* =========================================================
+   SEASON OPERATIONS (3-Column Layout)
    ========================================================= */
-  .season-actions-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-    gap:18px;
+  .season-actions-grid {
+    display: grid;
+    grid-template-rows: repeat(3, 1fr);
+    gap: 18px;
+  }
+
+  @media (max-width: 1024px) {
+    .season-actions-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   .season-action-card{
@@ -284,6 +264,198 @@
     background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border);
     border-radius: 12px; padding: 14px 18px; margin-bottom: 24px;
   }
+
+  /* Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--glow, #38bdf8);
+  animation: spin 0.75s linear infinite;
+}
+
+/* Season Operation Response Messages */
+.season-op-msg {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  display: none;
+}
+
+.season-op-msg.active {
+  display: block;
+}
+
+.season-op-msg.status-loading {
+  color: var(--glow, #38bdf8);
+}
+
+.season-op-msg.status-success {
+  color: #4ade80;
+}
+
+.season-op-msg.status-error {
+  color: #f87171;
+}
+
+/* Filter Bar Ordering (Left to Right: Month -> Season -> Rescheduled -> Classes) */
+.filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.filter-select {
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* Modal Layout */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay.hidden {
+  display: none !important;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-surface, #1e293b);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.full-width {
+  grid-column: span 2;
+}
+
+.form-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: inherit;
+  font-size: 14px;
+}
+
+.form-input[readonly] {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Class Emblem Preview Container */
+.emblem-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+}
+
+.emblem-img {
+  max-height: 30px;
+  max-width: 30px;
+  object-fit: contain;
+}
+
+/* Conditional Field Hiding */
+.full-field-only.hidden-field {
+  display: none !important;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Row Checkbox */
+.row-check { display: flex; align-items: center; justify-content: center; }
+.row-check input[type="checkbox"] {
+width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
+background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 3px;
+}
+
+/* Select All Header */
+.select-all-wrap { display: flex; align-items: center; gap: 8px; }
+.select-all-wrap input[type="checkbox"] {
+width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
+}
+.select-all-label { font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--glow); }
+
+
+/* Bulk Actions Bar */
+.bulk-actions-bar {
+display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+background: rgba(94,234,212,0.06); border: 1px solid rgba(94,234,212,0.2);
+border-radius: 8px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.bulk-actions-label { font-family: var(--font-data); font-size: 11px; color: var(--glow); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px; }
+.bulk-icon-btn {
+display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);
+color: var(--glow); font-family: var(--font-data); font-size: 11px; cursor: pointer;
+transition: all 0.15s ease; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.bulk-icon-btn:hover { background: var(--glass-fill-hi); border-color: var(--glow); color: var(--foam); }
+.bulk-icon-btn.bulk-cal:hover { color: #38bdf8; border-color: rgba(56,189,248,0.4); }
+.bulk-icon-btn.bulk-resched:hover { color: #f59e0b; border-color: rgba(245,158,11,0.4); }
+.bulk-icon-btn.bulk-del:hover { color: #f87171; border-color: rgba(248,113,113,0.4); }
 </style>
 </head>
 <body>
@@ -357,79 +529,86 @@
   <!-- Class Events Scheduled Row -->
   <div class="class-events-section">
     <div class="class-events-header">
-      <i data-lucide="trophy" size="14"></i> Class Events Scheduled
+      <i data-lucide="shield" size="14"></i> Class Events Scheduled
     </div>
     <div class="class-pill-list" id="classEventsPills">
       <span style="color: var(--foam-dim); font-size: 12px;">Loading class events…</span>
     </div>
   </div>
 
-  <!-- Add Scheduled Events to Calendars (Bulk & Sync Section) -->
-  <div class="calendar-sync-banner" id="calendar-sync">
-    <div class="sync-info">
-      <h4><i data-lucide="calendar-plus" color="#38bdf8"></i> Export Events to Google Calendar</h4>
-      <p>Publish all pending and rescheduled events directly into class-specific Google Calendars.</p>
-    </div>
-    <div style="display:flex; gap:10px;">
-      <button class="btn btn-approve" id="btnBulkExport">
-        <i data-lucide="cloud-upload" size="16"></i> Bulk Add All Pending
-      </button>
+
+<!-- Season Operations Panel (3 Columns) -->
+<div class="season-operations-panel" id="season-operations">
+  <div class="panel-header">
+    <div class="panel-title">
+      <span class="dot"></span>
+      <h3>Season Operations</h3>
     </div>
   </div>
 
-  <div class="season-operations-panel">
-    <div class="panel-header">
-      <div class="panel-title">
-        <span class="dot"></span>
-        <h3>Season Operations</h3>
-      </div>
-    </div>
-
-    <div class="tab-content active">
-      <div class="season-actions-grid">
-        <div class="season-action-card glass">
-          <div class="season-action-icon">
-            <i data-lucide="map-pinned"></i>
-          </div>
-          <div class="season-action-content">
-            <h4>Regional Conflict Scan</h4>
-            <p>
-              Check all regattas against Australian regional championship events
-              and update conflict references.
-            </p>
-          </div>
-          <button
-            id="regionalConflictBtn"
-            class="btn btn-ghost">
-            Run Scan
-          </button>
+  <div class="tab-content active">
+    <div class="season-actions-grid">
+      
+      <!-- Operation 1: Export Events -->
+      <div class="season-action-card glass">
+        <div class="season-action-icon">
+          <i data-lucide="calendar-plus" color="#38bdf8"></i>
         </div>
-
-        <div class="season-action-card glass">
-          <div class="season-action-icon">
-            <i data-lucide="calendar-range"></i>
-          </div>
-          <div class="season-action-content">
-            <h4>Schedule Next Season</h4>
-            <p>
-              Generate the next season fixture list using the Club Management
-              Regatta definitions.
-            </p>
-          </div>
-          <button
-            id="generateSeasonBtn"
-            class="btn btn-approve">
-            Generate Fixtures
-          </button>
+        <div class="season-action-content">
+          <h4>Export to Google Calendar</h4>
+          <p>
+            Publish all pending and rescheduled events directly into class-specific Google Calendars.
+          </p>
+          <div class="season-op-msg" id="msgBulkExport"></div>
         </div>
+        <button id="btnBulkExport" class="btn btn-approve">
+          <i data-lucide="cloud-upload" size="16"></i> Bulk Add All
+        </button>
       </div>
+
+      <!-- Operation 2: Regional Conflict Scan -->
+      <div class="season-action-card glass">
+        <div class="season-action-icon">
+          <i data-lucide="map-pinned"></i>
+        </div>
+        <div class="season-action-content">
+          <h4>Regional Conflict Scan</h4>
+          <p>
+            Check all regattas against Australian regional championship events and update conflict references.
+          </p>
+          <div class="season-op-msg" id="msgRegionalConflict"></div>
+        </div>
+        <button id="regionalConflictBtn" class="btn btn-ghost">
+          Run Scan
+        </button>
+      </div>
+
+      <!-- Operation 3: Schedule Next Season -->
+      <div class="season-action-card glass">
+        <div class="season-action-icon">
+          <i data-lucide="calendar-range"></i>
+        </div>
+        <div class="season-action-content">
+          <h4>Schedule Next Season</h4>
+          <p>
+            Generate the next season fixture list using the Club Management Regatta definitions.
+          </p>
+          <div class="season-op-msg" id="msgGenerateSeason"></div>
+        </div>
+        <button id="generateSeasonBtn" class="btn btn-approve">
+          Generate Fixtures
+        </button>
+      </div>
+
     </div>
   </div>
+</div>
 
   <!-- Main Events Table Queue -->
   <div class="panel" id="queue">
-    <div class="panel-header">
+    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
       <div class="panel-title"><span class="dot"></span><h3>Scheduled Events</h3></div>
+      <button class="btn btn-approve" onclick="openAddEventModal()"><i data-lucide="plus" size="16"></i> Add Event</button>
     </div>
     <div class="tab-content active">
       
@@ -444,24 +623,19 @@
         <button class="filter-pill" id="rescheduledToggle">Rescheduled Only</button>
         <div class="class-pill-group" id="classPillGroup"></div>
         <div style="margin-left: auto;">
-          <div class="select-all-wrap">
-            <div class="bulk-actions-bar" id="bulkActionsBar" style="margin-bottom:0; padding:6px 12px;">
-              <span class="bulk-actions-label">Selected:</span>
-              <button class="bulk-icon-btn bulk-cal" id="bulkAddCalBtn" title="Add selected to Calendar">
-                <i data-lucide="calendar-plus" size="14"></i> Calendar
-              </button>
-              <button class="bulk-icon-btn bulk-resched" id="bulkReschedBtn" title="Reschedule selected">
-                <i data-lucide="calendar-sync" size="14"></i> Reschedule
-              </button>
-              <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Delete selected">
-                <i data-lucide="trash-2" size="14"></i> Delete
-              </button>
-            </div>
-            <div style="display:inline-flex; align-items:center; gap:6px; margin-left:10px;">
-              <input type="checkbox" id="selectAllChk">
-              <label for="selectAllChk" class="select-all-label">Select All</label>
-            </div>
-          </div>
+
+            <button class="bulk-icon-btn bulk-cal" id="bulkAddCalBtn" title="Add selected to Calendar">
+            <i data-lucide="calendar-plus" size="15"></i>
+            </button>
+            <button class="bulk-icon-btn bulk-resched" id="bulkReschedBtn" title="Reschedule selected">
+            <i data-lucide="calendar-sync" size="15"></i>
+            </button>
+            <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Edit selected">
+            <i data-lucide="trash-2" size="15"></i>
+            </button>
+            <input type="checkbox" id="selectAllChk">
+            <label for="selectAllChk" class="select-all-label">Select All</label>
+
         </div>
       </div>
 
@@ -471,15 +645,14 @@
             <tr>
               <th>Date</th>
               <th>Class</th>
-              <th>Event</th>
+              <th>Event Type</th>
               <th>Calendar Status</th>
               <th>Reschedule Status</th>
               <th style="text-align: right;">Actions</th>
-              <th style="text-align: center; width:40px;">Select</th>
             </tr>
           </thead>
           <tbody id="eventsBody">
-            <tr><td colspan="7" style="text-align:center;color:var(--foam-dim);">Loading events…</td></tr>
+            <tr><td colspan="6" style="text-align:center;color:var(--foam-dim);">Loading events…</td></tr>
           </tbody>
         </table>
       </div>
@@ -547,75 +720,162 @@
 
 </main>
 
-<!-- Add Event Modal Dialog -->
-<div class="modal-overlay" id="addEventModal">
-  <div class="modal-card">
+<!-- Class Specific Google Calendar Modal with Season Selector -->
+<div class="modal-overlay" id="calendarModal">
+  <div class="modal-card" style="max-width: 800px; width: 90%;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h3 style="margin:0; color:var(--foam);">Add New Event</h3>
-      <button class="icon-btn" onclick="closeAddModal()"><i data-lucide="x"></i></button>
+      <h3 style="margin:0; color:var(--foam);" id="calendarModalTitle">Class Events</h3>
+      
+      <!-- Season Selector Controls (< CurrentSeason >) -->
+      <div id="modalSeasonSelector" style="display:flex; align-items:center; gap:8px;">
+        <button class="icon-btn" id="modalPrevSeason" onclick="shiftModalSeason(-1)" title="Previous Season">
+          <i data-lucide="chevron-left" size="18"></i>
+        </button>
+        <span id="modalSeasonDisplay" style="font-family:var(--font-data); font-weight:600; color:var(--glow); font-size:14px; min-width:80px; text-align:center;">
+          2026-27
+        </span>
+        <button class="icon-btn" id="modalNextSeason" onclick="shiftModalSeason(1)" title="Next Season">
+          <i data-lucide="chevron-right" size="18"></i>
+        </button>
+      </div>
+
+      <button class="icon-btn" onclick="closeCalendarModal()"><i data-lucide="x"></i></button>
     </div>
-    <div class="app-detail-grid">
-      <div>
-        <label>Class</label>
-        <select id="addEventClass"></select>
-      </div>
-      <div>
-        <label>Event Name / Regatta Type</label>
-        <input type="text" id="addEventName" placeholder="e.g. Club Regatta">
-      </div>
-      <div>
-        <label>Date</label>
-        <input type="date" id="addEventDate">
-      </div>
-      <div>
-        <label>Start Time</label>
-        <input type="text" id="addEventStart" placeholder="11:00">
-      </div>
-      <div>
-        <label>Finish Time</label>
-        <input type="text" id="addEventFinish" placeholder="16:00">
-      </div>
-      <div>
-        <label>Season</label>
-        <input type="text" id="addEventSeason" placeholder="e.g. 2024-25">
-      </div>
-    </div>
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
-      <button class="btn btn-approve" id="saveAddEventBtn">Add Event</button>
+    <div id="calendarModalBody" style="min-height: 380px;">
+      <!-- Filtered event table populated dynamically -->
     </div>
   </div>
 </div>
 
-<!-- Edit Event Modal Dialog -->
-<div class="modal-overlay" id="editModal">
-  <div class="modal-card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h3 style="margin:0; color:var(--foam);">Edit Event Details</h3>
-      <button class="icon-btn" onclick="closeEditModal()"><i data-lucide="x"></i></button>
+<!-- Add / Edit Event Modal -->
+<div id="eventModal" class="modal-overlay hidden">
+  <div class="modal-card glass">
+    <div class="modal-header">
+      <h3 id="modalTitle">Add Event</h3>
+      <button type="button" id="closeModalBtn" class="btn-icon">&times;</button>
     </div>
-    <div class="app-detail-grid">
-      <div>
-        <label>Event Name</label>
-        <input type="text" id="editEventName">
+
+    <form id="eventForm" class="modal-form">
+      <input type="hidden" id="modalMode" value="add">
+
+      <div class="form-grid">
+        <!-- Event Type -->
+        <div class="form-group">
+          <label for="modalEventType">Event Type</label>
+          <select id="modalEventType" class="form-input" required>
+            <option value="Competition">Competition</option>
+            <option value="Social">Social</option>
+            <option value="Meeting">Meeting</option>
+            <option value="Working Bee">Working Bee</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <!-- Class Emblem Display -->
+        <div class="form-group emblem-container full-field-only">
+          <label>Emblem</label>
+          <div class="emblem-preview">
+            <img id="modalEmblemImg" src="" alt="Emblem" class="emblem-img hidden">
+            <span id="modalEmblemPlaceholder" class="text-muted" style="font-size: 12px;">Select a Class</span>
+          </div>
+        </div>
+
+        <!-- Date (yyyy/MM/dd) -->
+        <div class="form-group">
+          <label for="modalDate">Date</label>
+          <input type="date" id="modalDate" class="form-input" required>
+        </div>
+
+        <!-- Month (MMM - Derived) -->
+        <div class="form-group full-field-only">
+          <label for="modalMonth">Month</label>
+          <input type="text" id="modalMonth" class="form-input" readonly placeholder="Auto (MMM)">
+        </div>
+
+        <!-- Start Time (hh:mm) -->
+        <div class="form-group">
+          <label for="modalStart">Start Time</label>
+          <input type="time" id="modalStart" class="form-input" required>
+        </div>
+
+        <!-- Finish Time (hh:mm) -->
+        <div class="form-group">
+          <label for="modalFinish">Finish Time</label>
+          <input type="time" id="modalFinish" class="form-input" required>
+        </div>
+
+        <!-- Class -->
+        <div class="form-group full-field-only">
+          <label for="modalClass">Class</label>
+          <select id="modalClass" class="form-input">
+            <option value="">Select Class...</option>
+          </select>
+        </div>
+
+        <!-- Regatta Type -->
+        <div class="form-group full-field-only">
+          <label for="modalRegattaType">Regatta Type</label>
+          <input type="text" id="modalRegattaType" class="form-input" placeholder="e.g. Club Championship">
+        </div>
+
+        <!-- Season -->
+        <div class="form-group full-field-only">
+          <label for="modalSeason">Season</label>
+          <input type="text" id="modalSeason" class="form-input" placeholder="e.g. 2026-27">
+        </div>
+
+        <!-- Round No -->
+        <div class="form-group full-field-only">
+          <label for="modalRoundNo">Round No</label>
+          <input type="text" id="modalRoundNo" class="form-input" placeholder="e.g. 1">
+        </div>
+
+        <!-- Results -->
+        <div class="form-group full-field-only">
+          <label for="modalResults">Results</label>
+          <select id="modalResults" class="form-input">
+            <option value="Not Started">Not Started</option>
+            <option value="Processed">Processed</option>
+            <option value="No Score">No Score</option>
+          </select>
+        </div>
+
+        <!-- Rescheduled Date -->
+        <div class="form-group full-field-only">
+          <label for="modalRescheduledDate">Rescheduled Date</label>
+          <input type="date" id="modalRescheduledDate" class="form-input">
+        </div>
+
+        <!-- HexKey (Not Editable) -->
+        <div class="form-group full-field-only">
+          <label for="modalHexKey">HexKey</label>
+          <input type="text" id="modalHexKey" class="form-input" readonly placeholder="Auto-generated">
+        </div>
+
+        <!-- Updated to Calendar (Calendar ID) -->
+        <div class="form-group full-field-only">
+          <label for="modalCalendarId">Updated to Calendar</label>
+          <input type="text" id="modalCalendarId" class="form-input" readonly placeholder="Class Calendar ID when synced">
+        </div>
+
+        <!-- Regional Conflicts (Read-only array/list) -->
+        <div class="form-group full-width full-field-only">
+          <label for="modalRegionalConflicts">Regional Conflicts</label>
+          <input type="text" id="modalRegionalConflicts" class="form-input" readonly placeholder="None">
+        </div>
+
+        <!-- Event Name (Freehand or Concatenated) -->
+        <div class="form-group full-width">
+          <label for="modalEvent" id="modalEventLabel">Event Name</label>
+          <input type="text" id="modalEvent" class="form-input" required placeholder="Event description">
+        </div>
       </div>
-      <div>
-        <label>Date</label>
-        <input type="date" id="editEventDate">
+
+      <div class="modal-footer">
+        <button type="button" id="cancelModalBtn" class="btn btn-ghost">Cancel</button>
+        <button type="submit" class="btn btn-approve">Save Event</button>
       </div>
-      <div>
-        <label>Start Time</label>
-        <input type="text" id="editStartTime">
-      </div>
-      <div>
-        <label>Finish Time</label>
-        <input type="text" id="editFinishTime">
-      </div>
-    </div>
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-      <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
-      <button class="btn btn-approve" id="saveEditBtn">Save Changes</button>
-    </div>
+    </form>
   </div>
 </div>
 
@@ -662,6 +922,7 @@ async function fetchSheet(WEBAPP_URL, sheetName) {
 async function updateSheet(WEBAPP_URL, sheetName, hexKey, updates) {
   const res = await fetch(WEBAPP_URL, {
     method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action: "update", sheet: sheetName, hexKey, updates })
   });
   const data = await res.json();
@@ -672,6 +933,7 @@ async function updateSheet(WEBAPP_URL, sheetName, hexKey, updates) {
 async function appendSheet(WEBAPP_URL, sheetName, rowData) {
   const res = await fetch(WEBAPP_URL, {
     method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action: "append", sheet: sheetName, rowData })
   });
   const data = await res.json();
@@ -776,6 +1038,33 @@ const lastActionLabel = document.getElementById("lastActionLabel");
 const regionalConflictBtn = document.getElementById("regionalConflictBtn");
 const generateSeasonBtn = document.getElementById("generateSeasonBtn");
 
+const filterMonth = document.getElementById("filterMonth");
+const eventModal = document.getElementById("eventModal");
+const eventForm = document.getElementById("eventForm");
+const modalTitle = document.getElementById("modalTitle");
+const modalMode = document.getElementById("modalMode");
+
+const modalHexKey = document.getElementById("modalHexKey");
+const modalMonth = document.getElementById("modalMonth");
+const modalDate = document.getElementById("modalDate");
+const modalStart = document.getElementById("modalStart");
+const modalFinish = document.getElementById("modalFinish");
+const modalClass = document.getElementById("modalClass");
+const modalRegattaType = document.getElementById("modalRegattaType");
+const modalEventType = document.getElementById("modalEventType");
+const modalSeason = document.getElementById("modalSeason");
+const modalRoundNo = document.getElementById("modalRoundNo");
+const modalResults = document.getElementById("modalResults");
+const modalRescheduledDate = document.getElementById("modalRescheduledDate");
+const modalCalendarId = document.getElementById("modalCalendarId");
+const modalRegionalConflicts = document.getElementById("modalRegionalConflicts");
+const modalEvent = document.getElementById("modalEvent");
+const modalEmblemImg = document.getElementById("modalEmblemImg");
+const modalEmblemPlaceholder = document.getElementById("modalEmblemPlaceholder");
+
+// Class Image Map lookup object (Populated during data load)
+let classImageMap = {};
+
 function logAction(msg) {
   const time = new Date().toLocaleTimeString();
   auditTrail.textContent = `[${time}] ${msg}\n` + (auditTrail.textContent === "No actions yet this session." ? "" : auditTrail.textContent);
@@ -787,15 +1076,17 @@ function logAction(msg) {
    ========================================================= */
 function seasonEvents() {
   return eventData.filter(e => {
+    if (e.Class === "M") return false; // Exclude Marblehead
+    if (filterMonth) {
+      const eDate = new Date(event.Date);
+      if (!isNaN(eDate.getTime())) {
+        const monthStr = eDate.toLocaleString("en-US", { month: "short" });
+        if (monthStr !== filterMonth) return false;
+      }
+    }
     if (selectedSeason && !String(e.Season).startsWith(String(selectedSeason))) return false;
     if (selectedClass && e.Class !== selectedClass) return false;
     if (rescheduledOnly && !(e["Rescheduled Date"] || "")) return false;
-    if (selectedMonth) {
-      const d = parseLocalDate(e.Date);
-      if (!d) return false;
-      const mName = d.toLocaleString("en-AU", { month: "short" });
-      if (mName !== selectedMonth) return false;
-    }
     return true;
   });
 }
@@ -847,7 +1138,7 @@ function renderMonthDropdown() {
 }
 
 function renderStats() {
-  const activeEvents = eventData.filter(e => String(e.Season).startsWith(String(selectedSeason)));
+  const activeEvents = eventData.filter(e => e.Class !== "M" && String(e.Season).startsWith(String(selectedSeason)));
   document.getElementById("statSeason").textContent = selectedSeason;
   document.getElementById("statTotalEvents").textContent = activeEvents.length;
   document.getElementById("statRescheduled").textContent = activeEvents.filter(e => e.Results === "Rescheduled" || (e["Rescheduled Date"] && !e["Rescheduled Date"].includes("Pending"))).length;
@@ -874,7 +1165,7 @@ function renderStats() {
 
 function renderClassEventsPills() {
   const classEventsContainer = document.getElementById("classEventsPills");
-  const seasonRows = eventData.filter(e => String(e.Season).startsWith(String(selectedSeason)));
+  const seasonRows = eventData.filter(e => e.Class !== "M" && String(e.Season).startsWith(String(selectedSeason)));
   
   const classCounts = {};
   seasonRows.forEach(e => {
@@ -887,12 +1178,113 @@ function renderClassEventsPills() {
   }
 
   classEventsContainer.innerHTML = Object.entries(classCounts).map(([className, count]) => `
-    <div class="class-stat-pill">
+    <div class="class-stat-pill" onclick="openClassCalendarModal('${className}')" title="Click to open Google Calendar and filter by ${className}">
       ${classInsignia(className)}
       <span>${className}</span>
       <span class="count">${count}</span>
     </div>
   `).join("");
+}
+
+/* =========================================================
+   CLASS MODAL & SEASON FILTER CONTROL
+   ========================================================= */
+let modalCurrentClass = "";
+let modalSeasonIndex = 0;
+let modalSeasonsList = [];
+
+function openClassCalendarModal(className) {
+  modalCurrentClass = className;
+
+  // 1. Filter scheduled events table on main console by class
+  selectedClass = className;
+  renderClassPills();
+  renderTable();
+
+  // 2. Extract available seasons from season dropdown / Event Data (Sorted Chronologically)
+  const seasonSelectElem = document.getElementById("seasonSelect");
+  if (seasonSelectElem && seasonSelectElem.options.length > 0) {
+    modalSeasonsList = Array.from(seasonSelectElem.options).map(opt => opt.value).reverse();
+  } else {
+    modalSeasonsList = Array.from(new Set(eventData.map(e => e.Season).filter(Boolean))).sort();
+  }
+
+  if (!modalSeasonsList.length) {
+    modalSeasonsList = ["2026-27"];
+  }
+
+  // 3. Default to '2026-27' or currently active dropdown season
+  const targetDefault = selectedSeason || "2026-27";
+  const defaultIdx = modalSeasonsList.findIndex(s => String(s).startsWith(String(targetDefault)));
+  modalSeasonIndex = defaultIdx !== -1 ? defaultIdx : 0;
+
+  document.getElementById("calendarModalTitle").textContent = `${className} — Class Events`;
+  document.getElementById("calendarModal").classList.add("active");
+
+  renderModalSeasonView();
+}
+
+function shiftModalSeason(direction) {
+  const newIndex = modalSeasonIndex + direction;
+  if (newIndex >= 0 && newIndex < modalSeasonsList.length) {
+    modalSeasonIndex = newIndex;
+    renderModalSeasonView();
+  }
+}
+
+function renderModalSeasonView() {
+  const currentSeason = modalSeasonsList[modalSeasonIndex];
+
+  // Update Season display label
+  document.getElementById("modalSeasonDisplay").textContent = currentSeason;
+
+  // Show/Hide Chevrons based on boundary conditions
+  const prevBtn = document.getElementById("modalPrevSeason");
+  const nextBtn = document.getElementById("modalNextSeason");
+
+  if (prevBtn) prevBtn.style.visibility = modalSeasonIndex > 0 ? "visible" : "hidden";
+  if (nextBtn) nextBtn.style.visibility = modalSeasonIndex < modalSeasonsList.length - 1 ? "visible" : "hidden";
+
+  // Filter events by selected Class AND active Modal Season
+  const classEvs = eventData.filter(e => 
+    e.Class === modalCurrentClass && 
+    String(e.Season).startsWith(String(currentSeason))
+  );
+
+  const body = document.getElementById("calendarModalBody");
+  body.innerHTML = `
+    <div style="margin-bottom:12px; color:var(--foam-dim); font-size:12px;">
+      Showing scheduled events for <strong>${modalCurrentClass}</strong> in season <strong>${currentSeason}</strong>:
+    </div>
+    <div class="admin-table-wrap" style="max-height: 380px; overflow-y: auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Event Title</th>
+            <th>Event Type</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${classEvs.length ? classEvs.map(e => `
+            <tr>
+              <td>${formatDate(e.Date)}</td>
+              <td>${e.Event || e.Competition || "—"}</td>
+              <td>${e.Competition || e["Event Type"] || e["Regatta Type"] || "—"}</td>
+              <td>${formatTime(e.Start)} –${formatTime(e.Finish)}</td>
+            </tr>
+          `).join('') : `<tr><td colspan="4" style="text-align:center;color:var(--foam-dim);">No events scheduled for ${modalCurrentClass} in season${currentSeason}.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeCalendarModal() {
+  document.getElementById("calendarModal").classList.remove("active");
 }
 
 function renderTable() {
@@ -902,7 +1294,7 @@ function renderTable() {
       <tr data-hex="${e.HexKey}" class="${e.HexKey === selectedHex ? 'selected' : ''}">
         <td>${formatDate(e.Date)}</td>
         <td>${e.Class}</td>
-        <td>${e.Event || e["Regatta Type"] || ""}</td>
+        <td>${e.Competition || e["Event Type"] || e.Event || e["Regatta Type"] || ""}</td>
         <td>${e.AddedStatus || e["Calendar Synced"] 
               ? `<span class="app-status-badge status-progress">In Calendar</span>` 
               : `<span class="app-status-badge status-awaiting">Not Synced</span>`}</td>
@@ -929,8 +1321,8 @@ function renderTable() {
         </td>
       </tr>
     `).join("")
-    : `<tr><td colspan="7" style="text-align:center;color:var(--foam-dim);">No events found matching criteria.</td></tr>`;
-
+    : `<tr><td colspan="6" style="text-align:center;color:var(--foam-dim);">No events found matching criteria.</td></tr>`;
+  
   // Attach checkbox listeners
   eventsBody.querySelectorAll(".row-check-input").forEach(chk => {
     chk.addEventListener("change", () => {
@@ -966,7 +1358,7 @@ function getAvailableDates() {
 
   const openSlots = futureSaturdays.filter(e => {
     const evt = String(e.Event || "").trim().toLowerCase();
-    const reg = String(e["Regatta Type"] || "").trim().toLowerCase();
+    const reg = String(e.Competition || e["Event Type"] || e["Regatta Type"] || "").trim().toLowerCase();
     return (
       evt === "" || reg === "" ||
       evt.includes("social") || reg.includes("social") ||
@@ -982,9 +1374,8 @@ function renderAvailableDates(extraDate = null) {
   let dates = getAvailableDates();
   const uniqueDatesMap = new Map();
   dates.forEach(e => {
-    if (!e || !e.Date) return;
     const dateKey = formatDate(e.Date);
-    if (dateKey && dateKey !== "—" && !uniqueDatesMap.has(dateKey)) uniqueDatesMap.set(dateKey, e);
+    if (!uniqueDatesMap.has(dateKey)) uniqueDatesMap.set(dateKey, e);
   });
 
   if (extraDate) {
@@ -999,7 +1390,7 @@ function renderAvailableDates(extraDate = null) {
   const sortedDates = Array.from(uniqueDatesMap.values()).sort((a, b) => (parseLocalDate(a.Date) || 0) - (parseLocalDate(b.Date) || 0));
 
   availableDates.innerHTML = sortedDates.map(e => {
-    const title = e.Event || e["Regatta Type"] || "Open Slot";
+    const title = e.Event || e.Competition || e["Event Type"] || e["Regatta Type"] || "Open Slot";
     return `<option value="${e.Date}">${formatDate(e.Date)} (${formatTime(e.Start)}–${formatTime(e.Finish)}) - ${title}</option>`;
   }).join("");
 
@@ -1050,7 +1441,7 @@ function renderSelectedEventDetails() {
       </div>
       <div class="event-detail-item">
         <span class="lbl">Event Name</span>
-        <span class="val">${event.Event || event["Regatta Type"] || '—'}</span>
+        <span class="val">${event.Event || event.Competition || event["Event Type"] || event["Regatta Type"] || '—'}</span>
       </div>
       <div class="event-detail-item">
         <span class="lbl">Time</span>
@@ -1082,13 +1473,193 @@ function renderNewEventPreview() {
       </div>
       <div class="event-detail-item">
         <span class="lbl">Event Name</span>
-        <span class="val">${selectedEvent.Event || selectedEvent["Regatta Type"] || '—'}</span>
+        <span class="val">${selectedEvent.Event || selectedEvent.Competition || selectedEvent["Event Type"] || selectedEvent["Regatta Type"] || '—'}</span>
       </div>
     </div>
   `;
 }
 
 availableDates.addEventListener("change", renderNewEventPreview);
+
+/* =========================================================
+   ADD EVENT MODAL & LOGIC
+   ========================================================= */
+function updateModalVisibility() {
+  const isAddMode = modalMode.value === "add";
+  const eventType = modalEventType.value;
+  const isCompOrSocial = ["Competition", "Social"].includes(eventType);
+
+  const fullFields = document.querySelectorAll(".full-field-only");
+
+  // Rule: When adding an Event, if Event Type is NOT 'Competition' or 'Social':
+  // Only show Date, Start, Finish, Event (Name freehand)
+  if (isAddMode && !isCompOrSocial) {
+    fullFields.forEach(el => el.classList.add("hidden-field"));
+    modalEvent.readOnly = false;
+  } else {
+    fullFields.forEach(el => el.classList.remove("hidden-field"));
+    if (isCompOrSocial) {
+      updateAutoEventName();
+    }
+  }
+}
+
+modalDate.addEventListener("change", () => {
+  const d = new Date(modalDate.value);
+  if (!isNaN(d.getTime())) {
+    modalMonth.value = d.toLocaleString("en-US", { month: "short" });
+  } else {
+    modalMonth.value = "";
+  }
+  updateAutoEventName();
+});
+
+// --- 4. Class -> Emblem Update ---
+modalClass.addEventListener("change", () => {
+  const selectedClass = modalClass.value;
+  const imageUrl = classImageMap[selectedClass] || classImageMap["General"] || "";
+
+  if (imageUrl) {
+    modalEmblemImg.src = imageUrl;
+    modalEmblemImg.classList.remove("hidden");
+    modalEmblemPlaceholder.classList.add("hidden");
+  } else {
+    modalEmblemImg.src = "";
+    modalEmblemImg.classList.add("hidden");
+    modalEmblemPlaceholder.classList.remove("hidden");
+  }
+  updateAutoEventName();
+});
+
+function updateAutoEventName() {
+  const eventType = modalEventType.value;
+  if (!["Competition", "Social"].includes(eventType)) return;
+
+  const start = modalStart.value || "";
+  const finish = modalFinish.value || "";
+  const cls = modalClass.value || "";
+  const regatta = modalRegattaType.value || "";
+  const round = modalRoundNo.value ? `Rd ${modalRoundNo.value}` : "";
+
+  const timeStr = start && finish ? `${start} - ${finish}` : (start || finish);
+  const parts = [timeStr, cls, regatta, round].filter(Boolean);
+
+  modalEvent.value = parts.join(" ").trim();
+}
+
+[modalStart, modalFinish, modalRegattaType, modalRoundNo, modalEventType].forEach(el => {
+  el.addEventListener("input", () => {
+    updateModalVisibility();
+    updateAutoEventName();
+  });
+  el.addEventListener("change", () => {
+    updateModalVisibility();
+    updateAutoEventName();
+  });
+});
+
+function openAddEventModal() {
+  modalTitle.textContent = "Add Event";
+  modalMode.value = "add";
+  eventForm.reset();
+
+  modalHexKey.value = "";
+  modalMonth.value = "";
+  modalCalendarId.value = "";
+  modalRegionalConflicts.value = "";
+  
+  modalEmblemImg.classList.add("hidden");
+  modalEmblemPlaceholder.classList.remove("hidden");
+
+  updateModalVisibility();
+  eventModal.classList.remove("hidden");
+}
+
+function openEditEventModal(hexKey) {
+  const event = eventData.find(e => e.HexKey === hexKey);
+  if (!event) return;
+
+  modalTitle.textContent = "Edit Event";
+  modalMode.value = "edit";
+
+  modalHexKey.value = event.HexKey || "";
+  modalDate.value = event.Date ? new Date(event.Date).toISOString().split("T")[0] : "";
+  modalMonth.value = event.Month || "";
+  modalStart.value = event.Start || "";
+  modalFinish.value = event.Finish || "";
+  modalClass.value = event.Class || "";
+  modalRegattaType.value = event["Regatta Type"] || "";
+  modalEventType.value = event["Event Type"] || "Competition";
+  modalSeason.value = event.Season || "";
+  modalRoundNo.value = event["Round no"] || "";
+  modalResults.value = event.Results || "Not Started";
+  modalRescheduledDate.value = event["Rescheduled Date"] ? new Date(event["Rescheduled Date"]).toISOString().split("T")[0] : "";
+  modalCalendarId.value = event["Updated to Calendar"] || "";
+  
+  const conflicts = Array.isArray(event["Regional Conflicts"]) 
+    ? event["Regional Conflicts"].join(", ") 
+    : (event["Regional Conflicts"] || "");
+  modalRegionalConflicts.value = conflicts;
+
+  modalEvent.value = event.Event || "";
+
+  // Trigger Class Emblem change
+  modalClass.dispatchEvent(new Event("change"));
+
+  updateModalVisibility();
+  eventModal.classList.remove("hidden");
+}
+
+document.getElementById("closeModalBtn")?.addEventListener("click", () => eventModal.classList.add("hidden"));
+document.getElementById("cancelModalBtn")?.addEventListener("click", () => eventModal.classList.add("hidden"));
+
+function closeAddEventModal() {
+  document.getElementById("addEventModal").classList.remove("active");
+}
+
+eventForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const isAdd = modalMode.value === "add";
+  const rowData = {
+    "Event Type": modalEventType.value,
+    "Date": modalDate.value,
+    "Start": modalStart.value,
+    "Finish": modalFinish.value,
+    "Event": modalEvent.value,
+  };
+
+  // Add remaining fields if Competition/Social or in Edit mode
+  if (!isAdd || ["Competition", "Social"].includes(modalEventType.value)) {
+    Object.assign(rowData, {
+      "Month": modalMonth.value,
+      "Class": modalClass.value,
+      "Regatta Type": modalRegattaType.value,
+      "Season": modalSeason.value,
+      "Round no": modalRoundNo.value,
+      "Results": modalResults.value,
+      "Rescheduled Date": modalRescheduledDate.value
+    });
+    
+  }
+
+  try {
+    if (isAdd) {
+      logAction("Adding new event...");
+      await appendSheet(SHEETS.calWebAppUrl, "Event Data", rowData);
+      logAction("Event added successfully.");
+    } else {
+      logAction(`Updating event ${modalHexKey.value}...`);
+      await updateSheet(SHEETS.calWebAppUrl, "Event Data", modalHexKey.value, rowData);
+      logAction("Event updated successfully.");
+    }
+
+    eventModal.classList.add("hidden");
+    await loadData();
+  } catch (err) {
+    logAction(`Save failed: ${err.message}`);
+  }
+});
 
 /* =========================================================
    ACTION HANDLERS (ADD TO CALENDAR, RESCHEDULE, EDIT)
@@ -1098,11 +1669,12 @@ async function addToCalendar(hexKey) {
   if (!event) return;
 
   const targetCalName = "Regattas - " + event.Class;
-  logAction(`Exporting "${event.Class} - ${event.Event || event["Regatta Type"]}" to ${targetCalName}...`);
+  logAction(`Exporting "${event.Class} - ${event.Event || event.Competition || event["Event Type"]}" to ${targetCalName}...`);
 
   try {
     const res = await fetch(SHEETS.calWebAppUrl, {
       method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ action: "exportToCalendar", hexKey: hexKey })
     });
     const data = await res.json();
@@ -1128,74 +1700,25 @@ async function addToCalendar(hexKey) {
 }
 
 /* --- Bulk Calendar Export --- */
-btnBulkExport.addEventListener("click", async () => {
-  btnBulkExport.disabled = true;
-  logAction("Initiating bulk export to Google Calendar...");
-  try {
-    const res = await fetch(SHEETS.calWebAppUrl, {
-      method: "POST",
-      body: JSON.stringify({ action: "exportToCalendar", hexKey: null })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-
-    logAction(`Bulk Sync Complete: ${data.count || 0} events added to Google Calendar.`);
-    await loadData();
-  } catch (err) {
-    logAction(`Bulk export error: ${err.message}`);
-  } finally {
-    btnBulkExport.disabled = false;
-  }
-});
-
-/* Add Event Modal */
-function openAddModal() {
-  // Populate class dropdown
-  const classSelect = document.getElementById("addEventClass");
-  classSelect.innerHTML = classes.map(c => `<option value="${c.ClassName}">${c.ClassName}</option>`).join("");
-  // Default season
-  document.getElementById("addEventSeason").value = selectedSeason + "-" + String(parseInt(selectedSeason)+1).slice(-2);
-  document.getElementById("addEventModal").classList.add("active");
-}
-
-function closeAddModal() {
-  document.getElementById("addEventModal").classList.remove("active");
-}
-
-document.getElementById("addEventBtn").addEventListener("click", openAddModal);
-
-document.getElementById("saveAddEventBtn").addEventListener("click", async () => {
-  const cls = document.getElementById("addEventClass").value;
-  const name = document.getElementById("addEventName").value.trim();
-  const date = document.getElementById("addEventDate").value;
-  const start = document.getElementById("addEventStart").value || "11:00";
-  const finish = document.getElementById("addEventFinish").value || "16:00";
-  const season = document.getElementById("addEventSeason").value.trim();
-
-  if (!cls || !date) { alert("Class and Date are required."); return; }
-
-  const d = parseLocalDate(date);
-  const month = d ? d.toLocaleString("en-AU", { month: "short" }) : "";
-  const classObj = classes.find(c => c.ClassName === cls) || {};
-
-  try {
-    await appendSheet(SHEETS.calWebAppUrl, "Event Data", {
-      HexKey: crypto.randomUUID(),
-      Month: month,
-      Date: formatDate(date),
-      Start: start,
-      Finish: finish,
-      Emblem: classObj.Emblem || "",
-      Class: cls,
-      "Regatta Type": name,
-      Season: season
-    });
-    logAction(`Added new event: ${cls} – ${name} on ${formatDate(date)}`);
-    closeAddModal();
-    await loadData();
-  } catch(err) {
-    alert("Failed to add event: " + err.message);
-  }
+btnBulkExport.addEventListener("click", () => {
+  const msgElem = document.getElementById("msgBulkExport");
+  runSeasonOp({
+    btn: btnBulkExport,
+    msgElem: msgElem,
+    loadingMsg: "Syncing events with Google Calendar...",
+    actionFn: async () => {
+      const res = await fetch(SHEETS.calWebAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "exportToCalendar", hexKey: null })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      
+      await loadData();
+      return `Bulk Sync Complete: ${data.count || 0} events added to Google Calendar.`;
+    }
+  });
 });
 
 /* Modal Controls */
@@ -1204,7 +1727,7 @@ function openEditModal(hexKey) {
   const event = eventData.find(e => e.HexKey === hexKey);
   if (!event) return;
 
-  document.getElementById("editEventName").value = event.Event || event["Regatta Type"] || "";
+  document.getElementById("editEventName").value = event.Event || event.Competition || event["Event Type"] || "";
   document.getElementById("editEventDate").value = formatDate(event.Date).replace(/\//g, "-");
   document.getElementById("editStartTime").value = event.Start || "";
   document.getElementById("editFinishTime").value = event.Finish || "";
@@ -1216,26 +1739,6 @@ function closeEditModal() {
   document.getElementById("editModal").classList.remove("active");
   editingHex = null;
 }
-
-document.getElementById("saveEditBtn").addEventListener("click", async () => {
-  if (!editingHex) return;
-  const name = document.getElementById("editEventName").value;
-  const date = document.getElementById("editEventDate").value;
-  const start = document.getElementById("editStartTime").value;
-  const finish = document.getElementById("editFinishTime").value;
-
-  try {
-    await updateSheet(SHEETS.calWebAppUrl, "Event Data", editingHex, { Event: name, Date: date, Start: start, Finish: finish });
-    const ev = eventData.find(e => e.HexKey === editingHex);
-    if (ev) { ev.Event = name; ev.Date = date; ev.Start = start; ev.Finish = finish; }
-    
-    logAction(`Updated Event: ${name} (${date})`);
-    closeEditModal();
-    renderTable();
-  } catch (err) {
-    alert("Failed to save changes: " + err.message);
-  }
-});
 
 /* --- Request Reschedule --- */
 requestBtn.addEventListener("click", async () => {
@@ -1276,7 +1779,7 @@ approveBtn.addEventListener("click", async () => {
     await appendSheet(SHEETS.calWebAppUrl, "Event Data", {
       HexKey: crypto.randomUUID(), Month: newMonth, Date: newDateFmt,
       Start: "11:00", Finish: "16:00", Emblem: event.Emblem || "",
-      Class: event.Class || "", "Regatta Type": event["Regatta Type"] || "",
+      Class: event.Class || "", Competition: event.Competition || event["Event Type"] || "",
       Season: event.Season || ""
     });
 
@@ -1331,12 +1834,11 @@ document.getElementById("bulkDeleteBtn").addEventListener("click", async () => {
     } catch(err) { logAction(`Error deleting ${hex}: ${err.message}`); }
   }
   selectedRows.clear();
-  await loadData();
 });
 
 function renderClassPills() {
   classPillGroup.innerHTML = classes
-  .filter(c => c.ClassName !== "Marblehead")
+  .filter(c => c.ClassName !== "M")
   .map(c => `
     <button class="class-pill ${c.ClassName === selectedClass ? 'active' : ''}" data-class="${c.ClassName}" title="${c.ClassName}">
       ${classInsignia(c.ClassName)}
@@ -1352,82 +1854,85 @@ function renderClassPills() {
   );
 }
 
-/* =========================================================
-   REGIONAL CONFLICT CHECK
-   ========================================================= */
+async function runSeasonOp({ btn, msgElem, loadingMsg, actionFn }) {
+  const originalBtnHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>`;
 
-regionalConflictBtn?.addEventListener("click", async () => {
-  regionalConflictBtn.classList.add("btn-busy");
+  msgElem.className = "season-op-msg active status-loading";
+  msgElem.textContent = loadingMsg;
 
   try {
-    logAction("Regional conflict scan started...");
-    const res = await fetch(SHEETS.calWebAppUrl, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "runRegionalConflicts"
-      })
-    });
-    const result = await res.json();
-    if (result.error) {
-      throw new Error(result.error);
-    }
-    logAction(
-      `Conflict scan completed. ${result.totalConflictsFound} conflicts found across ${result.datesWithConflicts} event dates.`
-    );
-    await loadData();
+    const successMsg = await actionFn();
+    msgElem.className = "season-op-msg active status-success";
+    msgElem.textContent = successMsg;
+    logAction(successMsg);
   } catch (err) {
-    logAction(
-      `Regional conflict scan failed: ${err.message}`
-    );
+    const errorMsg = `Failed: ${err.message}`;
+    msgElem.className = "season-op-msg active status-error";
+    msgElem.textContent = errorMsg;
+    logAction(errorMsg);
   } finally {
-    regionalConflictBtn.classList.remove("btn-busy");
+    btn.disabled = false;
+    btn.innerHTML = originalBtnHTML;
+    if (window.lucide) lucide.createIcons();
   }
+}
 
+/* =========================================================
+   REGIONAL CONFLICT CHECK
+========================================================= */
+regionalConflictBtn?.addEventListener("click", () => {
+  const msgElem = document.getElementById("msgRegionalConflict");
+  runSeasonOp({
+    btn: regionalConflictBtn,
+    msgElem: msgElem,
+    loadingMsg: "Scanning regional championship calendars...",
+    actionFn: async () => {
+      const res = await fetch(SHEETS.calWebAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "runRegionalConflicts" })
+      });
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+      if (result.success === false) throw new Error(result.error || "Conflict scan failed");
+
+      await loadData();
+      return `Conflict scan completed. ${result.totalConflictsFound ?? 0} conflicts found across ${result.datesWithConflicts ?? 0} event dates.`;
+    }
+  });
 });
 
 /* =========================================================
    GENERATE NEXT SEASON
-   ========================================================= */
+========================================================= */
+generateSeasonBtn?.addEventListener("click", () => {
+  const nextSeason = `${CURRENT_SEASON_START + 1}-${String(CURRENT_SEASON_START + 2).slice(-2)}`;
+  const msgElem = document.getElementById("msgGenerateSeason");
+  
+  runSeasonOp({
+    btn: generateSeasonBtn,
+    msgElem: msgElem,
+    loadingMsg: `Generating fixtures for season ${nextSeason}...`,
+    actionFn: async () => {
+      const res = await fetch(SHEETS.ssnWebAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "generateSeasonFixtures" })
+      });
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
 
-generateSeasonBtn?.addEventListener("click", async () => {
-  const nextSeason =
-    `${CURRENT_SEASON_START + 1}-${String(
-      CURRENT_SEASON_START + 2
-    ).slice(-2)}`;
-  generateSeasonBtn.classList.add("btn-busy");
-
-  try {
-    logAction(
-      `Generating fixtures for season ${nextSeason}...`
-    );
-    const res = await fetch(SHEETS.ssnWebAppUrl, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "generateSeasonFixtures"
-      })
-    });
-    const result = await res.json();
-    if (result.error) {
-      throw new Error(result.error);
+      await loadData();
+      return `${result.eventsCreated} fixtures generated (${result.competitionEvents} regattas, ${result.socialEvents} social sailing events).`;
     }
-    logAction(
-      `${result.eventsCreated} fixtures generated ` +
-      `(${result.competitionEvents} regattas, ` +
-      `${result.socialEvents} social sailing events).`
-    );
-    await loadData();
-  } catch (err) {
-    logAction(
-      `Season generation failed: ${err.message}`
-    );
-  } finally {
-    generateSeasonBtn.classList.remove("btn-busy");
-  }
+  });
 });
 
 /* =========================================================
    INITIAL DATA LOAD
-   ========================================================= */
+========================================================= */
 async function loadData() {
   try {
     eventData = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
@@ -1443,12 +1948,13 @@ async function loadData() {
     renderSelectedEventDetails();
     
   } catch (err) {
-    eventsBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
+    eventsBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
   }
 }
 
 loadData();
 if (window.lucide) lucide.createIcons();
+
 </script>
 </body>
 </html>
