@@ -383,14 +383,14 @@
         const rows = Array.isArray(data) ? data : (data.values ?? []);
         if (!rows.length) return [];
 
-        let hi = rows.findIndex(r => r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
-        if (hi === -1) hi = rows.findIndex(r => r.filter(c => String(c||"").trim()).length > 3);
+        let hi = rows.findIndex(r => Array.isArray(r) && r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
+        if (hi === -1) hi = rows.findIndex(r => Array.isArray(r) && r.filter(c => String(c||"").trim()).length > 3);
         if (hi === -1) return [];
 
         const headers = rows[hi].map(h => String(h||"").trim());
         return rows.slice(hi + 1)
-            .filter(r => r.some(c => String(c||"").trim()))
-            .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
+        .filter(r => Array.isArray(r) && r.some(c => String(c||"").trim()))
+        .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
     }
 
     async function updateSheet(domain, sheetName, hexKey, updates) {
