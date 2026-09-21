@@ -291,11 +291,78 @@
     /* =========================================================
     GOOGLE SHEETS MODULE
     ========================================================= */
-    const SHEETS = {
-      calWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
-      clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
-      applicationsSheetId: "1N9SFZ65rx7EA6XDBh7FUEmI504r_1aF3NYUVOg8g8Xk/edit?resourcekey=&gid=573855322#gid=573855322"
+    // config.js  (or inline in a shared include)
+    const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
+
+    // domain keys must match REGISTRY keys in Gateway.gs
+    const DOMAIN = {
+    members:   "members",
+    documents: "documents",
+    calendar:  "calendar",
+    apps:      "apps",
+    clubs:     "clubs",
+    notes:     "notes",
+    tracking:  "tracking"
     };
+
+    async function fetchSheet(domain, sheetName, hexKey = null) {
+        const action = hexKey ? "display" : "fetch";
+        const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
+                    + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
+
+        const res  = await fetch(url);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        // Single record
+        if (data.record) return data.record;
+
+        // Bulk — existing parse logic unchanged
+        const rows = Array.isArray(data) ? data : (data.values ?? []);
+        if (!rows.length) return [];
+
+        let hi = rows.findIndex(r => r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
+        if (hi === -1) hi = rows.findIndex(r => r.filter(c => String(c||"").trim()).length > 3);
+        if (hi === -1) return [];
+
+        const headers = rows[hi].map(h => String(h||"").trim());
+        return rows.slice(hi + 1)
+            .filter(r => r.some(c => String(c||"").trim()))
+            .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
+    }
+
+    async function updateSheet(domain, sheetName, hexKey, updates) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+
+    async function appendRow(domain, sheetName, rowData) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+
+    async function deleteRow(domain, sheetName, hexKey) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
 
     /* =========================================================
     APPLICATIONS DATA MODULE
@@ -444,7 +511,7 @@
 
     async function loadApplications() {
       try {
-        const res  = await fetch(`${  HOME_DATA_API}?action=applicationsList`);
+        const res  = await fetch(DOMAIN.apps, "Membership Applications");
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         allApplications = data.applications || [];
@@ -523,7 +590,7 @@
       document.getElementById('auditContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
 
       try {
-        const res = await fetch(`${APP_DETAIL_API}?token=${encodeURIComponent(rowId)}&action=display`);
+        const res = await fetch(DOMAIN.apps, "Membership Applications", encodeURIComponent(rowId));
         const d   = await res.json();
         if (d.error) throw new Error(d.error);
 

@@ -909,85 +909,84 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
 const AdminLog = {
   add({ hexCode = "", name = "", field = "", before = "", after = "", status = "success", message = "" }) {
     const value = status === "error" ? `ERROR: ${message || after}` : after;
-    return appendSheet(SHEETS.clbWebAppUrl, "AuditLog", {
+    return appendSheet(DOMAIN.audit, "AuditLog", {
       HexCode: hexCode, Timestamp: new Date().toISOString(), Name: name, Field: field, OldValue: before, NewValue: value
     }).catch(err => console.error("AuditLog write failed:", err));
   }
 };
 
-const SHEETS = {
-  calWebAppUrl: "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec",
-  clbWebAppUrl: "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec",
-  ssnWebAppUrl: "https://script.google.com/macros/library/d/1UHhsKNh1mJntPZVUd5IXbgX1c6kSUCayrysJTZc5EeZtGGyxdrbptUnG/4"
+// config.js  (or inline in a shared include)
+const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
+
+// domain keys must match REGISTRY keys in Gateway.gs
+const DOMAIN = {
+members:   "members",
+documents: "documents",
+calendar:  "calendar",
+apps:      "apps",
+clubs:     "clubs",
+notes:     "notes",
+audit:     "audit",
+tracking:  "tracking"
 };
 
-async function fetchSheet(WEBAPP_URL, sheetName) {
-  const res = await fetch(
-      `${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`
-  );
+async function fetchSheet(domain, sheetName, hexKey = null) {
+    const action = hexKey ? "display" : "fetch";
+    const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
+                + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
 
-  const data = await res.json();
-  if (data.error) {
-    throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
-  }
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
 
-  // Array:
-  if (Array.isArray(data)) {
-    console.log("Returning an array");
-    return data;
-  }
-  const rows = Array.isArray(data.values) ? data.values : [];
-  if (!rows.length) return [];
+    // Single record
+    if (data.record) return data.record;
 
-console.log(rows);
+    // Bulk — existing parse logic unchanged
+    const rows = Array.isArray(data) ? data : (data.values ?? []);
+    if (!rows.length) return [];
 
-  let headerIndex = rows.findIndex(r =>
-    Array.isArray(r) &&
-    r.some(cell => {
-        const val = String(cell || "").trim().toLowerCase();
-        return val === "rowid" || val === "status";
-    })
-  );
-  if (headerIndex === -1) {
-    headerIndex = rows.findIndex(r =>
-        Array.isArray(r) &&
-        r.filter(c => String(c || "").trim() !== "").length > 3
-    );
-  }
-  if (headerIndex === -1) return [];
+    let hi = rows.findIndex(r => r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
+    if (hi === -1) hi = rows.findIndex(r => r.filter(c => String(c||"").trim()).length > 3);
+    if (hi === -1) return [];
 
-  const headers = rows[headerIndex].map(h => String(h || "").trim());
-  console.log("Returning object rows");
-  return rows
-    .slice(headerIndex + 1)
-    .filter(r => r.some(c => String(c || "").trim() !== ""))
-    .map(r => {
-        const obj = {};
-        headers.forEach((h, i) => obj[h] = r[i] ?? "");
-        return obj;
+    const headers = rows[hi].map(h => String(h||"").trim());
+    return rows.slice(hi + 1)
+        .filter(r => r.some(c => String(c||"").trim()))
+        .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
+}
+
+async function updateSheet(domain, sheetName, hexKey, updates) {
+    const res  = await fetch(GATEWAY_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
     });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return true;
 }
 
-async function updateSheet(WEBAPP_URL, sheetName, hexKey, updates) {
-  const res = await fetch(WEBAPP_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action: "update", sheet: sheetName, hexKey, updates })
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return true;
+async function appendSheet(domain, sheetName, rowData) {
+    const res  = await fetch(GATEWAY_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return true;
 }
 
-async function appendSheet(WEBAPP_URL, sheetName, rowData) {
-  const res = await fetch(WEBAPP_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action: "append", sheet: sheetName, rowData })
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return true;
+async function deleteRow(domain, sheetName, hexKey) {
+    const res  = await fetch(GATEWAY_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return true;
 }
 
 /* =========================================================
@@ -1695,11 +1694,11 @@ eventForm.addEventListener("submit", async (e) => {
   try {
     if (isAdd) {
       logAction("Adding new event...");
-      await appendSheet(SHEETS.calWebAppUrl, "Event Data", rowData);
+      await appendSheet(DOMAIN.calendar, "Event Data", rowData);
       logAction("Event added successfully.");
     } else {
       logAction(`Updating event ${modalHexKey.value}...`);
-      await updateSheet(SHEETS.calWebAppUrl, "Event Data", modalHexKey.value, rowData);
+      await updateSheet(DOMAIN.calendar, "Event Data", modalHexKey.value, rowData);
       logAction("Event updated successfully.");
     }
 
@@ -1798,7 +1797,7 @@ requestBtn.addEventListener("click", async () => {
   const currentEvent = eventData.find(e => e.HexKey === selectedHex);
   requestBtn.disabled = true;
   try {
-    await updateSheet(SHEETS.calWebAppUrl, "Event Data", selectedHex, { "Rescheduled Date": "Pending " + newDate });
+    await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "Pending " + newDate });
     AdminLog.add({ hexCode: selectedHex, name: currentEvent ? currentEvent.Class : selectedHex, field: "Rescheduled Date", before: "", after: "Pending " + newDate });
     logAction(`Reschedule requested for ${currentEvent ? currentEvent.Class : selectedHex} → ${formatDate(newDate)}`);
     await loadData();
@@ -1825,14 +1824,14 @@ approveBtn.addEventListener("click", async () => {
     const newMonth = d ? d.toLocaleString("en-AU", { month: "short" }) : "";
     const newDateFmt = formatDate(newDate);
 
-    await appendSheet(SHEETS.calWebAppUrl, "Event Data", {
+    await appendSheet(DOMAIN.calendar, "Event Data", {
       HexKey: crypto.randomUUID(), Month: newMonth, Date: newDateFmt,
       Start: "11:00", Finish: "16:00", Emblem: event.Emblem || "",
       Class: event.Class || "", Competition: event.Competition || event["Event Type"] || "",
       Season: event.Season || ""
     });
 
-    await updateSheet(SHEETS.calWebAppUrl, "Event Data", selectedHex, { "Rescheduled Date": "", Results: "Rescheduled" });
+    await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "", Results: "Rescheduled" });
     logAction(`Reschedule approved for ${event.Class} → ${newDateFmt}`);
     await loadData();
   } catch (err) {
@@ -1878,7 +1877,7 @@ document.getElementById("bulkDeleteBtn").addEventListener("click", async () => {
   logAction(`Deleting ${selectedRows.size} event(s)...`);
   for (const hex of selectedRows) {
     try {
-      await updateSheet(SHEETS.calWebAppUrl, "Event Data", hex, { Results: "Deleted" });
+      await updateSheet(DOMAIN.calendar, "Event Data", hex, { Results: "Deleted" });
       logAction(`Deleted event ${hex}`);
     } catch(err) { logAction(`Error deleting ${hex}: ${err.message}`); }
   }
@@ -1999,8 +1998,8 @@ async function loadData() {
   if (selectedEventCard) selectedEventCard.innerHTML = `<div class="section-loading"><span class="spinner"></span> Loading…</div>`;
 
   try {
-    eventData = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
-    classes = await fetchSheet(SHEETS.clbWebAppUrl, "Classes");
+    eventData = await fetchSheet(DOMAIN.calendar, "Event Data");
+    classes = await fetchSheet(DOMAIN.members, "Classes");
 
     renderSeasonDropdown();
     renderMonthDropdown();

@@ -615,86 +615,81 @@
     /* =========================================================
        CONFIG
        ========================================================= */
-    let GOOGLE_EXPORT_FOLDER_ID = "";
-    const NOTES_WEBAPP_URL   = "https://script.google.com/macros/s/AKfycbzq-iw5CGc59VbnJEviaD0wmT5CAWuxP5wqbVg6Ea03sSBfYuEp1uOaZuGvXyNkzGBnlw/exec";
-    const MEMBERS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
-    const NOTES_SHEET   = "Notes";
-    const TOPICS_SHEET  = "Topics";
-    const ACTIONS_SHEET = "Actions";
-    const MEMBERS_SHEET = "Members";
-    const AUDIT_SHEET   = "AuditLog";
+    // config.js  (or inline in a shared include)
+    const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
 
-    /* =========================================================
-       SHEET HELPERS
-       ========================================================= */
-    async function fetchSheet(WEBAPP_URL, sheetName) {
+    // domain keys must match REGISTRY keys in Gateway.gs
+    const DOMAIN = {
+    members:   "members",
+    documents: "documents",
+    calendar:  "calendar",
+    apps:      "apps",
+    clubs:     "clubs",
+    notes:     "notes",
+    audit:     "audit",
+    tracking:  "tracking"
+    };
 
-        const res = await fetch(
-            `${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`
-        );
+    async function fetchSheet(domain, sheetName, hexKey = null) {
+        const action = hexKey ? "display" : "fetch";
+        const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
+                    + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
 
+        const res  = await fetch(url);
         const data = await res.json();
+        if (data.error) throw new Error(data.error);
 
-        if (data.error) {
-            throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
-        }
+        // Single record
+        if (data.record) return data.record;
 
-        // Format 1: already an array of objects
-        if (Array.isArray(data)) {
-            return data;
-        }
-
-        // Format 2: Google Sheets values[][]
-        const rows = data.values || [];
+        // Bulk — existing parse logic unchanged
+        const rows = Array.isArray(data) ? data : (data.values ?? []);
         if (!rows.length) return [];
 
-        let headerIndex = rows.findIndex(r =>
-            Array.isArray(r) &&
-            r.some(cell => {
-                const val = String(cell || "").trim().toLowerCase();
-                return val === "rowid" || val === "status";
-            })
-        );
+        let hi = rows.findIndex(r => r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
+        if (hi === -1) hi = rows.findIndex(r => r.filter(c => String(c||"").trim()).length > 3);
+        if (hi === -1) return [];
 
-        if (headerIndex === -1) {
-            headerIndex = rows.findIndex(r =>
-                Array.isArray(r) &&
-                r.filter(c => String(c || "").trim() !== "").length > 3
-            );
-        }
-
-        if (headerIndex === -1) return [];
-
-        const headers = rows[headerIndex].map(h => String(h || "").trim());
-
-        return rows
-            .slice(headerIndex + 1)
-            .filter(r => r.some(c => String(c || "").trim() !== ""))
-            .map(r => {
-                const obj = {};
-                headers.forEach((h, i) => obj[h] = r[i] ?? "");
-                return obj;
-            });
+        const headers = rows[hi].map(h => String(h||"").trim());
+        return rows.slice(hi + 1)
+            .filter(r => r.some(c => String(c||"").trim()))
+            .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
     }
 
-    async function appendSheet(url, sheet, rowData) {
-        const res  = await fetch(url, { method:"POST", body: JSON.stringify({ action:"append", sheet, rowData }) });
+    async function updateSheet(domain, sheetName, hexKey, updates) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
+        });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         return true;
     }
-    async function updateSheet(url, sheet, hexKey, updates) {
-        const res  = await fetch(url, { method:"POST", body: JSON.stringify({ action:"update", sheet, hexKey, updates }) });
+
+    async function appendSheet(domain, sheetName, rowData) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
+        });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         return true;
     }
-    async function deleteSheet(url, sheet, hexKey) {
-        const res  = await fetch(url, { method:"POST", body: JSON.stringify({ action:"delete", sheet, hexKey }) });
+
+    async function deleteSheet(domain, sheetName, hexKey) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
+        });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         return true;
     }
+    let GOOGLE_EXPORT_FOLDER_ID = "";
+
 
     /* =========================================================
        STATE
@@ -746,10 +741,10 @@
 
         try {
             [notes, topics, actions, members] = await Promise.all([
-                fetchSheet(NOTES_WEBAPP_URL, NOTES_SHEET),
-                fetchSheet(NOTES_WEBAPP_URL, TOPICS_SHEET),
-                fetchSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET),
-                fetchSheet(MEMBERS_WEBAPP_URL, MEMBERS_SHEET).catch(() => [])
+                fetchSheet(DOMAIN.notes, "Notes"),
+                fetchSheet(DOMAIN.notes, "Topics"),
+                fetchSheet(DOMAIN.notes, "Actions"),
+                fetchSheet(DOMAIN.members, "Members").catch(() => [])
             ]);
             // Filter active members — boolean TRUE or string "TRUE"
             members = members.filter(m => {
@@ -1118,10 +1113,10 @@
                 LastUpdated: new Date().toISOString()
             };
             if (editingNoteId) {
-                await updateSheet(NOTES_WEBAPP_URL, NOTES_SHEET, editingNoteId, rowData);
+                await updateSheet(DOMAIN.notes, "Notes", editingNoteId, rowData);
             } else {
                 rowData.CreatedAt = new Date().toISOString();
-                await appendSheet(NOTES_WEBAPP_URL, NOTES_SHEET, rowData);
+                await appendSheet(DOMAIN.notes, "Notes", rowData);
             }
 
             const newActions = [];
@@ -1138,8 +1133,8 @@
                     "By Member Email": a.byMemberEmail || "",
                     Status:            a.status || "Open"
                 };
-                if (a.id) { await updateSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, a.id, aData); }
-                else       { await appendSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, aData); if (isNew) newActions.push(aData); }
+                if (a.id) { await updateSheet(DOMAIN.notes, "Actions", a.id, aData); }
+                else      { await appendSheet(DOMAIN.notes, "Actions", aData); if (isNew) newActions.push(aData); }
             }
 
             if (newActions.length) await sendActionEmails(newActions, nid, topic, date);
@@ -1186,9 +1181,9 @@
         if (!editingNoteId) return;
         if (!confirm("Delete this note and all its actions? This cannot be undone.")) return;
         try {
-            await deleteSheet(NOTES_WEBAPP_URL, NOTES_SHEET, editingNoteId);
+            await deleteSheet(DOMAIN.notes, "Notes", editingNoteId);
             const related = actions.filter(a => gv(a,"NoteID") === editingNoteId);
-            for (const a of related) await deleteSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET, gv(a,"ActionID"));
+            for (const a of related) await deleteSheet(DOMAIN.notes, "Actions", gv(a,"ActionID"));
             await loadAll();
             await loadAuditLog();
             closeNoteModal();
@@ -1245,7 +1240,7 @@
         if (!v) return;
         btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
         try {
-            await appendSheet(NOTES_WEBAPP_URL, TOPICS_SHEET, { TopicID: noteId(), Topic: v, CreatedAt: new Date().toISOString() });
+            await appendSheet(DOMAIN.topics, "Topics", { TopicID: noteId(), Topic: v, CreatedAt: new Date().toISOString() });
             inp.value = "";
             await loadAll();
             renderTopicList();
@@ -1262,7 +1257,7 @@
         const btn = document.getElementById("refreshLogBtn");
         btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
         try {
-            auditRows = await fetchSheet(NOTES_WEBAPP_URL, AUDIT_SHEET);
+            auditRows = await fetchSheet(DOMAIN.audit, "AuditLog");
             auditRows.reverse(); // newest first
         } catch(e) { console.error("AuditLog fetch failed:", e); auditRows = []; }
         renderLog();
