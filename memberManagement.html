@@ -386,7 +386,7 @@
         let hi = rows.findIndex(r => Array.isArray(r) && r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
         if (hi === -1) hi = rows.findIndex(r => Array.isArray(r) && r.filter(c => String(c||"").trim()).length > 3);
         if (hi === -1) return [];
-
+console.log("rows sample:", rows.slice(0, 3));
         const headers = rows[hi].map(h => String(h||"").trim());
         return rows.slice(hi + 1)
         .filter(r => Array.isArray(r) && r.some(c => String(c||"").trim()))
