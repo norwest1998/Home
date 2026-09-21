@@ -305,7 +305,30 @@
     tracking:  "tracking"
     };
     
-
+    const KEY_MAP = {
+      'rowid':                    'rowId',
+      'first name':               'firstName',
+      'surname':                  'surname',
+      'membership type':          'membershipType',
+      'status':                   'status',
+      'votes for':                'votesFor',
+      'votes against':            'votesAgainst',
+      'turnaround ↵time':         'turnAround',
+      'nomination date':          'lastUpdated',
+      'laststatusupdated':        'lastUpdated',  // whichever you prefer
+      'name of current club':     'currentClub',
+      'nominating member name':   'nominator',
+      'seconders member name':    'seconder',
+      'email address':            'email',
+      'phone number':             'phone',
+      'address line':             'address',
+      'emergency contact':        'emergency',
+      'disclaimer':               'disclaimer',
+      'membership approved':      'approved',
+      'processed notes':          'log',
+      'rejection reason':         'rejectionReason',
+      'comments':                 'classOrBoat',   // or a dedicated field if you prefer
+    };
 
     /* =========================================================
     APPLICATIONS DATA MODULE
@@ -423,8 +446,16 @@
 
         const headers = rows[hi].map(h => String(h||"").trim());
         return rows.slice(hi + 1)
-            .filter(r => r.some(c => String(c||"").trim()))
-            .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
+          .filter(r => r.some(c => String(c||"").trim()))
+          .map(r => {
+            const raw = Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""]));
+            const normalised = {};
+            for (const [k, v] of Object.entries(raw)) {
+              const mapped = KEY_MAP[k.toLowerCase().trim()];
+              normalised[mapped || k] = v;
+            }
+            return normalised;
+          });
     }
 
     async function updateSheet(domain, sheetName, hexKey, updates) {
@@ -514,7 +545,7 @@
     async function loadApplications() {
       try {
         allApplications = await fetchSheet(DOMAIN.apps, "Membership Applications");
-        console.log('Raw apps:', allApplications);
+        console.log('Raw apps:', allApplications);  
         renderTable();
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
