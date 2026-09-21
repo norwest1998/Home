@@ -33,6 +33,7 @@
         gap: 16px;
         margin-bottom: 32px;
     }
+
     .health-stat {
         padding: 22px 20px;
         text-align: center;
@@ -163,6 +164,26 @@
             <div class="glass health-stat" id="health-financial">
                 <div class="health-pct">—</div>
                 <div class="health-label">PAID UP</div>
+                <div class="health-sub">Loading…</div>
+            </div>
+            <div class="glass health-stat" id="health-Members">
+                <div class="health-pct">—</div>
+                <div class="health-label">Full Members</div>
+                <div class="health-sub">Loading…</div>
+            </div>
+            <div class="glass health-stat" id="health-Boats">
+                <div class="health-pct">—</div>
+                <div class="health-label">Registered</div>
+                <div class="health-sub">Loading…</div>
+            </div>
+            <div class="glass health-stat" id="health-Classes">
+                <div class="health-pct">—</div>
+                <div class="health-label">Classes sailed</div>
+                <div class="health-sub">Loading…</div>
+            </div>
+            <div class="glass health-stat" id="health-Events">
+                <div class="health-pct">—</div>
+                <div class="health-label">Rescheduled</div>
                 <div class="health-sub">Loading…</div>
             </div>
         </section>
@@ -541,7 +562,23 @@
                                 label: "Pending",
                                 value: pendingCount,
                                 className: "badge-renewal"
-                            },
+                            },{
+                                label: "Members",
+                                value: fullCount,
+                                className: "badge-full"
+                            },{
+                                label: "Boats",
+                                value: events.length - compCount,
+                                className: "badge-full"
+                            },{
+                                label: "Classes",
+                                value: maintCount,
+                                className: "badge-full"
+                            },{
+                                label: "Events",
+                                value: rescheduledCount,
+                                className: "badge-full"
+                            }
                         ]
                     };
                 }
