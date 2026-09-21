@@ -721,17 +721,16 @@
                 fetchSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET),
                 fetchSheet(MEMBERS_WEBAPP_URL, MEMBERS_SHEET).catch(() => [])
             ]);
-            members = activeMembers();
             // Filter active members — boolean TRUE or string "TRUE"
             members = members.filter(m => {
                 const active = m["Active"] ?? m["active"];
                 return active === true || String(active).toUpperCase() === "TRUE";
-            }).filter(m => gv(m,"First Name","FirstName","Name","Full Name","MemberName","Member", "Membername"));
+            }).filter(m => gv(m,"MemberName","Member", "Membername"));
         } catch(e) {
             console.error("Load error:", e);
             notes = []; topics = []; actions = []; members = [];
             document.getElementById("notesBody").innerHTML =
-                `<tr class="spinner-row"><td colspan="7" style="color:#ff6b6b;">Failed to load. Check connection.</td></tr>`;
+                `<tr class="spinner-row"><td colspan="7" style="color:#ff6b6b;">Failed to load. Check connection./nError: ${e.message}</td></tr>`;
             return;
         }
         renderStats();
