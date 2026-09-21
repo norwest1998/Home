@@ -511,7 +511,7 @@
 
     async function loadApplications() {
       try {
-        const allApplications  = await fetch(DOMAIN.apps, "Membership Applications");
+        const allApplications  = await fetchSheet(DOMAIN.apps, "Membership Applications");
         renderTable();
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
@@ -587,7 +587,7 @@
       document.getElementById('auditContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
 
       try {
-        const res = await fetch(DOMAIN.apps, "Membership Applications", encodeURIComponent(rowId));
+        const res = await fetchSheet(DOMAIN.apps, "Membership Applications", encodeURIComponent(rowId));
         const d   = await res.json();
         if (d.error) throw new Error(d.error);
 
