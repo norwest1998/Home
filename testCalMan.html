@@ -1839,6 +1839,7 @@ document.getElementById("bulkDeleteBtn").addEventListener("click", async () => {
     } catch(err) { logAction(`Error deleting ${hex}: ${err.message}`); }
   }
   selectedRows.clear();
+});
 
 function renderClassPills() {
   classPillGroup.innerHTML = classes
@@ -1958,6 +1959,7 @@ async function loadData() {
 
 loadData();
 if (window.lucide) lucide.createIcons();
+
 </script>
 </body>
 </html>
