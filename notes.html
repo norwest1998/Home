@@ -827,6 +827,12 @@
         body.querySelectorAll("tr.clickable").forEach(tr =>
             tr.addEventListener("click", () => openNoteModal(tr.dataset.id))
         );
+        body.querySelectorAll(".export-note").forEach(btn =>
+            btn.addEventListener("click", e => {
+            e.stopPropagation();
+            exportNoteToSheet(btn.dataset.id);
+        })
+);
     }
 
     /* =========================================================
