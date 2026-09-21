@@ -87,10 +87,9 @@
   .sync-info h4 { margin: 0; color: var(--foam); font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
   .sync-info p { margin: 0; color: var(--foam-dim); font-size: 12px; }
 
-  /* Filter Bar (Season Dropdown + Rescheduled toggle + class pills) */
+  /* Filter Bar (Season Dropdown + Month Dropdown + Rescheduled toggle + class pills) */
   .filter-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
   .season-select-wrapper { display: flex; align-items: center; gap: 8px; }
-  .season-select-wrapper label { font-family: var(--font-data); font-size: 11px; text-transform: uppercase; color: var(--foam-dim); }
   .season-dropdown {
     padding: 8px 12px; border-radius: 8px; border: 1px solid var(--glass-border);
     background: rgba(0,0,0,0.4); color: var(--foam); font-size: 13px; font-family: var(--font-data);
@@ -138,13 +137,45 @@
   .row-actions { display: flex; align-items: center; gap: 6px; }
   .icon-btn {
     width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--glass-border);
-    background: rgba(0,0,0,0.3); color: var(--foam-dim); display: inline-flex;
+    background: rgba(0,0,0,0.3); color: var(--glow); display: inline-flex;
     align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease;
   }
   .icon-btn:hover { color: var(--foam); background: var(--glass-fill-hi); border-color: var(--glow); }
   .icon-btn.btn-cal:hover { color: #38bdf8; border-color: rgba(56,189,248,0.5); }
   .icon-btn.btn-resched:hover { color: #f59e0b; border-color: rgba(245,158,11,0.5); }
   .icon-btn.btn-edit:hover { color: #4ade80; border-color: rgba(74,222,128,0.5); }
+
+  /* Row Checkbox */
+  .row-check { display: flex; align-items: center; justify-content: center; }
+  .row-check input[type="checkbox"] {
+    width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
+    background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 3px;
+  }
+
+  /* Select All Header */
+  .select-all-wrap { display: flex; align-items: center; gap: 8px; }
+  .select-all-wrap input[type="checkbox"] {
+    width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
+  }
+  .select-all-label { font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--glow); }
+
+  /* Bulk Actions Bar */
+  .bulk-actions-bar {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    background: rgba(94,234,212,0.06); border: 1px solid rgba(94,234,212,0.2);
+    border-radius: 8px; margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .bulk-actions-label { font-family: var(--font-data); font-size: 11px; color: var(--glow); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px; }
+  .bulk-icon-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+    border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);
+    color: var(--glow); font-family: var(--font-data); font-size: 11px; cursor: pointer;
+    transition: all 0.15s ease; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .bulk-icon-btn:hover { background: var(--glass-fill-hi); border-color: var(--glow); color: var(--foam); }
+  .bulk-icon-btn.bulk-cal:hover { color: #38bdf8; border-color: rgba(56,189,248,0.4); }
+  .bulk-icon-btn.bulk-resched:hover { color: #f59e0b; border-color: rgba(245,158,11,0.4); }
+  .bulk-icon-btn.bulk-del:hover { color: #f87171; border-color: rgba(248,113,113,0.4); }
 
   /* Action Panel Grid */
   .action-panel-grid {
@@ -281,7 +312,12 @@
     <div class="admin-title-group">
       <h1>Calendar Management Console</h1>
     </div>
-    <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="btn btn-approve" id="addEventBtn" style="display:inline-flex; align-items:center; gap:6px;">
+        <i data-lucide="plus" size="16"></i> Add Event
+      </button>
+      <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
+    </div>
   </div>
 
   <!-- Calendar Health & Status Bar -->
@@ -400,11 +436,33 @@
       <!-- Filter Bar with All Seasons Dropdown -->
       <div class="filter-bar">
         <div class="season-select-wrapper">
-          <label for="seasonSelect">Season:</label>
           <select id="seasonSelect" class="season-dropdown"></select>
+        </div>
+        <div class="season-select-wrapper">
+          <select id="monthSelect" class="season-dropdown" style="min-width:140px;"></select>
         </div>
         <button class="filter-pill" id="rescheduledToggle">Rescheduled Only</button>
         <div class="class-pill-group" id="classPillGroup"></div>
+        <div style="margin-left: auto;">
+          <div class="select-all-wrap">
+            <div class="bulk-actions-bar" id="bulkActionsBar" style="margin-bottom:0; padding:6px 12px;">
+              <span class="bulk-actions-label">Selected:</span>
+              <button class="bulk-icon-btn bulk-cal" id="bulkAddCalBtn" title="Add selected to Calendar">
+                <i data-lucide="calendar-plus" size="14"></i> Calendar
+              </button>
+              <button class="bulk-icon-btn bulk-resched" id="bulkReschedBtn" title="Reschedule selected">
+                <i data-lucide="calendar-sync" size="14"></i> Reschedule
+              </button>
+              <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Delete selected">
+                <i data-lucide="trash-2" size="14"></i> Delete
+              </button>
+            </div>
+            <div style="display:inline-flex; align-items:center; gap:6px; margin-left:10px;">
+              <input type="checkbox" id="selectAllChk">
+              <label for="selectAllChk" class="select-all-label">Select All</label>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="admin-table-wrap">
@@ -417,10 +475,11 @@
               <th>Calendar Status</th>
               <th>Reschedule Status</th>
               <th style="text-align: right;">Actions</th>
+              <th style="text-align: center; width:40px;">Select</th>
             </tr>
           </thead>
           <tbody id="eventsBody">
-            <tr><td colspan="6" style="text-align:center;color:var(--foam-dim);">Loading events…</td></tr>
+            <tr><td colspan="7" style="text-align:center;color:var(--foam-dim);">Loading events…</td></tr>
           </tbody>
         </table>
       </div>
@@ -487,6 +546,46 @@
   </div>
 
 </main>
+
+<!-- Add Event Modal Dialog -->
+<div class="modal-overlay" id="addEventModal">
+  <div class="modal-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0; color:var(--foam);">Add New Event</h3>
+      <button class="icon-btn" onclick="closeAddModal()"><i data-lucide="x"></i></button>
+    </div>
+    <div class="app-detail-grid">
+      <div>
+        <label>Class</label>
+        <select id="addEventClass"></select>
+      </div>
+      <div>
+        <label>Event Name / Regatta Type</label>
+        <input type="text" id="addEventName" placeholder="e.g. Club Regatta">
+      </div>
+      <div>
+        <label>Date</label>
+        <input type="date" id="addEventDate">
+      </div>
+      <div>
+        <label>Start Time</label>
+        <input type="text" id="addEventStart" placeholder="11:00">
+      </div>
+      <div>
+        <label>Finish Time</label>
+        <input type="text" id="addEventFinish" placeholder="16:00">
+      </div>
+      <div>
+        <label>Season</label>
+        <input type="text" id="addEventSeason" placeholder="e.g. 2024-25">
+      </div>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-approve" id="saveAddEventBtn">Add Event</button>
+    </div>
+  </div>
+</div>
 
 <!-- Edit Event Modal Dialog -->
 <div class="modal-overlay" id="editModal">
@@ -660,6 +759,8 @@ const CURRENT_SEASON_START = now.getMonth() >= 6 ? now.getFullYear() : now.getFu
 let selectedSeason = String(CURRENT_SEASON_START);
 let selectedClass = "";
 let rescheduledOnly = false;
+let selectedMonth = "";
+let selectedRows = new Set();
 
 /* DOM References */
 const eventsBody = document.getElementById("eventsBody");
@@ -689,6 +790,12 @@ function seasonEvents() {
     if (selectedSeason && !String(e.Season).startsWith(String(selectedSeason))) return false;
     if (selectedClass && e.Class !== selectedClass) return false;
     if (rescheduledOnly && !(e["Rescheduled Date"] || "")) return false;
+    if (selectedMonth) {
+      const d = parseLocalDate(e.Date);
+      if (!d) return false;
+      const mName = d.toLocaleString("en-AU", { month: "short" });
+      if (mName !== selectedMonth) return false;
+    }
     return true;
   });
 }
@@ -703,8 +810,39 @@ function renderSeasonDropdown() {
 
   seasonSelect.addEventListener("change", (e) => {
     selectedSeason = e.target.value;
+    selectedMonth = "";
+    selectedRows.clear();
     renderStats();
     renderClassEventsPills();
+    renderMonthDropdown();
+    renderTable();
+  });
+}
+
+function renderMonthDropdown() {
+  const monthSelect = document.getElementById("monthSelect");
+  if (!monthSelect) return;
+
+  // Get months from current season events
+  const seasonRows = eventData.filter(e => !selectedSeason || String(e.Season).startsWith(String(selectedSeason)));
+  const monthsSet = new Set();
+  seasonRows.forEach(e => {
+    const d = parseLocalDate(e.Date);
+    if (d) monthsSet.add(d.toLocaleString("en-AU", { month: "short" }));
+  });
+
+  // Order by calendar month
+  const monthOrder = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const months = monthOrder.filter(m => monthsSet.has(m));
+
+  monthSelect.innerHTML = `<option value="">All Months</option>` +
+    months.map(m => `<option value="${m}" ${m === selectedMonth ? 'selected' : ''}>${m}</option>`).join("");
+
+  // Remove old listener to avoid duplicates
+  const newSelect = monthSelect.cloneNode(true);
+  monthSelect.parentNode.replaceChild(newSelect, monthSelect);
+  newSelect.addEventListener("change", (e) => {
+    selectedMonth = e.target.value;
     renderTable();
   });
 }
@@ -787,11 +925,34 @@ function renderTable() {
             </button>
           </div>
         </td>
+        <td style="text-align:center;">
+          <input type="checkbox" class="row-check-input" data-hex="${e.HexKey}" ${selectedRows.has(e.HexKey) ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--glow);cursor:pointer;">
+        </td>
       </tr>
     `).join("")
-    : `<tr><td colspan="6" style="text-align:center;color:var(--foam-dim);">No events found matching criteria.</td></tr>`;
+    : `<tr><td colspan="7" style="text-align:center;color:var(--foam-dim);">No events found matching criteria.</td></tr>`;
+
+  // Attach checkbox listeners
+  eventsBody.querySelectorAll(".row-check-input").forEach(chk => {
+    chk.addEventListener("change", () => {
+      const hex = chk.dataset.hex;
+      if (chk.checked) selectedRows.add(hex);
+      else selectedRows.delete(hex);
+      updateSelectAllState();
+    });
+  });
 
   if (window.lucide) lucide.createIcons();
+}
+
+function updateSelectAllState() {
+  const allChk = document.getElementById("selectAllChk");
+  if (!allChk) return;
+  const rows = seasonEvents();
+  const allSelected = rows.length > 0 && rows.every(e => selectedRows.has(e.HexKey));
+  const someSelected = rows.some(e => selectedRows.has(e.HexKey));
+  allChk.checked = allSelected;
+  allChk.indeterminate = !allSelected && someSelected;
 }
 
 function getAvailableDates() {
@@ -987,6 +1148,56 @@ btnBulkExport.addEventListener("click", async () => {
   }
 });
 
+/* Add Event Modal */
+function openAddModal() {
+  // Populate class dropdown
+  const classSelect = document.getElementById("addEventClass");
+  classSelect.innerHTML = classes.map(c => `<option value="${c.ClassName}">${c.ClassName}</option>`).join("");
+  // Default season
+  document.getElementById("addEventSeason").value = selectedSeason + "-" + String(parseInt(selectedSeason)+1).slice(-2);
+  document.getElementById("addEventModal").classList.add("active");
+}
+
+function closeAddModal() {
+  document.getElementById("addEventModal").classList.remove("active");
+}
+
+document.getElementById("addEventBtn").addEventListener("click", openAddModal);
+
+document.getElementById("saveAddEventBtn").addEventListener("click", async () => {
+  const cls = document.getElementById("addEventClass").value;
+  const name = document.getElementById("addEventName").value.trim();
+  const date = document.getElementById("addEventDate").value;
+  const start = document.getElementById("addEventStart").value || "11:00";
+  const finish = document.getElementById("addEventFinish").value || "16:00";
+  const season = document.getElementById("addEventSeason").value.trim();
+
+  if (!cls || !date) { alert("Class and Date are required."); return; }
+
+  const d = parseLocalDate(date);
+  const month = d ? d.toLocaleString("en-AU", { month: "short" }) : "";
+  const classObj = classes.find(c => c.ClassName === cls) || {};
+
+  try {
+    await appendSheet(SHEETS.calWebAppUrl, "Event Data", {
+      HexKey: crypto.randomUUID(),
+      Month: month,
+      Date: formatDate(date),
+      Start: start,
+      Finish: finish,
+      Emblem: classObj.Emblem || "",
+      Class: cls,
+      "Regatta Type": name,
+      Season: season
+    });
+    logAction(`Added new event: ${cls} – ${name} on ${formatDate(date)}`);
+    closeAddModal();
+    await loadData();
+  } catch(err) {
+    alert("Failed to add event: " + err.message);
+  }
+});
+
 /* Modal Controls */
 function openEditModal(hexKey) {
   editingHex = hexKey;
@@ -1083,6 +1294,44 @@ rescheduledToggle.addEventListener("click", () => {
   rescheduledOnly = !rescheduledOnly;
   rescheduledToggle.classList.toggle("active", rescheduledOnly);
   renderTable();
+});
+
+/* Select All */
+document.getElementById("selectAllChk").addEventListener("change", function() {
+  const rows = seasonEvents();
+  if (this.checked) rows.forEach(e => selectedRows.add(e.HexKey));
+  else selectedRows.clear();
+  renderTable();
+});
+
+/* Bulk Actions */
+document.getElementById("bulkAddCalBtn").addEventListener("click", async () => {
+  if (!selectedRows.size) { logAction("No events selected."); return; }
+  logAction(`Adding ${selectedRows.size} selected event(s) to Calendar...`);
+  for (const hex of selectedRows) { await addToCalendar(hex); }
+  selectedRows.clear();
+  renderTable();
+});
+
+document.getElementById("bulkReschedBtn").addEventListener("click", () => {
+  if (!selectedRows.size) { logAction("No events selected."); return; }
+  const first = Array.from(selectedRows)[0];
+  selectEvent(first);
+  logAction(`${selectedRows.size} event(s) selected. Use reschedule panel below.`);
+});
+
+document.getElementById("bulkDeleteBtn").addEventListener("click", async () => {
+  if (!selectedRows.size) { logAction("No events selected."); return; }
+  if (!confirm(`Delete ${selectedRows.size} selected event(s)? This cannot be undone.`)) return;
+  logAction(`Deleting ${selectedRows.size} event(s)...`);
+  for (const hex of selectedRows) {
+    try {
+      await updateSheet(SHEETS.calWebAppUrl, "Event Data", hex, { Results: "Deleted" });
+      logAction(`Deleted event ${hex}`);
+    } catch(err) { logAction(`Error deleting ${hex}: ${err.message}`); }
+  }
+  selectedRows.clear();
+  await loadData();
 });
 
 function renderClassPills() {
@@ -1185,6 +1434,7 @@ async function loadData() {
     classes = await fetchSheet(SHEETS.clbWebAppUrl, "Classes");
 
     renderSeasonDropdown();
+    renderMonthDropdown();
     renderClassPills();
     renderStats();
     renderClassEventsPills();
@@ -1193,7 +1443,7 @@ async function loadData() {
     renderSelectedEventDetails();
     
   } catch (err) {
-    eventsBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
+    eventsBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
   }
 }
 
