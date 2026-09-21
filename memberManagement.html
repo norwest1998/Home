@@ -525,7 +525,7 @@
 
     async function loadMembers() {
         try {
-            [allMembers, allBoats] = await Promise.all([
+            const [membersData, boatsData] = await Promise.all([
                 fetchSheet(DOMAIN.members, "Members"),
                 fetchSheet(DOMAIN.members, "ClassMembers")
             ]);
