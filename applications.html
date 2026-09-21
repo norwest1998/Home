@@ -586,8 +586,7 @@
       document.getElementById('auditContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
 
       try {
-        const res = await fetchSheet(DOMAIN.apps, "Membership Applications", encodeURIComponent(rowId));
-        const d   = await res.json();
+        const d = await fetchSheet(DOMAIN.apps, "Membership Applications", encodeURIComponent(rowId));
         if (d.error) throw new Error(d.error);
 
         document.getElementById('reviewTitle').textContent = `Application Review: ${d.fullName || name}`;
