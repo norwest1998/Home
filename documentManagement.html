@@ -421,24 +421,56 @@ const DOC_CONFIG = {
 };
 
 /* ---------- Sheets helpers ---------- */
-async function fetchSheet(url, sheetName) {
-    const res = await fetch(`${url}?action=fetch&sheet=${encodeURIComponent(sheetName)}`);
+async function fetchSheet(WEBAPP_URL, sheetName) {
+
+    const res = await fetch(
+        `${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`
+    );
+
     const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    const rows = Array.isArray(data) ? data : (data.values || []);
+
+    if (data.error) {
+        throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
+    }
+
+    // Format 1: already an array of objects
+    if (Array.isArray(data)) {
+        return data;
+    }
+
+    // Format 2: Google Sheets values[][]
+    const rows = data.values || [];
     if (!rows.length) return [];
-    let headerIndex = rows.findIndex(r => Array.isArray(r) && r.some(c => {
-        const v = String(c || "").trim().toLowerCase();
-        return v === "rowid" || v === "status" || v === "action";
-    }));
-    if (headerIndex === -1) headerIndex = 0;
+
+    let headerIndex = rows.findIndex(r =>
+        Array.isArray(r) &&
+        r.some(cell => {
+            const val = String(cell || "").trim().toLowerCase();
+            return val === "rowid" || val === "status";
+        })
+    );
+
+    if (headerIndex === -1) {
+        headerIndex = rows.findIndex(r =>
+            Array.isArray(r) &&
+            r.filter(c => String(c || "").trim() !== "").length > 3
+        );
+    }
+
+    if (headerIndex === -1) return [];
+
     const headers = rows[headerIndex].map(h => String(h || "").trim());
-    return rows.slice(headerIndex + 1).filter(r => r.some(c => String(c || "").trim() !== "")).map(r => {
-        const obj = {};
-        headers.forEach((h, i) => { if (h) obj[h] = r[i] !== undefined ? r[i] : ""; });
-        return obj;
-    });
+
+    return rows
+        .slice(headerIndex + 1)
+        .filter(r => r.some(c => String(c || "").trim() !== ""))
+        .map(r => {
+            const obj = {};
+            headers.forEach((h, i) => obj[h] = r[i] ?? "");
+            return obj;
+        });
 }
+
 async function updateSheet(url, sheetName, hexKey, updates) {
     const res = await fetch(url, { method: "POST", body: JSON.stringify({ action: "update", sheet: sheetName, hexKey, updates }) });
     const data = await res.json();
