@@ -464,6 +464,17 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
 .select-all-wrap input[type="checkbox"] {
   width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
 }
+
+/* Loading states */
+.table-loading-row td {
+  padding: 32px 0; text-align: center;
+}
+.section-loading {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; padding: 24px; color: var(--foam-dim);
+  font-family: var(--font-data); font-size: 12px;
+}
+.section-loading .spinner { flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -613,7 +624,7 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
   <div class="panel" id="queue">
     <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
       <div class="panel-title"><span class="dot"></span><h3>Scheduled Events</h3></div>
-      <button class="btn btn-ghost"  style="margin-bottom:2px;" onclick="openAddEventModal()"><i data-lucide="plus" size="14"></i> Add Event</button>
+      <button class="btn btn-ghost" onclick="openAddEventModal()"><i data-lucide="plus" size="14"></i> Add Event</button>
     </div>
     <div class="tab-content active">
       
@@ -627,7 +638,7 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
         </div>
         <button class="filter-pill" id="rescheduledToggle">Rescheduled Only</button>
         <div class="class-pill-group" id="classPillGroup"></div>
-        <div style="margin-left: auto;">
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
 
             <button class="bulk-icon-btn bulk-cal" id="bulkAddCalBtn" title="Add selected to Calendar">
             <i data-lucide="calendar-plus" size="15"></i>
@@ -1942,6 +1953,21 @@ generateSeasonBtn?.addEventListener("click", () => {
    INITIAL DATA LOAD
 ========================================================= */
 async function loadData() {
+  // Show loading state in all relevant sections
+  eventsBody.innerHTML = `<tr class="table-loading-row"><td colspan="7"><div class="section-loading"><span class="spinner"></span> Loading events…</div></td></tr>`;
+
+  const classEventsContainer = document.getElementById("classEventsPills");
+  if (classEventsContainer) classEventsContainer.innerHTML = `<div class="section-loading"><span class="spinner"></span> Loading class data…</div>`;
+
+  const healthText = document.getElementById("healthText");
+  if (healthText) healthText.textContent = "Checking health…";
+
+  const availableDatesEl = document.getElementById("availableDates");
+  if (availableDatesEl) availableDatesEl.innerHTML = `<option disabled selected>Loading dates…</option>`;
+
+  const selectedEventCard = document.getElementById("selectedEventCard");
+  if (selectedEventCard) selectedEventCard.innerHTML = `<div class="section-loading"><span class="spinner"></span> Loading…</div>`;
+
   try {
     eventData = await fetchSheet(SHEETS.calWebAppUrl, "Event Data");
     classes = await fetchSheet(SHEETS.clbWebAppUrl, "Classes");
