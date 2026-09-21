@@ -354,6 +354,8 @@
     // config.js  (or inline in a shared include)
     const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
     const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
+    let allMembers = [];
+    let allBoats = [];
 
     // domain keys must match REGISTRY keys in Gateway.gs
     const DOMAIN = {
@@ -523,7 +525,7 @@ console.log("rows sample:", rows.slice(0, 3));
 
     async function loadMembers() {
         try {
-            const [allMembers, allBoats] = await Promise.all([
+            [allMembers, allBoats] = await Promise.all([
                 fetchSheet(DOMAIN.members, "Members"),
                 fetchSheet(DOMAIN.members, "ClassMembers")
             ]);
