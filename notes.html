@@ -431,14 +431,6 @@
                                 <th>Attachments</th>
                                 <th>Status</th>
                                 <th>Export</th>
-                                <td>
-                                    <button
-                                    class="icon-btn export-note"
-                                    data-id="${nid}"
-                                    title="Save as Google Sheet">
-                                    <i data-lucide="file-input"></i>
-                                    </button>
-                                </td>
                             </tr>
                         </thead>
                         <tbody id="notesBody"></tbody>
@@ -828,7 +820,8 @@
                 <td>${openA.length > 0 ? `<span class="action-dot ${dotClass}"></span>${openA.length} open` : '<span style="color:var(--foam-dim)">—</span>'}</td>
                 <td>${attachCount > 0 ? `📎 ${attachCount}` : '—'}</td>
                 <td><span class="badge ${openA.length > 0 ? (dotClass==="due"?"badge-expired":"badge-renewal") : "badge-full"}">${openA.length > 0 ? (dotClass==="due"?"Overdue":"Active") : "Complete"}</span></td>
-            </tr>`;
+                <td><button class="icon-btn export-note" data-id="${nid}" title="Save as Google Sheet"><i data-lucide="file-input"></i></button></td>
+                </tr>`;
         }).join("");
         empty.style.display = rows.length ? "none" : "block";
         body.querySelectorAll("tr.clickable").forEach(tr =>
