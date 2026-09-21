@@ -166,22 +166,22 @@
                 <div class="health-label">PAID UP</div>
                 <div class="health-sub">Loading…</div>
             </div>
-            <div class="glass health-stat" id="health-Members">
+            <div class="glass health-stat" id="health-active">
                 <div class="health-pct">—</div>
                 <div class="health-label">Full Members</div>
                 <div class="health-sub">Loading…</div>
             </div>
-            <div class="glass health-stat" id="health-Boats">
+            <div class="glass health-stat" id="health-address">
                 <div class="health-pct">—</div>
                 <div class="health-label">Registered</div>
                 <div class="health-sub">Loading…</div>
             </div>
-            <div class="glass health-stat" id="health-Classes">
+            <div class="glass health-stat" id="health-contacts">
                 <div class="health-pct">—</div>
                 <div class="health-label">Classes sailed</div>
                 <div class="health-sub">Loading…</div>
             </div>
-            <div class="glass health-stat" id="health-Events">
+            <div class="glass health-stat" id="health-primary">
                 <div class="health-pct">—</div>
                 <div class="health-label">Rescheduled</div>
                 <div class="health-sub">Loading…</div>
@@ -234,579 +234,571 @@
     </footer>
 
     <script>
-        // Case-insensitive cell value retriever across header variations
-        function getRowVal(row, possibleKeys) {
-            if (!row) return "";
-            const rowKeys = Object.keys(row);
-            for (const targetKey of possibleKeys) {
-                const match = rowKeys.find(k => k.toLowerCase().trim() === targetKey.toLowerCase().trim());
-                if (match && row[match] !== undefined && row[match] !== null) {
-                    return String(row[match]).trim();
-                }
+    // Case-insensitive cell value retriever across header variations
+    function getRowVal(row, possibleKeys) {
+        if (!row) return "";
+        const rowKeys = Object.keys(row);
+        for (const targetKey of possibleKeys) {
+            const match = rowKeys.find(k => k.toLowerCase().trim() === targetKey.toLowerCase().trim());
+            if (match && row[match] !== undefined && row[match] !== null) {
+                return String(row[match]).trim();
             }
-            return "";
         }
+        return "";
+    }
 
-        function fmtTime(iso){
-            const d = new Date(iso);
-            return d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
-        }
+    function fmtTime(iso){
+        const d = new Date(iso);
+        return d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+    }
 
-        let logStatusFilter = "all";
-        function renderLog(){
-            const body = document.getElementById("logBody");
-            const empty = document.getElementById("logEmpty");
-            const q = document.getElementById("logSearch").value.trim().toLowerCase();
+    let logStatusFilter = "all";
+    function renderLog(){
+        const body = document.getElementById("logBody");
+        const empty = document.getElementById("logEmpty");
+        const q = document.getElementById("logSearch").value.trim().toLowerCase();
 
-            let entries = AdminLog.all();
-            if (logStatusFilter !== "all") entries = entries.filter(e => e.status === logStatusFilter);
-            if (q) entries = entries.filter(e =>
-                (e.fn||"").toLowerCase().includes(q) ||
-                (e.field||"").toLowerCase().includes(q)
-            );
+        let entries = AdminLog.all();
+        if (logStatusFilter !== "all") entries = entries.filter(e => e.status === logStatusFilter);
+        if (q) entries = entries.filter(e =>
+            (e.fn||"").toLowerCase().includes(q) ||
+            (e.field||"").toLowerCase().includes(q)
+        );
 
-            body.innerHTML = entries.map(e => `
-                <tr>
-                <td>${fmtTime(e.timestamp)}</td>
-                <td>${e.fn || ""}</td>
-                <td>${e.field || ""}</td>
-                <td class="diff-before">${e.before ?? ""}</td>
-                <td class="diff-after">${e.after ?? ""}</td>
-                <td><span class="badge ${e.status === "error" ? "badge-expired" : "badge-full"}">${e.status}</span></td>
-                </tr>
-            `).join("");
+        body.innerHTML = entries.map(e => `
+            <tr>
+            <td>${fmtTime(e.timestamp)}</td>
+            <td>${e.fn || ""}</td>
+            <td>${e.field || ""}</td>
+            <td class="diff-before">${e.before ?? ""}</td>
+            <td class="diff-after">${e.after ?? ""}</td>
+            <td><span class="badge ${e.status === "error" ? "badge-expired" : "badge-full"}">${e.status}</span></td>
+            </tr>
+        `).join("");
 
-            empty.style.display = entries.length ? "none" : "block";
-        }
+        empty.style.display = entries.length ? "none" : "block";
+    }
 
-        document.getElementById("logSearch").addEventListener("input", renderLog);
-        document.getElementById("clearLogBtn").addEventListener("click", () => AdminLog.refresh());
-        document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(btn => {
-            btn.addEventListener("click", () => {
-                document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                logStatusFilter = btn.dataset.status;
-                renderLog();
-            });
+    document.getElementById("logSearch").addEventListener("input", renderLog);
+    document.getElementById("clearLogBtn").addEventListener("click", () => AdminLog.refresh());
+    document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            logStatusFilter = btn.dataset.status;
+            renderLog();
+        });
+    });
+
+    /* ============================================================
+    GOOGLE SHEETS MODULE — SMMC ADMIN PANEL
+    ============================================================ */
+    // config.js  (or inline in a shared include)
+    const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
+
+    // domain keys must match REGISTRY keys in Gateway.gs
+    const DOMAIN = {
+    members:   "members",
+    documents: "documents",
+    calendar:  "calendar",
+    apps:      "apps",
+    clubs:     "clubs",
+    notes:     "notes",
+    audit:     "audit",
+    tracking:  "tracking"
+    };
+
+    async function fetchSheet(domain, sheetName, hexKey = null) {
+        const action = hexKey ? "display" : "fetch";
+        const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
+                    + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
+
+        const res  = await fetch(url);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        // Single record
+        if (data.record) return data.record;
+
+        // Bulk — existing parse logic unchanged
+        const rows = Array.isArray(data) ? data : (data.values ?? []);
+        if (!rows.length) return [];
+
+        let hi = rows.findIndex(r => r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
+        if (hi === -1) hi = rows.findIndex(r => r.filter(c => String(c||"").trim()).length > 3);
+        if (hi === -1) return [];
+
+        const headers = rows[hi].map(h => String(h||"").trim());
+        return rows.slice(hi + 1)
+            .filter(r => r.some(c => String(c||"").trim()))
+            .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
+    }
+
+    async function updateSheet(domain, sheetName, hexKey, updates) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+
+    async function appendRow(domain, sheetName, rowData) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+
+    async function deleteRow(domain, sheetName, hexKey) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+
+    window.SMMC_Sheets = { fetchSheet, updateSheet, appendRow, DOMAIN };
+
+    /* =========================================================
+    FUNCTION REGISTRY
+    ========================================================= */
+    const FUNCTIONS = [
+        // Membership Applications
+        {
+            id: "Member-Applications",
+            icon: '<i data-lucide="user-plus" color="#257fb6"></i>',
+            title: "Online Membership Applications",
+            description: "Manage online applications through the process.",
+            href: "applications.html",
+            status: async () => {
+                const apps = await fetchSheet(DOMAIN.apps, "Membership Applications");
+
+                const getStatus = (r) => getRowVal(r, ["Status", "App Status", "Application Status"]);
+                const getApproved = (r) => getRowVal(r, ["Membership Approved", "Approved"]);
+
+                const received = apps.filter(a => getStatus(a).toLowerCase() === "received").length;
+                const inProgress = apps.filter(a => getStatus(a).toLowerCase() === "in progress").length;
+                const awaiting = apps.filter(a => ["awaiting approval", "pending"].includes(getStatus(a).toLowerCase())).length;
+
+                const approved = apps.filter(a => {
+                    const st = getStatus(a).toLowerCase();
+                    const appv = getApproved(a).toLowerCase();
+                    return st === "processed" && (appv === "true" || appv === "yes" || appv === "approved");
+                }).length;
+
+                const rejected = apps.filter(a => {
+                    const st = getStatus(a).toLowerCase();
+                    const appv = getApproved(a).toLowerCase();
+                    return st === "processed" && (appv === "false" || appv === "no" || appv === "rejected");
+                }).length;
+
+                return {
+                    pills: [
+                        { label: "Received", value: received, className: "badge-affiliate" },
+                        { label: "In Progress", value: inProgress, className: "badge-default" },
+                        { label: "Awaiting Approval", value: awaiting, className: "badge-renewal" },
+                        { label: "Approved", value: approved, className: "badge-full" },
+                        { label: "Rejected", value: rejected, className: "badge-expired" }
+                    ]
+                };
+            }
+        },
+        // Member Management 
+        { 
+            id: "member-management", 
+            icon: '<i data-lucide="user-group" color="#257fb6"></i>', 
+            title: "Member Management", 
+            description: "Manage member details and communcation",
+            href: "memberManagement.html",
+            status: async () => {
+                const members = await fetchSheet(DOMAIN.members, "Members");
+
+                const getStatus = (r) => getRowVal(r, ["Active", "Membership Status"]).toLowerCase();
+                const getType = (r) => getRowVal(r, ["Membership Type", "Type", "Membership"]).toLowerCase();
+                const getPaid = (r) => getRowVal(r, ["Paid-up", "Paid Up", "PaidUp", "Paid"]).toLowerCase();
+
+                const isActive = (r) => ["true", "yes", "paid"].includes(getStatus(r));
+                const isPaid = (r) => ["true", "yes", "paid"].includes(getPaid(r));
+
+                const active = members.filter(isActive).length;
+                const full = members.filter(r => isActive(r) && getType(r) === "full").length;
+                const affiliate = members.filter(r => isActive(r) && getType(r) === "affiliate").length;
+                const expired = members.filter(r => !isActive(r) && getType(r) === "expired").length;
+                const paidUp = members.filter(r => isActive(r) && isPaid(r)).length;
+
+                return {
+                    pills: [
+                        { label: "Active", value: active, className: "badge-full" },
+                        { label: "Full", value: full, className: "badge-affiliate" },
+                        { label: "Affiliate", value: affiliate, className: "badge-default" },
+                        { label: "Expired", value: expired, className: "badge-expired" },
+                        { label: "Paid-up", value: paidUp, className: "badge-renewal" }
+                    ]
+                };
+            }
+        },
+        // Document Management
+        {
+            id: "documentRepository",
+            icon: '<i data-lucide="folder-open" color="#257fb6"></i>',
+            title: "Document Management",
+            description: "Library, search, versioning, review and sign-off.",
+            href: "documentManagement.html",
+            status: async () => {
+                const docs = await fetchSheet(DOMAIN.documents, "Documents");
+                const count = (s) => docs.filter(d => getRowVal(d, ["Status"]) === s).length;
+                return {
+                    pills: [
+                        { label: "Draft", value: count("Draft"), className: "badge-default" },
+                        { label: "In Review", value: count("In Review"), className: "badge-renewal" },
+                        { label: "Signed Off", value: count("Signed Off"), className: "badge-full" }
+                    ]
+                };
+            }
+        },
+        // Notes Management
+        {
+            id: "notes",
+            icon: '<i data-lucide="notebook-pen" color="#257fb6"></i>',
+            title: "Notes",
+            description: "Capture, manage and action meeting and topic notes.",
+            href: "notes.html",
+            status: async () => {
+                const [noteRows, actionRows] = await Promise.all([
+                    fetchSheet(DOMAIN.notes, "Notes"),
+                    fetchSheet(DOMAIN.notes, "Actions")
+                ]);
+                const now = new Date();
+                const open = actionRows.filter(a => getRowVal(a,["Status"]).toLowerCase() !== "done").length;
+                const overdue = actionRows.filter(a => {
+                    const d = new Date(getRowVal(a,["By Date"]));
+                    return getRowVal(a,["Status"]).toLowerCase() !== "done" && !isNaN(d) && d < now;
+                }).length;
+                return {
+                    pills: [
+                        { label: "Notes",           value: noteRows.length, className: "badge-full" },
+                        { label: "Open Actions",    value: open,            className: "badge-renewal" },
+                        { label: "Overdue",         value: overdue,         className: overdue > 0 ? "badge-expired" : "badge-default" }
+                    ]
+                };
+            }
+        },
+        // Calendar management
+        {
+            id: "calendar-management",
+            icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
+            title: "Calendar Management",
+            description: "Manage Calendar Events.",
+            href: "calendarManagement.html",
+            status: async () => {
+                const events = await fetchSheet(DOMAIN.calendar, "Event Data");
+
+                // helper to pull Competition regattas
+                const getCompVal = (row) => getRowVal(row, [
+                    "Competition", 
+                    "competition"
+                ]).trim().toLowerCase();
+
+                // Helper to pull the Rescheduled Date field across header variations
+                const getReschedVal = (row) => getRowVal(row, [
+                    "Rescheduled Date", 
+                    "RescheduledDate", 
+                    "Reschedule Date"
+                ]).trim().toLowerCase();
+
+                // count competitions
+                const compCount = events.filter(e => {
+                    const val = getCompVal(e);
+                    return val.includes("competition");
+                }).length;
+
+                // count maintenance days
+                const maintCount = events.filter(e => {
+                    const val = getCompVal(e);
+                    return val.includes("maintenance");
+                }).length;
+
+                // 1. Pending: Column contains "pending" (e.g., "Pending 15/10/2026")
+                const pendingCount = events.filter(e => {
+                    const val = getReschedVal(e);
+                    return val.includes("pending");
+                }).length;
+
+                // 2. Rescheduled: Column is populated with a date string and is no longer pending
+                const rescheduledCount = events.filter(e => {
+                    const val = getReschedVal(e);
+                    return val !== "" && !val.includes("pending");
+                }).length;
+
+                return {
+                    pills: [
+                        {
+                            label: "Regattas",
+                            value: compCount,
+                            className: "badge-full"
+                        },{
+                            label: "Socials",
+                            value: events.length - compCount,
+                            className: "badge-full"
+                        },{
+                            label: "Maintenance",
+                            value: maintCount,
+                            className: "badge-full"
+                        },{
+                            label: "Rescheduled",
+                            value: rescheduledCount,
+                            className: "badge-full"
+                        },{
+                            label: "Pending",
+                            value: pendingCount,
+                            className: "badge-renewal"
+                        },
+                    ]
+                };
+            }
+        },
+        // Calendar management
+        {
+            id: "calendar-management",
+            icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
+            title: "test Management",
+            description: "Manage Calendar Events.",
+            href: "testCalMan.html",
+            status: async () => {
+                const events = await fetchSheet(DOMAIN.calendar, "Event Data");
+
+                // helper to pull Competition regattas
+                const getCompVal = (row) => getRowVal(row, [
+                    "Competition", 
+                    "competition"
+                ]).trim().toLowerCase();
+
+                // Helper to pull the Rescheduled Date field across header variations
+                const getReschedVal = (row) => getRowVal(row, [
+                    "Rescheduled Date", 
+                    "RescheduledDate", 
+                    "Reschedule Date"
+                ]).trim().toLowerCase();
+
+                // count competitions
+                const compCount = events.filter(e => {
+                    const val = getCompVal(e);
+                    return val.includes("competition");
+                }).length;
+
+                // count maintenance days
+                const maintCount = events.filter(e => {
+                    const val = getCompVal(e);
+                    return val.includes("maintenance");
+                }).length;
+
+                // 1. Pending: Column contains "pending" (e.g., "Pending 15/10/2026")
+                const pendingCount = events.filter(e => {
+                    const val = getReschedVal(e);
+                    return val.includes("pending");
+                }).length;
+
+                // 2. Rescheduled: Column is populated with a date string and is no longer pending
+                const rescheduledCount = events.filter(e => {
+                    const val = getReschedVal(e);
+                    return val !== "" && !val.includes("pending");
+                }).length;
+
+                return {
+                    pills: [
+                        {
+                            label: "Regattas",
+                            value: compCount,
+                            className: "badge-full"
+                        },{
+                            label: "Socials",
+                            value: events.length - compCount,
+                            className: "badge-full"
+                        },{
+                            label: "Maintenance",
+                            value: maintCount,
+                            className: "badge-full"
+                        },{
+                            label: "Rescheduled",
+                            value: rescheduledCount,
+                            className: "badge-full"
+                        },{
+                            label: "Pending",
+                            value: pendingCount,
+                            className: "badge-renewal"
+                        },
+                    ]
+                };
+            }
+        },
+        { id: "add-function-slot", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
+    ];
+
+    // Case-insensitive field reader
+    function getVal(rowObj, fieldName) {
+        const targetKey = fieldName.toLowerCase().trim();
+        const foundKey = Object.keys(rowObj).find(k => k.toLowerCase().trim() === targetKey);
+        return foundKey ? rowObj[foundKey] : "";
+    }
+
+    const USAGE_KEY = "admin_fn_usage";
+    const getUsage = () => { try { return JSON.parse(localStorage.getItem(USAGE_KEY)) || {}; } catch(e) { return {}; } };
+    const bumpUsage = (id) => { const u = getUsage(); u[id] = (u[id]||0)+1; localStorage.setItem(USAGE_KEY, JSON.stringify(u)); };
+
+    const grid = document.getElementById("fnGrid");
+
+    function renderGrid(){
+        const usage = getUsage();
+        grid.innerHTML = "";
+        const sorted = [...FUNCTIONS].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
+
+        sorted.forEach((fn, idx) => {
+            const card = document.createElement("div");
+            card.className = "glass fn-card" + (fn.placeholder ? " placeholder" : "");
+            card.style.order = idx;
+
+            if (!fn.placeholder && fn.href) {
+                card.onclick = () => {
+                    bumpUsage(fn.id);
+                    location.href = fn.href;
+                };
+            }
+
+            card.innerHTML = `
+                <div class="tile-title">
+                    <div class="tile-icon">${fn.icon}</div>
+                    <div>
+                        <div style="font-weight:600;font-size:15px;">${fn.title}</div>
+                        <div class="fn-desc">${fn.description || ""}</div>
+                    </div>
+                </div>
+                ${!fn.placeholder ? `
+                    <div class="fn-status-row" id="status-row-${fn.id}" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:8px;">
+                        <span class="badge badge-default">Loading...</span>
+                    </div>
+                ` : ""}
+            `;
+
+            grid.appendChild(card);
+
+            if (!fn.placeholder && fn.status) {
+                fn.status().then(s => {
+                    const row = card.querySelector(`#status-row-${fn.id}`);
+                    if (row) {
+                        row.innerHTML = (s.pills || []).map(p => `
+                            <span class="badge ${p.className}">${p.value} ${p.label}</span>
+                        `).join("");
+                    }
+                }).catch(err => {
+                    console.error(`Error loading status for ${fn.id}:`, err);
+                    const row = card.querySelector(`#status-row-${fn.id}`);
+                    if (row) {
+                        row.innerHTML = `<span class="badge badge-expired">Status unavailable</span>`;
+                    }
+                });
+            }
         });
 
-        /* ============================================================
-        GOOGLE SHEETS MODULE — SMMC ADMIN PANEL
-        ============================================================ */
-        // config.js  (or inline in a shared include)
-        const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
+        lucide.createIcons();
+    }
 
-        // domain keys must match REGISTRY keys in Gateway.gs
-        const DOMAIN = {
-        members:   "members",
-        documents: "documents",
-        calendar:  "calendar",
-        apps:      "apps",
-        clubs:     "clubs",
-        notes:     "notes",
-        audit:     "audit",
-        tracking:  "tracking"
-        };
-
-        async function fetchSheet(domain, sheetName, hexKey = null) {
-            const action = hexKey ? "display" : "fetch";
-            const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
-                        + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
-
-            const res  = await fetch(url);
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-
-            // Single record
-            if (data.record) return data.record;
-
-            // Bulk — existing parse logic unchanged
-            const rows = Array.isArray(data) ? data : (data.values ?? []);
-            if (!rows.length) return [];
-
-            let hi = rows.findIndex(r => r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
-            if (hi === -1) hi = rows.findIndex(r => r.filter(c => String(c||"").trim()).length > 3);
-            if (hi === -1) return [];
-
-            const headers = rows[hi].map(h => String(h||"").trim());
-            return rows.slice(hi + 1)
-                .filter(r => r.some(c => String(c||"").trim()))
-                .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
-        }
-
-        async function updateSheet(domain, sheetName, hexKey, updates) {
-            const res  = await fetch(GATEWAY_URL, {
-                method:  "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
-            });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            return true;
-        }
-
-        async function appendRow(domain, sheetName, rowData) {
-            const res  = await fetch(GATEWAY_URL, {
-                method:  "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
-            });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            return true;
-        }
-
-        async function deleteRow(domain, sheetName, hexKey) {
-            const res  = await fetch(GATEWAY_URL, {
-                method:  "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
-            });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            return true;
-        }
-
-        window.SMMC_Sheets = { fetchSheet, updateSheet, appendRow, DOMAIN };
-
-        /* =========================================================
-        FUNCTION REGISTRY
-        ========================================================= */
-        const FUNCTIONS = [
-            // Membership Applications
-            {
-                id: "Member-Applications",
-                icon: '<i data-lucide="user-plus" color="#257fb6"></i>',
-                title: "Online Membership Applications",
-                description: "Manage online applications through the process.",
-                href: "applications.html",
-                status: async () => {
-                    const apps = await fetchSheet(DOMAIN.apps, "Membership Applications");
-
-                    const getStatus = (r) => getRowVal(r, ["Status", "App Status", "Application Status"]);
-                    const getApproved = (r) => getRowVal(r, ["Membership Approved", "Approved"]);
-
-                    const received = apps.filter(a => getStatus(a).toLowerCase() === "received").length;
-                    const inProgress = apps.filter(a => getStatus(a).toLowerCase() === "in progress").length;
-                    const awaiting = apps.filter(a => ["awaiting approval", "pending"].includes(getStatus(a).toLowerCase())).length;
-
-                    const approved = apps.filter(a => {
-                        const st = getStatus(a).toLowerCase();
-                        const appv = getApproved(a).toLowerCase();
-                        return st === "processed" && (appv === "true" || appv === "yes" || appv === "approved");
-                    }).length;
-
-                    const rejected = apps.filter(a => {
-                        const st = getStatus(a).toLowerCase();
-                        const appv = getApproved(a).toLowerCase();
-                        return st === "processed" && (appv === "false" || appv === "no" || appv === "rejected");
-                    }).length;
-
-                    return {
-                        pills: [
-                            { label: "Received", value: received, className: "badge-affiliate" },
-                            { label: "In Progress", value: inProgress, className: "badge-default" },
-                            { label: "Awaiting Approval", value: awaiting, className: "badge-renewal" },
-                            { label: "Approved", value: approved, className: "badge-full" },
-                            { label: "Rejected", value: rejected, className: "badge-expired" }
-                        ]
-                    };
-                }
-            },
-            // Member Management 
-            { 
-                id: "member-management", 
-                icon: '<i data-lucide="user-group" color="#257fb6"></i>', 
-                title: "Member Management", 
-                description: "Manage member details and communcation",
-                href: "memberManagement.html",
-                status: async () => {
-                    const members = await fetchSheet(DOMAIN.members, "Members");
-
-                    const getStatus = (r) => getRowVal(r, ["Active", "Membership Status"]).toLowerCase();
-                    const getType = (r) => getRowVal(r, ["Membership Type", "Type", "Membership"]).toLowerCase();
-                    const getPaid = (r) => getRowVal(r, ["Paid-up", "Paid Up", "PaidUp", "Paid"]).toLowerCase();
-
-                    const isActive = (r) => ["true", "yes", "paid"].includes(getStatus(r));
-                    const isPaid = (r) => ["true", "yes", "paid"].includes(getPaid(r));
-
-                    const active = members.filter(isActive).length;
-                    const full = members.filter(r => isActive(r) && getType(r) === "full").length;
-                    const affiliate = members.filter(r => isActive(r) && getType(r) === "affiliate").length;
-                    const expired = members.filter(r => !isActive(r) && getType(r) === "expired").length;
-                    const paidUp = members.filter(r => isActive(r) && isPaid(r)).length;
-
-                    return {
-                        pills: [
-                            { label: "Active", value: active, className: "badge-full" },
-                            { label: "Full", value: full, className: "badge-affiliate" },
-                            { label: "Affiliate", value: affiliate, className: "badge-default" },
-                            { label: "Expired", value: expired, className: "badge-expired" },
-                            { label: "Paid-up", value: paidUp, className: "badge-renewal" }
-                        ]
-                    };
-                }
-            },
-            // Document Management
-            {
-                id: "documentRepository",
-                icon: '<i data-lucide="folder-open" color="#257fb6"></i>',
-                title: "Document Management",
-                description: "Library, search, versioning, review and sign-off.",
-                href: "documentManagement.html",
-                status: async () => {
-                    const docs = await fetchSheet(DOMAIN.documents, "Documents");
-                    const count = (s) => docs.filter(d => getRowVal(d, ["Status"]) === s).length;
-                    return {
-                        pills: [
-                            { label: "Draft", value: count("Draft"), className: "badge-default" },
-                            { label: "In Review", value: count("In Review"), className: "badge-renewal" },
-                            { label: "Signed Off", value: count("Signed Off"), className: "badge-full" }
-                        ]
-                    };
-                }
-            },
-            // Notes Management
-            {
-                id: "notes",
-                icon: '<i data-lucide="notebook-pen" color="#257fb6"></i>',
-                title: "Notes",
-                description: "Capture, manage and action meeting and topic notes.",
-                href: "notes.html",
-                status: async () => {
-                    const [noteRows, actionRows] = await Promise.all([
-                        fetchSheet(DOMAIN.notes, "Notes"),
-                        fetchSheet(DOMAIN.notes, "Actions")
-                    ]);
-                    const now = new Date();
-                    const open = actionRows.filter(a => getRowVal(a,["Status"]).toLowerCase() !== "done").length;
-                    const overdue = actionRows.filter(a => {
-                        const d = new Date(getRowVal(a,["By Date"]));
-                        return getRowVal(a,["Status"]).toLowerCase() !== "done" && !isNaN(d) && d < now;
-                    }).length;
-                    return {
-                        pills: [
-                            { label: "Notes",           value: noteRows.length, className: "badge-full" },
-                            { label: "Open Actions",    value: open,            className: "badge-renewal" },
-                            { label: "Overdue",         value: overdue,         className: overdue > 0 ? "badge-expired" : "badge-default" }
-                        ]
-                    };
-                }
-            },
-            // Calendar management
-            {
-                id: "calendar-management",
-                icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
-                title: "Calendar Management",
-                description: "Manage Calendar Events.",
-                href: "calendarManagement.html",
-                status: async () => {
-                    const events = await fetchSheet(DOMAIN.calendar, "Event Data");
-
-                    // helper to pull Competition regattas
-                    const getCompVal = (row) => getRowVal(row, [
-                        "Competition", 
-                        "competition"
-                    ]).trim().toLowerCase();
-
-                    // Helper to pull the Rescheduled Date field across header variations
-                    const getReschedVal = (row) => getRowVal(row, [
-                        "Rescheduled Date", 
-                        "RescheduledDate", 
-                        "Reschedule Date"
-                    ]).trim().toLowerCase();
-
-                    // count competitions
-                    const compCount = events.filter(e => {
-                        const val = getCompVal(e);
-                        return val.includes("competition");
-                    }).length;
-
-                    // count maintenance days
-                    const maintCount = events.filter(e => {
-                        const val = getCompVal(e);
-                        return val.includes("maintenance");
-                    }).length;
-
-                    // 1. Pending: Column contains "pending" (e.g., "Pending 15/10/2026")
-                    const pendingCount = events.filter(e => {
-                        const val = getReschedVal(e);
-                        return val.includes("pending");
-                    }).length;
-
-                    // 2. Rescheduled: Column is populated with a date string and is no longer pending
-                    const rescheduledCount = events.filter(e => {
-                        const val = getReschedVal(e);
-                        return val !== "" && !val.includes("pending");
-                    }).length;
-
-                    return {
-                        pills: [
-                            {
-                                label: "Regattas",
-                                value: compCount,
-                                className: "badge-full"
-                            },{
-                                label: "Socials",
-                                value: events.length - compCount,
-                                className: "badge-full"
-                            },{
-                                label: "Maintenance",
-                                value: maintCount,
-                                className: "badge-full"
-                            },{
-                                label: "Rescheduled",
-                                value: rescheduledCount,
-                                className: "badge-full"
-                            },{
-                                label: "Pending",
-                                value: pendingCount,
-                                className: "badge-renewal"
-                            },{
-                                label: "Members",
-                                value: fullCount,
-                                className: "badge-full"
-                            },{
-                                label: "Boats",
-                                value: events.length - compCount,
-                                className: "badge-full"
-                            },{
-                                label: "Classes",
-                                value: maintCount,
-                                className: "badge-full"
-                            },{
-                                label: "Events",
-                                value: rescheduledCount,
-                                className: "badge-full"
-                            }
-                        ]
-                    };
-                }
-            },
-            // Calendar management
-            {
-                id: "calendar-management",
-                icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
-                title: "test Management",
-                description: "Manage Calendar Events.",
-                href: "testCalMan.html",
-                status: async () => {
-                    const events = await fetchSheet(DOMAIN.calendar, "Event Data");
-
-                    // helper to pull Competition regattas
-                    const getCompVal = (row) => getRowVal(row, [
-                        "Competition", 
-                        "competition"
-                    ]).trim().toLowerCase();
-
-                    // Helper to pull the Rescheduled Date field across header variations
-                    const getReschedVal = (row) => getRowVal(row, [
-                        "Rescheduled Date", 
-                        "RescheduledDate", 
-                        "Reschedule Date"
-                    ]).trim().toLowerCase();
-
-                    // count competitions
-                    const compCount = events.filter(e => {
-                        const val = getCompVal(e);
-                        return val.includes("competition");
-                    }).length;
-
-                    // count maintenance days
-                    const maintCount = events.filter(e => {
-                        const val = getCompVal(e);
-                        return val.includes("maintenance");
-                    }).length;
-
-                    // 1. Pending: Column contains "pending" (e.g., "Pending 15/10/2026")
-                    const pendingCount = events.filter(e => {
-                        const val = getReschedVal(e);
-                        return val.includes("pending");
-                    }).length;
-
-                    // 2. Rescheduled: Column is populated with a date string and is no longer pending
-                    const rescheduledCount = events.filter(e => {
-                        const val = getReschedVal(e);
-                        return val !== "" && !val.includes("pending");
-                    }).length;
-
-                    return {
-                        pills: [
-                            {
-                                label: "Regattas",
-                                value: compCount,
-                                className: "badge-full"
-                            },{
-                                label: "Socials",
-                                value: events.length - compCount,
-                                className: "badge-full"
-                            },{
-                                label: "Maintenance",
-                                value: maintCount,
-                                className: "badge-full"
-                            },{
-                                label: "Rescheduled",
-                                value: rescheduledCount,
-                                className: "badge-full"
-                            },{
-                                label: "Pending",
-                                value: pendingCount,
-                                className: "badge-renewal"
-                            },
-                        ]
-                    };
-                }
-            },
-            { id: "add-function-slot", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
-        ];
-
-        // Case-insensitive field reader
-        function getVal(rowObj, fieldName) {
-            const targetKey = fieldName.toLowerCase().trim();
-            const foundKey = Object.keys(rowObj).find(k => k.toLowerCase().trim() === targetKey);
-            return foundKey ? rowObj[foundKey] : "";
-        }
-
-        const USAGE_KEY = "admin_fn_usage";
-        const getUsage = () => { try { return JSON.parse(localStorage.getItem(USAGE_KEY)) || {}; } catch(e) { return {}; } };
-        const bumpUsage = (id) => { const u = getUsage(); u[id] = (u[id]||0)+1; localStorage.setItem(USAGE_KEY, JSON.stringify(u)); };
-
-        const grid = document.getElementById("fnGrid");
-
-        function renderGrid(){
-            const usage = getUsage();
-            grid.innerHTML = "";
-            const sorted = [...FUNCTIONS].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
-
-            sorted.forEach((fn, idx) => {
-                const card = document.createElement("div");
-                card.className = "glass fn-card" + (fn.placeholder ? " placeholder" : "");
-                card.style.order = idx;
-
-                if (!fn.placeholder && fn.href) {
-                    card.onclick = () => {
-                        bumpUsage(fn.id);
-                        location.href = fn.href;
-                    };
-                }
-
-                card.innerHTML = `
-                    <div class="tile-title">
-                        <div class="tile-icon">${fn.icon}</div>
-                        <div>
-                            <div style="font-weight:600;font-size:15px;">${fn.title}</div>
-                            <div class="fn-desc">${fn.description || ""}</div>
-                        </div>
-                    </div>
-                    ${!fn.placeholder ? `
-                        <div class="fn-status-row" id="status-row-${fn.id}" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:8px;">
-                            <span class="badge badge-default">Loading...</span>
-                        </div>
-                    ` : ""}
-                `;
-
-                grid.appendChild(card);
-
-                if (!fn.placeholder && fn.status) {
-                    fn.status().then(s => {
-                        const row = card.querySelector(`#status-row-${fn.id}`);
-                        if (row) {
-                            row.innerHTML = (s.pills || []).map(p => `
-                                <span class="badge ${p.className}">${p.value} ${p.label}</span>
-                            `).join("");
-                        }
-                    }).catch(err => {
-                        console.error(`Error loading status for ${fn.id}:`, err);
-                        const row = card.querySelector(`#status-row-${fn.id}`);
-                        if (row) {
-                            row.innerHTML = `<span class="badge badge-expired">Status unavailable</span>`;
-                        }
-                    });
-                }
-            });
-
-            lucide.createIcons();
-        }
-
-        // Single shared source: the AuditLog sheet also written to by Member Management
-        // and Event Rescheduler. Schema: [HexCode, Timestamp, Name, Field, OldValue, NewValue]
-        const AdminLog = {
-            _cache: [],
-            all() {
-                return this._cache;
-            },
-            async refresh() {
-                try {
-                    const rows = await fetchSheet(DOMAIN.audit, "AuditLog");
-                    // fetchSheet returns objects keyed by header row; fall back to raw fetch if headers differ.
-                    this._cache = rows.map(r => {
-                        const vals = Object.values(r);
-                        const isError = String(vals[5] ?? "").startsWith("ERROR:");
-                        return {
-                            timestamp: vals[1], fn: vals[2], sheet: "", field: vals[3],
-                            before: vals[4], after: vals[5],
-                            status: isError ? "error" : "success",
-                            message: isError ? String(vals[5]).replace(/^ERROR:\s*/, "") : ""
-                        };
-                    }).reverse();
-                } catch (err) {
-                    console.error("AuditLog fetch failed:", err);
-                    this._cache = [];
-                }
-                renderLog();
-            }
-        };
-
-        /* ============================================================
-        MEMBER HEALTH BOARD
-        ============================================================ */
-        function pctClass(pct){
-            if (pct === 100) return "whatsapp";
-            if (pct >= 96)  return "glow";
-            if (pct >= 80)  return "amber";
-            return "signal";
-        }
-
-        async function loadMemberHealth(){
+    // Single shared source: the AuditLog sheet also written to by Member Management
+    // and Event Rescheduler. Schema: [HexCode, Timestamp, Name, Field, OldValue, NewValue]
+    const AdminLog = {
+        _cache: [],
+        all() {
+            return this._cache;
+        },
+        async refresh() {
             try {
-                const members = await fetchSheet(DOMAIN.members, "Members");
-                const total = members.length;
-
-                const hasVal = (r, keys) => getRowVal(r, keys) !== "";
-
-                const withPhone = members.filter(m => hasVal(m, ["Telephone", "Phone", "Mobile", "Telephone Number", "Phone Number"])).length;
-                const withEmail = members.filter(m => hasVal(m, ["Email", "Email Address"])).length;
-                const withWhatsapp = members.filter(m => hasVal(m, ["WhatsApp", "Whatsapp Number", "WhatsApp Number"])).length;
-                const withPaidUp = members.filter(m => hasVal(m, ["Paid Up", "PaidUp"])).length;
-
-                const stats = [
-                    { id: "health-phone", count: withPhone },
-                    { id: "health-email", count: withEmail },
-                    { id: "health-whatsapp", count: withWhatsapp },
-                    { id: "health-financial", count: withPaidUp },
-                ];
-
-                stats.forEach(s => {
-                    const pct = total ? Math.round((s.count / total) * 100) : 0;
-                    const el = document.getElementById(s.id);
-                    el.querySelector(".health-pct").textContent = pct + "%";
-                    el.querySelector(".health-pct").className = "health-pct " + pctClass(pct);
-                    el.querySelector(".health-sub").textContent = `${s.count} of ${total} members`;
-                });
+                const rows = await fetchSheet(DOMAIN.audit, "AuditLog");
+                // fetchSheet returns objects keyed by header row; fall back to raw fetch if headers differ.
+                this._cache = rows.map(r => {
+                    const vals = Object.values(r);
+                    const isError = String(vals[5] ?? "").startsWith("ERROR:");
+                    return {
+                        timestamp: vals[1], fn: vals[2], sheet: "", field: vals[3],
+                        before: vals[4], after: vals[5],
+                        status: isError ? "error" : "success",
+                        message: isError ? String(vals[5]).replace(/^ERROR:\s*/, "") : ""
+                    };
+                }).reverse();
             } catch (err) {
-                console.error("Error loading member health:", err);
-                ["health-phone", "health-email", "health-whatsapp"].forEach(id => {
-                    const el = document.getElementById(id);
-                    el.querySelector(".health-pct").textContent = "—";
-                    el.querySelector(".health-pct").className = "health-pct bad";
-                    el.querySelector(".health-sub").textContent = "Unavailable";
-                });
+                console.error("AuditLog fetch failed:", err);
+                this._cache = [];
             }
+            renderLog();
         }
+    };
 
-        renderGrid();
-        AdminLog.refresh();
-        loadMemberHealth();
+    /* ============================================================
+    MEMBER HEALTH BOARD
+    ============================================================ */
+    function pctClass(pct){
+        if (pct === 100) return "whatsapp";
+        if (pct >= 96)  return "glow";
+        if (pct >= 80)  return "amber";
+        return "signal";
+    }
+
+    async function loadMemberHealth(){
+        try {
+            const members = await fetchSheet(DOMAIN.members, "Members");
+            const total = members.length;
+            const activeMembers = members.filter(m => m.Active === true);
+            const hasVal = (r, keys) => getRowVal(r, keys) !== "";
+
+            const withPhone = activeMembers.filter(m => hasVal(m, ["Telephone", "Phone", "Mobile", "Telephone Number", "Phone Number"])).length;
+            const withEmail = activeMembers.filter(m => hasVal(m, ["Email", "Email Address"])).length;
+            const withWhatsapp = activeMembers.filter(m => hasVal(m, ["WhatsApp", "Whatsapp Number", "WhatsApp Number"])).length;
+            const withPaidUp = activeMembers.filter(m => hasVal(m, ["Paid Up", "PaidUp"])).length;
+            const withActive = members.filter(m => hasVal(m, ["Active", "active"])).length;
+            const withAddr = activeMembers.filter(m => hasVal(m, ["Address Line", "Post Code"])).length;
+            const withCont = activeMembers.filter(m => hasVal(m, ["Emergency Contact Name", "Emergency Contact"])).length;
+            const withMulti = activeMembers.filter(m => !m["Home Club"]).length;
+
+            const stats = [
+                { id: "health-phone", count: withPhone },
+                { id: "health-email", count: withEmail },
+                { id: "health-whatsapp", count: withWhatsapp },
+                { id: "health-financial", count: withPaidUp },
+                { id: "health-active", count: withActive },
+                { id: "health-address", count: withAddr },
+                { id: "health-contacts", count: withCont },
+                { id: "health-primary", count: withMulti }
+            ];
+
+            stats.forEach(s => {
+                const pct = total ? Math.round((s.count / total) * 100) : 0;
+                const el = document.getElementById(s.id);
+                el.querySelector(".health-pct").textContent = pct + "%";
+                el.querySelector(".health-pct").className = "health-pct " + pctClass(pct);
+                el.querySelector(".health-sub").textContent = `${s.count} of ${total} members`;
+            });
+        } catch (err) {
+            console.error("Error loading member health:", err);
+            ["health-phone", "health-email", "health-whatsapp"].forEach(id => {
+                const el = document.getElementById(id);
+                el.querySelector(".health-pct").textContent = "—";
+                el.querySelector(".health-pct").className = "health-pct bad";
+                el.querySelector(".health-sub").textContent = "Unavailable";
+            });
+        }
+    }
+
+    renderGrid();
+    AdminLog.refresh();
+    loadMemberHealth();
     </script>
 </body>
 </html>
