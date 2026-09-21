@@ -623,32 +623,22 @@ transition: all 0.15s ease; text-transform: uppercase; letter-spacing: 0.04em;
         <button class="filter-pill" id="rescheduledToggle">Rescheduled Only</button>
         <div class="class-pill-group" id="classPillGroup"></div>
         <div style="margin-left: auto;">
-            <div class="bulk-actions-bar" style="display:inline-flex; align-items:center; gap:6px; margin-left:10px;">
-              <button class="bulk-icon-btn bulk-cal" id="bulkAddCalBtn" title="Add selected to Calendar">
-                <i data-lucide="calendar-plus" size="15"></i> Calendar
-              </button>
-              <button class="bulk-icon-btn bulk-resched" id="bulkReschedBtn" title="Reschedule selected">
-                <i data-lucide="calendar-sync" size="15"></i> Reschedule
-              </button>
-              <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Delete selected">
-                <i data-lucide="trash-2" size="15"></i> Edit
-              </button>
-              <input type="checkbox" id="selectAllChk">
-              <label for="selectAllChk" class="select-all-label">Select All</label>
-            </div>
+
+            <button class="bulk-icon-btn bulk-cal" id="bulkAddCalBtn" title="Add selected to Calendar">
+            <i data-lucide="calendar-plus" size="15"></i>
+            </button>
+            <button class="bulk-icon-btn bulk-resched" id="bulkReschedBtn" title="Reschedule selected">
+            <i data-lucide="calendar-sync" size="15"></i>
+            </button>
+            <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Edit selected">
+            <i data-lucide="trash-2" size="15"></i>
+            </button>
+            <input type="checkbox" id="selectAllChk">
+            <label for="selectAllChk" class="select-all-label">Select All</label>
+
         </div>
       </div>
-          <div class="row-actions" style="justify-content: flex-end;">
-            <button class="icon-btn btn-cal" title="Add to Calendar" onclick="addToCalendar('${e.HexKey}')">
-              <i data-lucide="calendar-plus" size="15"></i>
-            </button>
-            <button class="icon-btn btn-resched" title="Reschedule Event" onclick="selectEvent('${e.HexKey}')">
-              <i data-lucide="calendar-sync" size="15"></i>
-            </button>
-            <button class="icon-btn btn-edit" title="Edit Event" onclick="openEditModal('${e.HexKey}')">
-              <i data-lucide="pencil" size="15"></i>
-            </button>
-          </div>
+
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>
