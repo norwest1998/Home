@@ -721,6 +721,10 @@
                 fetchSheet(NOTES_WEBAPP_URL, ACTIONS_SHEET),
                 fetchSheet(MEMBERS_WEBAPP_URL, MEMBERS_SHEET).catch(() => [])
             ]);
+console.log("notes", notes.length);
+console.log("topics", topics.length);
+console.log("actions", actions.length);
+console.log("members", members.length);
             // Filter active members — boolean TRUE or string "TRUE"
             members = members.filter(m => {
                 const active = m["Active"] ?? m["active"];
@@ -733,6 +737,7 @@
                 `<tr class="spinner-row"><td colspan="7" style="color:#ff6b6b;">Failed to load. Check connection./nError: ${e.message}</td></tr>`;
             return;
         }
+
         renderStats();
         renderTopicDropdowns();
         renderTable();
