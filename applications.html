@@ -511,8 +511,8 @@
 
     async function loadApplications() {
       try {
-        const allApplications  = await fetchSheet(DOMAIN.apps, "Membership Applications");
-        renderTable();
+        allApplications  = await fetchSheet(DOMAIN.apps, "Membership Applications");
+         ();
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
         document.getElementById('appsTableBody').innerHTML =
