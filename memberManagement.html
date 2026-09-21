@@ -525,12 +525,12 @@ console.log("rows sample:", rows.slice(0, 3));
 
     async function loadMembers() {
         try {
-            const [membersData, boatsData] = await Promise.all([
+            const [allMembers, allBoats] = await Promise.all([
                 fetchSheet(DOMAIN.members, "Members"),
                 fetchSheet(DOMAIN.members, "ClassMembers")
             ]);
-            allMembers = parseMembersSheet(membersData);
-            allBoats = parseBoatsSheet(boatsData);
+            /* allMembers = parseMembersSheet(membersData);
+            allBoats = parseBoatsSheet(boatsData); */
             populateMembershipFilterOptions();
             filterMemberDirectory();
         } catch (err) {

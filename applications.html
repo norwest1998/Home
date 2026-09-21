@@ -466,7 +466,7 @@
         else if (s.includes('deliberation')) counts.deliberation++;
         else if (s.includes('awaiting'))     counts.awaiting++;
         else if (s.includes('processed'))    counts.processed++;
-        else                                  counts.received++;
+        else                                 counts.received++;
       });
       document.getElementById('statReceived').textContent         = counts.received;
       document.getElementById('statInProgress').textContent       = counts.progress;
@@ -512,7 +512,7 @@
     async function loadApplications() {
       try {
         allApplications  = await fetchSheet(DOMAIN.apps, "Membership Applications");
-         renderTable();
+        renderTable();
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
         document.getElementById('appsTableBody').innerHTML =
