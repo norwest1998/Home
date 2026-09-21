@@ -648,7 +648,7 @@
     }
 
     async function activeMembers() {
-        const res  = await fetch(`MEMBERS_WEBAPP_URL?action=activeMembers`);
+        const res  = await fetch(`${MEMBERS_WEBAPP_URL}?action=activeMembers`);
         const data = await res.json();
         if (!data || data.error) throw new Error(data?.error || "Fetch failed");
         const rows = Array.isArray(data) ? data : (data.values || []);
