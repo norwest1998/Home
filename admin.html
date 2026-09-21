@@ -754,18 +754,18 @@
     async function loadMemberHealth(){
         try {
             const members = await fetchSheet(DOMAIN.members, "Members");
-            const total = members.length;
             const activeMembers = members.filter(m => m.Active === true);
+            const total = members.length;
             const hasVal = (r, keys) => getRowVal(r, keys) !== "";
 
-            const withPhone = activeMembers.filter(m => hasVal(m, ["Telephone", "Phone", "Mobile", "Telephone Number", "Phone Number"])).length;
-            const withEmail = activeMembers.filter(m => hasVal(m, ["Email", "Email Address"])).length;
-            const withWhatsapp = activeMembers.filter(m => hasVal(m, ["WhatsApp", "Whatsapp Number", "WhatsApp Number"])).length;
-            const withPaidUp = activeMembers.filter(m => hasVal(m, ["Paid Up", "PaidUp"])).length;
+            const withPhone = members.filter(m => hasVal(m, ["Telephone", "Phone", "Mobile", "Telephone Number", "Phone Number"])).length;
+            const withEmail = members.filter(m => hasVal(m, ["Email", "Email Address"])).length;
+            const withWhatsapp = members.filter(m => hasVal(m, ["WhatsApp", "Whatsapp Number", "WhatsApp Number"])).length;
+            const withPaidUp = members.filter(m => hasVal(m, ["Paid Up", "PaidUp"])).length;
             const withActive = members.filter(m => hasVal(m, ["Active", "active"])).length;
-            const withAddr = activeMembers.filter(m => hasVal(m, ["Address Line", "Post Code"])).length;
-            const withCont = activeMembers.filter(m => hasVal(m, ["Emergency Contact Name", "Emergency Contact"])).length;
-            const withMulti = activeMembers.filter(m => !m["Home Club"]).length;
+            const withAddr = members.filter(m => hasVal(m, ["Address Line", "Post Code"])).length;
+            const withCont = members.filter(m => hasVal(m, ["Emergency Contact Name", "Emergency Contact"])).length;
+            const withMulti = members.filter(m => !m["Home Club"]).length;
 
             const stats = [
                 { id: "health-phone", count: withPhone },
@@ -779,11 +779,11 @@
             ];
 
             stats.forEach(s => {
-                const pct = total ? Math.round((s.count / total) * 100) : 0;
+                const pct = total ? Math.round((s.count / activeMembers.length) * 100) : 0;
                 const el = document.getElementById(s.id);
                 el.querySelector(".health-pct").textContent = pct + "%";
                 el.querySelector(".health-pct").className = "health-pct " + pctClass(pct);
-                el.querySelector(".health-sub").textContent = `${s.count} of ${total} members`;
+                el.querySelector(".health-sub").textContent = `${s.count} of ${activeMembers.length} members`;
             });
         } catch (err) {
             console.error("Error loading member health:", err);

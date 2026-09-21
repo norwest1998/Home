@@ -334,6 +334,11 @@
     }
     .action-remove:hover { color: #ff6b6b; }
 
+    /* Search wrap — icon inside input */
+    .search-wrap { position: relative; display: flex; align-items: center; }
+    .search-wrap .nav-icon { position: absolute; left: 10px; width: 14px; height: 14px; pointer-events: none; color: var(--foam-dim); }
+    .search-wrap .search-input { padding-left: 32px; }
+
     /* Audit Log */
     .log-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
     .log-toolbar .search-wrap { flex: 1; min-width: 200px; margin-bottom: 0; }
@@ -376,11 +381,11 @@
 
     <main class="container">
 
-        <div class="admin-header">
+        <div class="admin-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
             <div class="admin-title-group">
                <h1>Notes Management Console</h1>
             </div>
-            <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
+            <a href="admin.html" class="btn btn-ghost" style="flex-shrink:0;">Back to Dashboard</a>
         </div>
 
         <div class="section-head">
@@ -459,11 +464,12 @@
                         <i class="nav-icon" data-lucide="search" size="8"></i>
                         <input class="search-input" id="logSearch" placeholder='Search action, sheet, record…'>
                     </div>
-                    <button type="button" class="app-filter-btn active" data-logfilter="all">All</button>
-                    <button type="button" class="app-filter-btn" data-logfilter="APPEND">Created</button>
-                    <button type="button" class="app-filter-btn" data-logfilter="UPDATE">Updated</button>
-                    <button type="button" class="app-filter-btn" data-logfilter="DELETE">Deleted</button>
-                    <button type="button" class="app-filter-btn" data-logfilter="EMAIL">Emailed</button>
+                    <select class="glass-select" id="logSheetFilter">
+                        <option value="notes" selected>Notes</option>
+                        <option value="all">All</option>
+                        <option value="actions">Actions</option>
+                        <option value="topics">Topics</option>
+                    </select>
                     <button class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
                 </div>
             </div>
@@ -708,7 +714,7 @@
     let actions = [];
     let members = [];
     let auditRows = [];
-    let logFilter = "all";
+    let logFilter = "notes";
     let editingNoteId = null;
     let copyInEmails  = [];
     let actionRows    = [];
@@ -1288,7 +1294,10 @@
         const body  = document.getElementById("logBody");
         const empty = document.getElementById("logEmpty");
         let rows = [...auditRows];
-        if (logFilter !== "all") rows = rows.filter(r => gv(r,"Action").toUpperCase() === logFilter);
+        if (logFilter === "notes")   rows = rows.filter(r => gv(r,"Sheet").toLowerCase() === "notes");
+        else if (logFilter === "actions") rows = rows.filter(r => gv(r,"Sheet").toLowerCase() === "actions");
+        else if (logFilter === "topics")  rows = rows.filter(r => gv(r,"Sheet").toLowerCase() === "topics");
+        // "all" = no filter
         if (q) rows = rows.filter(r =>
             gv(r,"Action").toLowerCase().includes(q)   ||
             gv(r,"Sheet").toLowerCase().includes(q)    ||
@@ -1319,13 +1328,9 @@
         empty.style.display = rows.length ? "none" : "block";
     }
 
-    document.querySelectorAll(".app-filter-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            document.querySelectorAll(".app-filter-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            logFilter = btn.dataset.logfilter;
-            renderLog();
-        });
+    document.getElementById("logSheetFilter").addEventListener("change", function() {
+        logFilter = this.value;
+        renderLog();
     });
     document.getElementById("logSearch").addEventListener("input", renderLog);
     document.getElementById("refreshLogBtn").addEventListener("click", loadAuditLog);
