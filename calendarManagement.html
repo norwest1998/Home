@@ -922,53 +922,50 @@ const SHEETS = {
 };
 
 async function fetchSheet(WEBAPP_URL, sheetName) {
+  const res = await fetch(
+      `${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`
+  );
 
-    const res = await fetch(
-        `${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`
-    );
+  const data = await res.json();
+  if (data.error) {
+    throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
+  }
 
-    const data = await res.json();
+  // Array:
+  if (Array.isArray(data)) {
+    console.log("Returning an array");
+    return data;
+  }
+  const rows = Array.isArray(data.values) ? data.values : [];
+  if (!rows.length) return [];
 
-    if (data.error) {
-        throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
-    }
+console.log(rows);
 
-    // Format 1: already an array of objects
-    if (Array.isArray(data)) {
-        return data;
-    }
-
-    // Format 2: Google Sheets values[][]
-    const rows = data.values || [];
-    if (!rows.length) return [];
-
-    let headerIndex = rows.findIndex(r =>
+  let headerIndex = rows.findIndex(r =>
+    Array.isArray(r) &&
+    r.some(cell => {
+        const val = String(cell || "").trim().toLowerCase();
+        return val === "rowid" || val === "status";
+    })
+  );
+  if (headerIndex === -1) {
+    headerIndex = rows.findIndex(r =>
         Array.isArray(r) &&
-        r.some(cell => {
-            const val = String(cell || "").trim().toLowerCase();
-            return val === "rowid" || val === "status";
-        })
+        r.filter(c => String(c || "").trim() !== "").length > 3
     );
+  }
+  if (headerIndex === -1) return [];
 
-    if (headerIndex === -1) {
-        headerIndex = rows.findIndex(r =>
-            Array.isArray(r) &&
-            r.filter(c => String(c || "").trim() !== "").length > 3
-        );
-    }
-
-    if (headerIndex === -1) return [];
-
-    const headers = rows[headerIndex].map(h => String(h || "").trim());
-
-    return rows
-        .slice(headerIndex + 1)
-        .filter(r => r.some(c => String(c || "").trim() !== ""))
-        .map(r => {
-            const obj = {};
-            headers.forEach((h, i) => obj[h] = r[i] ?? "");
-            return obj;
-        });
+  const headers = rows[headerIndex].map(h => String(h || "").trim());
+  console.log("Returning object rows");
+  return rows
+    .slice(headerIndex + 1)
+    .filter(r => r.some(c => String(c || "").trim() !== ""))
+    .map(r => {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = r[i] ?? "");
+        return obj;
+    });
 }
 
 async function updateSheet(WEBAPP_URL, sheetName, hexKey, updates) {
