@@ -17,13 +17,6 @@
         gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
     }
 
-    .admin-header {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
-    }
-    .admin-title-group { display: flex; flex-direction: column; gap: 4px; }
-    .admin-title-group h1 { font-family: var(--font-display); font-size: 28px; color: var(--foam); }
-    
     /* Stats board */
     .stats-grid {
         display: grid;
@@ -485,12 +478,12 @@
                     <table class="log-table">
                         <thead>
                             <tr>
-                                <th>Time</th>
-                                <th>User</th>
-                                <th>Action</th>
-                                <th>Sheet</th>
-                                <th>Record ID</th>
-                                <th>Detail</th>
+                                <th>Timestamp</th>
+                                <th>Name</th>
+                                <th>Field</th>
+                                <th>HexCode</th>
+                                <th>Old Value</th>
+                                <th>New Value</th>
                             </tr>
                         </thead>
                         <tbody id="logBody"></tbody>
@@ -711,6 +704,7 @@
         return true;
     }
     let GOOGLE_EXPORT_FOLDER_ID = "";
+    const currentUserName = localStorage.getItem("memberName") || localStorage.getItem("userName") || "Unknown";
 
 
     /* =========================================================
@@ -725,6 +719,30 @@
     let editingNoteId = null;
     let copyInEmails  = [];
     let actionRows    = [];
+    let _oldNoteSnapshot = null; // captures pre-edit state for audit diff
+
+    /* =========================================================
+       AUDIT LOG WRITER
+       ========================================================= */
+    function isoNow() {
+        // Local date-time without timezone, e.g. "2026-09-21 14:35:00"
+        const d = new Date();
+        const pad = n => String(n).padStart(2,"0");
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    async function writeAuditLog(hexCode, field, oldValue, newValue) {
+        try {
+            await appendSheet(DOMAIN.audit, "Audit Trail", {
+                HexCode:   hexCode,
+                Timestamp: isoNow(),
+                Name:      currentUserName || "Unknown",
+                Field:     field,
+                "Old Value": oldValue,
+                "New Value": newValue
+            });
+        } catch(e) { console.warn("Audit log write failed:", e.message); }
+    }
 
     /* =========================================================
        HELPERS
@@ -891,6 +909,7 @@
         editingNoteId = nid;
         copyInEmails  = [];
         actionRows    = [];
+        _oldNoteSnapshot = null;
         const isNew   = !nid;
         document.getElementById("modalTitle").textContent        = isNew ? "New Note" : "Edit Note";
         document.getElementById("modalDelete").style.display     = isNew ? "none" : "inline-flex";
@@ -920,6 +939,16 @@
                 byMemberEmail: gv(a,"By Member Email"),
                 status:        gv(a,"Status")
             }));
+            // Snapshot for audit diff
+            _oldNoteSnapshot = {
+                Date:        gv(n,"Date"),
+                Topic:       gv(n,"Topic"),
+                SubTopic:    gv(n,"SubTopic","Sub Topic"),
+                Note:        gv(n,"Note"),
+                Attachments: gv(n,"Attachments"),
+                CopyIn:      gv(n,"CopyIn","Copy In"),
+                Actions:     actionRows.map(a => `${a.action} (${a.byMember||"—"}, ${a.byDate||"—"})`).join("; ")
+            };
         }
         renderAttachPreview();
         renderCopyInTags();
@@ -1124,6 +1153,7 @@
 
         try {
             const nid = editingNoteId || noteId();
+            const isNew = !editingNoteId;
             const rowData = {
                 NoteID:      nid,
                 Date:        date,
@@ -1141,10 +1171,35 @@
                 await appendSheet(DOMAIN.notes, "Notes", rowData);
             }
 
+            // ── Audit log ──────────────────────────────────────────
+            if (isNew) {
+                await writeAuditLog(nid, "Notes",
+                    "",
+                    `Topic:${topic} | Date:${date} | Note:${note.slice(0,100)}`
+                );
+            } else if (_oldNoteSnapshot) {
+                const newSnap = {
+                    Date:        date,
+                    Topic:       topic,
+                    SubTopic:    document.getElementById("fSubTopic").value.trim(),
+                    Note:        note,
+                    Attachments: document.getElementById("fAttachments").value.trim(),
+                    CopyIn:      copyInEmails.join(", ")
+                };
+                for (const [field, oldVal] of Object.entries(_oldNoteSnapshot)) {
+                    if (field === "Actions") continue; // handled below
+                    const newVal = newSnap[field] ?? "";
+                    if (String(oldVal) !== String(newVal)) {
+                        await writeAuditLog(nid, `Notes / ${field}`, oldVal, newVal);
+                    }
+                }
+            }
+            // ── End audit log ──────────────────────────────────────
+
             const newActions = [];
             for (const a of actionRows) {
                 if (!a.action.trim()) continue;
-                const isNew = !a.id;
+                const isNewAction = !a.id;
                 const aid   = a.id || noteId();
                 const aData = {
                     ActionID:          aid,
@@ -1155,8 +1210,25 @@
                     "By Member Email": a.byMemberEmail || "",
                     Status:            a.status || "Open"
                 };
-                if (a.id) { await updateSheet(DOMAIN.notes, "Actions", a.id, aData); }
-                else      { await appendSheet(DOMAIN.notes, "Actions", aData); if (isNew) newActions.push(aData); }
+                if (a.id) {
+                    // Find old action for diff
+                    const oldA = (_oldNoteSnapshot ? actions.find(x => gv(x,"ActionID") === a.id) : null);
+                    await updateSheet(DOMAIN.notes, "Actions", a.id, aData);
+                    if (oldA) {
+                        const oldStr = `${gv(oldA,"Action")} (${gv(oldA,"By Member")||"—"}, ${gv(oldA,"By Date")||"—"})`;
+                        const newStr = `${a.action} (${a.byMember||"—"}, ${a.byDate||"—"})`;
+                        if (oldStr !== newStr) await writeAuditLog(nid, "Actions", oldStr, newStr);
+                    }
+                } else {
+                    await appendSheet(DOMAIN.notes, "Actions", aData);
+                    if (isNewAction) {
+                        newActions.push(aData);
+                        await writeAuditLog(nid, "Actions",
+                            "",
+                            `${a.action} (${a.byMember||"—"}, ${a.byDate||"—"})`
+                        );
+                    }
+                }
             }
 
             if (newActions.length) await sendActionEmails(newActions, nid, topic, date);
@@ -1203,9 +1275,20 @@
         if (!editingNoteId) return;
         if (!confirm("Delete this note and all its actions? This cannot be undone.")) return;
         try {
+            const n = notes.find(n => gv(n,"NoteID") === editingNoteId);
+            const oldSummary = n
+                ? `Topic:${gv(n,"Topic")} | Date:${gv(n,"Date")} | Note:${gv(n,"Note").slice(0,100)}`
+                : editingNoteId;
+            await writeAuditLog(editingNoteId, "Notes", oldSummary, "DELETED");
             await deleteSheet(DOMAIN.notes, "Notes", editingNoteId);
             const related = actions.filter(a => gv(a,"NoteID") === editingNoteId);
-            for (const a of related) await deleteSheet(DOMAIN.notes, "Actions", gv(a,"ActionID"));
+            for (const a of related) {
+                await writeAuditLog(editingNoteId, "Actions",
+                    `${gv(a,"Action")} (${gv(a,"By Member")||"—"}, ${gv(a,"By Date")||"—"})`,
+                    "DELETED"
+                );
+                await deleteSheet(DOMAIN.notes, "Actions", gv(a,"ActionID"));
+            }
             await loadAll();
             await loadAuditLog();
             closeNoteModal();
@@ -1279,21 +1362,11 @@
         const btn = document.getElementById("refreshLogBtn");
         btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
         try {
-            auditRows = await fetchSheet(DOMAIN.audit, "AuditLog");
+            auditRows = await fetchSheet(DOMAIN.audit, "Audit Trail");
             auditRows.reverse(); // newest first
         } catch(e) { console.error("AuditLog fetch failed:", e); auditRows = []; }
         renderLog();
         btn.disabled = false; btn.textContent = "Refresh";
-    }
-
-    function actionBadgeClass(action) {
-        switch ((action||"").toUpperCase()) {
-            case "APPEND": return "badge-full";
-            case "UPDATE": return "badge-renewal";
-            case "DELETE": return "badge-expired";
-            case "EMAIL":  return "badge-default";
-            default:       return "badge-default";
-        }
     }
 
     function renderLog() {
@@ -1301,37 +1374,25 @@
         const body  = document.getElementById("logBody");
         const empty = document.getElementById("logEmpty");
         let rows = [...auditRows];
-        if (logFilter === "notes")   rows = rows.filter(r => gv(r,"Sheet").toLowerCase() === "notes");
-        else if (logFilter === "actions") rows = rows.filter(r => gv(r,"Sheet").toLowerCase() === "actions");
-        else if (logFilter === "topics")  rows = rows.filter(r => gv(r,"Sheet").toLowerCase() === "topics");
+        if (logFilter === "notes")        rows = rows.filter(r => gv(r,"Field").toLowerCase().startsWith("notes"));
+        else if (logFilter === "actions") rows = rows.filter(r => gv(r,"Field").toLowerCase().startsWith("actions"));
+        else if (logFilter === "topics")  rows = rows.filter(r => gv(r,"Field").toLowerCase().startsWith("topics"));
         // "all" = no filter
         if (q) rows = rows.filter(r =>
-            gv(r,"Action").toLowerCase().includes(q)   ||
-            gv(r,"Sheet").toLowerCase().includes(q)    ||
-            gv(r,"RecordID").toLowerCase().includes(q) ||
-            gv(r,"User").toLowerCase().includes(q)     ||
-            gv(r,"Detail").toLowerCase().includes(q)
+            gv(r,"HexCode").toLowerCase().includes(q)    ||
+            gv(r,"Name").toLowerCase().includes(q)       ||
+            gv(r,"Field").toLowerCase().includes(q)      ||
+            gv(r,"Old Value").toLowerCase().includes(q)  ||
+            gv(r,"New Value").toLowerCase().includes(q)
         );
-        body.innerHTML = rows.map(r => {
-            const action = gv(r,"Action");
-            const detail = gv(r,"Detail");
-            let detailHtml = detail;
-            try {
-                const parsed = JSON.parse(detail);
-                detailHtml = Object.entries(parsed)
-                    .filter(([k]) => !["NoteID","ActionID","TopicID","CreatedAt","LastUpdated"].includes(k))
-                    .map(([k,v]) => `<span style="color:var(--foam-dim)">${k}:</span> ${String(v).slice(0,60)}`)
-                    .join(" · ");
-            } catch(e) { /* raw text */ }
-            return `<tr>
-                <td style="white-space:nowrap;">${fmtTime(gv(r,"Timestamp"))}</td>
-                <td style="font-size:11px;">${gv(r,"User")}</td>
-                <td><span class="badge ${actionBadgeClass(action)}">${action}</span></td>
-                <td>${gv(r,"Sheet")}</td>
-                <td style="font-family:monospace;font-size:11px;">${gv(r,"RecordID").slice(0,14)}</td>
-                <td style="font-size:11.5px;max-width:300px;word-break:break-word;">${detailHtml}</td>
-            </tr>`;
-        }).join("");
+        body.innerHTML = rows.map(r => `<tr>
+            <td style="white-space:nowrap;font-size:11.5px;">${fmtTime(gv(r,"Timestamp"))}</td>
+            <td style="font-size:11px;">${gv(r,"Name")}</td>
+            <td style="font-size:12px;">${gv(r,"Field")}</td>
+            <td style="font-family:monospace;font-size:11px;">${gv(r,"HexCode").slice(0,14)}</td>
+            <td style="font-size:11.5px;max-width:200px;word-break:break-word;color:var(--foam-dim);">${gv(r,"Old Value").slice(0,120)}</td>
+            <td style="font-size:11.5px;max-width:200px;word-break:break-word;">${gv(r,"New Value").slice(0,120)}</td>
+        </tr>`).join("");
         empty.style.display = rows.length ? "none" : "block";
     }
 
