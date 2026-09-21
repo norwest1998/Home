@@ -305,66 +305,7 @@
     tracking:  "tracking"
     };
     
-    let allApplications = [];
 
-    async function fetchSheet(domain, sheetName, hexKey = null) {
-        const action = hexKey ? "display" : "fetch";
-        const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
-                    + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
-
-        const res  = await fetch(url);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        // Single record
-        if (data.record) return data.record;
-
-        // Bulk — existing parse logic unchanged
-        const rows = Array.isArray(data) ? data : (data.values ?? []);
-        if (!rows.length) return [];
-
-        let hi = rows.findIndex(r => r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
-        if (hi === -1) hi = rows.findIndex(r => r.filter(c => String(c||"").trim()).length > 3);
-        if (hi === -1) return [];
-
-        const headers = rows[hi].map(h => String(h||"").trim());
-        return rows.slice(hi + 1)
-            .filter(r => r.some(c => String(c||"").trim()))
-            .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
-    }
-
-    async function updateSheet(domain, sheetName, hexKey, updates) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
-
-    async function appendRow(domain, sheetName, rowData) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
-
-    async function deleteRow(domain, sheetName, hexKey) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
 
     /* =========================================================
     APPLICATIONS DATA MODULE
@@ -373,6 +314,7 @@
     const APP_DETAIL_API = 'https://script.google.com/macros/s/AKfycbyWulPkIPBPaLA4f85ygVDpJUa-e3fWpY-XOYzTQ_2gF8h9EfuWinBdTiR1DtjYWSwl9g/exec';
 
     let selectedRowId = null;
+    let allApplications = [];
 
     function esc(s) {
       const d = document.createElement('div');
@@ -457,6 +399,65 @@
         return { label: 'Urgent, Attention required', cls: 'status-urgent' };
       }
       return { label: a.status, cls: appStatusCSSClass(a.status) };
+    }
+
+    async function fetchSheet(domain, sheetName, hexKey = null) {
+        const action = hexKey ? "display" : "fetch";
+        const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
+                    + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
+
+        const res  = await fetch(url);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        // Single record
+        if (data.record) return data.record;
+
+        // Bulk — existing parse logic unchanged
+        const rows = Array.isArray(data) ? data : (data.values ?? []);
+        if (!rows.length) return [];
+
+        let hi = rows.findIndex(r => r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
+        if (hi === -1) hi = rows.findIndex(r => r.filter(c => String(c||"").trim()).length > 3);
+        if (hi === -1) return [];
+
+        const headers = rows[hi].map(h => String(h||"").trim());
+        return rows.slice(hi + 1)
+            .filter(r => r.some(c => String(c||"").trim()))
+            .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
+    }
+
+    async function updateSheet(domain, sheetName, hexKey, updates) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+
+    async function appendRow(domain, sheetName, rowData) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+
+    async function deleteRow(domain, sheetName, hexKey) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
     }
 
     function updateStats(apps) {
