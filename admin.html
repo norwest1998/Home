@@ -148,42 +148,42 @@
         <section class="health-grid" id="healthGrid">
             <div class="glass health-stat" id="health-phone">
                 <div class="health-pct">—</div>
-                <div class="health-label">WITH TELEPHONE NUMBER</div>
+                <div class="health-label">With telephone number</div>
                 <div class="health-sub">Loading…</div>
             </div>
             <div class="glass health-stat" id="health-email">
                 <div class="health-pct">—</div>
-                <div class="health-label">WITH EMAIL</div>
+                <div class="health-label">With emailL</div>
                 <div class="health-sub">Loading…</div>
             </div>
             <div class="glass health-stat" id="health-whatsapp">
                 <div class="health-pct">—</div>
-                <div class="health-label">WITH WHATSAPP</div>
+                <div class="health-label">Using WhatsApp</div>
                 <div class="health-sub">Loading…</div>
             </div>
             <div class="glass health-stat" id="health-financial">
                 <div class="health-pct">—</div>
-                <div class="health-label">PAID UP</div>
+                <div class="health-label">Financial</div>
                 <div class="health-sub">Loading…</div>
             </div>
             <div class="glass health-stat" id="health-active">
                 <div class="health-pct">—</div>
-                <div class="health-label">Full Members</div>
+                <div class="health-label">Active members</div>
                 <div class="health-sub">Loading…</div>
             </div>
             <div class="glass health-stat" id="health-address">
                 <div class="health-pct">—</div>
-                <div class="health-label">Registered</div>
+                <div class="health-label">With an address</div>
                 <div class="health-sub">Loading…</div>
             </div>
             <div class="glass health-stat" id="health-contacts">
                 <div class="health-pct">—</div>
-                <div class="health-label">Classes sailed</div>
+                <div class="health-label">With an emergency contact</div>
                 <div class="health-sub">Loading…</div>
             </div>
             <div class="glass health-stat" id="health-primary">
                 <div class="health-pct">—</div>
-                <div class="health-label">Rescheduled</div>
+                <div class="health-label">Full members</div>
                 <div class="health-sub">Loading…</div>
             </div>
         </section>
@@ -779,11 +779,11 @@
             ];
 
             stats.forEach(s => {
-                const pct = total ? Math.round((s.count / activeMembers.length) * 100) : 0;
+                const pct = total ? Math.round((s.count / total) * 100) : 0;
                 const el = document.getElementById(s.id);
                 el.querySelector(".health-pct").textContent = pct + "%";
                 el.querySelector(".health-pct").className = "health-pct " + pctClass(pct);
-                el.querySelector(".health-sub").textContent = `${s.count} of ${activeMembers.length} members`;
+                el.querySelector(".health-sub").textContent = `${s.count} of ${total} members`;
             });
         } catch (err) {
             console.error("Error loading member health:", err);
