@@ -581,7 +581,7 @@ vertical-align: middle;
             </div>
         </div>
         <div class="tab-content active">
-            <div class="log-table-wrap">
+            <div class="log-table-wrap">    
                 <table class="log-table">
                     <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
                     <tbody id="auditBody"></tbody>
@@ -680,7 +680,7 @@ vertical-align: middle;
             members = members.filter(m => {
                 const active = m["Active"] ?? m["active"];
                 return active === true || String(active).toUpperCase() === "TRUE";
-            }).filter(m => gv(m,"MemberName","Member", "Membername"));
+            }).filter(m => gv(m,"MemberName","Member", "Membername","name","membername"));
         } catch(e) {
             console.error("Load error:", e);
             notes = []; topics = []; actions = []; members = [];
