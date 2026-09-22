@@ -413,12 +413,12 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
     let allBoats = [];
 
     async function apiPost(action, payload) {
-        // Route Gateway write actions through updateSheet/appendRow/deleteRow
+        // Route Gateway write actions through updateSheet/appendSheet/deleteRow
         if (action === "update") {
             return updateSheet(payload.domain, payload.sheet, payload.hexKey, payload.updates);
         }
         if (action === "append") {
-            return appendRow(payload.domain, payload.sheet, payload.rowData);
+            return appendSheet(payload.domain, payload.sheet, payload.rowData);
         }
         if (action === "delete") {
             return deleteRow(payload.domain, payload.sheet, payload.hexKey);

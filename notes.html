@@ -632,19 +632,6 @@ vertical-align: middle;
         return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     }
 
-    async function writeAuditLog(hexCode, field, oldValue, newValue) {
-        try {
-            await appendSheet(DOMAIN.audit, "Audit Trail", {
-                HexCode:   hexCode,
-                Timestamp: isoNow(),
-                Name:      currentUserName || "Unknown",
-                Field:     field,
-                "Old Value": oldValue,
-                "New Value": newValue
-            });
-        } catch(e) { console.warn("Audit log write failed:", e.message); }
-    }
-
     /* =========================================================
        HELPERS
        ========================================================= */
@@ -1072,31 +1059,6 @@ vertical-align: middle;
                 await appendSheet(DOMAIN.notes, "Notes", rowData);
             }
 
-            // ── Audit log ──────────────────────────────────────────
-            if (isNew) {
-                await writeAuditLog(nid, "Notes",
-                    "",
-                    `Topic:${topic} | Date:${date} | Note:${note.slice(0,100)}`
-                );
-            } else if (_oldNoteSnapshot) {
-                const newSnap = {
-                    Date:        date,
-                    Topic:       topic,
-                    SubTopic:    document.getElementById("fSubTopic").value.trim(),
-                    Note:        note,
-                    Attachments: document.getElementById("fAttachments").value.trim(),
-                    CopyIn:      copyInEmails.join(", ")
-                };
-                for (const [field, oldVal] of Object.entries(_oldNoteSnapshot)) {
-                    if (field === "Actions") continue; // handled below
-                    const newVal = newSnap[field] ?? "";
-                    if (String(oldVal) !== String(newVal)) {
-                        await writeAuditLog(nid, `Notes / ${field}`, oldVal, newVal);
-                    }
-                }
-            }
-            // ── End audit log ──────────────────────────────────────
-
             const newActions = [];
             for (const a of actionRows) {
                 if (!a.action.trim()) continue;
@@ -1118,25 +1080,17 @@ vertical-align: middle;
                     if (oldA) {
                         const oldStr = `${gv(oldA,"Action")} (${gv(oldA,"By Member")||"—"}, ${gv(oldA,"By Date")||"—"})`;
                         const newStr = `${a.action} (${a.byMember||"—"}, ${a.byDate||"—"})`;
-                        if (oldStr !== newStr) await writeAuditLog(nid, "Actions", oldStr, newStr);
                     }
                 } else {
-                    await appendSheet(DOMAIN.notes, "Actions", aData);
-                    if (isNewAction) {
-                        newActions.push(aData);
-                        await writeAuditLog(nid, "Actions",
-                            "",
-                            `${a.action} (${a.byMember||"—"}, ${a.byDate||"—"})`
-                        );
-                    }
+                    await appendSheet(DOMAIN.notes, "Actions", nid, aData);
                 }
             }
 
             if (newActions.length) await sendActionEmails(newActions, nid, topic, date);
-
+                
             showModalStatus("Saved successfully.", "success");
             await loadAll();
-            await loadAuditLog();
+            await AuditLog.load();
             setTimeout(closeNoteModal, 800);
         } catch(e) {
             showModalStatus("Error: " + e.message, "error");
@@ -1180,18 +1134,13 @@ vertical-align: middle;
             const oldSummary = n
                 ? `Topic:${gv(n,"Topic")} | Date:${gv(n,"Date")} | Note:${gv(n,"Note").slice(0,100)}`
                 : editingNoteId;
-            await writeAuditLog(editingNoteId, "Notes", oldSummary, "DELETED");
-            await deleteSheet(DOMAIN.notes, "Notes", editingNoteId);
+            await deleteRow(DOMAIN.notes, "Notes", editingNoteId);
             const related = actions.filter(a => gv(a,"NoteID") === editingNoteId);
             for (const a of related) {
-                await writeAuditLog(editingNoteId, "Actions",
-                    `${gv(a,"Action")} (${gv(a,"By Member")||"—"}, ${gv(a,"By Date")||"—"})`,
-                    "DELETED"
-                );
-                await deleteSheet(DOMAIN.notes, "Actions", gv(a,"ActionID"));
+                await deleteRow(DOMAIN.notes, "Actions", gv(a,"ActionID"));
             }
             await loadAll();
-            await loadAuditLog();
+            await AuditLog.load();;
             closeNoteModal();
         } catch(e) { showModalStatus("Delete failed: " + e.message, "error"); }
     }
@@ -1222,6 +1171,7 @@ vertical-align: middle;
                     actions: d.actions.map(a => ({ action: a.Action, byDate: a["By Date"], byMember: a["By Member"] }))
                 }))
             })});
+            AuditLog.load();
         } catch(e) { console.warn("Email failed:", e.message); }
     }
 
@@ -1246,9 +1196,10 @@ vertical-align: middle;
         if (!v) return;
         btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
         try {
-            await appendSheet(DOMAIN.topics, "Topics", { TopicID: noteId(), Topic: v, CreatedAt: new Date().toISOString() });
+            await appendSheet(DOMAIN.topics, "Topics", { TopicID: noteId(), Topic: v});
             inp.value = "";
             await loadAll();
+            AuditLog.load();
             renderTopicList();
             ts.textContent = `"${v}" added.`; ts.className = "modal-status visible success";
         } catch(e) {
@@ -1293,7 +1244,7 @@ vertical-align: middle;
     /* =========================================================
        INIT
        ========================================================= */
-    loadAll().then(() => { lucide.createIcons(); loadAuditLog(); });
+    loadAll().then(() => { lucide.createIcons(); AuditLog.load(); });
 </script>
 </body>
 </html>
