@@ -1197,7 +1197,7 @@ vertical-align: middle;
         if (!v) return;
         btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
         try {
-            await appendSheet(DOMAIN.topics, "Topics", { TopicID: noteId(), Topic: v});
+            await appendSheet(DOMAIN.notes, "Topics", { TopicID: noteId(), Topic: v});
             inp.value = "";
             await loadAll();
             AuditLog.load();
