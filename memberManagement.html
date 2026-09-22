@@ -670,7 +670,7 @@
     }
 
     function renderMemberStats() {
-        const REQUIRED_FIELDS = ['name','email','phone','membershipType','startDate','endDate','addressLine','suburb','postcode','emergencyContactName','emergencyContactNumber'];
+        const REQUIRED_FIELDS = ['memberName','email','phone','membershipType','startDate','endDate','addressLine','suburb','postcode','emergencyContactName','emergencyContactNumber'];
         const active = allMembers.filter(m => isActiveStatus(m.status));
         const paid = allMembers.filter(m => m.isPaid);
         const complete = allMembers.filter(m => REQUIRED_FIELDS.every(f => m[f] && String(m[f]).trim() !== ''));
