@@ -479,7 +479,7 @@ vertical-align: middle;
                     <div class="attach-picker-row">
                         <input type="text" id="fAttachments" placeholder="Paste Drive link or use Browse…">
                         <button type="button" class="drive-browse-btn" id="driveBrowseBtn">
-                            <i class="nav-icon" data-lucide="folder" color="#a3a10b"></i> Browse Drive
+                            <i class="nav-icon" data-lucide="folder" size="8" color="var(--folder)"></i> Browse Drive
                         </button>
                     </div>
                     <div class="attach-list" id="attachPreview"></div>
@@ -511,7 +511,7 @@ vertical-align: middle;
                 <button class="btn btn-ghost" id="modalCancel">Cancel</button>
                 <button class="btn btn-ghost" id="modalDelete" style="color:#ff6b6b; display:none;">Delete</button>
                 <button class="btn btn-primary" id="modalSave">Save Note</button>
-                <button class="btn btn-ghost" id="exportSheetBtn"><i data-lucide="file-input"></i>Save as Google Sheet</button>
+                <button class="btn btn-ghost" id="exportSheetBtn"><i data-lucide="file-input" size="12"></i></button>
             </div>
         </div>
     </div>
@@ -573,7 +573,7 @@ vertical-align: middle;
                     <button id="auditFilterAll">All</button>
                 </div>
                 <div class="search-wrap">
-                    <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
+                    <span class="search-icon"><i class="inline-icon" data-lucide="search" size="8"></i></span>
                     <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
                 </div>
                 <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
@@ -775,7 +775,7 @@ vertical-align: middle;
                 <td>${openA.length > 0 ? `<span class="action-dot ${dotClass}"></span>${openA.length} open` : '<span style="color:var(--foam-dim)">—</span>'}</td>
                 <td>${attachCount > 0 ? `📎 ${attachCount}` : '—'}</td>
                 <td><span class="badge ${openA.length > 0 ? (dotClass==="due"?"badge-expired":"badge-renewal") : "badge-full"}">${openA.length > 0 ? (dotClass==="due"?"Overdue":"Active") : "Complete"}</span></td>
-                <td><button class="icon-btn export-note" data-id="${nid}" title="Save as Google Sheet"><i data-lucide="file-input"></i></button></td>
+                <td><button class="icon-btn export-note" data-id="${nid}"><i data-lucide="file-input" size="12"></i></button></td>
                 </tr>`;
         }).join("");
         empty.style.display = rows.length ? "none" : "block";
