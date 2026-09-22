@@ -814,6 +814,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 fetchSheet(DOMAIN.members, "Members").catch(() => [])
             ]);
             // Filter active members — boolean TRUE or string "TRUE"
+            console.log("Members loaded:", members.map(m => gv(m,"MemberName","Member","First Name","FirstName")));
             members = members.filter(m => {
                 const active = m["Active"] ?? m["active"];
                 return active === true || String(active).toUpperCase() === "TRUE";
