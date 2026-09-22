@@ -69,7 +69,7 @@
     .bulk-comm-card .bc-desc { font-size: 12.5px; color: var(--foam-dim); line-height: 1.4; }
     .bulk-comm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 
-    .log-table-wrap { max-height: 360px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+    .log-table-wrap { max-height: 420px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
     table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
     .log-table th {
         position: sticky; top: 0; background: var(--ocean-mid); text-align: left;
@@ -79,6 +79,26 @@
     }
     .log-table td { padding: 8px 10px; border-bottom: 1px solid var(--glass-border); color: var(--foam); vertical-align: top; }
     .log-table tr:last-child td { border-bottom: none; }
+    .log-table tr.audit-error td { background: rgba(255,80,80,0.06); }
+    .log-table .val-error { color: #ff6b6b; font-size: 11.5px; }
+
+    /* Audit domain toggle */
+    .audit-toggle { display: flex; gap: 0; border: 1px solid var(--glass-border); border-radius: 8px; overflow: hidden; }
+    .audit-toggle button {
+        padding: 5px 14px; font-size: 11.5px; font-family: inherit; cursor: pointer;
+        background: transparent; border: none; color: var(--foam-dim); transition: background .15s, color .15s;
+    }
+    .audit-toggle button.active { background: rgba(255,255,255,0.1); color: var(--foam); }
+
+    /* Before / After tab pill inside cell */
+    .val-tabs { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+    .val-tab-btns { display: flex; gap: 0; border: 1px solid var(--glass-border); border-radius: 6px; overflow: hidden; width: fit-content; }
+    .val-tab-btns button {
+        padding: 2px 8px; font-size: 10px; font-family: inherit; cursor: pointer;
+        background: transparent; border: none; color: var(--foam-dim); transition: background .12s, color .12s;
+    }
+    .val-tab-btns button.active { background: rgba(255,255,255,0.1); color: var(--foam); }
+    .val-content { font-size: 12px; color: var(--foam); word-break: break-word; min-height: 16px; }
 
     .fn-message { font-size: 12px; margin-top: 8px; display: none; }
     .fn-message.visible { display: block; }
@@ -322,9 +342,13 @@
         <div class="panel-header">
             <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
             <div class="panel-toolbar">
+                <div class="audit-toggle">
+                    <button id="auditFilterMembers" class="active" onclick="setAuditFilter('members')">Members</button>
+                    <button id="auditFilterAll" onclick="setAuditFilter('all')">All</button>
+                </div>
                 <div class="search-wrap">
                     <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
-                    <input class="search-input" id="auditSearch" placeholder="Search by member name, function, field, or message…">
+                    <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
                 </div>
                 <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
             </div>
@@ -332,7 +356,7 @@
         <div class="tab-content active">
             <div class="log-table-wrap">
                 <table class="log-table">
-                    <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Field</th><th>Before</th><th>After</th><th>Status</th></tr></thead>
+                    <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
                     <tbody id="auditBody"></tbody>
                 </table>
             </div>
@@ -1120,30 +1144,76 @@
         }
     }
 
+    let auditDomainFilter = 'members'; // default to members domain
+
+    function setAuditFilter(filter) {
+        auditDomainFilter = filter;
+        document.getElementById('auditFilterMembers').classList.toggle('active', filter === 'members');
+        document.getElementById('auditFilterAll').classList.toggle('active', filter === 'all');
+        renderAuditLog();
+    }
+
+    // Renders a before/after tab switcher inside a cell
+    function renderValTabs(before, after, isError, uid) {
+        const bSafe = escapeHtml(before);
+        const aSafe = escapeHtml(after);
+        const aClass = isError ? ' val-error' : '';
+        return `
+        <div class="val-tabs">
+            <div class="val-tab-btns">
+                <button class="active" onclick="switchValTab('${uid}','before',this)">Before</button>
+                <button onclick="switchValTab('${uid}','after',this)">After</button>
+            </div>
+            <div class="val-content" id="val-${uid}">${bSafe || '<span style="opacity:.4">—</span>'}</div>
+            <div class="val-content" id="val-${uid}-after" style="display:none;" class="${aClass}">${isError ? `<span class="val-error">${aSafe}</span>` : (aSafe || '<span style="opacity:.4">—</span>')}</div>
+        </div>`;
+    }
+
+    function switchValTab(uid, tab, btn) {
+        const beforeEl = document.getElementById(`val-${uid}`);
+        const afterEl  = document.getElementById(`val-${uid}-after`);
+        const btns = btn.closest('.val-tab-btns').querySelectorAll('button');
+        btns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        beforeEl.style.display = tab === 'before' ? '' : 'none';
+        afterEl.style.display  = tab === 'after'  ? '' : 'none';
+    }
+
     function renderAuditLog() {
         const q = document.getElementById('auditSearch').value.trim().toLowerCase();
         let entries = auditEntries;
+
+        // Domain filter: 'members' shows only entries where domain === 'members'
+        if (auditDomainFilter === 'members') {
+            entries = entries.filter(e => String(e.domain || '').toLowerCase() === 'members');
+        }
+
         if (q) {
             entries = entries.filter(e =>
                 String(e.memberName || '').toLowerCase().includes(q) ||
                 String(e.action || '').toLowerCase().includes(q) ||
+                String(e.domain || '').toLowerCase().includes(q) ||
+                String(e.sheet || '').toLowerCase().includes(q) ||
                 String(e.field || '').toLowerCase().includes(q) ||
                 String(e.before || '').toLowerCase().includes(q) ||
                 String(e.after || '').toLowerCase().includes(q)
             );
         }
 
-        document.getElementById('auditBody').innerHTML = entries.map(e => {
-            const isError = String(e.success || '').toLowerCase() === 'failed' || String(e.after || '').startsWith('ERROR:');
+        document.getElementById('auditBody').innerHTML = entries.map((e, i) => {
+            const isError = String(e.success || '').toLowerCase() === 'failed'
+                         || String(e.after || '').startsWith('ERROR:');
+            const uid = `al${i}`;
             return `
-            <tr>
-                <td>${fmtTime(e.timestamp)}</td>
+            <tr class="${isError ? 'audit-error' : ''}">
+                <td style="white-space:nowrap;">${fmtTime(e.timestamp)}</td>
                 <td>${escapeHtml(e.memberName)}</td>
+                <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(e.domain)}</td>
+                <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(e.sheet)}</td>
                 <td>${escapeHtml(e.action)}</td>
                 <td>${escapeHtml(e.field)}</td>
-                <td>${escapeHtml(e.before)}</td>
-                <td>${escapeHtml(e.after)}</td>
-                <td><span class="badge ${isError ? 'badge-expired' : 'badge-full'}">${isError ? 'error' : 'success'}</span></td>
+                <td>${renderValTabs(e.before, e.after, isError, uid)}</td>
+                <td><span class="badge ${isError ? 'badge-expired' : 'badge-full'}">${isError ? 'Fail' : 'OK'}</span></td>
             </tr>`;
         }).join('');
         document.getElementById('auditEmpty').style.display = entries.length ? 'none' : 'block';
