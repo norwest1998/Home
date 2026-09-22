@@ -573,7 +573,7 @@ vertical-align: middle;
                     <button id="auditFilterAll">All</button>
                 </div>
                 <div class="search-wrap">
-                    <span class="search-icon"><i class="inline-icon" data-lucide="search" size="8"></i></span>
+                    <span class="search-icon"><i class="nav-icon" data-lucide="search" size="8"></i></span>
                     <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
                 </div>
                 <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
@@ -606,6 +606,7 @@ vertical-align: middle;
        ========================================================= */
 
     let GOOGLE_EXPORT_FOLDER_ID = "";
+    const NOTES_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzq-iw5CGc59VbnJEviaD0wmT5CAWuxP5wqbVg6Ea03sSBfYuEp1uOaZuGvXyNkzGBnlw/exec";
     const currentUserName = localStorage.getItem("memberName") || localStorage.getItem("userName") || "Unknown";
 
     /* =========================================================
@@ -775,7 +776,7 @@ vertical-align: middle;
                 <td>${openA.length > 0 ? `<span class="action-dot ${dotClass}"></span>${openA.length} open` : '<span style="color:var(--foam-dim)">—</span>'}</td>
                 <td>${attachCount > 0 ? `📎 ${attachCount}` : '—'}</td>
                 <td><span class="badge ${openA.length > 0 ? (dotClass==="due"?"badge-expired":"badge-renewal") : "badge-full"}">${openA.length > 0 ? (dotClass==="due"?"Overdue":"Active") : "Complete"}</span></td>
-                <td><button class="icon-btn export-note" data-id="${nid}"><i data-lucide="file-input" size="12"></i></button></td>
+                <td><button class="nav-icon export-note" data-id="${nid}"><i data-lucide="file-input" size="10"></i></button></td>
                 </tr>`;
         }).join("");
         empty.style.display = rows.length ? "none" : "block";
