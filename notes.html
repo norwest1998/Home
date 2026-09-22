@@ -1137,11 +1137,12 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
         if (!actionRows.length) { container.innerHTML = ""; return; }
         container.innerHTML = actionRows.map((a, i) => `
             <div class="action-item" data-i="${i}">
-                <input type="text" class="act-action" value="${(a.action||"").replace(/"/g,'&quot;')}" placeholder="Describe the action…">
+                <input type="text" class="act-action" value="${(a.action||"").replace(/"/g,'&quot;')}" placeholder="Describe action…">
                 <span class="action-pill-sep">·</span>
                 <input type="date" class="act-bydate" value="${a.byDate || ""}">
                 <span class="action-pill-sep">·</span>
                 <select class="act-bymember">${memberOptions(a.byMember||"")}</select>
+                <span style="font-size:10px; color:var(--foam-dim); margin-left:4px;">${a.id ? 'Saved' : 'New Draft'}</span>
                 <button class="action-remove" data-i="${i}" title="Remove">✕</button>
             </div>`
         ).join("");
@@ -1156,12 +1157,12 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
             row.querySelector(".act-bymember").addEventListener("change", e => {
                 const sel = e.target;
                 actionRows[i].byMember = sel.value;
-                const opt = sel.querySelector(`option[value="${CSS.escape(sel.value)}"]`) ||
-                            [...sel.options].find(o => o.value === sel.value);
+                const opt = [...sel.options].find(o => o.value === sel.value);
                 actionRows[i].byMemberEmail = opt ? (opt.dataset.email || "") : "";
             });
         });
     }
+
     function addActionRow() {
         actionRows.push({ id:"", action:"", byDate:"", byMember:"", byMemberEmail:"", status:"Open" });
         renderActionItems();
@@ -1178,11 +1179,10 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
 
         const btn = document.getElementById("modalSave");
         btn.disabled = true;
-        btn.innerHTML = `<span class="spinner"></span> Saving…`;
+        btn.innerHTML = `<span class="spinner"></span> Saving Note & Actions…`;
 
         try {
             const nid = editingNoteId || noteId();
-            const isNew = !editingNoteId;
             const rowData = {
                 NoteID:      nid,
                 Date:        date,
@@ -1193,6 +1193,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 CopyIn:      copyInEmails.join(", "),
                 LastUpdated: new Date().toISOString()
             };
+
             if (editingNoteId) {
                 await updateSheet(DOMAIN.notes, "Notes", editingNoteId, rowData);
             } else {
@@ -1203,7 +1204,6 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
             const newActions = [];
             for (const a of actionRows) {
                 if (!a.action.trim()) continue;
-                const isNewAction = !a.id;
                 const aid   = a.id || noteId();
                 const aData = {
                     ActionID:          aid,
@@ -1214,27 +1214,24 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                     "By Member Email": a.byMemberEmail || "",
                     Status:            a.status || "Open"
                 };
+
                 if (a.id) {
-                    // Find old action for diff
-                    const oldA = (_oldNoteSnapshot ? actions.find(x => gv(x,"ActionID") === a.id) : null);
                     await updateSheet(DOMAIN.notes, "Actions", a.id, aData);
-                    if (oldA) {
-                        const oldStr = `${gv(oldA,"Action")} (${gv(oldA,"By Member")||"—"}, ${gv(oldA,"By Date")||"—"})`;
-                        const newStr = `${a.action} (${a.byMember||"—"}, ${a.byDate||"—"})`;
-                    }
                 } else {
-                    await appendSheet(DOMAIN.notes, "Actions", nid, aData);
+                    // Fixed: Corrected signature to 3 arguments (domain, sheet, data)
+                    await appendSheet(DOMAIN.notes, "Actions", aData);
+                    newActions.push(aData);
                 }
             }
 
             if (newActions.length) await sendActionEmails(newActions, nid, topic, date);
 
-            showModalStatus("Saved successfully.", "success");
+            showModalStatus("Note and actions saved successfully.", "success");
             await loadAll();
             await AuditLog.load();
             setTimeout(closeNoteModal, 800);
         } catch(e) {
-            showModalStatus("Error: " + e.message, "error");
+            showModalStatus("Error saving note or actions: " + e.message, "error");
         } finally {
             btn.disabled = false;
             btn.textContent = "Save Note";
