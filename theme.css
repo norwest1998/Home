@@ -219,6 +219,9 @@
   .panel-header {
     padding: 20px 24px 0;
     border-bottom: 1px solid var(--glass-border);
+    display: flex; 
+    flex-direction: column; 
+    gap: 4px; 
   }
  
   .panel-title {
