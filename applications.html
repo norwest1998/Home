@@ -294,43 +294,6 @@
     // config.js  (or inline in a shared include)
     const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
 
-    // domain keys must match REGISTRY keys in Gateway.gs
-    const DOMAIN = {
-    members:   "members",
-    documents: "documents",
-    calendar:  "calendar",
-    apps:      "apps",
-    clubs:     "clubs",
-    notes:     "notes",
-    tracking:  "tracking"
-    };
-    
-    const KEY_MAP = {
-      'rowid':                    'rowId',
-      'first name':               'firstName',
-      'surname':                  'surname',
-      'membership type':          'membershipType',
-      'status':                   'status',
-      'votes for':                'votesFor',
-      'votes against':            'votesAgainst',
-      'turnaround ↵time':         'turnAround',
-      'nomination date':          'lastUpdated',
-      'laststatusupdated':        'lastUpdated',  // whichever you prefer
-      'name of current club':     'currentClub',
-      'nominating member name':   'nominator',
-      'seconders member name':    'seconder',
-      'email address':            'email',
-      'phone number':             'phone',
-      'address line':             'address',
-      'emergency contact':        'emergency',
-      'disclaimer':               'disclaimer',
-      'membership approved':      'approved',
-      'processed notes':          'log',
-      'rejection reason':         'rejectionReason',
-      'class Or Boat':            'classOrBoat',   // or a dedicated field if you prefer
-      'comments':                 'comments'
-    };
-
     /* =========================================================
     APPLICATIONS DATA MODULE
     ========================================================= */
@@ -339,6 +302,64 @@
 
     let selectedRowId = null;
     let allApplications = [];
+
+    // domain keys must match REGISTRY keys in Gateway.gs
+    const DOMAIN = {
+        members:   "members",
+        documents: "documents",
+        calendar:  "calendar",
+        apps:      "apps",
+        notes:     "notes",
+        audit:     "audit",
+        tracking:  "tracking"
+    };
+
+    // Returns array of objects (fetch) or single object (display)
+    async function fetchSheet(domain, sheetName, hexKey = null) {
+        const action = hexKey ? "display" : "fetch";
+        const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
+                     + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
+        const res  = await fetch(url);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        // display returns { record: {} }, fetch returns { values: [...] }
+        if (data.record) return data.record;
+        return data.values ?? [];
+    }
+
+    async function updateSheet(domain, sheetName, hexKey, updates) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+
+    async function appendRow(domain, sheetName, rowData) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+
+    async function deleteRow(domain, sheetName, hexKey) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
+    
 
     function esc(s) {
       const d = document.createElement('div');
@@ -423,73 +444,6 @@
         return { label: 'Urgent, Attention required', cls: 'status-urgent' };
       }
       return { label: a.status, cls: appStatusCSSClass(a.status) };
-    }
-
-    async function fetchSheet(domain, sheetName, hexKey = null) {
-        const action = hexKey ? "display" : "fetch";
-        const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
-                    + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
-
-        const res  = await fetch(url);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        // Single record
-        if (data.record) return data.record;
-
-        // Bulk — existing parse logic unchanged
-        const rows = Array.isArray(data) ? data : (data.values ?? []);
-        if (!rows.length) return [];
-
-        let hi = rows.findIndex(r => r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
-        if (hi === -1) hi = rows.findIndex(r => r.filter(c => String(c||"").trim()).length > 3);
-        if (hi === -1) return [];
-
-        const headers = rows[hi].map(h => String(h||"").trim());
-        return rows.slice(hi + 1)
-          .filter(r => r.some(c => String(c||"").trim()))
-          .map(r => {
-            const raw = Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""]));
-            const normalised = {};
-            for (const [k, v] of Object.entries(raw)) {
-              const mapped = KEY_MAP[k.toLowerCase().trim()];
-              normalised[mapped || k] = v;
-            }
-            return normalised;
-          });
-    }
-
-    async function updateSheet(domain, sheetName, hexKey, updates) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
-
-    async function appendRow(domain, sheetName, rowData) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
-
-    async function deleteRow(domain, sheetName, hexKey) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
     }
 
     function updateStats(apps) {

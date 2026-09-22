@@ -919,75 +919,62 @@ const AdminLog = {
 const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
 
 // domain keys must match REGISTRY keys in Gateway.gs
-const DOMAIN = {
-members:   "members",
-documents: "documents",
-calendar:  "calendar",
-apps:      "apps",
-clubs:     "clubs",
-notes:     "notes",
-audit:     "audit",
-tracking:  "tracking"
-};
+    // domain keys must match REGISTRY keys in Gateway.gs
+    const DOMAIN = {
+        members:   "members",
+        documents: "documents",
+        calendar:  "calendar",
+        apps:      "apps",
+        notes:     "notes",
+        audit:     "audit",
+        tracking:  "tracking"
+    };
 
-async function fetchSheet(domain, sheetName, hexKey = null) {
-    const action = hexKey ? "display" : "fetch";
-    const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
-                + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
+    // Returns array of objects (fetch) or single object (display)
+    async function fetchSheet(domain, sheetName, hexKey = null) {
+        const action = hexKey ? "display" : "fetch";
+        const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
+                     + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
+        const res  = await fetch(url);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        // display returns { record: {} }, fetch returns { values: [...] }
+        if (data.record) return data.record;
+        return data.values ?? [];
+    }
 
-    const res  = await fetch(url);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    async function updateSheet(domain, sheetName, hexKey, updates) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
 
-    // Single record
-    if (data.record) return data.record;
+    async function appendRow(domain, sheetName, rowData) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
 
-    // Bulk — existing parse logic unchanged
-    const rows = Array.isArray(data) ? data : (data.values ?? []);
-    if (!rows.length) return [];
-
-    let hi = rows.findIndex(r => r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
-    if (hi === -1) hi = rows.findIndex(r => r.filter(c => String(c||"").trim()).length > 3);
-    if (hi === -1) return [];
-
-    const headers = rows[hi].map(h => String(h||"").trim());
-    return rows.slice(hi + 1)
-        .filter(r => r.some(c => String(c||"").trim()))
-        .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
-}
-
-async function updateSheet(domain, sheetName, hexKey, updates) {
-    const res  = await fetch(GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return true;
-}
-
-async function appendSheet(domain, sheetName, rowData) {
-    const res  = await fetch(GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return true;
-}
-
-async function deleteRow(domain, sheetName, hexKey) {
-    const res  = await fetch(GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return true;
-}
+    async function deleteRow(domain, sheetName, hexKey) {
+        const res  = await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return true;
+    }
 
 /* =========================================================
    DATE & TIME HELPERS
