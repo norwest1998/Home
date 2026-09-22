@@ -1015,8 +1015,7 @@
         st.textContent = "";
 
         try {
-            const data = await fetch(
-                `${NOTES_WEBAPP_URL}?action=drivesearch&q=${encodeURIComponent(query)}`
+            const data = await fetch(`${NOTES_WEBAPP_URL}?action=drivesearch&q=${encodeURIComponent(query)}`
             ).then(r => r.json());
 
             if (data.error) throw new Error(data.error);
@@ -1362,7 +1361,7 @@
         const btn = document.getElementById("refreshLogBtn");
         btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
         try {
-            auditRows = await fetchSheet(DOMAIN.audit, "Audit Trail");
+            auditRows = await fetchSheet(DOMAIN.audit, "AuditLog");
             auditRows.reverse(); // newest first
         } catch(e) { console.error("AuditLog fetch failed:", e); auditRows = []; }
         renderLog();
