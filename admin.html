@@ -27,17 +27,13 @@
 }
 
 /* Member Health stat board 
+
+*/
+.health-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
     margin-bottom: 32px;
-*/
-.health-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 20px;
 }
 
 .health-stat {
@@ -95,34 +91,14 @@
 }
 
 .fn-desc { font-size: 13px; color: var(--foam-dim); line-height: 1.4; min-height: 32px; }
-
 .fn-options { display: flex; flex-wrap: wrap; gap: 6px; }
-
 .fn-usage { font-size: 10.5px; color: var(--foam-dim); }
-
 .fn-results.log-box { display: none; }
 .fn-results.log-box.visible { display: block; }
-
 .fn-message { font-size: 12px; display: none; }
 .fn-message.visible { display: block; }
 .fn-message.success { color: var(--glow); }
 .fn-message.error { color: #ff6b6b; }
-
-/* Admin log panel */
-.log-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
-.log-toolbar .search-wrap { flex: 1; min-width: 200px; margin-bottom: 0; }
-.log-table-wrap { max-height: 420px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
-table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-.log-table th {
-    position: sticky; top: 0; background: var(--ocean-mid); text-align: left;
-    padding: 8px 10px; font-family: var(--font-data); font-size: 10px;
-    letter-spacing: 0.06em; text-transform: uppercase; color: var(--foam-dim);
-    border-bottom: 1px solid var(--glass-border);
-}
-.log-table td { padding: 8px 10px; border-bottom: 1px solid var(--glass-border); color: var(--foam); vertical-align: top; }
-.log-table tr:last-child td { border-bottom: none; }
-.log-table .diff-before { color: #f87171; text-decoration: line-through; opacity: 0.8; }
-.log-table .diff-after { color: #4ade80; }
 
 
 </style>
