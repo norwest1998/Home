@@ -814,7 +814,6 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 fetchSheet(DOMAIN.members, "Members").catch(() => [])
             ]);
             // Filter active members — boolean TRUE or string "TRUE"
-            console.log("Members loaded:", members.map(m => gv(m,"MemberName","Member","First Name","FirstName")));
             members = members.filter(m => {
                 const active = m["Active"] ?? m["active"];
                 return active === true || String(active).toUpperCase() === "TRUE";
@@ -1122,7 +1121,6 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
         const opts = members.map(m => {
             const name  = gv(m,"MemberName","membername","memberName", "name", "Name");
             const email = gv(m,"Email","Email Address", "email","eMail");
-            console.log(name + " <> " + email)
             return { name, email };
         }).filter(m => m.name);
 
@@ -1131,18 +1129,19 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 `<option value="${m.name}" data-email="${m.email}" ${selected === m.name ? "selected" : ""}>${m.name}</option>`
             ).join("");
     }
-
     function renderActionItems() {
         const container = document.getElementById("actionItems");
         if (!actionRows.length) { container.innerHTML = ""; return; }
         container.innerHTML = actionRows.map((a, i) => `
             <div class="action-item" data-i="${i}">
-                <input type="text" class="act-action" value="${(a.action||"").replace(/"/g,'&quot;')}" placeholder="Describe action…">
+                <input type="text" class="act-action" value="${(a.action||"").replace(/"/g,'&quot;')}" placeholder="Describe the action…">
                 <span class="action-pill-sep">·</span>
                 <input type="date" class="act-bydate" value="${a.byDate || ""}">
                 <span class="action-pill-sep">·</span>
                 <select class="act-bymember">${memberOptions(a.byMember||"")}</select>
-                <span style="font-size:10px; color:var(--foam-dim); margin-left:4px;">${a.id ? 'Saved' : 'New Draft'}</span>
+                <span style="font-size:10px; color:var(--foam-dim); padding:0 4px; border-radius:4px; background:rgba(255,255,255,0.06);">
+                    ${a.id ? 'Saved' : 'Draft'}
+                </span>
                 <button class="action-remove" data-i="${i}" title="Remove">✕</button>
             </div>`
         ).join("");
@@ -1218,7 +1217,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 if (a.id) {
                     await updateSheet(DOMAIN.notes, "Actions", a.id, aData);
                 } else {
-                    // Fixed: Corrected signature to 3 arguments (domain, sheet, data)
+                    // Corrected: Passed 3 arguments (domain, sheet, rowData)
                     await appendSheet(DOMAIN.notes, "Actions", aData);
                     newActions.push(aData);
                 }
@@ -1231,7 +1230,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
             await AuditLog.load();
             setTimeout(closeNoteModal, 800);
         } catch(e) {
-            showModalStatus("Error saving note or actions: " + e.message, "error");
+            showModalStatus("Error saving: " + e.message, "error");
         } finally {
             btn.disabled = false;
             btn.textContent = "Save Note";
