@@ -329,7 +329,14 @@ vertical-align: middle;
 .action-pill-sep { color: var(--glass-border); font-size: 14px; user-select: none; flex-shrink: 0; }
 .act-bydate   { width: 130px; flex-shrink: 0; color-scheme: dark; }
 .act-action   { flex: 1; min-width: 120px; }
-.act-bymember { min-width: 130px; }
+.act-bymember {
+    min-width: 140px;
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 6px !important;
+    padding: 2px 8px !important;
+    cursor: pointer;
+}
 .action-remove {
     background: none; border: none; color: var(--foam-dim);
     cursor: pointer; padding: 2px 6px; font-size: 15px; line-height: 1;
@@ -343,14 +350,35 @@ vertical-align: middle;
 .search-wrap .nav-icon { position: absolute; left: 10px; width: 14px; height: 14px; pointer-events: none; color: var(--foam-dim); }
 .search-wrap .search-input { padding-left: 32px; }
 
-.action-item select.act-bymember {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid var(--glass-border);
-    border-radius: 6px;
-    padding: 2px 8px;
-    min-width: 140px;
-    cursor: pointer;
+/* ── Action Items section ── */
+.actions-toolbar {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    align-items: center; margin-bottom: 16px;
 }
+.actions-toolbar .search-wrap { flex: 1; min-width: 220px; margin-bottom: 0; }
+
+.actions-table-wrap { max-height: 420px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.actions-table th {
+    position: sticky; top: 0; background: var(--ocean-mid);
+    text-align: left; padding: 8px 10px;
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim); border-bottom: 1px solid var(--glass-border);
+}
+.actions-table td {
+    padding: 8px 10px; border-bottom: 1px solid var(--glass-border);
+    color: var(--foam); vertical-align: middle;
+}
+.actions-table tr:last-child td { border-bottom: none; }
+.actions-table tr.clickable { cursor: pointer; }
+.actions-table tr.clickable:hover td { background: rgba(255,255,255,0.04); }
+
+/* Action edit modal status badge colours */
+.amodal-status { font-size: 12px; display: none; }
+.amodal-status.visible { display: block; }
+.amodal-status.success { color: var(--glow); }
+.amodal-status.error   { color: #ff6b6b; }
 
 </style>
 </head>
@@ -368,6 +396,7 @@ vertical-align: middle;
     </a>
     <ul class="nav-links">
         <li class="nav-item"><a href="admin.html" class="nav-link">Admin Home</a></li>
+        <li class="nav-item"><a href="#action-items" class="nav-link">Action Items</a></li>
         <li class="nav-item"><a href="#audit-log" class="nav-link">Audit Log</a></li>
         <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
     </ul>
@@ -569,6 +598,105 @@ vertical-align: middle;
         </div>
     </div>
 
+    <!-- ===================== ACTION ITEMS TABLE ===================== -->
+    <div class="section-head" id="action-items">
+        <h2>All Action Items</h2>
+        <p>All actions across every note. Click a row to edit status, due date or assignment.</p>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title"><span class="dot"></span><h3>Actions</h3></div>
+            <div class="actions-toolbar">
+                <div class="search-wrap">
+                    <i class="nav-icon" data-lucide="search"></i>
+                    <input class="search-input" id="actionsSearch" placeholder="Search action, member, note…">
+                </div>
+                <select class="glass-select" id="filterActionStatus">
+                    <option value="">All Statuses</option>
+                    <option value="open">Open</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="done">Done</option>
+                </select>
+                <select class="glass-select" id="filterActionMember">
+                    <option value="">All Members</option>
+                </select>
+            </div>
+        </div>
+        <div class="tab-content active">
+            <div class="actions-table-wrap">
+                <table class="actions-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Action</th>
+                            <th>Assigned To</th>
+                            <th>Due Date</th>
+                            <th>Note Topic</th>
+                            <th>Note Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="actionsBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="actionsEmpty" style="display:none;">No actions found.</div>
+        </div>
+    </div>
+
+    <!-- ===================== ACTION EDIT MODAL ===================== -->
+    <div class="modal-overlay" id="actionEditModal">
+        <div class="modal" style="max-width:560px;">
+            <div class="modal-header">
+                <h3 id="actionModalTitle">Edit Action</h3>
+                <button class="modal-close" id="actionModalClose" title="Close">✕</button>
+            </div>
+
+            <!-- Read-only context -->
+            <div style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;">
+                <div class="view-label">From Note</div>
+                <div class="view-field" id="aModalNoteContext" style="border:none;padding:0;font-size:13px;color:var(--foam);"></div>
+            </div>
+
+            <!-- Editable fields -->
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Action *</label>
+                    <textarea id="aModalAction" placeholder="Describe the action…" style="min-height:80px;"></textarea>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Due Date</label>
+                    <input type="date" id="aModalByDate">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="aModalStatus">
+                        <option value="Open">Open</option>
+                        <option value="Done">Done</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Assigned To</label>
+                    <select id="aModalByMember">
+                        <option value="">— Assign —</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <span class="amodal-status" id="aModalStatusMsg"></span>
+                <button class="btn btn-ghost" id="actionModalCancel">Cancel</button>
+                <button class="btn btn-primary" id="actionModalSave">Save Action</button>
+            </div>
+        </div>
+    </div>
+
     <!-- AUDIT LOG -->
     <div class="section-head" id="audit-log">
         <h2>Audit Log</h2>
@@ -685,7 +813,6 @@ vertical-align: middle;
                 fetchSheet(DOMAIN.notes, "Actions"),
                 fetchSheet(DOMAIN.members, "Members").catch(() => [])
             ]);
-            console.log("Members loaded:", members.map(m => gv(m,"MemberName","Member","First Name","FirstName")));
             // Filter active members — boolean TRUE or string "TRUE"
             members = members.filter(m => {
                 const active = m["Active"] ?? m["active"];
@@ -702,6 +829,8 @@ vertical-align: middle;
         renderStats();
         renderTopicDropdowns();
         renderTable();
+        populateMemberFilter();
+        renderActionsTable();
     }
 
     /* =========================================================
@@ -787,7 +916,7 @@ vertical-align: middle;
                 <td>${openA.length > 0 ? `<span class="action-dot ${dotClass}"></span>${openA.length} open` : '<span style="color:var(--foam-dim)">—</span>'}</td>
                 <td>${attachCount > 0 ? `📎 ${attachCount}` : '—'}</td>
                 <td><span class="badge ${openA.length > 0 ? (dotClass==="due"?"badge-expired":"badge-renewal") : "badge-full"}">${openA.length > 0 ? (dotClass==="due"?"Overdue":"Active") : "Complete"}</span></td>
-                <button class="export-note" data-id="${nid}" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--foam-dim);display:inline-flex;align-items:center;" title="Export to Google Sheet"><i data-lucide="file-input" size="14"></i></button>
+                <td><button class="export-note" data-id="${nid}" title="Export to Google Sheet" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--foam-dim);display:inline-flex;align-items:center;border-radius:6px;transition:color 0.15s;" onmouseover="this.style.color='var(--foam)'" onmouseout="this.style.color='var(--foam-dim)'"><i data-lucide="file-input" size="14"></i></button></td>
                 </tr>`;
         }).join("");
         empty.style.display = rows.length ? "none" : "block";
@@ -1186,6 +1315,168 @@ vertical-align: middle;
     }
 
     /* =========================================================
+       ACTION ITEMS TABLE
+       ========================================================= */
+    function renderActionsTable() {
+        const q       = (document.getElementById("actionsSearch").value || "").trim().toLowerCase();
+        const statusF = document.getElementById("filterActionStatus").value.toLowerCase();
+        const memberF = document.getElementById("filterActionMember").value.toLowerCase();
+        const now     = new Date();
+
+        let rows = [...actions];
+        if (q) rows = rows.filter(a =>
+            gv(a,"Action").toLowerCase().includes(q) ||
+            gv(a,"By Member").toLowerCase().includes(q) ||
+            (parentNoteContext(gv(a,"NoteID"))).toLowerCase().includes(q)
+        );
+        if (statusF === "done")    rows = rows.filter(a => gv(a,"Status").toLowerCase() === "done");
+        else if (statusF === "overdue") rows = rows.filter(a => {
+            const d = new Date(gv(a,"By Date"));
+            return gv(a,"Status").toLowerCase() !== "done" && !isNaN(d) && d < now;
+        });
+        else if (statusF === "open") rows = rows.filter(a => gv(a,"Status").toLowerCase() !== "done");
+        if (memberF) rows = rows.filter(a => gv(a,"By Member").toLowerCase() === memberF);
+
+        // Sort: overdue first, then by date asc, done last
+        rows.sort((a,b) => {
+            const aDone = gv(a,"Status").toLowerCase() === "done";
+            const bDone = gv(b,"Status").toLowerCase() === "done";
+            if (aDone !== bDone) return aDone ? 1 : -1;
+            return new Date(gv(a,"By Date")) - new Date(gv(b,"By Date"));
+        });
+
+        const body  = document.getElementById("actionsBody");
+        const empty = document.getElementById("actionsEmpty");
+
+        body.innerHTML = rows.map(a => {
+            const aid    = gv(a,"ActionID");
+            const status = gv(a,"Status") || "Open";
+            const isDone = status.toLowerCase() === "done";
+            const byDate = gv(a,"By Date");
+            const d      = new Date(byDate);
+            const isOverdue = !isDone && byDate && !isNaN(d) && d < now;
+            const isSoon    = !isDone && !isOverdue && byDate && !isNaN(d) && ((d-now)/86400000) <= 7;
+            const dotCls    = isDone ? "ok" : isOverdue ? "due" : isSoon ? "soon" : "ok";
+            const badgeCls  = isDone ? "badge-full" : isOverdue ? "badge-expired" : "badge-renewal";
+            const badgeLbl  = isDone ? "Done" : isOverdue ? "Overdue" : "Open";
+            const parentNote = notes.find(n => gv(n,"NoteID") === gv(a,"NoteID"));
+            const noteTopic  = parentNote ? gv(parentNote,"Topic") : "—";
+            const noteDate   = parentNote ? fmtDate(gv(parentNote,"Date")) : "—";
+            return `<tr class="clickable" data-aid="${aid}">
+                <td><span class="action-dot ${dotCls}"></span><span class="badge ${badgeCls}">${badgeLbl}</span></td>
+                <td style="max-width:260px;">${gv(a,"Action").slice(0,90)}${gv(a,"Action").length > 90 ? "…" : ""}</td>
+                <td>${gv(a,"By Member") || '<span style="color:var(--foam-dim)">—</span>'}</td>
+                <td style="color:${isOverdue ? "#ff6b6b" : "var(--foam)"}">${byDate ? fmtDate(byDate) : '<span style="color:var(--foam-dim)">—</span>'}</td>
+                <td>${noteTopic}</td>
+                <td>${noteDate}</td>
+            </tr>`;
+        }).join("");
+
+        empty.style.display = rows.length ? "none" : "block";
+
+        body.querySelectorAll("tr.clickable").forEach(tr =>
+            tr.addEventListener("click", () => openActionEditModal(tr.dataset.aid))
+        );
+
+        lucide.createIcons();
+    }
+
+    function parentNoteContext(nid) {
+        const n = notes.find(n => gv(n,"NoteID") === nid);
+        return n ? `${gv(n,"Topic")} — ${fmtDate(gv(n,"Date"))}` : "";
+    }
+
+    function populateMemberFilter() {
+        const sel  = document.getElementById("filterActionMember");
+        const prev = sel.value;
+        const names = [...new Set(actions.map(a => gv(a,"By Member")).filter(Boolean))].sort();
+        sel.innerHTML = `<option value="">All Members</option>` +
+            names.map(n => `<option value="${n.toLowerCase()}">${n}</option>`).join("");
+        if (names.map(n => n.toLowerCase()).includes(prev)) sel.value = prev;
+    }
+
+    /* =========================================================
+       ACTION EDIT MODAL
+       ========================================================= */
+    let editingActionId = null;
+
+    function openActionEditModal(aid) {
+        const a = actions.find(a => gv(a,"ActionID") === aid);
+        if (!a) return;
+        editingActionId = aid;
+
+        // Context (read-only)
+        document.getElementById("aModalNoteContext").textContent = parentNoteContext(gv(a,"NoteID")) || "—";
+
+        // Editable fields
+        document.getElementById("aModalAction").value   = gv(a,"Action");
+        document.getElementById("aModalByDate").value   = gv(a,"By Date");
+        document.getElementById("aModalStatus").value   = gv(a,"Status") || "Open";
+
+        // Member dropdown
+        const memberSel = document.getElementById("aModalByMember");
+        memberSel.innerHTML = memberOptions(gv(a,"By Member"));
+
+        // Clear status msg
+        const msg = document.getElementById("aModalStatusMsg");
+        msg.textContent = ""; msg.className = "amodal-status";
+
+        document.getElementById("actionEditModal").classList.add("open");
+    }
+
+    function closeActionEditModal() {
+        document.getElementById("actionEditModal").classList.remove("open");
+        editingActionId = null;
+    }
+
+    async function saveActionEdit() {
+        if (!editingActionId) return;
+        const action  = document.getElementById("aModalAction").value.trim();
+        const byDate  = document.getElementById("aModalByDate").value;
+        const status  = document.getElementById("aModalStatus").value;
+        const sel     = document.getElementById("aModalByMember");
+        const byMember = sel.value;
+        const byMemberEmail = sel.value
+            ? (([...sel.options].find(o => o.value === sel.value) || {}).dataset?.email || "")
+            : "";
+
+        if (!action) {
+            showAModalStatus("Action text is required.", "error"); return;
+        }
+
+        const btn = document.getElementById("actionModalSave");
+        btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> Saving…`;
+
+        try {
+            const a = actions.find(a => gv(a,"ActionID") === editingActionId);
+            const nid = a ? gv(a,"NoteID") : "";
+            const aData = {
+                ActionID:          editingActionId,
+                NoteID:            nid,
+                Action:            action,
+                "By Date":         byDate,
+                "By Member":       byMember,
+                "By Member Email": byMemberEmail,
+                Status:            status
+            };
+            await updateSheet(DOMAIN.notes, "Actions", editingActionId, aData);
+            showAModalStatus("Saved.", "success");
+            await loadAll();
+            await AuditLog.load();
+            setTimeout(closeActionEditModal, 700);
+        } catch(e) {
+            showAModalStatus("Error: " + e.message, "error");
+        } finally {
+            btn.disabled = false; btn.textContent = "Save Action";
+        }
+    }
+
+    function showAModalStatus(msg, type) {
+        const el = document.getElementById("aModalStatusMsg");
+        el.textContent = msg; el.className = `amodal-status visible ${type}`;
+    }
+
+    /* =========================================================
        TOPIC MODAL
        ========================================================= */
     function openTopicModal() { document.getElementById("topicModal").classList.add("open"); renderTopicList(); }
@@ -1250,6 +1541,17 @@ vertical-align: middle;
     document.getElementById("filterAction").addEventListener("change", renderTable);
     document.getElementById("noteModal").addEventListener("click", e => { if (e.target===e.currentTarget) closeNoteModal(); });
     document.getElementById("topicModal").addEventListener("click", e => { if (e.target===e.currentTarget) closeTopicModal(); });
+
+    // Action Items table filters
+    document.getElementById("actionsSearch").addEventListener("input", renderActionsTable);
+    document.getElementById("filterActionStatus").addEventListener("change", renderActionsTable);
+    document.getElementById("filterActionMember").addEventListener("change", renderActionsTable);
+
+    // Action Edit Modal
+    document.getElementById("actionModalClose").addEventListener("click", closeActionEditModal);
+    document.getElementById("actionModalCancel").addEventListener("click", closeActionEditModal);
+    document.getElementById("actionModalSave").addEventListener("click", saveActionEdit);
+    document.getElementById("actionEditModal").addEventListener("click", e => { if (e.target===e.currentTarget) closeActionEditModal(); });
 
     /* =========================================================
        INIT
