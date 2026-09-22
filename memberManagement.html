@@ -186,7 +186,29 @@
         <li class="nav-item"><a href="#audit-log" class="nav-link">Audit Log</a></li>
     </ul>
 </header>
-
+<!-- MEMBER STATS -->
+<div id="memberStats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px;">
+    <div class="glass" style="padding:14px 16px;border-radius:12px;text-align:center;">
+        <div id="statActive" style="font-size:28px;font-weight:700;color:var(--foam);line-height:1;">—</div>
+        <div style="font-size:11px;color:var(--foam-dim);margin-top:4px;">Active Members</div>
+    </div>
+    <div class="glass" style="padding:14px 16px;border-radius:12px;text-align:center;">
+        <div id="statPaid" style="font-size:28px;font-weight:700;color:var(--foam);line-height:1;">—</div>
+        <div style="font-size:11px;color:var(--foam-dim);margin-top:4px;">Financial (Paid Up)</div>
+    </div>
+    <div class="glass" style="padding:14px 16px;border-radius:12px;text-align:center;">
+        <div id="statComplete" style="font-size:28px;font-weight:700;color:var(--foam);line-height:1;">—</div>
+        <div style="font-size:11px;color:var(--foam-dim);margin-top:4px;">Complete Records</div>
+    </div>
+    <div class="glass" style="padding:14px 16px;border-radius:12px;text-align:center;">
+        <div id="statAffiliate" style="font-size:28px;font-weight:700;color:var(--foam);line-height:1;">—</div>
+        <div style="font-size:11px;color:var(--foam-dim);margin-top:4px;">Affiliate Members</div>
+    </div>
+    <div class="glass" style="padding:14px 16px;border-radius:12px;text-align:center;">
+        <div id="statTotal" style="font-size:28px;font-weight:700;color:var(--glow,#00c6ff);line-height:1;">—</div>
+        <div style="font-size:11px;color:var(--foam-dim);margin-top:4px;">Total Members</div>
+    </div>
+</div>
 <main class="container">
     <!-- Admin Workspace Header -->
     <div class="mm-header">
@@ -533,6 +555,7 @@
             allBoats = parseBoatsSheet(boatsData);
             populateMembershipFilterOptions();
             filterMemberDirectory();
+            renderMemberStats();
         } catch (err) {
             document.getElementById('memberListsResults').innerHTML =
                 `<div class="empty-state">Error loading members: ${escapeHtml(err.message)}</div>`;
@@ -605,6 +628,19 @@
                 filterMemberDirectory();
             }
         }
+    }
+
+    function renderMemberStats() {
+        const REQUIRED_FIELDS = ['name','email','phone','membershipType','startDate','endDate','addressLine','suburb','postcode','emergencyContactName','emergencyContactNumber'];
+        const active = allMembers.filter(m => isActiveStatus(m.status));
+        const paid = allMembers.filter(m => m.isPaid);
+        const complete = allMembers.filter(m => REQUIRED_FIELDS.every(f => m[f] && String(m[f]).trim() !== ''));
+        const affiliate = allMembers.filter(m => String(m.membershipType || '').toLowerCase().includes('affiliate'));
+        document.getElementById('statActive').textContent = active.length;
+        document.getElementById('statPaid').textContent = paid.length;
+        document.getElementById('statComplete').textContent = complete.length;
+        document.getElementById('statAffiliate').textContent = affiliate.length;
+        document.getElementById('statTotal').textContent = allMembers.length;
     }
 
     document.getElementById('memberStatusFilter').addEventListener('change', filterMemberDirectory);
