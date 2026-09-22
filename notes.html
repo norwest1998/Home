@@ -435,201 +435,160 @@ vertical-align: middle;
         </div>
     </div>
 
-    <div class="section-head">
+    <!-- ===================== NOTE MODAL ===================== -->
+    <div class="modal-overlay" id="noteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">New Note</h3>
+                <button class="modal-close" id="modalClose" title="Close">✕</button>
+            </div>
+
+            <!-- Date + Topic + Sub Topic -->
+            <div class="form-row triple">
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="fDate">
+                </div>
+                <div class="form-group">
+                    <label>Topic *</label>
+                    <div class="topic-mgmt">
+                        <select id="fTopic">
+                            <option value="">— Select Topic —</option>
+                        </select>
+                        <button class="btn btn-ghost" id="addTopicBtn" style="padding:5px 10px;font-size:11px;white-space:nowrap;" title="Add new topic">+ Topic</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Sub Topic</label>
+                    <input type="text" id="fSubTopic" placeholder="Optional">
+                </div>
+            </div>
+
+            <!-- Note body -->
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Note *</label>
+                    <textarea id="fNote" placeholder="Enter note content…" style="min-height:120px;"></textarea>
+                </div>
+            </div>
+
+            <!-- Attachments -->
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Attachments — Google Drive</label>
+                    <div class="attach-picker-row">
+                        <input type="text" id="fAttachments" placeholder="Paste Drive link or use Browse…">
+                        <button type="button" class="drive-browse-btn" id="driveBrowseBtn">
+                            <i class="nav-icon" data-lucide="folder" color="#b41d1d"></i> Browse Drive
+                        </button>
+                    </div>
+                    <div class="attach-list" id="attachPreview"></div>
+                </div>
+            </div>
+
+            <!-- Action List -->
+            <div class="action-list-section">
+                <h4>Action List</h4>
+                <div id="actionItems"></div>
+                <button class="btn btn-ghost" id="addActionBtn" style="padding:5px 12px;font-size:11px;width:fit-content;">+ Add Action</button>
+            </div>
+
+            <!-- Copy-in members -->
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Copy In (email addresses)</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="email" id="fCopyInInput" placeholder="member@example.com" style="flex:1;">
+                        <button class="btn btn-ghost" id="addCopyInBtn" style="padding:5px 12px;font-size:11px;white-space:nowrap;">Add</button>
+                    </div>
+                    <div class="copyin-wrap" id="copyInTags"></div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer">
+                <span class="modal-status" id="modalStatus"></span>
+                <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+                <button class="btn btn-ghost" id="modalDelete" style="color:#ff6b6b; display:none;">Delete</button>
+                <button class="btn btn-primary" id="modalSave">Save Note</button>
+                <button class="btn btn-ghost" id="exportSheetBtn"><i data-lucide="file-input"></i>Save as Google Sheet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== ADD TOPIC MODAL ===================== -->
+    <div class="modal-overlay" id="topicModal">
+        <div class="modal" style="max-width:420px;">
+            <div class="modal-header">
+                <h3>Manage Topics</h3>
+                <button class="modal-close" id="topicModalClose">✕</button>
+            </div>
+            <div class="form-group">
+                <label>New Topic Name</label>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="newTopicInput" placeholder="e.g. Finance, Events…" style="flex:1;">
+                    <button class="btn btn-primary" id="saveTopicBtn" style="padding:6px 14px;font-size:12px;">Add</button>
+                </div>
+            </div>
+            <div id="topicList" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;"></div>
+            <div class="modal-footer">
+                <span class="modal-status" id="topicStatus"></span>
+                <button class="btn btn-ghost" id="topicModalCancel">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== DRIVE PICKER MODAL ===================== -->
+    <div class="modal-overlay" id="driveModal">
+        <div class="drive-modal">
+            <div class="modal-header">
+                <h3>Browse Google Drive</h3>
+                <button class="modal-close" id="driveModalClose">✕</button>
+            </div>
+            <div class="form-group">
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="driveSearchInput" placeholder="Search files…" style="flex:1;">
+                    <button class="btn btn-primary" id="driveSearchBtn" style="padding:6px 14px;font-size:12px;">Search</button>
+                </div>
+            </div>
+            <div id="driveResults" style="display:flex;flex-direction:column;gap:4px;min-height:80px;"></div>
+            <div class="modal-footer">
+                <span class="modal-status" id="driveStatus"></span>
+                <button class="btn btn-ghost" id="driveModalCancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIT LOG -->
+    <div class="section-head" id="audit-log">
         <h2>Audit Log</h2>
-        <p>All create, update and delete activity on notes, actions and topics.</p>
+        <p>Actions recorded to the AuditLog sheet.</p>
     </div>
     <div class="panel">
         <div class="panel-header">
             <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
-            <div class="log-toolbar">
-                <div class="search-wrap">
-                    <i class="nav-icon" data-lucide="search" size="8"></i>
-                    <input class="search-input" id="logSearch" placeholder='Search action, sheet, record…'>
+            <div class="panel-toolbar">
+                <div class="audit-toggle">
+                    <button id="auditFilterMembers" class="active">Members</button>
+                    <button id="auditFilterAll">All</button>
                 </div>
-                <select class="glass-select" id="logSheetFilter">
-                    <option value="notes" selected>Notes</option>
-                    <option value="all">All</option>
-                    <option value="actions">Actions</option>
-                    <option value="topics">Topics</option>
-                </select>
-                <button class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+                <div class="search-wrap">
+                    <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
+                    <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
+                </div>
+                <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
             </div>
         </div>
         <div class="tab-content active">
             <div class="log-table-wrap">
                 <table class="log-table">
-                    <thead>
-                        <tr>
-                            <th>Timestamp</th>
-                            <th>Name</th>
-                            <th>Field</th>
-                            <th>HexCode</th>
-                            <th>Old Value</th>
-                            <th>New Value</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logBody"></tbody>
+                    <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
+                    <tbody id="auditBody"><span class="spinner"></span></tbody>
                 </table>
             </div>
-            <div class="empty-state" id="logEmpty" style="display:none;">No activity yet.</div>
+            <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
         </div>
     </div>
-
-<!-- ===================== NOTE MODAL ===================== -->
-<div class="modal-overlay" id="noteModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h3 id="modalTitle">New Note</h3>
-            <button class="modal-close" id="modalClose" title="Close">✕</button>
-        </div>
-
-        <!-- Date + Topic + Sub Topic -->
-        <div class="form-row triple">
-            <div class="form-group">
-                <label>Date *</label>
-                <input type="date" id="fDate">
-            </div>
-            <div class="form-group">
-                <label>Topic *</label>
-                <div class="topic-mgmt">
-                    <select id="fTopic">
-                        <option value="">— Select Topic —</option>
-                    </select>
-                    <button class="btn btn-ghost" id="addTopicBtn" style="padding:5px 10px;font-size:11px;white-space:nowrap;" title="Add new topic">+ Topic</button>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Sub Topic</label>
-                <input type="text" id="fSubTopic" placeholder="Optional">
-            </div>
-        </div>
-
-        <!-- Note body -->
-        <div class="form-row full">
-            <div class="form-group">
-                <label>Note *</label>
-                <textarea id="fNote" placeholder="Enter note content…" style="min-height:120px;"></textarea>
-            </div>
-        </div>
-
-        <!-- Attachments -->
-        <div class="form-row full">
-            <div class="form-group">
-                <label>Attachments — Google Drive</label>
-                <div class="attach-picker-row">
-                    <input type="text" id="fAttachments" placeholder="Paste Drive link or use Browse…">
-                    <button type="button" class="drive-browse-btn" id="driveBrowseBtn">
-                        <i class="nav-icon" data-lucide="folder" color="#b41d1d"></i> Browse Drive
-                    </button>
-                </div>
-                <div class="attach-list" id="attachPreview"></div>
-            </div>
-        </div>
-
-        <!-- Action List -->
-        <div class="action-list-section">
-            <h4>Action List</h4>
-            <div id="actionItems"></div>
-            <button class="btn btn-ghost" id="addActionBtn" style="padding:5px 12px;font-size:11px;width:fit-content;">+ Add Action</button>
-        </div>
-
-        <!-- Copy-in members -->
-        <div class="form-row full">
-            <div class="form-group">
-                <label>Copy In (email addresses)</label>
-                <div style="display:flex;gap:8px;">
-                    <input type="email" id="fCopyInInput" placeholder="member@example.com" style="flex:1;">
-                    <button class="btn btn-ghost" id="addCopyInBtn" style="padding:5px 12px;font-size:11px;white-space:nowrap;">Add</button>
-                </div>
-                <div class="copyin-wrap" id="copyInTags"></div>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="modal-footer">
-            <span class="modal-status" id="modalStatus"></span>
-            <button class="btn btn-ghost" id="modalCancel">Cancel</button>
-            <button class="btn btn-ghost" id="modalDelete" style="color:#ff6b6b; display:none;">Delete</button>
-            <button class="btn btn-primary" id="modalSave">Save Note</button>
-            <button class="btn btn-ghost" id="exportSheetBtn"><i data-lucide="file-input"></i>Save as Google Sheet</button>
-        </div>
-    </div>
-</div>
-
-<!-- ===================== ADD TOPIC MODAL ===================== -->
-<div class="modal-overlay" id="topicModal">
-    <div class="modal" style="max-width:420px;">
-        <div class="modal-header">
-            <h3>Manage Topics</h3>
-            <button class="modal-close" id="topicModalClose">✕</button>
-        </div>
-        <div class="form-group">
-            <label>New Topic Name</label>
-            <div style="display:flex;gap:8px;">
-                <input type="text" id="newTopicInput" placeholder="e.g. Finance, Events…" style="flex:1;">
-                <button class="btn btn-primary" id="saveTopicBtn" style="padding:6px 14px;font-size:12px;">Add</button>
-            </div>
-        </div>
-        <div id="topicList" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;"></div>
-        <div class="modal-footer">
-            <span class="modal-status" id="topicStatus"></span>
-            <button class="btn btn-ghost" id="topicModalCancel">Done</button>
-        </div>
-    </div>
-</div>
-
-<!-- ===================== DRIVE PICKER MODAL ===================== -->
-<div class="modal-overlay" id="driveModal">
-    <div class="drive-modal">
-        <div class="modal-header">
-            <h3>Browse Google Drive</h3>
-            <button class="modal-close" id="driveModalClose">✕</button>
-        </div>
-        <div class="form-group">
-            <div style="display:flex;gap:8px;">
-                <input type="text" id="driveSearchInput" placeholder="Search files…" style="flex:1;">
-                <button class="btn btn-primary" id="driveSearchBtn" style="padding:6px 14px;font-size:12px;">Search</button>
-            </div>
-        </div>
-        <div id="driveResults" style="display:flex;flex-direction:column;gap:4px;min-height:80px;"></div>
-        <div class="modal-footer">
-            <span class="modal-status" id="driveStatus"></span>
-            <button class="btn btn-ghost" id="driveModalCancel">Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- AUDIT LOG -->
-<div class="section-head" id="audit-log">
-    <h2>Audit Log</h2>
-    <p>Actions recorded to the AuditLog sheet.</p>
-</div>
-<div class="panel">
-    <div class="panel-header">
-        <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
-        <div class="panel-toolbar">
-            <div class="audit-toggle">
-                <button id="auditFilterMembers" class="active">Members</button>
-                <button id="auditFilterAll">All</button>
-            </div>
-            <div class="search-wrap">
-                <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
-                <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
-            </div>
-            <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
-        </div>
-    </div>
-    <div class="tab-content active">
-        <div class="log-table-wrap">
-            <table class="log-table">
-                <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
-                <tbody id="auditBody"><span class="spinner"></span></tbody>
-            </table>
-        </div>
-        <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
-    </div>
-</div>
 </main>
 
 <footer>
