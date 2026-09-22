@@ -634,6 +634,7 @@
       vertical-align: middle;
       margin: 0 auto 8px;
       align-self: center;
+      animation: spin 0.7s linear infinite !important;
   }
   .spinner-lg {
       width: 28px; height: 28px;
