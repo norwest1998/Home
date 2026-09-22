@@ -156,6 +156,19 @@ table.boat-table th {
 }
 table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-border); color: var(--foam); }
 
+.stat-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-grid > * {
+  flex: 1 1 150px; /* grows, shrinks, and has a base size of 150px */
+  max-width: 250px; /* optional: prevents items from getting too wide on large rows */
+}
+
 .stat-glass {
     padding:14px 16px;
     border-radius:12px;
