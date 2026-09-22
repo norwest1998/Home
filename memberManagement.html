@@ -156,6 +156,28 @@ table.boat-table th {
 }
 table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-border); color: var(--foam); }
 
+/* Member Health stat board */
+.health-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.health-stat {
+    padding: 22px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.health-stat .health-pct {
+    font-family: var(--font-display);
+    font-size: 34px;
+    color: var(--foam);
+    line-height: 1;
+}
+
 .stat-grid {
   display: flex;
   flex-wrap: wrap;
@@ -215,23 +237,23 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
 
     <!-- MEMBER STATS -->
     <div class="stat-grid" id="memberStats" >
-        <div class="stat-glass">
+        <div class="glass stat-glass">
             <div class="stat-total" id="statActive" >—</div>
             <div class="stat-text" >Active Members</div>
         </div>
-        <div class="stat-glass">
+        <div class="glass stat-glass">
             <div class="stat-total" id="statPaid">—</div>
             <div class="stat-text">Financial (Paid Up)</div>
         </div>
-        <div class="stat-glass">
+        <div class="glass stat-glass">
             <div class="stat-total" id="statComplete" >—</div>
             <div class="stat-text">Complete Records</div>
         </div>
-        <div class="stat-glass">
+        <div class="glass stat-glass">
             <div class="stat-total" id="statAffiliate">—</div>
             <div class="stat-text">Affiliate Members</div>
         </div>
-        <div class="stat-glass">
+        <div class="glass stat-glass">
             <div class="stat-total" id="statTotal">—</div>
             <div class="stat-text">Member Records</div>
         </div>
