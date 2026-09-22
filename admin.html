@@ -250,17 +250,6 @@ function getRowVal(row, possibleKeys) {
     return "";
 }
 
-document.getElementById("logSearch").addEventListener("input", renderLog);
-document.getElementById("clearLogBtn").addEventListener("click", () => AdminLog.refresh());
-document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll('.log-toolbar .app-filter-btn').forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        logStatusFilter = btn.dataset.status;
-        renderLog();
-    });
-});
-
 /* ============================================================
 GOOGLE SHEETS MODULE — SMMC ADMIN PANEL
 ============================================================ */
