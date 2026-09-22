@@ -395,70 +395,17 @@
 <footer>
     <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
 </footer>
-
+<script src="gateway.js"></script>   <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
+<script src="auditLog.js"></script>
+<script>
+    AuditLog.init('all');  // or 'all' to default to unfiltered
+</script>
 <script>
     // config.js  (or inline in a shared include)
     const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
     const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
     let allMembers = [];
     let allBoats = [];
-
-    // domain keys must match REGISTRY keys in Gateway.gs
-    const DOMAIN = {
-        members:   "members",
-        documents: "documents",
-        calendar:  "calendar",
-        apps:      "apps",
-        notes:     "notes",
-        audit:     "audit",
-        tracking:  "tracking"
-    };
-
-    // Returns array of objects (fetch) or single object (display)
-    async function fetchSheet(domain, sheetName, hexKey = null) {
-        const action = hexKey ? "display" : "fetch";
-        const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
-                     + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
-        const res  = await fetch(url);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        // display returns { record: {} }, fetch returns { values: [...] }
-        if (data.record) return data.record;
-        return data.values ?? [];
-    }
-
-    async function updateSheet(domain, sheetName, hexKey, updates) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
-
-    async function appendRow(domain, sheetName, rowData) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
-
-    async function deleteRow(domain, sheetName, hexKey) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
 
     async function apiPost(action, payload) {
         // Route Gateway write actions through updateSheet/appendRow/deleteRow
@@ -1105,118 +1052,6 @@
             btn.disabled = false;
             btn.textContent = originalText;
         }
-    }
-
-    /* ============================================================
-    AUDIT LOG
-    ============================================================ */
-    let auditEntries = [];
-
-    function fmtTime(v) {
-        const d = new Date(v);
-        return isNaN(d) ? String(v) : d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
-    }
-
-    async function loadAuditLog() {
-        try {
-            // fetchSheet now returns array of objects keyed by registry headers
-            const rows = await fetchSheet(DOMAIN.audit, "AuditLog");
-            if (!Array.isArray(rows)) throw new Error("Audit log data invalid.");
-
-            auditEntries = rows.map(r => ({
-                hexCode:    r["HexCode"]    || "",
-                timestamp:  r["Timestamp"]  || "",
-                memberName: r["User"]       || "",
-                action:     r["Action"]     || "",
-                domain:     r["Domain"]     || "",
-                sheet:      r["Sheet"]      || "",
-                field:      r["Detail"]     || "",
-                before:     r["Old Value"]  || "",
-                after:      r["New Value"]  || "",
-                success:    r["Success"]    || ""
-            })).reverse();
-
-            renderAuditLog();
-        } catch (err) {
-            document.getElementById('auditBody').innerHTML = '';
-            document.getElementById('auditEmpty').style.display = 'block';
-            document.getElementById('auditEmpty').textContent = 'Error loading audit log: ' + err.message;
-        }
-    }
-
-    let auditDomainFilter = 'members'; // default to members domain
-
-    function setAuditFilter(filter) {
-        auditDomainFilter = filter;
-        document.getElementById('auditFilterMembers').classList.toggle('active', filter === 'members');
-        document.getElementById('auditFilterAll').classList.toggle('active', filter === 'all');
-        renderAuditLog();
-    }
-
-    // Renders a before/after tab switcher inside a cell
-    function renderValTabs(before, after, isError, uid) {
-        const bSafe = escapeHtml(before);
-        const aSafe = escapeHtml(after);
-        const aClass = isError ? ' val-error' : '';
-        return `
-        <div class="val-tabs">
-            <div class="val-tab-btns">
-                <button class="active" onclick="switchValTab('${uid}','before',this)">Before</button>
-                <button onclick="switchValTab('${uid}','after',this)">After</button>
-            </div>
-            <div class="val-content" id="val-${uid}">${bSafe || '<span style="opacity:.4">—</span>'}</div>
-            <div class="val-content" id="val-${uid}-after" style="display:none;" class="${aClass}">${isError ? `<span class="val-error">${aSafe}</span>` : (aSafe || '<span style="opacity:.4">—</span>')}</div>
-        </div>`;
-    }
-
-    function switchValTab(uid, tab, btn) {
-        const beforeEl = document.getElementById(`val-${uid}`);
-        const afterEl  = document.getElementById(`val-${uid}-after`);
-        const btns = btn.closest('.val-tab-btns').querySelectorAll('button');
-        btns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        beforeEl.style.display = tab === 'before' ? '' : 'none';
-        afterEl.style.display  = tab === 'after'  ? '' : 'none';
-    }
-
-    function renderAuditLog() {
-        const q = document.getElementById('auditSearch').value.trim().toLowerCase();
-        let entries = auditEntries;
-
-        // Domain filter: 'members' shows only entries where domain === 'members'
-        if (auditDomainFilter === 'members') {
-            entries = entries.filter(e => String(e.domain || '').toLowerCase() === 'members');
-        }
-
-        if (q) {
-            entries = entries.filter(e =>
-                String(e.memberName || '').toLowerCase().includes(q) ||
-                String(e.action || '').toLowerCase().includes(q) ||
-                String(e.domain || '').toLowerCase().includes(q) ||
-                String(e.sheet || '').toLowerCase().includes(q) ||
-                String(e.field || '').toLowerCase().includes(q) ||
-                String(e.before || '').toLowerCase().includes(q) ||
-                String(e.after || '').toLowerCase().includes(q)
-            );
-        }
-
-        document.getElementById('auditBody').innerHTML = entries.map((e, i) => {
-            const isError = String(e.success || '').toLowerCase() === 'failed'
-                         || String(e.after || '').startsWith('ERROR:');
-            const uid = `al${i}`;
-            return `
-            <tr class="${isError ? 'audit-error' : ''}">
-                <td style="white-space:nowrap;">${fmtTime(e.timestamp)}</td>
-                <td>${escapeHtml(e.memberName)}</td>
-                <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(e.domain)}</td>
-                <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(e.sheet)}</td>
-                <td>${escapeHtml(e.action)}</td>
-                <td>${escapeHtml(e.field)}</td>
-                <td>${renderValTabs(e.before, e.after, isError, uid)}</td>
-                <td><span class="badge ${isError ? 'badge-expired' : 'badge-full'}">${isError ? 'Fail' : 'OK'}</span></td>
-            </tr>`;
-        }).join('');
-        document.getElementById('auditEmpty').style.display = entries.length ? 'none' : 'block';
     }
 
     function checkModalChanges() {
