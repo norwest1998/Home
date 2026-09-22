@@ -901,80 +901,13 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
 <footer>
   <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
 </footer>
-
+<script src="shared.js"></script>   <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
+<script src="auditLog.js"></script>
 <script>
-/* =========================================================
-   SHARED ADMIN LOG & API CONFIG
-   ========================================================= */
-const AdminLog = {
-  add({ hexCode = "", name = "", field = "", before = "", after = "", status = "success", message = "" }) {
-    const value = status === "error" ? `ERROR: ${message || after}` : after;
-    return appendSheet(DOMAIN.audit, "AuditLog", {
-      HexCode: hexCode, Timestamp: new Date().toISOString(), Name: name, Field: field, OldValue: before, NewValue: value
-    }).catch(err => console.error("AuditLog write failed:", err));
-  }
-};
+    AuditLog.init('Calendar');  // or 'all' to default to unfiltered
+</script>
+<script>
 
-// config.js  (or inline in a shared include)
-const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
-
-// domain keys must match REGISTRY keys in Gateway.gs
-    // domain keys must match REGISTRY keys in Gateway.gs
-    const DOMAIN = {
-        members:   "members",
-        documents: "documents",
-        calendar:  "calendar",
-        apps:      "apps",
-        notes:     "notes",
-        audit:     "audit",
-        tracking:  "tracking"
-    };
-
-    // Returns array of objects (fetch) or single object (display)
-    async function fetchSheet(domain, sheetName, hexKey = null) {
-        const action = hexKey ? "display" : "fetch";
-        const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
-                     + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
-        const res  = await fetch(url);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        // display returns { record: {} }, fetch returns { values: [...] }
-        if (data.record) return data.record;
-        return data.values ?? [];
-    }
-
-    async function updateSheet(domain, sheetName, hexKey, updates) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
-
-    async function appendRow(domain, sheetName, rowData) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
-
-    async function deleteRow(domain, sheetName, hexKey) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
 
 /* =========================================================
    DATE & TIME HELPERS
