@@ -761,7 +761,7 @@
             const withPhone = activeMembers.filter(m => hasVal(m, ["Telephone", "Phone", "Mobile", "Telephone Number", "Phone Number"])).length;
             const withEmail = activeMembers.filter(m => hasVal(m, ["Email", "Email Address"])).length;
             const withWhatsapp = activeMembers.filter(m => m.WhatsApp === true).length;
-            const withPaidUp = activeMembers.filter(m => m["Paid Up"] === true).length;
+            const withPaidUp = activeMembers.filter(m => m["Paid up"] === true).length;
             const withActive = activeMembers.filter(m => m.Active === true).length;
             const withAddr = activeMembers.filter(m => hasVal(m, ["Address Line", "Post Code"])).length;
             const withCont = activeMembers.filter(m => hasVal(m, ["Emergency Contact Name", "Emergency Contact"])).length;
