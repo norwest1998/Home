@@ -36,7 +36,7 @@
         return true;
     }
 
-    async function appendRow(domain, sheetName, rowData) {
+    async function appendSheet(domain, sheetName, rowData) {
         const res  = await fetch(GATEWAY_URL, {
             method:  "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
