@@ -1120,10 +1120,9 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
        ========================================================= */
     function memberOptions(selected) {
         const opts = members.map(m => {
-            const first = gv(m,"First Name","FirstName");
-            const last  = gv(m,"Last Name","LastName","Surname");
-            const name  = (first + " " + last).trim();
-            const email = gv(m,"Email","Email Address");
+            const name  = gv(m,"MemberName","membername","memberName", "name", "Name");
+            const email = gv(m,"Email","Email Address", "email","eMail");
+            console.log(name + " <> " + email)
             return { name, email };
         }).filter(m => m.name);
 
