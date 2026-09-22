@@ -1085,37 +1085,37 @@
     }
 
     async function loadAuditLog() {
-    try {
-        const data = await fetchSheet(DOMAIN.audit, "AuditLog");
-        if (data.error) throw new Error(data.error);
+        try {
+            const data = await fetchSheet(DOMAIN.audit, "AuditLog");
+            if (data.error) throw new Error(data.error);
 
-        // Explicitly fallback to an empty array if data.values is missing
-        const rows = data.values;
+            // Explicitly fallback to an empty array if data.values is missing
+            const rows = data.values;
 
-        // Check if rows is actually an array before processing
-        if (!Array.isArray(rows)) {
-        throw new Error("Sheet data is empty or invalid.");
+            // Check if rows is actually an array before processing
+            if (!Array.isArray(rows)) {
+            throw new Error("Sheet data is empty or invalid.");
+            }
+
+            auditEntries = rows
+            .slice(1)
+            .filter(r => Array.isArray(r) && r.some(c => c !== "")) // Ensure row itself is an array
+            .map(r => ({
+                hexCode: r[0] || "",
+                timestamp: r[1] || "",
+                memberName: r[2] || "",
+                field: r[3] || "",
+                before: r[4] || "",
+                after: r[5] || ""
+            }))
+            .reverse();
+
+            renderAuditLog();
+        } catch (err) {
+            document.getElementById('auditBody').innerHTML = '';
+            document.getElementById('auditEmpty').style.display = 'block';
+            document.getElementById('auditEmpty').textContent = 'Error loading audit log: ' + err.message;
         }
-
-        auditEntries = rows
-        .slice(1)
-        .filter(r => Array.isArray(r) && r.some(c => c !== "")) // Ensure row itself is an array
-        .map(r => ({
-            hexCode: r[0] || "",
-            timestamp: r[1] || "",
-            memberName: r[2] || "",
-            field: r[3] || "",
-            before: r[4] || "",
-            after: r[5] || ""
-        }))
-        .reverse();
-
-        renderAuditLog();
-    } catch (err) {
-        document.getElementById('auditBody').innerHTML = '';
-        document.getElementById('auditEmpty').style.display = 'block';
-        document.getElementById('auditEmpty').textContent = 'Error loading audit log: ' + err.message;
-    }
     }
 
     function renderAuditLog() {
