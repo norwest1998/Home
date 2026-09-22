@@ -353,8 +353,8 @@ vertical-align: middle;
             <strong>Sydney Maritime Modellers Club</strong>
             <span>ADMINISTRATION PORTAL</span>
         </div>
-        <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
-        <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
+        <i class="nav-icon" data-lucide="folder-key" color="#a51e1e"></i>
+        <p style="color:#a51e1e;"><strong>Restricted Area</strong></p>
     </a>
     <ul class="nav-links">
         <li class="nav-item"><a href="admin.html" class="nav-link">Admin Home</a></li>
@@ -479,7 +479,7 @@ vertical-align: middle;
                     <div class="attach-picker-row">
                         <input type="text" id="fAttachments" placeholder="Paste Drive link or use Browse…">
                         <button type="button" class="drive-browse-btn" id="driveBrowseBtn">
-                            <i class="nav-icon" data-lucide="folder" color="#b41d1d"></i> Browse Drive
+                            <i class="nav-icon" data-lucide="folder" color="#a3a10b"></i> Browse Drive
                         </button>
                     </div>
                     <div class="attach-list" id="attachPreview"></div>
@@ -1087,7 +1087,7 @@ vertical-align: middle;
             }
 
             if (newActions.length) await sendActionEmails(newActions, nid, topic, date);
-                
+
             showModalStatus("Saved successfully.", "success");
             await loadAll();
             await AuditLog.load();
