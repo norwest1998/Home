@@ -942,7 +942,7 @@
 
             showMsg('modalMsg', `Saved ${changes.length} change(s) successfully.`, false);
             await loadMembers();
-            await loadAuditLog();
+            await AuditLog.load();
 
             const refreshed = allMembers.find(m => m.row === activeModalMember.row) || updatedData;
             await openMemberModal(refreshed, true);
@@ -1013,7 +1013,7 @@
         try {
             await apiPost(action, {});
             showMsg(`msg-${action}`, 'Sent to all active members.', false);
-            await loadAuditLog();
+            await AuditLog.load();
         } catch (err) {
             showMsg(`msg-${action}`, 'Error: ' + err.message, true);
         } finally {
@@ -1065,7 +1065,7 @@
     INIT
     ============================================================ */
     loadMembers();
-    loadAuditLog();
+    AuditLog.load();
     if (window.lucide) lucide.createIcons();
 </script>
 </body>
