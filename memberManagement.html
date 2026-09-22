@@ -69,16 +69,6 @@
     .bulk-comm-card .bc-desc { font-size: 12.5px; color: var(--foam-dim); line-height: 1.4; }
     .bulk-comm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 
-    /* Before / After tab pill inside cell */
-    .val-tabs { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
-    .val-tab-btns { display: flex; gap: 0; border: 1px solid var(--glass-border); border-radius: 6px; overflow: hidden; width: fit-content; }
-    .val-tab-btns button {
-        padding: 2px 8px; font-size: 10px; font-family: inherit; cursor: pointer;
-        background: transparent; border: none; color: var(--foam-dim); transition: background .12s, color .12s;
-    }
-    .val-tab-btns button.active { background: rgba(255,255,255,0.1); color: var(--foam); }
-    .val-content { font-size: 12px; color: var(--foam); word-break: break-word; min-height: 16px; }
-
     .fn-message { font-size: 12px; margin-top: 8px; display: none; }
     .fn-message.visible { display: block; }
     .fn-message.success { color: var(--glow, #4ade80); }
@@ -1073,9 +1063,6 @@
             btn.style.display = hasChanges ? 'inline-flex' : 'none';
         }
     }
-
-    document.getElementById('auditSearch').addEventListener('input', renderAuditLog);
-    document.getElementById('refreshLogBtn').addEventListener('click', loadAuditLog);
 
     /* ============================================================
     INIT
