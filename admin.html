@@ -311,27 +311,13 @@
     async function fetchSheet(domain, sheetName, hexKey = null) {
         const action = hexKey ? "display" : "fetch";
         const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
-                    + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
-
+                     + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
         const res  = await fetch(url);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
-
-        // Single record
+        // display returns { record: {} }, fetch returns { values: [...] }
         if (data.record) return data.record;
-
-        // Bulk — existing parse logic unchanged
-        const rows = Array.isArray(data) ? data : (data.values ?? []);
-        if (!rows.length) return [];
-
-        let hi = rows.findIndex(r => r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
-        if (hi === -1) hi = rows.findIndex(r => r.filter(c => String(c||"").trim()).length > 3);
-        if (hi === -1) return [];
-
-        const headers = rows[hi].map(h => String(h||"").trim());
-        return rows.slice(hi + 1)
-            .filter(r => r.some(c => String(c||"").trim()))
-            .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
+        return data.values ?? [];
     }
 
     async function updateSheet(domain, sheetName, hexKey, updates) {
