@@ -69,27 +69,6 @@
     .bulk-comm-card .bc-desc { font-size: 12.5px; color: var(--foam-dim); line-height: 1.4; }
     .bulk-comm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 
-    .log-table-wrap { max-height: 420px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
-    table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-    .log-table th {
-        position: sticky; top: 0; background: var(--ocean-mid); text-align: left;
-        padding: 8px 10px; font-family: var(--font-data); font-size: 10px;
-        letter-spacing: 0.06em; text-transform: uppercase; color: var(--foam-dim);
-        border-bottom: 1px solid var(--glass-border);
-    }
-    .log-table td { padding: 8px 10px; border-bottom: 1px solid var(--glass-border); color: var(--foam); vertical-align: top; }
-    .log-table tr:last-child td { border-bottom: none; }
-    .log-table tr.audit-error td { background: rgba(255,80,80,0.06); }
-    .log-table .val-error { color: #ff6b6b; font-size: 11.5px; }
-
-    /* Audit domain toggle */
-    .audit-toggle { display: flex; gap: 0; border: 1px solid var(--glass-border); border-radius: 8px; overflow: hidden; }
-    .audit-toggle button {
-        padding: 5px 14px; font-size: 11.5px; font-family: inherit; cursor: pointer;
-        background: transparent; border: none; color: var(--foam-dim); transition: background .15s, color .15s;
-    }
-    .audit-toggle button.active { background: rgba(255,255,255,0.1); color: var(--foam); }
-
     /* Before / After tab pill inside cell */
     .val-tabs { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
     .val-tab-btns { display: flex; gap: 0; border: 1px solid var(--glass-border); border-radius: 6px; overflow: hidden; width: fit-content; }
