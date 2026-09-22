@@ -757,6 +757,9 @@
   .val-tab-btns button.active { background: rgba(255,255,255,0.1); color: var(--foam); }
   .val-content { font-size: 12px; color: var(--foam); word-break: break-word; min-height: 16px; }
 
+  .panel-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .panel-toolbar .search-wrap { flex: 1; min-width: 200px; margin-bottom: 0; }
+
   /* =========================================================
     FOOTER
     ========================================================= */
