@@ -29,7 +29,7 @@
         const res  = await fetch(GATEWAY_URL, {
             method:  "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
+            body:    JSON.stringify({ action: "update", domain: domain, sheet: sheetName, hexKey: hexKey, update: updates })
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
@@ -40,7 +40,7 @@
         const res  = await fetch(GATEWAY_URL, {
             method:  "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
+            body:    JSON.stringify({ action: "append", domain: domain, sheet: sheetName, rowData: rowData })
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
@@ -51,7 +51,7 @@
         const res  = await fetch(GATEWAY_URL, {
             method:  "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
+            body:    JSON.stringify({ action: "delete", domain: domain, sheet: sheetName, hexKey: hexKey })
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
