@@ -1131,8 +1131,7 @@
 
     async function loadAuditLog() {
         try {
-            const res = await fetchSheet(DOMAIN.audit,"AuditLog");
-            const data = await res.json();
+            const data = await fetchSheet(DOMAIN.audit,"AuditLog");
             if (data.error) throw new Error(data.error);
             const rows = data.values || [];
             auditEntries = rows.slice(1).filter(r => r.some(c => c !== "")).map(r => ({
