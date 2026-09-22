@@ -335,14 +335,17 @@
     </div>
 
     <!-- AUDIT LOG -->
-    <div class="section-head" id="audit-log"><h2>Audit Log</h2><p>Every Member Management action, recorded to the AuditLog sheet.</p></div>
+    <div class="section-head" id="audit-log">
+        <h2>Audit Log</h2>
+        <p>Actions recorded to the AuditLog sheet.</p>
+    </div>
     <div class="panel">
         <div class="panel-header">
             <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
             <div class="panel-toolbar">
                 <div class="audit-toggle">
-                    <button id="auditFilterMembers" class="active" onclick="setAuditFilter('members')">Members</button>
-                    <button id="auditFilterAll" onclick="setAuditFilter('all')">All</button>
+                    <button id="auditFilterMembers" class="active">Members</button>
+                    <button id="auditFilterAll">All</button>
                 </div>
                 <div class="search-wrap">
                     <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
