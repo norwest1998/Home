@@ -1,714 +1,653 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notes — Sydney Maritime Modellers Club</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="theme.css">
-    <style>
-    /* =========================================================
-       NOTES PAGE STYLES — matches admin.html conventions
-       ========================================================= */
-    .notes-header {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
-    }
-    .admin-header {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
-    }
-    /* Stats board */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 16px;
-        margin-bottom: 32px;
-    }
-    .stat-card {
-        padding: 20px 18px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-    }
-    .stat-card .stat-val {
-        font-family: var(--font-display);
-        font-size: 32px;
-        color: var(--foam);
-        line-height: 1;
-    }
-    .stat-card .stat-val.warn { color: #ffb347; }
-    .stat-card .stat-val.accent { color: var(--signal); }
-    .stat-card .stat-label {
-        font-family: var(--font-data);
-        font-size: 10px;
-        letter-spacing: 0.06em;
-        color: var(--foam-dim);
-        text-transform: uppercase;
-    }
-    .stat-card .stat-sub { font-size: 11px; color: var(--foam-dim); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notes — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* =========================================================
+    NOTES PAGE STYLES — matches admin.html conventions
+    ========================================================= */
+.notes-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
+}
+.admin-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
+}
+/* Stats board */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+.stat-card {
+    padding: 20px 18px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.stat-card .stat-val {
+    font-family: var(--font-display);
+    font-size: 32px;
+    color: var(--foam);
+    line-height: 1;
+}
+.stat-card .stat-val.warn { color: #ffb347; }
+.stat-card .stat-val.accent { color: var(--signal); }
+.stat-card .stat-label {
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--foam-dim);
+    text-transform: uppercase;
+}
+.stat-card .stat-sub { font-size: 11px; color: var(--foam-dim); }
 
-    /* Toolbar */
-    .notes-toolbar {
-        display: flex; gap: 10px; flex-wrap: wrap;
-        align-items: center; margin-bottom: 16px;
-    }
-    .notes-toolbar .search-wrap { flex: 1; min-width: 220px; margin-bottom: 0; }
+/* Toolbar */
+.notes-toolbar {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    align-items: center; margin-bottom: 16px;
+}
+.notes-toolbar .search-wrap { flex: 1; min-width: 220px; margin-bottom: 0; }
 
-    /* Glass select — matches theme, readable text */
-    .glass-select {
-        appearance: none;
-        -webkit-appearance: none;
-        background: rgba(255,255,255,0.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0b8c8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
-        border: 1px solid var(--glass-border);
-        border-radius: 8px;
-        color: var(--foam);
-        font-family: var(--font-body, 'Inter', sans-serif);
-        font-size: 12px;
-        padding: 5px 30px 5px 12px;
-        cursor: pointer;
-        transition: border-color 0.2s, background 0.2s;
-        min-width: 120px;
-    }
-    .glass-select:hover  { background-color: rgba(255,255,255,0.12); border-color: var(--foam-dim); }
-    .glass-select:focus  { outline: none; border-color: var(--foam); }
-    .glass-select option { background: #0f2535; color: var(--foam); }
+/* Glass select — matches theme, readable text */
+.glass-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: rgba(255,255,255,0.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0b8c8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--foam);
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 12px;
+    padding: 5px 30px 5px 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    min-width: 120px;
+}
+.glass-select:hover  { background-color: rgba(255,255,255,0.12); border-color: var(--foam-dim); }
+.glass-select:focus  { outline: none; border-color: var(--foam); }
+.glass-select option { background: #0f2535; color: var(--foam); }
 
-    /* Table */
-    .notes-table-wrap { max-height: 480px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
-    table.notes-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-    .notes-table th {
-        position: sticky; top: 0; background: var(--ocean-mid);
-        text-align: left; padding: 8px 10px;
-        font-family: var(--font-data); font-size: 10px;
-        letter-spacing: 0.06em; text-transform: uppercase;
-        color: var(--foam-dim); border-bottom: 1px solid var(--glass-border);
-    }
-    
-    .notes-table td {
-        padding: 8px 10px; border-bottom: 1px solid var(--glass-border);
-        color: var(--foam); vertical-align: top;
-    }
-    .notes-table tr:last-child td { border-bottom: none; }
-    .notes-table tr.clickable { cursor: pointer; }
-    .notes-table tr.clickable:hover td { background: rgba(255,255,255,0.04); }
+/* Table */
+.notes-table-wrap { max-height: 480px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+table.notes-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.notes-table th {
+    position: sticky; top: 0; background: var(--ocean-mid);
+    text-align: left; padding: 8px 10px;
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim); border-bottom: 1px solid var(--glass-border);
+}
 
-    /* Action badges in table */
-    .action-dot {
-        display: inline-block; width: 8px; height: 8px;
-        border-radius: 50%; margin-right: 4px;
-    }
-    .action-dot.due    { background: #ff6b6b; }
-    .action-dot.soon   { background: #ffb347; }
-    .action-dot.ok     { background: var(--glow); }
+.notes-table td {
+    padding: 8px 10px; border-bottom: 1px solid var(--glass-border);
+    color: var(--foam); vertical-align: top;
+}
+.notes-table tr:last-child td { border-bottom: none; }
+.notes-table tr.clickable { cursor: pointer; }
+.notes-table tr.clickable:hover td { background: rgba(255,255,255,0.04); }
 
-    /* Modal overlay */
-    .modal-overlay {
-        display: none; position: fixed; inset: 0;
-        background: rgba(0,0,0,0.65); z-index: 1000;
-        align-items: center; justify-content: center;
-        padding: 20px;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal {
-        background: var(--ocean-mid);
-        border: 1px solid var(--glass-border);
-        border-radius: 16px;
-        width: 100%; max-width: 800px;
-        max-height: 90vh; overflow-y: auto;
-        padding: 28px;
-        display: flex; flex-direction: column; gap: 20px;
-    }
-    .modal-header {
-        display: flex; align-items: center;
-        justify-content: space-between; gap: 12px;
-    }
-    .modal-header h3 { font-size: 18px; color: var(--foam); }
-    .modal-close {
-        background: none; border: none; color: var(--foam-dim);
-        cursor: pointer; padding: 4px; line-height: 1;
-        font-size: 20px; transition: color 0.15s;
-    }
-    .modal-close:hover { color: var(--foam); }
+/* Action badges in table */
+.action-dot {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; margin-right: 4px;
+}
+.action-dot.due    { background: #ff6b6b; }
+.action-dot.soon   { background: #ffb347; }
+.action-dot.ok     { background: var(--glow); }
 
-    /* Form layout */
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-    }
-    .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
-    .form-row.full   { grid-template-columns: 1fr; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-group label {
-        font-family: var(--font-data); font-size: 10px;
-        letter-spacing: 0.06em; text-transform: uppercase;
-        color: var(--foam-dim);
-    }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        background: rgba(255,255,255,0.06);
-        border: 1px solid var(--glass-border);
-        border-radius: 8px;
-        color: var(--foam);
-        font-family: var(--font-body, 'Inter', sans-serif);
-        font-size: 13px;
-        padding: 8px 12px;
-        width: 100%;
-        box-sizing: border-box;
-        transition: border-color 0.2s;
-    }
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: var(--foam);
-    }
-    .form-group select option { background: var(--ocean-mid); }
-    .form-group textarea { resize: vertical; min-height: 90px; }
+/* Modal overlay */
+.modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); z-index: 1000;
+    align-items: center; justify-content: center;
+    padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+    background: var(--ocean-mid);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    width: 100%; max-width: 800px;
+    max-height: 90vh; overflow-y: auto;
+    padding: 28px;
+    display: flex; flex-direction: column; gap: 20px;
+}
+.modal-header {
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 12px;
+}
+.modal-header h3 { font-size: 18px; color: var(--foam); }
+.modal-close {
+    background: none; border: none; color: var(--foam-dim);
+    cursor: pointer; padding: 4px; line-height: 1;
+    font-size: 20px; transition: color 0.15s;
+}
+.modal-close:hover { color: var(--foam); }
 
-    /* Action list sub-section */
-    .action-list-section {
-        border: 1px solid var(--glass-border);
-        border-radius: 10px;
-        padding: 14px;
-        display: flex; flex-direction: column; gap: 12px;
-    }
-    .action-list-section h4 {
-        font-size: 12px; color: var(--foam-dim);
-        font-family: var(--font-data); letter-spacing: 0.05em;
-        text-transform: uppercase; margin: 0;
-    }
-    .action-item {
-        display: grid;
-        grid-template-columns: 1fr 140px 1fr 28px;
-        gap: 8px; align-items: center;
-    }
-    .action-remove {
-        background: none; border: none; color: #ff6b6b;
-        cursor: pointer; padding: 4px; font-size: 16px; line-height: 1;
-    }
-    .action-remove:hover { opacity: 0.7; }
+/* Form layout */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+.form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+.form-row.full   { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label {
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim);
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--foam);
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 13px;
+    padding: 8px 12px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--foam);
+}
+.form-group select option { background: var(--ocean-mid); }
+.form-group textarea { resize: vertical; min-height: 90px; }
 
-    /* Copy-in emails */
-    .copyin-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
-    .copyin-tag {
-        display: inline-flex; align-items: center; gap: 6px;
-        background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border);
-        border-radius: 6px; padding: 3px 8px; font-size: 12px; color: var(--foam);
-    }
-    .copyin-tag button {
-        background: none; border: none; color: var(--foam-dim);
-        cursor: pointer; padding: 0; font-size: 13px; line-height: 1;
-    }
-    .copyin-tag button:hover { color: #ff6b6b; }
+/* Action list sub-section */
+.action-list-section {
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 12px;
+}
+.action-list-section h4 {
+    font-size: 12px; color: var(--foam-dim);
+    font-family: var(--font-data); letter-spacing: 0.05em;
+    text-transform: uppercase; margin: 0;
+}
+.action-item {
+    display: grid;
+    grid-template-columns: 1fr 140px 1fr 28px;
+    gap: 8px; align-items: center;
+}
+.action-remove {
+    background: none; border: none; color: #ff6b6b;
+    cursor: pointer; padding: 4px; font-size: 16px; line-height: 1;
+}
+.action-remove:hover { opacity: 0.7; }
 
-    /* Attachments */
-    .attach-list { display: flex; flex-direction: column; gap: 6px; }
-    .attach-item {
-        display: flex; align-items: center; gap: 8px;
-        font-size: 12px; color: var(--foam);
-    }
-    .attach-item a { color: var(--glow); text-decoration: none; }
-    .attach-item a:hover { text-decoration: underline; }
+/* Copy-in emails */
+.copyin-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
+.copyin-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border);
+    border-radius: 6px; padding: 3px 8px; font-size: 12px; color: var(--foam);
+}
+.copyin-tag button {
+    background: none; border: none; color: var(--foam-dim);
+    cursor: pointer; padding: 0; font-size: 13px; line-height: 1;
+}
+.copyin-tag button:hover { color: #ff6b6b; }
 
-    /* Topic mgmt */
-    .topic-mgmt {
-        display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-    }
-    .topic-mgmt input { flex: 1; min-width: 140px; }
+/* Attachments */
+.attach-list { display: flex; flex-direction: column; gap: 6px; }
+.attach-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--foam);
+}
+.attach-item a { color: var(--glow); text-decoration: none; }
+.attach-item a:hover { text-decoration: underline; }
 
-    /* Modal footer */
-    .modal-footer {
-        display: flex; justify-content: flex-end;
-        gap: 10px; flex-wrap: wrap; padding-top: 4px;
-    }
+/* Topic mgmt */
+.topic-mgmt {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.topic-mgmt input { flex: 1; min-width: 140px; }
 
-    /* Status message inside modal */
-    .modal-status { font-size: 12px; display: none; }
-    .modal-status.visible { display: block; }
-    .modal-status.success { color: var(--glow); }
-    .modal-status.error   { color: #ff6b6b; }
+/* Modal footer */
+.modal-footer {
+    display: flex; justify-content: flex-end;
+    gap: 10px; flex-wrap: wrap; padding-top: 4px;
+}
 
-    /* View-only mode */
-    .view-field {
-        font-size: 13px; color: var(--foam); line-height: 1.5;
-        padding: 8px 0; border-bottom: 1px solid var(--glass-border);
-    }
-    .view-field:last-child { border-bottom: none; }
-    .view-label {
-        font-family: var(--font-data); font-size: 10px;
-        letter-spacing: 0.06em; text-transform: uppercase;
-        color: var(--foam-dim); margin-bottom: 3px;
-    }
-    /* Spinner CSS */
-    .spinner {
-    display: inline-block;
-    width: 18px; height: 18px;
-    border: 2px solid rgba(255,255,255,0.15);
-    border-top-color: var(--foam);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    vertical-align: middle;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+/* Status message inside modal */
+.modal-status { font-size: 12px; display: none; }
+.modal-status.visible { display: block; }
+.modal-status.success { color: var(--glow); }
+.modal-status.error   { color: #ff6b6b; }
 
-    .spinner-row td {
-        text-align: center;
-        color: var(--foam-dim);
-        font-size: 12px;
-        padding: 24px;
-    }
-    /* Google Drive picker */
-    .attach-picker-row {
-        display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-    }
-    .attach-picker-row input { flex: 1; min-width: 200px; }
-    .drive-browse-btn {
-        display: inline-flex; align-items: center; gap: 6px;
-        background: rgba(255,255,255,0.07); border: 1px solid var(--glass-border);
-        border-radius: 8px; color: var(--foam); font-size: 12px;
-        padding: 7px 12px; cursor: pointer; white-space: nowrap;
-        transition: background 0.15s;
-    }
-    .drive-browse-btn:hover { background: rgba(255,255,255,0.13); }
+/* View-only mode */
+.view-field {
+    font-size: 13px; color: var(--foam); line-height: 1.5;
+    padding: 8px 0; border-bottom: 1px solid var(--glass-border);
+}
+.view-field:last-child { border-bottom: none; }
+.view-label {
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim); margin-bottom: 3px;
+}
+/* Spinner CSS */
+.spinner {
+display: inline-block;
+width: 18px; height: 18px;
+border: 2px solid rgba(255,255,255,0.15);
+border-top-color: var(--foam);
+border-radius: 50%;
+animation: spin 0.7s linear infinite;
+vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Drive search modal */
-    .drive-modal {
-        background: var(--ocean-mid);
-        border: 1px solid var(--glass-border);
-        border-radius: 16px;
-        width: 100%; max-width: 560px;
-        max-height: 80vh; overflow-y: auto;
-        padding: 24px;
-        display: flex; flex-direction: column; gap: 14px;
-    }
-    .drive-result-item {
-        display: flex; align-items: center; gap: 10px;
-        padding: 8px 10px; border-radius: 8px; cursor: pointer;
-        border: 1px solid transparent; transition: all 0.15s;
-    }
-    .drive-result-item:hover { background: rgba(255,255,255,0.06); border-color: var(--glass-border); }
-    .drive-result-item .dr-icon { font-size: 20px; flex-shrink: 0; }
-    .drive-result-item .dr-name { font-size: 13px; color: var(--foam); flex: 1; word-break: break-word; }
-    .drive-result-item .dr-meta { font-size: 10px; color: var(--foam-dim); }
+.spinner-row td {
+    text-align: center;
+    color: var(--foam-dim);
+    font-size: 12px;
+    padding: 24px;
+}
+/* Google Drive picker */
+.attach-picker-row {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.attach-picker-row input { flex: 1; min-width: 200px; }
+.drive-browse-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.07); border: 1px solid var(--glass-border);
+    border-radius: 8px; color: var(--foam); font-size: 12px;
+    padding: 7px 12px; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s;
+}
+.drive-browse-btn:hover { background: rgba(255,255,255,0.13); }
 
-    /* Action pills */
-    .action-list-section {
-        border: 1px solid var(--glass-border);
-        border-radius: 10px;
-        padding: 14px;
-        display: flex; flex-direction: column; gap: 10px;
-    }
-    .action-list-section h4 {
-        font-size: 12px; color: var(--foam-dim);
-        font-family: var(--font-data); letter-spacing: 0.05em;
-        text-transform: uppercase; margin: 0;
-    }
-    .action-item {
-        display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
-        background: rgba(255,255,255,0.04);
-        border: 1px solid var(--glass-border);
-        border-radius: 999px;
-        padding: 5px 10px 5px 14px;
-    }
-    .action-item input,
-    .action-item select {
-        background: transparent; border: none; outline: none;
-        color: var(--foam);
-        font-family: var(--font-body, 'Inter', sans-serif);
-        font-size: 12.5px; padding: 2px 4px; min-width: 80px;
-    }
-    .action-item input::placeholder { color: var(--foam-dim); }
-    .action-item select option { background: #0f2535; color: var(--foam); }
-    .action-pill-sep { color: var(--glass-border); font-size: 14px; user-select: none; flex-shrink: 0; }
-    .act-bydate   { width: 130px; flex-shrink: 0; color-scheme: dark; }
-    .act-action   { flex: 1; min-width: 120px; }
-    .act-bymember { min-width: 130px; }
-    .action-remove {
-        background: none; border: none; color: var(--foam-dim);
-        cursor: pointer; padding: 2px 6px; font-size: 15px; line-height: 1;
-        margin-left: auto; flex-shrink: 0; border-radius: 50%;
-        transition: color 0.15s;
-    }
-    .action-remove:hover { color: #ff6b6b; }
+/* Drive search modal */
+.drive-modal {
+    background: var(--ocean-mid);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    width: 100%; max-width: 560px;
+    max-height: 80vh; overflow-y: auto;
+    padding: 24px;
+    display: flex; flex-direction: column; gap: 14px;
+}
+.drive-result-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px; cursor: pointer;
+    border: 1px solid transparent; transition: all 0.15s;
+}
+.drive-result-item:hover { background: rgba(255,255,255,0.06); border-color: var(--glass-border); }
+.drive-result-item .dr-icon { font-size: 20px; flex-shrink: 0; }
+.drive-result-item .dr-name { font-size: 13px; color: var(--foam); flex: 1; word-break: break-word; }
+.drive-result-item .dr-meta { font-size: 10px; color: var(--foam-dim); }
 
-    /* Search wrap — icon inside input */
-    .search-wrap { position: relative; display: flex; align-items: center; }
-    .search-wrap .nav-icon { position: absolute; left: 10px; width: 14px; height: 14px; pointer-events: none; color: var(--foam-dim); }
-    .search-wrap .search-input { padding-left: 32px; }
+/* Action pills */
+.action-list-section {
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.action-list-section h4 {
+    font-size: 12px; color: var(--foam-dim);
+    font-family: var(--font-data); letter-spacing: 0.05em;
+    text-transform: uppercase; margin: 0;
+}
+.action-item {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    padding: 5px 10px 5px 14px;
+}
+.action-item input,
+.action-item select {
+    background: transparent; border: none; outline: none;
+    color: var(--foam);
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 12.5px; padding: 2px 4px; min-width: 80px;
+}
+.action-item input::placeholder { color: var(--foam-dim); }
+.action-item select option { background: #0f2535; color: var(--foam); }
+.action-pill-sep { color: var(--glass-border); font-size: 14px; user-select: none; flex-shrink: 0; }
+.act-bydate   { width: 130px; flex-shrink: 0; color-scheme: dark; }
+.act-action   { flex: 1; min-width: 120px; }
+.act-bymember { min-width: 130px; }
+.action-remove {
+    background: none; border: none; color: var(--foam-dim);
+    cursor: pointer; padding: 2px 6px; font-size: 15px; line-height: 1;
+    margin-left: auto; flex-shrink: 0; border-radius: 50%;
+    transition: color 0.15s;
+}
+.action-remove:hover { color: #ff6b6b; }
 
-    /* Audit Log */
-    .log-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
-    .log-toolbar .search-wrap { flex: 1; min-width: 200px; margin-bottom: 0; }
-    .log-table-wrap { max-height: 420px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
-    table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-    .log-table th {
-        position: sticky; top: 0; background: var(--ocean-mid); text-align: left;
-        padding: 8px 10px; font-family: var(--font-data); font-size: 10px;
-        letter-spacing: 0.06em; text-transform: uppercase; color: var(--foam-dim);
-        border-bottom: 1px solid var(--glass-border);
-    }
-    .log-table td { padding: 8px 10px; border-bottom: 1px solid var(--glass-border); color: var(--foam); vertical-align: top; }
-    .log-table tr:last-child td { border-bottom: none; }
-    .app-filter-btn {
-        background: none; border: 1px solid var(--glass-border); border-radius: 6px;
-        color: var(--foam-dim); cursor: pointer; font-size: 11px; padding: 4px 10px;
-        transition: all 0.15s;
-    }
-    .app-filter-btn.active, .app-filter-btn:hover { background: rgba(255,255,255,0.08); color: var(--foam); }
-    </style>
+/* Search wrap — icon inside input */
+.search-wrap { position: relative; display: flex; align-items: center; }
+.search-wrap .nav-icon { position: absolute; left: 10px; width: 14px; height: 14px; pointer-events: none; color: var(--foam-dim); }
+.search-wrap .search-input { padding-left: 32px; }
+
+</style>
 </head>
 <body>
-    <!-- Shared Navigation Header -->
-    <header class="nav-glass">
-        <a href="index.html" class="brand">
-            <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
-            <div class="brand-text">
-                <strong>Sydney Maritime Modellers Club</strong>
-                <span>ADMINISTRATION PORTAL</span>
-            </div>
-            <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
-            <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
-        </a>
-        <ul class="nav-links">
-            <li class="nav-item"><a href="admin.html" class="nav-link">Admin Home</a></li>
-            <li class="nav-item"><a href="#audit-log" class="nav-link">Audit Log</a></li>
-            <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
-        </ul>
-    </header>
-
-    <main class="container">
-
-        <div class="admin-header">
-            <div class="admin-title-group">
-               <h1>Notes Management Console</h1>
-            </div>
-            <a href="admin.html" class="btn btn-ghost" style="flex-shrink:0;">Back to Dashboard</a>
+<!-- Shared Navigation Header -->
+<header class="nav-glass">
+    <a href="index.html" class="brand">
+        <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+        <div class="brand-text">
+            <strong>Sydney Maritime Modellers Club</strong>
+            <span>ADMINISTRATION PORTAL</span>
         </div>
+        <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
+        <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
+    </a>
+    <ul class="nav-links">
+        <li class="nav-item"><a href="admin.html" class="nav-link">Admin Home</a></li>
+        <li class="nav-item"><a href="#audit-log" class="nav-link">Audit Log</a></li>
+        <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
+    </ul>
+</header>
+<main class="container">
 
-        <div class="section-head">
-            <h2>Notes Overview</h2>
-            <p>Summary of recorded notes and outstanding actions.</p>
+    <div class="admin-header">
+        <div class="admin-title-group">
+            <h1>Notes Management Console</h1>
         </div>
+        <a href="admin.html" class="btn btn-ghost" style="flex-shrink:0;">Back to Dashboard</a>
+    </div>
 
-        <!-- Stats board -->
-        <section class="stats-grid" id="statsGrid">
-            <div class="glass stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-label">Total Notes</div></div>
-            <div class="glass stat-card"><div class="stat-val" id="stat-topics">—</div><div class="stat-label">Topics</div></div>
-            <div class="glass stat-card"><div class="stat-val warn" id="stat-actions">—</div><div class="stat-label">Open Actions</div></div>
-            <div class="glass stat-card"><div class="stat-val accent" id="stat-overdue">—</div><div class="stat-label">Overdue Actions</div></div>
-            <div class="glass stat-card"><div class="stat-val" id="stat-this-month">—</div><div class="stat-label">This Month</div></div>
-            <div class="glass stat-card"><div class="stat-val" id="stat-attachments">—</div><div class="stat-label">Attachments</div></div>
-        </section>
+    <div class="section-head">
+        <h2>Notes Overview</h2>
+        <p>Summary of recorded notes and outstanding actions.</p>
+    </div>
 
-        <!-- Notes table -->
-        <div class="section-head">
-            <h2>All Notes</h2>
-            <p>Click a row to view or edit. Use the button to add a new note.</p>
-        </div>
+    <!-- Stats board -->
+    <section class="stats-grid" id="statsGrid">
+        <div class="glass stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-label">Total Notes</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-topics">—</div><div class="stat-label">Topics</div></div>
+        <div class="glass stat-card"><div class="stat-val warn" id="stat-actions">—</div><div class="stat-label">Open Actions</div></div>
+        <div class="glass stat-card"><div class="stat-val accent" id="stat-overdue">—</div><div class="stat-label">Overdue Actions</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-this-month">—</div><div class="stat-label">This Month</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-attachments">—</div><div class="stat-label">Attachments</div></div>
+    </section>
 
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title"><span class="dot"></span><h3>Notes</h3></div>
-                <div class="notes-toolbar">
-                    <div class="search-wrap">
-                        <i class="nav-icon" data-lucide="search" size="8"></i>
-                        <input class="search-input" id="notesSearch" placeholder='Search action, sheet, record…'>
-                    </div>
-                    <select class="glass-select" id="filterTopic">
-                        <option value="">All Topics</option>
-                    </select>
-                    <select class="glass-select" id="filterAction">
-                        <option value="">All Statuses</option>
-                        <option value="overdue">Overdue Actions</option>
-                        <option value="open">Open Actions</option>
-                        <option value="none">No Actions</option>
-                    </select>
-                    <button class="btn btn-ghost" id="refreshBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
-                    <button class="btn btn-primary" id="newNoteBtn" style="padding:5px 14px;font-size:12px;">+ New Note</button>
+    <!-- Notes table -->
+    <div class="section-head">
+        <h2>All Notes</h2>
+        <p>Click a row to view or edit. Use the button to add a new note.</p>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title"><span class="dot"></span><h3>Notes</h3></div>
+            <div class="notes-toolbar">
+                <div class="search-wrap">
+                    <i class="nav-icon" data-lucide="search" size="8"></i>
+                    <input class="search-input" id="notesSearch" placeholder='Search action, sheet, record…'>
                 </div>
-            </div>
-            <div class="tab-content active">
-                <div class="notes-table-wrap">
-                    <table class="notes-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Topic</th>
-                                <th>Sub Topic</th>
-                                <th>Note Preview</th>
-                                <th>Actions</th>
-                                <th>Attachments</th>
-                                <th>Status</th>
-                                <th>Export</th>
-                            </tr>
-                        </thead>
-                        <tbody id="notesBody"></tbody>
-                    </table>
-                </div>
-                <div class="empty-state" id="notesEmpty" style="display:none;">No notes found.</div>
+                <select class="glass-select" id="filterTopic">
+                    <option value="">All Topics</option>
+                </select>
+                <select class="glass-select" id="filterAction">
+                    <option value="">All Statuses</option>
+                    <option value="overdue">Overdue Actions</option>
+                    <option value="open">Open Actions</option>
+                    <option value="none">No Actions</option>
+                </select>
+                <button class="btn btn-ghost" id="refreshBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+                <button class="btn btn-primary" id="newNoteBtn" style="padding:5px 14px;font-size:12px;">+ New Note</button>
             </div>
         </div>
-
-        <div class="section-head">
-            <h2>Audit Log</h2>
-            <p>All create, update and delete activity on notes, actions and topics.</p>
-        </div>
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
-                <div class="log-toolbar">
-                    <div class="search-wrap">
-                        <i class="nav-icon" data-lucide="search" size="8"></i>
-                        <input class="search-input" id="logSearch" placeholder='Search action, sheet, record…'>
-                    </div>
-                    <select class="glass-select" id="logSheetFilter">
-                        <option value="notes" selected>Notes</option>
-                        <option value="all">All</option>
-                        <option value="actions">Actions</option>
-                        <option value="topics">Topics</option>
-                    </select>
-                    <button class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
-                </div>
+        <div class="tab-content active">
+            <div class="notes-table-wrap">
+                <table class="notes-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Topic</th>
+                            <th>Sub Topic</th>
+                            <th>Note Preview</th>
+                            <th>Actions</th>
+                            <th>Attachments</th>
+                            <th>Status</th>
+                            <th>Export</th>
+                        </tr>
+                    </thead>
+                    <tbody id="notesBody"></tbody>
+                </table>
             </div>
-            <div class="tab-content active">
-                <div class="log-table-wrap">
-                    <table class="log-table">
-                        <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>Name</th>
-                                <th>Field</th>
-                                <th>HexCode</th>
-                                <th>Old Value</th>
-                                <th>New Value</th>
-                            </tr>
-                        </thead>
-                        <tbody id="logBody"></tbody>
-                    </table>
-                </div>
-                <div class="empty-state" id="logEmpty" style="display:none;">No activity yet.</div>
-            </div>
-        </div>
-
-    </main>
-
-    <footer>
-        <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
-    </footer>
-
-    <!-- ===================== NOTE MODAL ===================== -->
-    <div class="modal-overlay" id="noteModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="modalTitle">New Note</h3>
-                <button class="modal-close" id="modalClose" title="Close">✕</button>
-            </div>
-
-            <!-- Date + Topic + Sub Topic -->
-            <div class="form-row triple">
-                <div class="form-group">
-                    <label>Date *</label>
-                    <input type="date" id="fDate">
-                </div>
-                <div class="form-group">
-                    <label>Topic *</label>
-                    <div class="topic-mgmt">
-                        <select id="fTopic">
-                            <option value="">— Select Topic —</option>
-                        </select>
-                        <button class="btn btn-ghost" id="addTopicBtn" style="padding:5px 10px;font-size:11px;white-space:nowrap;" title="Add new topic">+ Topic</button>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Sub Topic</label>
-                    <input type="text" id="fSubTopic" placeholder="Optional">
-                </div>
-            </div>
-
-            <!-- Note body -->
-            <div class="form-row full">
-                <div class="form-group">
-                    <label>Note *</label>
-                    <textarea id="fNote" placeholder="Enter note content…" style="min-height:120px;"></textarea>
-                </div>
-            </div>
-
-            <!-- Attachments -->
-            <div class="form-row full">
-                <div class="form-group">
-                    <label>Attachments — Google Drive</label>
-                    <div class="attach-picker-row">
-                        <input type="text" id="fAttachments" placeholder="Paste Drive link or use Browse…">
-                        <button type="button" class="drive-browse-btn" id="driveBrowseBtn">
-                            <i class="nav-icon" data-lucide="folder" color="#b41d1d"></i> Browse Drive
-                        </button>
-                    </div>
-                    <div class="attach-list" id="attachPreview"></div>
-                </div>
-            </div>
-
-            <!-- Action List -->
-            <div class="action-list-section">
-                <h4>Action List</h4>
-                <div id="actionItems"></div>
-                <button class="btn btn-ghost" id="addActionBtn" style="padding:5px 12px;font-size:11px;width:fit-content;">+ Add Action</button>
-            </div>
-
-            <!-- Copy-in members -->
-            <div class="form-row full">
-                <div class="form-group">
-                    <label>Copy In (email addresses)</label>
-                    <div style="display:flex;gap:8px;">
-                        <input type="email" id="fCopyInInput" placeholder="member@example.com" style="flex:1;">
-                        <button class="btn btn-ghost" id="addCopyInBtn" style="padding:5px 12px;font-size:11px;white-space:nowrap;">Add</button>
-                    </div>
-                    <div class="copyin-wrap" id="copyInTags"></div>
-                </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="modal-footer">
-                <span class="modal-status" id="modalStatus"></span>
-                <button class="btn btn-ghost" id="modalCancel">Cancel</button>
-                <button class="btn btn-ghost" id="modalDelete" style="color:#ff6b6b; display:none;">Delete</button>
-                <button class="btn btn-primary" id="modalSave">Save Note</button>
-                <button class="btn btn-ghost" id="exportSheetBtn"><i data-lucide="file-input"></i>Save as Google Sheet</button>
-            </div>
+            <div class="empty-state" id="notesEmpty" style="display:none;">No notes found.</div>
         </div>
     </div>
 
-    <!-- ===================== ADD TOPIC MODAL ===================== -->
-    <div class="modal-overlay" id="topicModal">
-        <div class="modal" style="max-width:420px;">
-            <div class="modal-header">
-                <h3>Manage Topics</h3>
-                <button class="modal-close" id="topicModalClose">✕</button>
+    <div class="section-head">
+        <h2>Audit Log</h2>
+        <p>All create, update and delete activity on notes, actions and topics.</p>
+    </div>
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
+            <div class="log-toolbar">
+                <div class="search-wrap">
+                    <i class="nav-icon" data-lucide="search" size="8"></i>
+                    <input class="search-input" id="logSearch" placeholder='Search action, sheet, record…'>
+                </div>
+                <select class="glass-select" id="logSheetFilter">
+                    <option value="notes" selected>Notes</option>
+                    <option value="all">All</option>
+                    <option value="actions">Actions</option>
+                    <option value="topics">Topics</option>
+                </select>
+                <button class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+            </div>
+        </div>
+        <div class="tab-content active">
+            <div class="log-table-wrap">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Name</th>
+                            <th>Field</th>
+                            <th>HexCode</th>
+                            <th>Old Value</th>
+                            <th>New Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="logEmpty" style="display:none;">No activity yet.</div>
+        </div>
+    </div>
+
+<!-- ===================== NOTE MODAL ===================== -->
+<div class="modal-overlay" id="noteModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle">New Note</h3>
+            <button class="modal-close" id="modalClose" title="Close">✕</button>
+        </div>
+
+        <!-- Date + Topic + Sub Topic -->
+        <div class="form-row triple">
+            <div class="form-group">
+                <label>Date *</label>
+                <input type="date" id="fDate">
             </div>
             <div class="form-group">
-                <label>New Topic Name</label>
-                <div style="display:flex;gap:8px;">
-                    <input type="text" id="newTopicInput" placeholder="e.g. Finance, Events…" style="flex:1;">
-                    <button class="btn btn-primary" id="saveTopicBtn" style="padding:6px 14px;font-size:12px;">Add</button>
+                <label>Topic *</label>
+                <div class="topic-mgmt">
+                    <select id="fTopic">
+                        <option value="">— Select Topic —</option>
+                    </select>
+                    <button class="btn btn-ghost" id="addTopicBtn" style="padding:5px 10px;font-size:11px;white-space:nowrap;" title="Add new topic">+ Topic</button>
                 </div>
-            </div>
-            <div id="topicList" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;"></div>
-            <div class="modal-footer">
-                <span class="modal-status" id="topicStatus"></span>
-                <button class="btn btn-ghost" id="topicModalCancel">Done</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== DRIVE PICKER MODAL ===================== -->
-    <div class="modal-overlay" id="driveModal">
-        <div class="drive-modal">
-            <div class="modal-header">
-                <h3>Browse Google Drive</h3>
-                <button class="modal-close" id="driveModalClose">✕</button>
             </div>
             <div class="form-group">
-                <div style="display:flex;gap:8px;">
-                    <input type="text" id="driveSearchInput" placeholder="Search files…" style="flex:1;">
-                    <button class="btn btn-primary" id="driveSearchBtn" style="padding:6px 14px;font-size:12px;">Search</button>
-                </div>
-            </div>
-            <div id="driveResults" style="display:flex;flex-direction:column;gap:4px;min-height:80px;"></div>
-            <div class="modal-footer">
-                <span class="modal-status" id="driveStatus"></span>
-                <button class="btn btn-ghost" id="driveModalCancel">Cancel</button>
+                <label>Sub Topic</label>
+                <input type="text" id="fSubTopic" placeholder="Optional">
             </div>
         </div>
+
+        <!-- Note body -->
+        <div class="form-row full">
+            <div class="form-group">
+                <label>Note *</label>
+                <textarea id="fNote" placeholder="Enter note content…" style="min-height:120px;"></textarea>
+            </div>
+        </div>
+
+        <!-- Attachments -->
+        <div class="form-row full">
+            <div class="form-group">
+                <label>Attachments — Google Drive</label>
+                <div class="attach-picker-row">
+                    <input type="text" id="fAttachments" placeholder="Paste Drive link or use Browse…">
+                    <button type="button" class="drive-browse-btn" id="driveBrowseBtn">
+                        <i class="nav-icon" data-lucide="folder" color="#b41d1d"></i> Browse Drive
+                    </button>
+                </div>
+                <div class="attach-list" id="attachPreview"></div>
+            </div>
+        </div>
+
+        <!-- Action List -->
+        <div class="action-list-section">
+            <h4>Action List</h4>
+            <div id="actionItems"></div>
+            <button class="btn btn-ghost" id="addActionBtn" style="padding:5px 12px;font-size:11px;width:fit-content;">+ Add Action</button>
+        </div>
+
+        <!-- Copy-in members -->
+        <div class="form-row full">
+            <div class="form-group">
+                <label>Copy In (email addresses)</label>
+                <div style="display:flex;gap:8px;">
+                    <input type="email" id="fCopyInInput" placeholder="member@example.com" style="flex:1;">
+                    <button class="btn btn-ghost" id="addCopyInBtn" style="padding:5px 12px;font-size:11px;white-space:nowrap;">Add</button>
+                </div>
+                <div class="copyin-wrap" id="copyInTags"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+            <span class="modal-status" id="modalStatus"></span>
+            <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+            <button class="btn btn-ghost" id="modalDelete" style="color:#ff6b6b; display:none;">Delete</button>
+            <button class="btn btn-primary" id="modalSave">Save Note</button>
+            <button class="btn btn-ghost" id="exportSheetBtn"><i data-lucide="file-input"></i>Save as Google Sheet</button>
+        </div>
     </div>
+</div>
 
-    <!-- ===================== AUDIT LOG ===================== -->
-    <div style="height:0;" id="audit-log"></div>
+<!-- ===================== ADD TOPIC MODAL ===================== -->
+<div class="modal-overlay" id="topicModal">
+    <div class="modal" style="max-width:420px;">
+        <div class="modal-header">
+            <h3>Manage Topics</h3>
+            <button class="modal-close" id="topicModalClose">✕</button>
+        </div>
+        <div class="form-group">
+            <label>New Topic Name</label>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="newTopicInput" placeholder="e.g. Finance, Events…" style="flex:1;">
+                <button class="btn btn-primary" id="saveTopicBtn" style="padding:6px 14px;font-size:12px;">Add</button>
+            </div>
+        </div>
+        <div id="topicList" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;"></div>
+        <div class="modal-footer">
+            <span class="modal-status" id="topicStatus"></span>
+            <button class="btn btn-ghost" id="topicModalCancel">Done</button>
+        </div>
+    </div>
+</div>
 
-    <script>
+<!-- ===================== DRIVE PICKER MODAL ===================== -->
+<div class="modal-overlay" id="driveModal">
+    <div class="drive-modal">
+        <div class="modal-header">
+            <h3>Browse Google Drive</h3>
+            <button class="modal-close" id="driveModalClose">✕</button>
+        </div>
+        <div class="form-group">
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="driveSearchInput" placeholder="Search files…" style="flex:1;">
+                <button class="btn btn-primary" id="driveSearchBtn" style="padding:6px 14px;font-size:12px;">Search</button>
+            </div>
+        </div>
+        <div id="driveResults" style="display:flex;flex-direction:column;gap:4px;min-height:80px;"></div>
+        <div class="modal-footer">
+            <span class="modal-status" id="driveStatus"></span>
+            <button class="btn btn-ghost" id="driveModalCancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- AUDIT LOG -->
+<div class="section-head" id="audit-log">
+    <h2>Audit Log</h2>
+    <p>Actions recorded to the AuditLog sheet.</p>
+</div>
+<div class="panel">
+    <div class="panel-header">
+        <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
+        <div class="panel-toolbar">
+            <div class="audit-toggle">
+                <button id="auditFilterMembers" class="active">Members</button>
+                <button id="auditFilterAll">All</button>
+            </div>
+            <div class="search-wrap">
+                <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
+                <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
+            </div>
+            <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+        </div>
+    </div>
+    <div class="tab-content active">
+        <div class="log-table-wrap">
+            <table class="log-table">
+                <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
+                <tbody id="auditBody"><span class="spinner"></span></tbody>
+            </table>
+        </div>
+        <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
+    </div>
+</div>
+</main>
+
+<footer>
+    <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+</footer>
+
+<script src="shared.js"></script>  
+<script src="auditLog.js"></script>
+<script>
+    AuditLog.init('notes');  
+</script>
+<script>
     /* =========================================================
        CONFIG
        ========================================================= */
-    // config.js  (or inline in a shared include)
-    const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
 
-    // domain keys must match REGISTRY keys in Gateway.gs
-    const DOMAIN = {
-    members:   "members",
-    documents: "documents",
-    calendar:  "calendar",
-    apps:      "apps",
-    clubs:     "clubs",
-    notes:     "notes",
-    audit:     "audit",
-    tracking:  "tracking"
-    };
-
-    async function fetchSheet(domain, sheetName, hexKey = null) {
-        const action = hexKey ? "display" : "fetch";
-        const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
-                    + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
-
-        const res  = await fetch(url);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        // Single record
-        if (data.record) return data.record;
-
-        // Bulk — existing parse logic unchanged
-        const rows = Array.isArray(data) ? data : (data.values ?? []);
-        if (!rows.length) return [];
-
-        let hi = rows.findIndex(r => r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
-        if (hi === -1) hi = rows.findIndex(r => r.filter(c => String(c||"").trim()).length > 3);
-        if (hi === -1) return [];
-
-        const headers = rows[hi].map(h => String(h||"").trim());
-        return rows.slice(hi + 1)
-            .filter(r => r.some(c => String(c||"").trim()))
-            .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
-    }
-
-    async function updateSheet(domain, sheetName, hexKey, updates) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "update", domain, sheet: sheetName, hexKey, updates })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
-
-    async function appendSheet(domain, sheetName, rowData) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "append", domain, sheet: sheetName, rowData })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
-
-    async function deleteSheet(domain, sheetName, hexKey) {
-        const res  = await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({ action: "delete", domain, sheet: sheetName, hexKey })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return true;
-    }
     let GOOGLE_EXPORT_FOLDER_ID = "";
     const currentUserName = localStorage.getItem("memberName") || localStorage.getItem("userName") || "Unknown";
-
 
     /* =========================================================
        STATE
@@ -901,8 +840,8 @@
             btn.addEventListener("click", e => {
             e.stopPropagation();
             exportNoteToSheet(btn.dataset.id);
-        })
-);
+            })
+        );
     }
 
     /* =========================================================
@@ -958,6 +897,7 @@
         renderActionItems();
         document.getElementById("noteModal").classList.add("open");
     }
+
     function closeNoteModal() {
         document.getElementById("noteModal").classList.remove("open");
         editingNoteId = null;
@@ -1357,53 +1297,6 @@
         } finally { btn.disabled = false; btn.textContent = "Add"; }
     }
 
-    /* =========================================================
-       AUDIT LOG
-       ========================================================= */
-    async function loadAuditLog() {
-        const btn = document.getElementById("refreshLogBtn");
-        btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
-        try {
-            auditRows = await fetchSheet(DOMAIN.audit, "AuditLog");
-            auditRows.reverse(); // newest first
-        } catch(e) { console.error("AuditLog fetch failed:", e); auditRows = []; }
-        renderLog();
-        btn.disabled = false; btn.textContent = "Refresh";
-    }
-
-    function renderLog() {
-        const q     = document.getElementById("logSearch").value.trim().toLowerCase();
-        const body  = document.getElementById("logBody");
-        const empty = document.getElementById("logEmpty");
-        let rows = [...auditRows];
-        if (logFilter === "notes")        rows = rows.filter(r => gv(r,"Field").toLowerCase().startsWith("notes"));
-        else if (logFilter === "actions") rows = rows.filter(r => gv(r,"Field").toLowerCase().startsWith("actions"));
-        else if (logFilter === "topics")  rows = rows.filter(r => gv(r,"Field").toLowerCase().startsWith("topics"));
-        // "all" = no filter
-        if (q) rows = rows.filter(r =>
-            gv(r,"HexCode").toLowerCase().includes(q)    ||
-            gv(r,"Name").toLowerCase().includes(q)       ||
-            gv(r,"Field").toLowerCase().includes(q)      ||
-            gv(r,"Old Value").toLowerCase().includes(q)  ||
-            gv(r,"New Value").toLowerCase().includes(q)
-        );
-        body.innerHTML = rows.map(r => `<tr>
-            <td style="white-space:nowrap;font-size:11.5px;">${fmtTime(gv(r,"Timestamp"))}</td>
-            <td style="font-size:11px;">${gv(r,"Name")}</td>
-            <td style="font-size:12px;">${gv(r,"Field")}</td>
-            <td style="font-family:monospace;font-size:11px;">${gv(r,"HexCode").slice(0,14)}</td>
-            <td style="font-size:11.5px;max-width:200px;word-break:break-word;color:var(--foam-dim);">${gv(r,"Old Value").slice(0,120)}</td>
-            <td style="font-size:11.5px;max-width:200px;word-break:break-word;">${gv(r,"New Value").slice(0,120)}</td>
-        </tr>`).join("");
-        empty.style.display = rows.length ? "none" : "block";
-    }
-
-    document.getElementById("logSheetFilter").addEventListener("change", function() {
-        logFilter = this.value;
-        renderLog();
-    });
-    document.getElementById("logSearch").addEventListener("input", renderLog);
-    document.getElementById("refreshLogBtn").addEventListener("click", loadAuditLog);
     document.querySelectorAll(".export-note").forEach(btn =>
       btn.addEventListener("click", e => {
           e.stopPropagation();
@@ -1442,6 +1335,6 @@
        INIT
        ========================================================= */
     loadAll().then(() => { lucide.createIcons(); loadAuditLog(); });
-    </script>
+</script>
 </body>
 </html>

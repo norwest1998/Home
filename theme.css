@@ -622,14 +622,21 @@
     font-size: 13px;
   }
  
-  /* Loading spinner */
+  /* Spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
   .spinner {
-    width: 20px; height: 20px;
-    border: 2px solid var(--glass-border);
-    border-top-color: var(--glow);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    margin: 0 auto 8px;
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid var(--glass-border);
+      border-top-color: var(--foam-dim);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin: 0 auto 8px;
+  }
+  .spinner-lg {
+      width: 28px; height: 28px;
+      border-width: 3px;
   }
 
   .tile-grid {
