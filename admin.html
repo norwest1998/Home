@@ -26,12 +26,18 @@
     background: var(--signal); border: 1px solid var(--alert); width: fit-content;
 }
 
-/* Member Health stat board */
-.health-grid {
+/* Member Health stat board 
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
     margin-bottom: 32px;
+*/
+.health-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .health-stat {
