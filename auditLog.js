@@ -5,8 +5,10 @@ const AuditLog = {
     entries: [],
     domainFilter: 'members',
 
-    init(defaultFilter = 'members') {
+    init(defaultFilter = 'members', filterLabel = 'Members') {
         this.domainFilter = defaultFilter;
+        this.primaryDomain = defaultFilter;  // store for toggle
+        document.getElementById('auditFilterMembers').textContent = filterLabel;
         document.getElementById('auditSearch').addEventListener('input', () => this.render());
         document.getElementById('refreshLogBtn').addEventListener('click', () => this.load());
         document.getElementById('auditFilterMembers').addEventListener('click', () => this.setFilter('members'));
@@ -15,7 +17,7 @@ const AuditLog = {
     },
 
     setFilter(filter) {
-        this.domainFilter = filter;
+        this.domainFilter = filter === 'all' ? 'all' : this.primaryDomain;
         document.getElementById('auditFilterMembers').classList.toggle('active', filter === 'members');
         document.getElementById('auditFilterAll').classList.toggle('active', filter === 'all');
         this.render();

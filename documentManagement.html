@@ -407,11 +407,48 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
         </div>
     </div>
 </div>
+<!-- AUDIT LOG -->
+<div class="section-head" id="audit-log">
+    <h2>Audit Log</h2>
+    <p>Actions recorded to the AuditLog sheet.</p>
+</div>
+<div class="panel">
+    <div class="panel-header">
+        <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
+        <div class="panel-toolbar">
+            <div class="audit-toggle">
+                <button id="auditFilterMembers" class="active">Members</button>
+                <button id="auditFilterAll">All</button>
+            </div>
+            <div class="search-wrap">
+                <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
+                <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
+            </div>
+            <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+        </div>
+    </div>
+    <div class="tab-content active">
+        <div class="log-table-wrap">
+            <table class="log-table">
+                <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
+                <tbody id="auditBody"><span class="spinner"></span></tbody>
+            </table>
+        </div>
+        <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
+    </div>
+</div>
+<footer>
+    <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+</footer>
 
+<script src="shared.js"></script>  
+<script src="auditLog.js"></script>
+<script>
+    AuditLog.init('notes',"Notes");  
+</script>
 <script>
 const DOC_CONFIG = {
-    audWebAppUrl: "https://script.google.com/macros/s/AKfycbwDLWh4_GE_uRJFmNihhBfONT54fhyliEybq3tnrvticdtrekG1rn_iUvtTgxjDzlE/exec",
-    docWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec",
+    docWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec"
     documentsSheet: "Documents",
     versionsSheet: "DocumentVersions",
     driveClientId: "738246015685-4vk2o2l7nit598jvkl8r423sa4hff8rf.apps.googleusercontent.com",
@@ -421,77 +458,11 @@ const DOC_CONFIG = {
 };
 
 /* ---------- Sheets helpers ---------- */
-async function fetchSheet(WEBAPP_URL, sheetName) {
 
-    const res = await fetch(
-        `${WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent(sheetName)}`
-    );
-
-    const data = await res.json();
-
-    if (data.error) {
-        throw new Error(`Error: ${data.error}, Cannot read sheet: ${sheetName}`);
-    }
-
-    // Format 1: already an array of objects
-    if (Array.isArray(data)) {
-        return data;
-    }
-
-    // Format 2: Google Sheets values[][]
-    const rows = data.values || [];
-    if (!rows.length) return [];
-
-    let headerIndex = rows.findIndex(r =>
-        Array.isArray(r) &&
-        r.some(cell => {
-            const val = String(cell || "").trim().toLowerCase();
-            return val === "rowid" || val === "status";
-        })
-    );
-
-    if (headerIndex === -1) {
-        headerIndex = rows.findIndex(r =>
-            Array.isArray(r) &&
-            r.filter(c => String(c || "").trim() !== "").length > 3
-        );
-    }
-
-    if (headerIndex === -1) return [];
-
-    const headers = rows[headerIndex].map(h => String(h || "").trim());
-
-    return rows
-        .slice(headerIndex + 1)
-        .filter(r => r.some(c => String(c || "").trim() !== ""))
-        .map(r => {
-            const obj = {};
-            headers.forEach((h, i) => obj[h] = r[i] ?? "");
-            return obj;
-        });
-}
-
-async function updateSheet(url, sheetName, hexKey, updates) {
-    const res = await fetch(url, { method: "POST", body: JSON.stringify({ action: "update", sheet: sheetName, hexKey, updates }) });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return true;
-}
-async function appendSheet(url, sheetName, rowData) {
-    const res = await fetch(url, { method: "POST", body: JSON.stringify({ action: "append", sheet: sheetName, rowData }) });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return true;
-}
 function genRowId() {
     const bytes = new Uint8Array(8);
     crypto.getRandomValues(bytes);
     return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
 
 function getStatusPillClass(status) {
@@ -558,7 +529,7 @@ let DOCS = [];
 let activeCategory = null;
 
 async function loadDocs() {
-    DOCS = await fetchSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet);
+    DOCS = await fetchSheet(DOMAIN.document, "Documents");
     renderLibraryTree();
     renderGrid();
     await loadAuditLog();
@@ -749,7 +720,7 @@ async function handleStatusPillChange(selectEl) {
 
     try {
         // 1. Update Database Record
-        await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, rowId, {
+        await updateSheet(DOMAIN.document, "Documents", rowId, {
             Status: newStatus,
             LastModifiedBy: actor,
             LastModifiedDate: now
@@ -762,7 +733,6 @@ async function handleStatusPillChange(selectEl) {
         }
 
         // 3. Log Action & Refresh State
-        await logDocumentAction(doc.DriveFileId || rowId, doc.Title, `Status updated from "${oldStatus}" to "${newStatus}"`);
         await loadDocs();
 
     } catch (err) {
@@ -880,7 +850,7 @@ document.getElementById("driveFileArchiveBtn").addEventListener("click", async (
         if (matchedDoc) {
             const who = prompt("Enter your name for the change log:") || "System Admin";
             const now = new Date().toISOString();
-            await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, matchedDoc.RowID, {
+            await updateSheet(DOMAIN.document, "Documents", matchedDoc.RowID, {
                 Status: "Archived", LastModifiedBy: who, LastModifiedDate: now
             });
             await loadDocs();
@@ -972,6 +942,7 @@ async function getOrCreateArchiveFolder() {
         body: JSON.stringify({ name: "Archive", mimeType: "application/vnd.google-apps.folder", parents: [DOC_CONFIG.rootFolderId] })
     });
     const createData = await createRes.json();
+    await logDocumentAction("Archive", DOC_CONFIG.rootFolderId, "Create Archive Folder ");
     return createData.id;
 }
 
@@ -981,13 +952,19 @@ async function logDocumentAction(fileId, fileName, action) {
         const who = document.getElementById("actorName")?.value.trim() || "Web App User";
         const now = new Date().toISOString();
         
-        await appendSheet(DOC_CONFIG.audWebAppUrl, "AuditLog", {
+        await appendSheet(DOMAIN.audit, "AuditLog", {
+
             RowID: genRowId(),
+            Timestamp: now,   
+            User: who,         
             Action: action,
-            Target: fileName,
-            TargetID: fileId,
-            User: who,
-            Timestamp: now
+            Domain: "Documents",
+            Sheet: "Documents",
+            Detail: fileName,
+            OldValue: fileId,
+            Success: "Success"
+            
+            
         });
         await loadAuditLog();
     } catch (err) {
@@ -1160,7 +1137,6 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
                 RowID: genRowId(), DocID: doc.RowID, Version: newVersion,
                 DriveFileId: doc.DriveFileId, DriveLink: doc.DriveLink, ChangedBy: who, ChangedDate: now, Notes: notes
             });
-            await logDocumentAction(doc.DriveFileId, title || file.name, "Upload New Version");
             setStep(2, "done");
         } else {
             setStep(0, "active");
@@ -1180,7 +1156,6 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
             await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
                 RowID: genRowId(), DocID: rowId, Version: 1, DriveFileId: fileId, DriveLink: link, ChangedBy: who, ChangedDate: now, Notes: notes || "Initial upload"
             });
-            await logDocumentAction(fileId, title || file.name, "Upload Document");
             setStep(2, "done");
         }
 
@@ -1211,7 +1186,7 @@ async function openDetailModal(docId) {
         `${doc.Category || "Uncategorised"} · Status: ${doc.Status} · Reviewed by: ${doc.ReviewedBy || "—"} (${doc.ReviewDate || "—"}) · Signed off by: ${doc.SignedOffBy || "—"} (${doc.SignOffDate || "—"})`;
     document.getElementById("detailModal").classList.add("visible");
 
-    const versions = (await fetchSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet)).filter(v => v.DocID === docId);
+    const versions = await fetchSheet(DOMAIN.document, "DocumentVersions",docId);
     document.getElementById("detailVersions").innerHTML = versions.map(v => `
         <div class="ver-row">
             <span>v${v.Version} — ${v.ChangedBy} — ${v.ChangedDate}</span>
@@ -1225,10 +1200,9 @@ document.getElementById("markReviewBtn").addEventListener("click", async () => {
     const who = document.getElementById("actorName").value.trim();
     if (!who) { alert("Enter your name."); return; }
     const doc = DOCS.find(d => d.RowID === detailDocId);
-    await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, detailDocId, {
+    await updateSheet(DOMAIN.document, "Documents", detailDocId, {
         Status: "In Review", ReviewedBy: who, ReviewDate: new Date().toISOString()
     });
-    await logDocumentAction(doc ? doc.DriveFileId : detailDocId, doc ? doc.Title : "Document", "Marked In Review");
     document.getElementById("detailModal").classList.remove("visible");
     await loadDocs();
 });
@@ -1236,10 +1210,9 @@ document.getElementById("markSignoffBtn").addEventListener("click", async () => 
     const who = document.getElementById("actorName").value.trim();
     if (!who) { alert("Enter your name."); return; }
     const doc = DOCS.find(d => d.RowID === detailDocId);
-    await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, detailDocId, {
+    await updateSheet(DOMAIN.document, "Documents", detailDocId, {
         Status: "Signed Off", SignedOffBy: who, SignOffDate: new Date().toISOString()
     });
-    await logDocumentAction(doc ? doc.DriveFileId : detailDocId, doc ? doc.Title : "Document", "Marked Signed Off");
     document.getElementById("detailModal").classList.remove("visible");
     await loadDocs();
 });
@@ -1333,7 +1306,7 @@ async function syncDriveToSheet() {
 
             const rowId = genRowId();
             
-            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, {
+            await appendSheet(DOMAIN.document, "Documents", {
                 RowID: rowId,
                 Title: file.name,
                 Category: file.category || "Root",
@@ -1351,7 +1324,7 @@ async function syncDriveToSheet() {
                 SignOffDate: ""
             });
 
-            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
+            await appendSheet(DOMAIN.document, "DocumentVersions", {
                 RowID: genRowId(),
                 DocID: rowId,
                 Version: 1,
@@ -1362,8 +1335,6 @@ async function syncDriveToSheet() {
                 Notes: "Auto-synced from Google Drive"
             });
         }
-
-        await logDocumentAction(DOC_CONFIG.rootFolderId, "Google Drive Library", `Auto-synced ${total} document(s)`);
 
         spinner.style.display = "none";
         progressBar.style.width = "100%";
