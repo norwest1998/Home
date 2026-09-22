@@ -494,51 +494,6 @@
         return s === 'true' || s === 'yes' || s === 'active' || s === '1';
     }
 
-    function parseMembersSheet(values) {
-        return (values || []).slice(1)
-            .map((r, i) => ({ r, sheetRow: i + 2 }))
-            .filter(({ r }) => r.some(c => c !== ''))
-            .map(({ r, sheetRow }) => ({
-                row: sheetRow,
-                id: r[0],
-                status: r[1],
-                name: r[2],
-                membershipType: r[3],
-                startDate: r[4],
-                endDate: r[5],
-                isPaid: parseBoolLike(r[6]),
-                phone: r[7],
-                email: r[8],
-                whatsapp: r[9],
-                duplicate: r[10],
-                addressLine: r[11],
-                suburb: r[12],
-                postcode: r[13],
-                emergencyContactName: r[14],
-                emergencyContactNumber: r[15],
-                calendarSubscription: r[16],
-                homeClub: r[17],
-                committee: r[18]
-            }));
-    }
-
-    function parseBoatsSheet(values) {
-        return (values || []).slice(1)
-            .filter(r => r.some(c => c !== ''))
-            .map(r => ({
-                boatId: r[0],
-                active: parseBoolLike(r[1]),
-                member: r[2],
-                class: r[3],
-                sailNo: r[4],
-                model: r[5],
-                handicap: r[6],
-                hrn: r[7],
-                gh: r[8],
-                ghHcap: r[9]
-            }));
-    }
-
     function getMemberClasses(name) {
         const n = String(name || '').trim().toLowerCase();
         const classes = allBoats
@@ -1130,19 +1085,37 @@
     }
 
     async function loadAuditLog() {
-        try {
-            const data = await fetchSheet(DOMAIN.audit,"AuditLog");
-            if (data.error) throw new Error(data.error);
-            const rows = data.values || [];
-            auditEntries = rows.slice(1).filter(r => r.some(c => c !== "")).map(r => ({
-                hexCode: r[0], timestamp: r[1], memberName: r[2], field: r[3], before: r[4], after: r[5]
-            })).reverse();
-            renderAuditLog();
-        } catch (err) {
-            document.getElementById('auditBody').innerHTML = '';
-            document.getElementById('auditEmpty').style.display = 'block';
-            document.getElementById('auditEmpty').textContent = 'Error loading audit log: ' + err.message;
+    try {
+        const data = await fetchSheet(DOMAIN.audit, "AuditLog");
+        if (data.error) throw new Error(data.error);
+
+        // Explicitly fallback to an empty array if data.values is missing
+        const rows = data.values;
+
+        // Check if rows is actually an array before processing
+        if (!Array.isArray(rows)) {
+        throw new Error("Sheet data is empty or invalid.");
         }
+
+        auditEntries = rows
+        .slice(1)
+        .filter(r => Array.isArray(r) && r.some(c => c !== "")) // Ensure row itself is an array
+        .map(r => ({
+            hexCode: r[0] || "",
+            timestamp: r[1] || "",
+            memberName: r[2] || "",
+            field: r[3] || "",
+            before: r[4] || "",
+            after: r[5] || ""
+        }))
+        .reverse();
+
+        renderAuditLog();
+    } catch (err) {
+        document.getElementById('auditBody').innerHTML = '';
+        document.getElementById('auditEmpty').style.display = 'block';
+        document.getElementById('auditEmpty').textContent = 'Error loading audit log: ' + err.message;
+    }
     }
 
     function renderAuditLog() {
