@@ -242,9 +242,15 @@
     </div>
 
     <!-- MEMBER ACTIONS -->
-    <div class="section-head" id="member-actions">
-        <h2>Member Actions</h2>
-        <p>Search, filter, and act on members — payments, update requests, and status changes.</p>
+    <div class="section-head" id="member-actions" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div>
+            <h2>Member Actions</h2>
+            <p>Search, filter, and act on members — payments, update requests, and status changes.</p>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+            <button type="button" class="icon-btn" title="Copy Phone List" onclick="copyPhoneList()"><i class="inline-icon" data-lucide="phone"></i></button>
+            <button type="button" class="icon-btn" title="Copy Email List" onclick="copyEmailList()"><i class="inline-icon" data-lucide="mail"></i></button>
+        </div>
     </div>
 
     <div class="panel">
@@ -290,25 +296,17 @@
                 <button class="btn" style="flex-shrink:0;" onclick="runMemberQuery()">Run Query</button>
             </div>
 
-            <div class="action-btn-row">
-                <button type="button" class="btn btn-ghost" id="btn-copy-phones" onclick="copyPhoneList()">
-                    <i class="inline-icon" data-lucide="phone" color="#257fb6"></i> Copy Phone List
-                </button>
-                <button type="button" class="btn btn-ghost" id="btn-copy-emails" onclick="copyEmailList()">
-                    <i class="inline-icon" data-lucide="mail" color="#257fb6"></i> Copy Email List
-                </button>
-            </div>
 
-            <div class="list-header-row" id="memberActionsHeader" style="display:none;">
-                <label class="checkbox-inline">
-                    <input type="checkbox" id="selectAllMembers" onchange="toggleSelectAllMembers(this)">
-                    <span>Select all</span>
-                </label>
+            <div class="list-header-row" id="memberActionsHeader" style="display:none;justify-content:flex-end;">
                 <div class="row-actions">
                     <button type="button" class="icon-btn" title="Request update (selected)" onclick="handleBulkAction('requestUpdate')"><i class="inline-icon" data-lucide="mail-plus"></i></button>
                     <button type="button" class="icon-btn" title="Mark paid (selected)" onclick="handleBulkAction('markPaid')"><i class="inline-icon" data-lucide="dollar-sign"></i></button>
                     <button type="button" class="icon-btn" title="Inactivate (selected)" onclick="handleBulkAction('inactivate')"><i class="inline-icon" data-lucide="user-x"></i></button>
                     <button type="button" class="icon-btn" title="Expire (selected)" onclick="handleBulkAction('expire')"><i class="inline-icon" data-lucide="shield-off"></i></button>
+                    <label class="checkbox-inline" style="margin-left:8px;">
+                        <input type="checkbox" id="selectAllMembers" onchange="toggleSelectAllMembers(this)">
+                        <span>All</span>
+                    </label>
                 </div>
             </div>
 
@@ -320,10 +318,7 @@
     </div>
 
     <!-- BULK COMMUNICATIONS -->
-    <div class="section-head" id="communications">
-        <h2>Member Communications</h2>
-        <p>Send to every active member. These actions cannot be targeted or undone.</p>
-    </div>
+    <div class="section-head" id="communications"><h2>Member Communications</h2><p>Send to every active member. These actions cannot be targeted or undone.</p></div>
     <div class="bulk-comm-grid">
         <div class="glass bulk-comm-card">
             <div class="bc-title">Request Members Update</div>
@@ -536,8 +531,10 @@
                 fetchSheet(DOMAIN.members, "ClassMembers")
             ]);
 
-            // fetchSheet already returns array of objects — just normalise the fields
-            allMembers = membersRaw.map((r, i) => ({
+            // fetchSheet already returns array of objects — filter out any header-echo rows
+            allMembers = membersRaw
+                .filter(r => r['ID'] && String(r['ID']).trim().toLowerCase() !== 'id')
+                .map((r, i) => ({
                 row: i + 2,
                 id: r['ID'] ?? '',
                 status: r['Active'] ?? '',
