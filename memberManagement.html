@@ -547,12 +547,49 @@
 
     async function loadMembers() {
         try {
-            const [membersData, boatsData] = await Promise.all([
+            const [membersRaw, boatsRaw] = await Promise.all([
                 fetchSheet(DOMAIN.members, "Members"),
                 fetchSheet(DOMAIN.members, "ClassMembers")
             ]);
-            allMembers = parseMembersSheet(membersData);
-            allBoats = parseBoatsSheet(boatsData);
+
+            // fetchSheet already returns array of objects — just normalise the fields
+            allMembers = membersRaw.map((r, i) => ({
+                row: i + 2,
+                id: r['ID'] ?? '',
+                status: r['Active'] ?? '',
+                name: r['MemberName'] ?? '',
+                membershipType: r['Membership'] ?? '',
+                startDate: r['Start Date'] ?? '',
+                endDate: r['End Date'] ?? '',
+                isPaid: parseBoolLike(r['Paid up'] ?? ''),
+                phone: r['Phone']?? '',
+                email: r['email'] ?? '',
+                whatsapp: r['WhatsApp'] ?? '',
+                duplicate: r['Duplicate'] ?? r['duplicate'] ?? '',
+                addressLine: r['AddressLine'] ?? '',
+                suburb: r['Suburb'] ?? '',
+                postcode: r['PCode'] ?? '',
+                emergencyContactName: r['Emergency Contact Name'] ?? '',
+                emergencyContactNumber: r['Emergency Contact Number'] ?? '',
+                calendarSubscription: r['Calendar Subscription'] ?? '',
+                homeClub: r['Home Club'] ?? '',
+                committee: r['Committee'] ?? ''
+            }));
+
+            allBoats = boatsRaw.map(r => ({
+                boatId: r['BoatID']?? '',
+                active: parseBoolLike(r['Active']?? ''),
+                member: r['Member'] ?? '',
+                class: r['Class'] ??'',
+                sailNo: r['SailNo']?? '',
+                model: r['Model'] ??'',
+                handicap: r['Handicap'] ?? '',
+                hrn: r['HRN'] ?? '',
+                gh: r['GH'] ?? '',
+                ghHcap: r['GH Hcap'] ?? '',
+                hull: r['Hull Colour']
+            }));
+
             populateMembershipFilterOptions();
             filterMemberDirectory();
             renderMemberStats();
