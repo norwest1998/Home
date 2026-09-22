@@ -1131,7 +1131,7 @@
 
     async function loadAuditLog() {
         try {
-            const res = await fetch(`${AUDIT_WEBAPP_URL}?action=fetch&sheet=${encodeURIComponent('AuditLog')}`);
+            const res = await fetch(`${DOMAIN.audit}?action=fetch&sheet=${encodeURIComponent('AuditLog')}`);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             const rows = data.values || [];
