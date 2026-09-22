@@ -230,7 +230,6 @@
     align-items: center;
     gap: 10px;
     margin-bottom: 16px;
-    justify-content:space-between;
   }
  
   .panel-title .dot {
