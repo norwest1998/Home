@@ -727,8 +727,12 @@
                     const vals = Object.values(r);
                     const isError = String(vals[5] ?? "").startsWith("ERROR:");
                     return {
-                        timestamp: vals[1], fn: vals[2], sheet: "", field: vals[3],
-                        before: vals[4], after: vals[5],
+                        timestamp: vals[1], 
+                        fn: vals[2], 
+                        sheet: "", 
+                        field: vals[3],
+                        before: vals[4], 
+                        after: vals[5],
                         status: isError ? "error" : "success",
                         message: isError ? String(vals[5]).replace(/^ERROR:\s*/, "") : ""
                     };

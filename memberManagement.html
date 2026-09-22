@@ -332,7 +332,7 @@
         <div class="tab-content active">
             <div class="log-table-wrap">
                 <table class="log-table">
-                    <thead><tr><th>Time</th><th>Member / Context</th><th>Action</th><th>Before</th><th>After</th><th>Status</th></tr></thead>
+                    <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Field</th><th>Before</th><th>After</th><th>Status</th></tr></thead>
                     <tbody id="auditBody"></tbody>
                 </table>
             </div>
@@ -383,40 +383,26 @@
 
     // domain keys must match REGISTRY keys in Gateway.gs
     const DOMAIN = {
-    members:   "members",
-    documents: "documents",
-    calendar:  "calendar",
-    apps:      "apps",
-    clubs:     "clubs",
-    notes:     "notes",
-    audit:     "audit",
-    tracking:  "tracking"
+        members:   "members",
+        documents: "documents",
+        calendar:  "calendar",
+        apps:      "apps",
+        notes:     "notes",
+        audit:     "audit",
+        tracking:  "tracking"
     };
 
+    // Returns array of objects (fetch) or single object (display)
     async function fetchSheet(domain, sheetName, hexKey = null) {
         const action = hexKey ? "display" : "fetch";
         const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
-                    + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
-
+                     + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
         const res  = await fetch(url);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
-
-        // Single record
+        // display returns { record: {} }, fetch returns { values: [...] }
         if (data.record) return data.record;
-
-        // Bulk — existing parse logic unchanged
-        const rows = Array.isArray(data) ? data : (data.values ?? []);
-        if (!rows.length) return [];
-
-        let hi = rows.findIndex(r => Array.isArray(r) && r.some(c => ["rowid","status"].includes(String(c||"").trim().toLowerCase())));
-        if (hi === -1) hi = rows.findIndex(r => Array.isArray(r) && r.filter(c => String(c||"").trim()).length > 3);
-        if (hi === -1) return [];
-
-        const headers = rows[hi].map(h => String(h||"").trim());
-        return rows.slice(hi + 1)
-        .filter(r => Array.isArray(r) && r.some(c => String(c||"").trim()))
-        .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""])));
+        return data.values ?? [];
     }
 
     async function updateSheet(domain, sheetName, hexKey, updates) {
@@ -453,7 +439,21 @@
     }
 
     async function apiPost(action, payload) {
-        const res = await fetch(CLB_WEBAPP_URL, {method: "POST", body: JSON.stringify({action, ...payload})});
+        // Route Gateway write actions through updateSheet/appendRow/deleteRow
+        if (action === "update") {
+            return updateSheet(payload.domain, payload.sheet, payload.hexKey, payload.updates);
+        }
+        if (action === "append") {
+            return appendRow(payload.domain, payload.sheet, payload.rowData);
+        }
+        if (action === "delete") {
+            return deleteRow(payload.domain, payload.sheet, payload.hexKey);
+        }
+        // All other actions (emails, queries, etc.) go to CLB_WEBAPP_URL
+        const res = await fetch(CLB_WEBAPP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action, ...payload })
+        });
         if (!res.ok) throw new Error(`Server error (${res.status})`);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
@@ -985,12 +985,21 @@
         }
 
         try {
-            await apiPost('updateMember', {
-                row: activeModalMember.row,
-                updatedData: updatedData,
-                changes: changes,
-                memberName: activeModalMember.name
+            // Build updates keyed by registry header names (matching MODAL_SECTIONS field keys → sheet headers)
+            const updates = {};
+            const KEY_MAP = {
+                id: 'ID', status: 'Active', name: 'MemberName', membershipType: 'Membership',
+                startDate: 'Start Date', endDate: 'End Date', isPaid: 'Paid up',
+                phone: 'Phone', email: 'email', whatsapp: 'WhatsApp',
+                addressLine: 'Address Line', suburb: 'Suburb', postcode: 'PCode',
+                emergencyContactName: 'Emergency Contact Name', emergencyContactNumber: 'Emergency Contact Number',
+                calendarSubscription: 'Calendar Subscription', homeClub: 'Home Club', committee: 'Committee'
+            };
+            changes.forEach(c => {
+                const sheetKey = KEY_MAP[c.key] || c.key;
+                updates[sheetKey] = c.after;
             });
+            await updateSheet(DOMAIN.members, "Members", activeModalMember.id, updates);
 
             showMsg('modalMsg', `Saved ${changes.length} change(s) successfully.`, false);
             await loadMembers();
@@ -1086,29 +1095,22 @@
 
     async function loadAuditLog() {
         try {
-            const data = await fetchSheet(DOMAIN.audit, "AuditLog");
-            if (data.error) throw new Error(data.error);
+            // fetchSheet now returns array of objects keyed by registry headers
+            const rows = await fetchSheet(DOMAIN.audit, "AuditLog");
+            if (!Array.isArray(rows)) throw new Error("Audit log data invalid.");
 
-            // Explicitly fallback to an empty array if data.values is missing
-            const rows = data.values;
-
-            // Check if rows is actually an array before processing
-            if (!Array.isArray(rows)) {
-            throw new Error("Sheet data is empty or invalid.");
-            }
-
-            auditEntries = rows
-            .slice(1)
-            .filter(r => Array.isArray(r) && r.some(c => c !== "")) // Ensure row itself is an array
-            .map(r => ({
-                hexCode: r[0] || "",
-                timestamp: r[1] || "",
-                memberName: r[2] || "",
-                field: r[3] || "",
-                before: r[4] || "",
-                after: r[5] || ""
-            }))
-            .reverse();
+            auditEntries = rows.map(r => ({
+                hexCode:    r["HexCode"]    || "",
+                timestamp:  r["Timestamp"]  || "",
+                memberName: r["User"]       || "",
+                action:     r["Action"]     || "",
+                domain:     r["Domain"]     || "",
+                sheet:      r["Sheet"]      || "",
+                field:      r["Detail"]     || "",
+                before:     r["Old Value"]  || "",
+                after:      r["New Value"]  || "",
+                success:    r["Success"]    || ""
+            })).reverse();
 
             renderAuditLog();
         } catch (err) {
@@ -1124,6 +1126,7 @@
         if (q) {
             entries = entries.filter(e =>
                 String(e.memberName || '').toLowerCase().includes(q) ||
+                String(e.action || '').toLowerCase().includes(q) ||
                 String(e.field || '').toLowerCase().includes(q) ||
                 String(e.before || '').toLowerCase().includes(q) ||
                 String(e.after || '').toLowerCase().includes(q)
@@ -1131,11 +1134,12 @@
         }
 
         document.getElementById('auditBody').innerHTML = entries.map(e => {
-            const isError = String(e.after || '').startsWith('ERROR:');
+            const isError = String(e.success || '').toLowerCase() === 'failed' || String(e.after || '').startsWith('ERROR:');
             return `
             <tr>
                 <td>${fmtTime(e.timestamp)}</td>
                 <td>${escapeHtml(e.memberName)}</td>
+                <td>${escapeHtml(e.action)}</td>
                 <td>${escapeHtml(e.field)}</td>
                 <td>${escapeHtml(e.before)}</td>
                 <td>${escapeHtml(e.after)}</td>
