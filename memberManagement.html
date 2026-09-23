@@ -336,7 +336,10 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
                 <span class="dot"></span>
                 <h3>Activity</h3>
             </div>
-            <div class="panel-toolbar">
+
+        </div>
+        <div class="tab-content active">
+                        <div class="panel-toolbar">
                 <div class="audit-toggle">
                     <button id="auditFilterMembers" class="active">Members</button>
                     <button id="auditFilterAll">All</button>
@@ -347,8 +350,6 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
                 </div>
                 <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
             </div>
-        </div>
-        <div class="tab-content active">
             <div class="log-table-wrap">
                 <table class="log-table">
                     <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
