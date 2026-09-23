@@ -984,7 +984,7 @@ function fmtTime(v) {
 
 async function loadAuditLog() {
     try {
-        const res = await fetch(`${DOC_CONFIG.audWebAppUrl}?action=fetch&sheet=${encodeURIComponent('AuditLog')}`);
+        const res = await fetchSheet(DOMAIN.audit, "AuditLog");
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         const rows = Array.isArray(data) ? data : (data.values || []);
