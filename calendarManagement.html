@@ -1777,14 +1777,13 @@ async function addToCalendar(hexKey) {
     if (data.error) throw new Error(data.error);
 
     event.AddedStatus = targetCalName;
-    AdminLog.add({
+    appendSheet(DOMAIN.audit, "AuditLog",{
       hexCode: hexKey,
       name: event.Class,
-      field: "AddedStatus",
-      before: "",
+      detail: "AddedStatus",
+      before: `Exported to ${targetCalName}`,
       after: targetCalName,
-      status: "success",
-      message: `Exported to ${targetCalName}`
+      status: "success"
     });
 
     logAction(`Successfully added event to "${targetCalName}"!`);
@@ -1863,7 +1862,7 @@ approveBtn.addEventListener("click", async () => {
       Finish: slot.Finish,
       Emblem: event.Emblem || "",
       Class: event.Class || "",
-      Competition: event.Competition || event["Event Type"] || "",
+      ['Event Type']: event["Event Type"] || "",
       Season: event.Season || ""
     });
 
