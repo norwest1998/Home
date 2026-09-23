@@ -1645,6 +1645,9 @@ function openAddEventModal() {
 function openEditEventModal(hexKey) {
   const event = eventData.find(e => e.HexKey === hexKey);
   if (!event) return;
+  if (event.Results === "Processed") {
+    throw new Error("This event has already been processed and cannot be edited.");
+  }
 
   modalTitle.textContent = "Edit Event";
   modalMode.value = "edit";
@@ -1659,7 +1662,7 @@ function openEditEventModal(hexKey) {
   modalEventType.value = event["Event Type"] || "Competition";
   modalSeason.value = event.Season || "";
   modalRoundNo.value = event["Round no"] || "";
-  modalResults.value = event.Results || "Not Started";
+  modalResults.value = event["Event Type"] === "Competition" ? "Not Started" || "Not Scored";
   modalRescheduledDate.value = event["Rescheduled Date"] ? new Date(event["Rescheduled Date"]).toISOString().split("T")[0] : "";
   modalCalendarId.value = event["Updated to Calendar"] || "";
   
