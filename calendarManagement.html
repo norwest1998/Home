@@ -1809,7 +1809,7 @@ btnBulkExport.addEventListener("click", () => {
 
 /* Modal Controls */
 function openEditModal(hexKey) {
-console.log("Looking for event: " + event.HexKey)
+console.log("Looking for event: " + hexKey)
   editingHex = hexKey;
   const event = eventData.find(e => e.HexKey === hexKey);
   if (!event) return;
