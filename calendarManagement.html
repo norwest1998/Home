@@ -1669,7 +1669,7 @@ function openEditEventModal(hexKey) {
   modalEventType.value = event["Event Type"] || "Competition";
   modalSeason.value = event.Season || "";
   modalRoundNo.value = event["Round no"] || "";
-  modalResults.value = event["Event Type"] === "Competition" ? "Not Started" || "Not Scored";
+  modalResults.value = event['Event Type'] === 'Competition' ? 'Not Started' : 'Not Scored';
   modalRescheduledDate.value = event["Rescheduled Date"] ? new Date(event["Rescheduled Date"]).toISOString().split("T")[0] : "";
   modalCalendarId.value = event["Updated to Calendar"] || "";
   
