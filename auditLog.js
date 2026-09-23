@@ -73,32 +73,16 @@ const AuditLog = {
                 <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(e.sheet)}</td>
                 <td>${escapeHtml(e.action)}</td>
                 <td>${escapeHtml(e.field)}</td>
-                <!-- Pass the full entry object 'e' here instead of just before/after -->
-                <td>${this._valTabs(e, isError, uid)}</td>
+                <td>${this._valTabs(e.before, e.after, isError, uid)}</td>
                 <td><span class="badge ${isError ? 'badge-expired' : 'badge-full'}">${isError ? 'Fail' : 'OK'}</span></td>
             </tr>`;
         }).join('');
         document.getElementById('auditEmpty').style.display = entries.length ? 'none' : 'block';
     },
 
-    _valTabs(e, isError, uid) {
-        const bSafe = escapeHtml(e.before);
-        const aSafe = escapeHtml(e.after);
-        
-        // Inject a view button for Appended records containing JSON
-        let viewBtn = '';
-        if (e.action.toLowerCase().includes('append') && String(e.after).trim().startsWith('{')) {
-            // Encode the JSON string to safely pass it into the inline onclick handler
-            const encodedData = encodeURIComponent(e.after);
-            viewBtn = `
-                <div style="margin-top: 8px;">
-                    <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 11px;" 
-                        onclick="viewRecordModal('${escapeHtml(e.domain)}', '${escapeHtml(e.sheet)}', '${encodedData}')">
-                        View Record
-                    </button>
-                </div>`;
-        }
-
+    _valTabs(before, after, isError, uid) {
+        const bSafe = escapeHtml(before);
+        const aSafe = escapeHtml(after);
         return `
         <div class="val-tabs">
             <div class="val-tab-btns">
@@ -106,12 +90,9 @@ const AuditLog = {
                 <button onclick="AuditLog._switchTab('${uid}','after',this)">After</button>
             </div>
             <div class="val-content" id="val-${uid}">${bSafe || '<span style="opacity:.4">—</span>'}</div>
-            <div class="val-content" id="val-${uid}-after" style="display:none;">
-                ${isError ? `<span class="val-error">${aSafe}</span>` : (aSafe || '<span style="opacity:.4">—</span>')}
-                ${viewBtn}
-            </div>
+            <div class="val-content" id="val-${uid}-after" style="display:none;">${isError ? `<span class="val-error">${aSafe}</span>` : (aSafe || '<span style="opacity:.4">—</span>')}</div>
         </div>`;
-    }
+    },
 
     _switchTab(uid, tab, btn) {
         btn.closest('.val-tab-btns').querySelectorAll('button').forEach(b => b.classList.remove('active'));
