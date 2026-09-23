@@ -465,6 +465,73 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
   width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
 }
 
+/* Filter bar layout */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.bulk-align-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.bulk-align-group .select-all-wrap {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+.bulk-align-group .select-all-label {
+  font-family: var(--font-data); font-size: 10px; text-transform: uppercase; color: var(--foam-dim); white-space: nowrap;
+}
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+/* Narrow/wide action column toggling */
+@media (min-width: 769px) {
+  .col-actions-narrow { display: none !important; }
+}
+@media (max-width: 768px) {
+  .col-actions-full { display: none !important; }
+}
+
+/* Ellipsis row dropdown */
+.row-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #0c2b42;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  min-width: 160px;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+.row-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 14px;
+  background: none;
+  border: none;
+  color: var(--foam);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.row-dropdown button:hover { background: var(--glass-fill-hi); }
+
 /* Loading states */
 .table-loading-row td {
   padding: 32px 0; text-align: center;
@@ -623,39 +690,42 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
   <!-- Main Events Table Queue -->
   <div class="panel" id="queue">
     <div class="panel-header">
-      <div class="panel-title"><span class="dot">
-      </span><h3>Scheduled Events</h3>
-    </div>
-      <button class="btn btn-ghost" onclick="openAddEventModal()"><i data-lucide="plus" size="14"></i> Add Event</button>
+      <div class="panel-title"><span class="dot"></span><h3>Scheduled Events</h3></div>
+      <div class="panel-toolbar">
+        <button class="btn btn-ghost" onclick="openAddEventModal()"><i data-lucide="plus" size="14"></i> Add Event</button>
+      </div>
     </div>
     <div class="tab-content active">
       
       <!-- Filter Bar with All Seasons Dropdown -->
       <div class="filter-bar">
-        <div class="season-select-wrapper">
-          <select id="seasonSelect" class="season-dropdown"></select>
-        </div>
-        <div class="season-select-wrapper">
-          <select id="monthSelect" class="season-dropdown" style="min-width:140px;"></select>
-        </div>
-        <button class="filter-pill" id="rescheduledToggle">Rescheduled Only</button>
-        <div class="class-pill-group" id="classPillGroup"></div>
-        <div style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
-
-            <button class="bulk-icon-btn bulk-cal" id="bulkAddCalBtn" title="Add selected to Calendar">
+        <!-- Left: Select All + Bulk icons (mirrors table column order: select | actions) -->
+        <div class="bulk-align-group">
+          <div class="select-all-wrap">
+            <input type="checkbox" id="selectAllChk">
+            <label for="selectAllChk" class="select-all-label">All</label>
+          </div>
+          <button class="bulk-icon-btn bulk-cal" id="bulkAddCalBtn" title="Add selected to Calendar">
             <i data-lucide="calendar-plus" size="15"></i>
-            </button>
-            <button class="bulk-icon-btn bulk-resched" id="bulkReschedBtn" title="Reschedule selected">
+          </button>
+          <button class="bulk-icon-btn bulk-resched" id="bulkReschedBtn" title="Reschedule selected">
             <i data-lucide="calendar-sync" size="15"></i>
-            </button>
-            <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Edit selected">
-            <i data-lucide="pencil" size="15"></i>
-            </button>
-            <div class="select-all-wrap">
-              <label for="selectAllChk" class="select-all-label">Select</label>
-              <input type="checkbox" id="selectAllChk">
-            </div>
+          </button>
+          <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Delete selected">
+            <i data-lucide="trash-2" size="15"></i>
+          </button>
+        </div>
 
+        <!-- Right: Filters -->
+        <div class="filter-controls">
+          <div class="season-select-wrapper">
+            <select id="seasonSelect" class="season-dropdown"></select>
+          </div>
+          <div class="season-select-wrapper">
+            <select id="monthSelect" class="season-dropdown" style="min-width:140px;"></select>
+          </div>
+          <button class="filter-pill" id="rescheduledToggle">Rescheduled Only</button>
+          <div class="class-pill-group" id="classPillGroup"></div>
         </div>
       </div>
 
@@ -663,13 +733,14 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
         <table class="admin-table">
           <thead>
             <tr>
+              <th style="width:36px;"></th>
               <th>Date</th>
               <th>Class</th>
               <th>Event Type</th>
               <th>Calendar Status</th>
               <th>Reschedule Status</th>
-              <th style="text-align: right;">Actions</th>
-              <th style="text-align: center;">Select</th>
+              <th class="col-actions-full" style="text-align: right;">Actions</th>
+              <th class="col-actions-narrow" style="text-align:right; width:36px;"></th>
             </tr>
           </thead>
           <tbody id="eventsBody">
@@ -1079,12 +1150,11 @@ function logAction(msg) {
 function seasonEvents() {
   return eventData.filter(e => {
     if (e.Class === "M") return false; // Exclude Marblehead
-    if (filterMonth) {
-      const eDate = new Date(event.Date);
-      if (!isNaN(eDate.getTime())) {
-        const monthStr = eDate.toLocaleString("en-US", { month: "short" });
-        if (monthStr !== filterMonth) return false;
-      }
+    if (selectedMonth) {
+      const eDate = parseLocalDate(e.Date);
+      if (!eDate) return false;
+      const monthStr = eDate.toLocaleString("en-AU", { month: "short" });
+      if (monthStr !== selectedMonth) return false;
     }
     if (selectedSeason && !String(e.Season).startsWith(String(selectedSeason))) return false;
     if (selectedClass && e.Class !== selectedClass) return false;
@@ -1294,6 +1364,9 @@ function renderTable() {
   eventsBody.innerHTML = rows.length
     ? rows.map(e => `
       <tr data-hex="${e.HexKey}" class="${e.HexKey === selectedHex ? 'selected' : ''}">
+        <td style="width:36px;padding:12px 8px 12px 14px;">
+          <input type="checkbox" class="row-check-input" data-hex="${e.HexKey}" ${selectedRows.has(e.HexKey) ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--glow);cursor:pointer;display:block;">
+        </td>
         <td>${formatDate(e.Date)}</td>
         <td>${e.Class}</td>
         <td>${e.Competition || e["Event Type"] || e.Event || e["Regatta Type"] || ""}</td>
@@ -1305,8 +1378,8 @@ function renderTable() {
               : e["Rescheduled Date"]
                 ? `<span class="app-status-badge status-progress">Rescheduled</span>`
                 : `<span class="app-status-badge">—</span>`}</td>
-        <td style="text-align: right;">
-          <div class="row-actions" style="justify-content: flex-end;">
+        <td class="col-actions-full" style="text-align:right; padding-right:10px;">
+          <div class="row-actions" style="justify-content:flex-end;">
             <button class="icon-btn btn-cal" title="Add to Calendar" onclick="addToCalendar('${e.HexKey}')">
               <i data-lucide="calendar-plus" size="15"></i>
             </button>
@@ -1318,12 +1391,21 @@ function renderTable() {
             </button>
           </div>
         </td>
-        <td style="text-align:center;">
-          <input type="checkbox" class="row-check-input" data-hex="${e.HexKey}" ${selectedRows.has(e.HexKey) ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--glow);cursor:pointer;">
+        <td class="col-actions-narrow" style="text-align:right; padding-right:10px;">
+          <div class="row-ellipsis-wrap" style="position:relative; display:inline-block;">
+            <button class="icon-btn" title="Actions" onclick="toggleRowMenu(event,'${e.HexKey}')">
+              <i data-lucide="ellipsis-vertical" size="15"></i>
+            </button>
+            <div class="row-dropdown" id="menu-${e.HexKey}" style="display:none;">
+              <button onclick="addToCalendar('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="calendar-plus" size="13"></i> Add to Calendar</button>
+              <button onclick="selectEvent('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="calendar-sync" size="13"></i> Reschedule</button>
+              <button onclick="openEditModal('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="pencil" size="13"></i> Edit</button>
+            </div>
+          </div>
         </td>
       </tr>
     `).join("")
-    : `<tr><td colspan="6" style="text-align:center;color:var(--foam-dim);">No events found matching criteria.</td></tr>`;
+    : `<tr><td colspan="8" style="text-align:center;color:var(--foam-dim);">No events found matching criteria.</td></tr>`;
   
   // Attach checkbox listeners
   eventsBody.querySelectorAll(".row-check-input").forEach(chk => {
@@ -1968,6 +2050,19 @@ async function loadData() {
     eventsBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
   }
 }
+
+/* Ellipsis row menu helpers */
+function toggleRowMenu(evt, hex) {
+  evt.stopPropagation();
+  const menu = document.getElementById(`menu-${hex}`);
+  const isOpen = menu.style.display !== 'none';
+  closeAllRowMenus();
+  if (!isOpen) { menu.style.display = 'block'; if (window.lucide) lucide.createIcons(); }
+}
+function closeAllRowMenus() {
+  document.querySelectorAll('.row-dropdown').forEach(m => m.style.display = 'none');
+}
+document.addEventListener('click', closeAllRowMenus);
 
 loadData();
 if (window.lucide) lucide.createIcons();
