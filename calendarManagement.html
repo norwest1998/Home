@@ -65,20 +65,22 @@
     font-family: var(--font-data); font-size: 11px; text-transform: uppercase;
     color: var(--glow); letter-spacing: 0.05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
   }
-  .class-pill-list { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .class-pill-list { display: flex; align-items: stretch; gap: 10px; flex-wrap: nowrap; overflow-x: auto; }
   .class-stat-pill {
-    display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px;
-    border-radius: 999px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);
-    color: var(--foam); font-size: 12px; font-family: var(--font-data); transition: all 0.15s ease;
-    cursor: pointer;
+    display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+    border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);
+    color: var(--foam); font-size: 13px; font-family: var(--font-data); transition: all 0.15s ease;
+    cursor: pointer; flex: 1; min-width: 0; white-space: nowrap;
   }
   .class-stat-pill:hover {
     background: rgba(255,106,61,0.15); border-color: rgba(255,106,61,0.4);
   }
-  .class-stat-pill img { width: 20px; height: 20px; object-fit: contain; }
+  .class-stat-pill img { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
+  .class-stat-pill .pill-label { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
   .class-stat-pill .count {
     background: rgba(255,106,61,0.2); color: var(--signal); font-weight: 700;
-    padding: 2px 8px; border-radius: 12px; font-size: 11px; border: 1px solid rgba(255,106,61,0.3);
+    padding: 3px 10px; border-radius: 12px; font-size: 12px; border: 1px solid rgba(255,106,61,0.3);
+    flex-shrink: 0;
   }
 
   /* Calendar Bulk Sync Card */
@@ -689,22 +691,23 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
 
   <!-- Main Events Table Queue -->
   <div class="panel" id="queue">
-    <div class="panel-header">
+    <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
       <div class="panel-title"><span class="dot"></span><h3>Scheduled Events</h3></div>
-      <div class="panel-toolbar">
-        <button class="btn btn-ghost" onclick="openAddEventModal()"><i data-lucide="plus" size="14"></i> Add Event</button>
-      </div>
+      <button class="btn btn-ghost" id="addEventBtn" style="flex-shrink:0;"><i data-lucide="plus" size="14"></i> Add Event</button>
     </div>
     <div class="tab-content active">
       
-      <!-- Filter Bar with All Seasons Dropdown -->
-      <div class="filter-bar">
-        <!-- Left: Select All + Bulk icons (mirrors table column order: select | actions) -->
-        <div class="bulk-align-group">
-          <div class="select-all-wrap">
-            <input type="checkbox" id="selectAllChk">
-            <label for="selectAllChk" class="select-all-label">All</label>
-          </div>
+      <!-- Filter Bar -->
+      <div class="filter-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <!-- Left: Filters -->
+        <div class="filter-controls" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;">
+          <select id="seasonSelect" class="season-dropdown"></select>
+          <select id="monthSelect" class="season-dropdown" style="min-width:140px;"></select>
+          <button class="filter-pill" id="rescheduledToggle">Rescheduled Only</button>
+          <div class="class-pill-group" id="classPillGroup"></div>
+        </div>
+        <!-- Right: Bulk icons + Select All — aligns with table Actions | Select columns -->
+        <div class="bulk-align-group" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:auto;">
           <button class="bulk-icon-btn bulk-cal" id="bulkAddCalBtn" title="Add selected to Calendar">
             <i data-lucide="calendar-plus" size="15"></i>
           </button>
@@ -714,18 +717,10 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
           <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Delete selected">
             <i data-lucide="trash-2" size="15"></i>
           </button>
-        </div>
-
-        <!-- Right: Filters -->
-        <div class="filter-controls">
-          <div class="season-select-wrapper">
-            <select id="seasonSelect" class="season-dropdown"></select>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding-left:4px;">
+            <label for="selectAllChk" class="select-all-label" style="font-family:var(--font-data);font-size:9px;text-transform:uppercase;color:var(--glow);letter-spacing:0.06em;">Select</label>
+            <input type="checkbox" id="selectAllChk" style="width:16px;height:16px;accent-color:var(--glow);cursor:pointer;">
           </div>
-          <div class="season-select-wrapper">
-            <select id="monthSelect" class="season-dropdown" style="min-width:140px;"></select>
-          </div>
-          <button class="filter-pill" id="rescheduledToggle">Rescheduled Only</button>
-          <div class="class-pill-group" id="classPillGroup"></div>
         </div>
       </div>
 
@@ -1249,10 +1244,12 @@ function renderClassEventsPills() {
     return;
   }
 
-  classEventsContainer.innerHTML = Object.entries(classCounts).map(([className, count]) => `
-    <div class="class-stat-pill" onclick="openClassCalendarModal('${className}')" title="Click to open Google Calendar and filter by ${className}">
+  classEventsContainer.innerHTML = Object.entries(classCounts)
+    .sort(([,a],[,b]) => b - a)
+    .map(([className, count]) => `
+    <div class="class-stat-pill" onclick="openClassCalendarModal('${className}')" title="${className} — ${count} events">
       ${classInsignia(className)}
-      <span>${className}</span>
+      <span class="pill-label">${className}</span>
       <span class="count">${count}</span>
     </div>
   `).join("");
@@ -2050,6 +2047,9 @@ async function loadData() {
     eventsBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
   }
 }
+
+/* Add Event button */
+document.getElementById('addEventBtn')?.addEventListener('click', openAddEventModal);
 
 /* Ellipsis row menu helpers */
 function toggleRowMenu(evt, hex) {
