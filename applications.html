@@ -163,164 +163,153 @@
 </head>
 <body>
 
-<header class="nav-glass">
-<a href="index.html" class="brand">
+    <header class="nav-glass">
+    <a href="index.html" class="brand">
 
-    <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
-    <div class="brand-text">
-        <strong>Sydney Maritime Modellers Club</strong>
-        <span>APPLICATIONS PORTAL</span>
-    </div>
-    <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
-    <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
-</a>
-<ul class="nav-links">
-    <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
-    <li class="nav-item"><a href="#reviews" class="nav-link">Application Review</a></li>
-    <li class="nav-item"><a href="#audit-log" class="nav-link">Committee Logs</a></li>
-</ul>
-</header>
+        <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+        <div class="brand-text">
+            <strong>Sydney Maritime Modellers Club</strong>
+            <span>APPLICATIONS PORTAL</span>
+        </div>
+        <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
+        <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
+    </a>
+    <ul class="nav-links">
+        <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
+        <li class="nav-item"><a href="#reviews" class="nav-link">Application Review</a></li>
+        <li class="nav-item"><a href="#audit-log" class="nav-link">Committee Logs</a></li>
+    </ul>
+    </header>
 
-<main class="container">
-  
-  <!-- Admin Workspace Header -->
-  <div class="admin-header">
-    <div class="admin-title-group">
-      <h1>Membership Applications</h1>
-    </div>
-    <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
-  </div>
-
-  <!-- Admin Quick Stats -->
-  <div class="admin-stats-bar">
-    <div class="admin-stats-row">
-      <div class="admin-stat-card glass">
-        <span class="lbl">Received</span>
-        <span class="num" id="statReceived" style="color:#60a5fa;">—</span>
-      </div>
-      <div class="admin-stat-card glass">
-        <span class="lbl">In Progress</span>
-        <span class="num" id="statInProgress" style="color:#fbbf24;">—</span>
-      </div>
-      <div class="admin-stat-card glass">
-        <span class="lbl">Awaiting Approval</span>
-        <span class="num" id="statAwaitingApproval" style="color:var(--signal);">—</span>
-      </div>
-      <div class="admin-stat-card glass">
-        <span class="lbl">Processed</span>
-        <span class="num" id="statProcessed" style="color:var(--glow);">—</span>
-      </div>
-    </div>
-    <div class="admin-stat-card glass admin-stat-card--turnaround">
-      <span class="lbl">Avg Turnaround</span>
-      <span class="num" id="statAvgTurnaround" style="color:#a78bfa;">—</span>
-    </div>
-  </div>
-
-  <!-- Main Approvals Queue Panel -->
-  <div class="panel" id="approvals">
-    <div class="panel-header">
-      <div class="panel-title">
-        <span class="dot"></span>
-        <h3>Applications List</h3>
-      </div>
-    </div>
+  <main class="container">
     
-    <div class="tab-content active">
-      <div class="search-wrap">
-        <input class="search-input" type="text" placeholder="Filter pending applications by applicant name, sail #, or class...">
+    <!-- Admin Workspace Header -->
+    <div class="admin-header">
+      <div class="admin-title-group">
+        <h1>Membership Applications</h1>
       </div>
-
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Applicant</th>
-              <th>Type</th>
-              <th>Class / Boat</th>
-              <th>Submitted</th>
-              <th>Status</th>
-              <th>Votes</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="appsTableBody">
-            <tr><td colspan="7"><div class="empty-state"><div class="spinner"></div> Loading applications…</div></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
     </div>
-  </div>
 
-  <!-- Approval Action Panel & Vote Audit Log -->
-  <div class="action-panel-grid">
-    
-    <!-- Selected Item Review Panel -->
-    <div class="panel" id="reviews">
-      <div class="panel-header">
-        <div class="panel-title">
-          <h3 id="reviewTitle">Application Review</h3>
+    <!-- Admin Quick Stats -->
+    <div class="admin-stats-bar">
+      <div class="admin-stats-row">
+        <div class="admin-stat-card glass">
+          <span class="lbl">Received</span>
+          <span class="num" id="statReceived" style="color:#60a5fa;">—</span>
+        </div>
+        <div class="admin-stat-card glass">
+          <span class="lbl">In Progress</span>
+          <span class="num" id="statInProgress" style="color:#fbbf24;">—</span>
+        </div>
+        <div class="admin-stat-card glass">
+          <span class="lbl">Awaiting Approval</span>
+          <span class="num" id="statAwaitingApproval" style="color:var(--signal);">—</span>
+        </div>
+        <div class="admin-stat-card glass">
+          <span class="lbl">Processed</span>
+          <span class="num" id="statProcessed" style="color:var(--glow);">—</span>
         </div>
       </div>
-      <div class="tab-content active" id="reviewContent">
-        <div class="empty-state">Select an application from the queue to review it.</div>
+      <div class="admin-stat-card glass admin-stat-card--turnaround">
+        <span class="lbl">Avg Turnaround</span>
+        <span class="num" id="statAvgTurnaround" style="color:#a78bfa;">—</span>
       </div>
     </div>
 
-    <!-- Committee Decision Log -->
-    <div class="panel" id="audit-log">
+    <!-- Main Approvals Queue Panel -->
+    <div class="panel" id="approvals">
       <div class="panel-header">
         <div class="panel-title">
-          <h3>Committee Voting Audit</h3>
+          <span class="dot"></span>
+          <h3>Applications List</h3>
         </div>
       </div>
-      <div class="tab-content active" id="auditContent">
-        <div class="empty-state">No application selected.</div>
+      
+      <div class="tab-content active">
+        <div class="search-wrap">
+          <input class="search-input" type="text" placeholder="Filter pending applications by applicant name, sail #, or class...">
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Applicant</th>
+                <th>Type</th>
+                <th>Class / Boat</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th>Votes</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="appsTableBody">
+              <tr><td colspan="7"><div class="empty-state"><div class="spinner"></div> Loading applications…</div></td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-  </div>
-    <!-- AUDIT LOG -->
-    <div class="section-head" id="audit-log">
-        <h2>Audit Log</h2>
-        <p>Actions recorded to the AuditLog sheet.</p>
-    </div>
-    <div class="panel">
+    <!-- Approval Action Panel & Vote Audit Log -->
+    <div class="action-panel-grid">
+      
+      <!-- Selected Item Review Panel -->
+      <div class="panel" id="reviews">
         <div class="panel-header">
-            <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
-            <div class="panel-toolbar">
-                <div class="audit-toggle">
-                    <button id="auditFilterMembers" class="active">Members</button>
-                    <button id="auditFilterAll">All</button>
-                </div>
-                <div class="search-wrap">
-                    <i class="nav-icon" data-lucide="search"></i>
-                    <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
-                </div>
-                <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
-            </div>
+          <div class="panel-title">
+            <h3 id="reviewTitle">Application Review</h3>
+          </div>
         </div>
-        <div class="tab-content active">
-            <div class="log-table-wrap">
-                <table class="log-table">
-                    <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
-                    <tbody id="auditBody"></tbody>
-                </table>
-            </div>
-            <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
+        <div class="tab-content active" id="reviewContent">
+          <div class="empty-state">Select an application from the queue to review it.</div>
         </div>
-    </div>
-</main>
+      </div>
 
-<footer>
-  <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
-</footer>
-<script src="shared.js"></script>   <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
-<script src="auditLog.js"></script>
-<script>
-  AuditLog.init('apps', 'Applications');  // or 'all' to default to unfiltered
-</script>
-<script>
+      <!-- Committee Decision Log -->
+      <div class="panel" id="audit-log">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h3>Committee Voting Audit</h3>
+          </div>
+        </div>
+        <div class="tab-content active" id="auditContent">
+          <div class="empty-state">No application selected.</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer>
+    <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+  </footer>
+  <script src="shared.js"></script>   <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
+  <script src="auditLog.js"></script>
+  <script>
+      AuditLog.init('calendar', 'Events');  // or 'all' to default to unfiltered
+  </script>
+  <script>
+    /* =========================================================
+    GOOGLE SHEETS MODULE
+    ========================================================= */
+    // config.js  (or inline in a shared include)
+    const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
+
+    // domain keys must match REGISTRY keys in Gateway.gs
+    const DOMAIN = {
+    members:   "members",
+    documents: "documents",
+    calendar:  "calendar",
+    apps:      "apps",
+    clubs:     "clubs",
+    notes:     "notes",
+    tracking:  "tracking"
+    };
+    
+
 
     /* =========================================================
     APPLICATIONS DATA MODULE
@@ -470,18 +459,14 @@
     async function loadApplications() {
       try {
         allApplications = await fetchSheet(DOMAIN.apps, "Membership Applications");
-  console.log('Raw apps:', allApplications);  
         renderTable();
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
         document.getElementById('appsTableBody').innerHTML =
-          `<tr><td colspan="7"><div class="empty-state" style="color:var(--signal);"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"></i> Applications list unavailable Error: ${err.message}</div></td></tr>`;
+          `<tr><td colspan="7"><div class="empty-state" style="color:var(--signal);"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"></i> Applications list unavailable/nError: ${err.message}</div></td></tr>`;
       }
     }
-    /**
-     * Parses JSON array and populates the boat section
-     * @param {string|Array} boatsData - JSON string or array of boat objects
-     */
+
     function renderBoatDetails(boatsData) {
       const container = document.getElementById('boatsContainer');
       if (!container) return;

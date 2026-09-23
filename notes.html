@@ -1158,7 +1158,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 actionRows[i].byMember = sel.value;
                 const opt = [...sel.options].find(o => o.value === sel.value);
                 actionRows[i].byMemberEmail = opt ? (opt.dataset.email || "") : "";
-            });
+            }); 
         });
     }
 
