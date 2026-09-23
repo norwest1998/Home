@@ -1826,7 +1826,7 @@ requestBtn.addEventListener("click", async () => {
   try {
     await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "Pending " + slotHex });
     appendSheet(DOMAIN.audit, "AuditLog",{
-      hexCode: hexKey,
+      hexCode: selectedHex,
       name: "",
       detail: "Rescheduled Date",
       before: "",
