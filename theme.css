@@ -88,10 +88,8 @@
     background:linear-gradient(120deg, rgba(255,255,255,0.14) 0%, transparent 30%);
     pointer-events:none;
   }
-  .nav-icon {
-    width: 35px;
-    height: 35px;
-  }
+  .nav-icon {width: 35px; height: 35px; }
+  .inline-icon { width: 15px; height: 15px; flex-shrink: 0; vertical-align: -3px; }
 
   /* =========================================================
      ADMIN LAYOUT & CONSOLE WORKSPACE STYLES 
