@@ -1208,7 +1208,7 @@ function renderStats() {
   const activeEvents = eventData.filter(e => e.Class !== "M" && String(e.Season).startsWith(String(selectedSeason)));
   document.getElementById("statSeason").textContent = selectedSeason;
   document.getElementById("statTotalEvents").textContent = activeEvents.length;
-  document.getElementById("statRescheduled").textContent = activeEvents.filter(e => e.Results === "Rescheduled" || (e["Rescheduled Date"] && !e["Rescheduled Date"].includes("Pending"))).length;
+  document.getElementById("statRescheduled").textContent = activeEvents.filter(e => (e["Rescheduled Date"] && !e["Rescheduled Date"].includes("Pending"))).length;
   document.getElementById("statPending").textContent = activeEvents.filter(e => (e["Rescheduled Date"] || "").includes("Pending")).length;
 
   // Calendar Health Calculation
@@ -1366,7 +1366,7 @@ function renderTable() {
         </td>
         <td>${formatDate(e.Date)}</td>
         <td>${e.Class}</td>
-        <td>${e.Competition || e["Event Type"] || e.Event || e["Regatta Type"] || ""}</td>
+        <td>${e["Regatta Type"] || ""}</td>
         <td>${e.AddedStatus || e["Calendar Synced"] 
               ? `<span class="app-status-badge status-progress">In Calendar</span>` 
               : `<span class="app-status-badge status-awaiting">Not Synced</span>`}</td>
@@ -2031,8 +2031,9 @@ async function loadData() {
   if (selectedEventCard) selectedEventCard.innerHTML = `<div class="section-loading"><span class="spinner"></span> Loading…</div>`;
 
   try {
-    eventData = await fetchSheet(DOMAIN.calendar, "Event Data");
-    classes = await fetchSheet(DOMAIN.members, "Classes");
+    data = await fetchSheet(DOMAIN.calendar, "Event Data");
+    eventData = data.map(normaliseApp);
+    classes   = await fetchSheet(DOMAIN.members, "Classes");
 
     renderSeasonDropdown();
     renderMonthDropdown();
@@ -2048,6 +2049,7 @@ async function loadData() {
   }
 }
 
+}
 /* Add Event button */
 document.getElementById('addEventBtn')?.addEventListener('click', openAddEventModal);
 
