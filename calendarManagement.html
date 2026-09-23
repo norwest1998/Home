@@ -819,7 +819,7 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
                   <button id="auditFilterAll">All</button>
               </div>
               <div class="search-wrap">
-                  <i class="nav-icon search-icon" data-lucide="search" size="8"></i>
+                  <i class="nav-icon search-icon" data-lucide="search"></i>
                   <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
               </div>
               <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
@@ -1569,7 +1569,7 @@ function updateModalVisibility() {
   const isAddMode = modalMode.value === "add";
   const eventType = modalEventType.value;
   const isCompOrSocial = ["Competition", "Social"].includes(eventType);
-
+console.log("in updateModalVisibility: isAddMode " + isAddMode + " eventType: " + eventType + " isCompOrSocial: " + isCompOrSocial);
   const fullFields = document.querySelectorAll(".full-field-only");
 
   // Rule: When adding an Event, if Event Type is NOT 'Competition' or 'Social':
@@ -1651,7 +1651,7 @@ function openAddEventModal() {
   
   modalEmblemImg.classList.add("hidden");
   modalEmblemPlaceholder.classList.remove("hidden");
-console.log("in open event modal: textContext" + modalTitle.textContent + " Mode value: " + modalMode.value);
+console.log("in open event modal: textContext " + modalTitle.textContent + " Mode value: " + modalMode.value);
   updateModalVisibility();
   eventModal.classList.remove("hidden");
 }
