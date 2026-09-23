@@ -1360,7 +1360,7 @@ function renderTable() {
         </td>
         <td>${formatDate(e.Date)}</td>
         <td>${e.Class} ${e["Regatta Type"]}</td>
-        <td>${e.Competition || e["Event Type"] || e.Event || ""}</td>
+        <td>${e["Event Type"] || e.Event || ""}</td>
         <td>${e.AddedStatus || e["Calendar Synced"] 
               ? `<span class="app-status-badge status-progress">In Calendar</span>` 
               : `<span class="app-status-badge status-awaiting">Not Synced</span>`}</td>
@@ -1370,7 +1370,7 @@ function renderTable() {
                 ? `<span class="app-status-badge status-progress">Rescheduled</span>`
                 : `<span class="app-status-badge">—</span>`}</td>
         <td class="col-actions-full" style="text-align:right; padding-right:10px;">
-          ${e.Results !== "Processed" ? `
+          ${(e.Results !== "Processed" && !(e["Event Type"] !== "Competition" && new Date(e.Date) <= new Date())) ? `
           <div class="row-actions" style="justify-content:flex-end;">
             <button class="icon-btn btn-cal" title="Add to Calendar" onclick="addToCalendar('${e.HexKey}')">
               <i data-lucide="calendar-plus" size="15"></i>
@@ -1381,10 +1381,10 @@ function renderTable() {
             <button class="icon-btn btn-edit" title="Edit Event" onclick="openEditEventModal('${e.HexKey}')">
               <i data-lucide="pencil" size="15"></i>
             </button>
-          </div>` : ""}
+          </div>` : "Processed"}
         </td>
         <td class="col-actions-narrow" style="text-align:right; padding-right:10px;">
-          ${e.Results !== "Processed" ? `
+          ${(e.Results !== "Processed" && !(e["Event Type"] !== "Competition" && new Date(e.Date) <= new Date())) ? `
           <div class="row-ellipsis-wrap" style="position:relative; display:inline-block;">
             <button class="icon-btn" title="Actions" onclick="toggleRowMenu(event,'${e.HexKey}')">
               <i data-lucide="ellipsis-vertical" size="15"></i>
@@ -1394,7 +1394,7 @@ function renderTable() {
               <button onclick="selectEvent('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="calendar-sync" size="13"></i> Reschedule</button>
               <button onclick="openEditEventModal('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="pencil" size="13"></i> Edit</button>
             </div>
-          </div>` : ""}
+          </div>` : "Processed"}
         </td>
       </tr>
     `).join("")
