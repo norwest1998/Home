@@ -1733,8 +1733,7 @@ eventForm.addEventListener("submit", async (e) => {
       "Regatta Type": modalRegattaType.value,
       "Season": modalSeason.value,
       "Round no": modalRoundNo.value,
-      "Results": modalResults.value,
-      "Rescheduled Date": modalRescheduledDate.value
+      "Results": modalResults.value
     });
     
   }
@@ -1854,19 +1853,15 @@ approveBtn.addEventListener("click", async () => {
     const d = parseLocalDate(slot.Date);
     const newMonth = d ? d.toLocaleString("en-AU", { month: "short" }) : "";
 
-    await appendSheet(DOMAIN.calendar, "Event Data", {
-      HexKey: crypto.randomUUID(),
-      Month: newMonth,
-      Date: slot.Date,
-      Start: slot.Start,
-      Finish: slot.Finish,
-      Emblem: event.Emblem || "",
+    await updateSheet(DOMAIN.calendar, "Event Data", {
+      HexKey: slotHex,
       Class: event.Class || "",
+      ['Regatta Type']: event['Regatta Type'] || "",
       ['Event Type']: event["Event Type"] || "",
       Season: event.Season || ""
     });
 
-    await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "", Results: "Rescheduled" });
+    await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": '${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}', Results: "Rescheduled" });
     logAction(`Reschedule approved: ${event.Class} → ${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`);
     await loadData();
   } catch (err) {
