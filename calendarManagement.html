@@ -1370,7 +1370,7 @@ function renderTable() {
             <button class="icon-btn btn-resched" title="Reschedule Event" onclick="selectEvent('${e.HexKey}')">
               <i data-lucide="calendar-sync" size="15"></i>
             </button>
-            <button class="icon-btn btn-edit" title="Edit Event" onclick="openEditModal('${e.HexKey}')">
+            <button class="icon-btn btn-edit" title="Edit Event" onclick="openEditEventModal('${e.HexKey}')">
               <i data-lucide="pencil" size="15"></i>
             </button>
           </div>
@@ -1383,7 +1383,7 @@ function renderTable() {
             <div class="row-dropdown" id="menu-${e.HexKey}" style="display:none;">
               <button onclick="addToCalendar('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="calendar-plus" size="13"></i> Add to Calendar</button>
               <button onclick="selectEvent('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="calendar-sync" size="13"></i> Reschedule</button>
-              <button onclick="openEditModal('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="pencil" size="13"></i> Edit</button>
+              <button onclick="openEditEventModal('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="pencil" size="13"></i> Edit</button>
             </div>
           </div>
         </td>
@@ -1807,26 +1807,6 @@ btnBulkExport.addEventListener("click", () => {
     }
   });
 });
-
-/* Modal Controls */
-function openEditModal(hexKey) {
-console.log("Looking for event: " + hexKey);
-  editingHex = hexKey;
-  const event = eventData.find(e => e.HexKey === hexKey);
-  if (!event) return;
-console.log("Found event: " + event.HexKey  + " Event: " + event.Event + " Event type: " +  event["Event Type"]);
-  document.getElementById("editEventName").value = event.Event || event["Event Type"] || "";
-  document.getElementById("editEventDate").value = formatDate(event.Date).replace(/\//g, "-");
-  document.getElementById("editStartTime").value = event.Start || "";
-  document.getElementById("editFinishTime").value = event.Finish || "";
-
-  document.getElementById("editModal").classList.add("active");
-}
-
-function closeEditModal() {
-  document.getElementById("editModal").classList.remove("active");
-  editingHex = null;
-}
 
 /* --- Request Reschedule --- */
 requestBtn.addEventListener("click", async () => {
