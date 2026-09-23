@@ -2010,6 +2010,15 @@ generateSeasonBtn?.addEventListener("click", () => {
   });
 });
 
+function inferSeason(dateStr) {
+  const d = parseLocalDate(dateStr);
+  if (!d) return "";
+  const y = d.getFullYear();
+  const m = d.getMonth(); // 0-indexed
+  const start = m >= 6 ? y : y - 1; // season starts July
+  return `${start}-${String(start + 1).slice(-2)}`;
+}
+
 /* =========================================================
    INITIAL DATA LOAD
 ========================================================= */
@@ -2031,7 +2040,10 @@ async function loadData() {
 
   try {
     eventData = await fetchSheet(DOMAIN.calendar, "Event Data");
+    eventData.Season = eventData.Season || inferSeason(eventData.Date);
     classes   = await fetchSheet(DOMAIN.members, "Classes");
+
+
 
     renderSeasonDropdown();
     renderMonthDropdown();
