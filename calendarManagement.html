@@ -1127,9 +1127,6 @@ const modalEvent = document.getElementById("modalEvent");
 const modalEmblemImg = document.getElementById("modalEmblemImg");
 const modalEmblemPlaceholder = document.getElementById("modalEmblemPlaceholder");
 
-// Class Image Map lookup object (Populated during data load)
-let classImageMap = {};
-
 function logAction(msg) {
   const time = new Date().toLocaleTimeString();
   auditTrail.textContent = `[${time}] ${msg}\n` + (auditTrail.textContent === "No actions yet this session." ? "" : auditTrail.textContent);
@@ -1596,7 +1593,7 @@ modalDate.addEventListener("change", () => {
 // --- 4. Class -> Emblem Update ---
 modalClass.addEventListener("change", () => {
   const selectedClass = modalClass.value;
-  const imageUrl = classImageMap[selectedClass] || classImageMap["General"] || "";
+  const imageUrl = classInsignia(className) || classInsignia("General") || "";
 
   if (imageUrl) {
     modalEmblemImg.src = imageUrl;
