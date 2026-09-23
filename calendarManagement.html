@@ -2044,7 +2044,11 @@ async function loadData() {
 
   try {
     eventData = await fetchSheet(DOMAIN.calendar, "Event Data");
-    eventData.Season = eventData.Season || inferSeason(eventData.Date);
+    eventData.forEach(e => {
+      if (!e.HexKey) e.HexKey = `${e.Date}|${e.Start || ""}|${e.Class || ""}`;
+      if (!e.Season) e.Season = inferSeason(eventData.Date);
+    });
+    
     classes   = await fetchSheet(DOMAIN.members, "Classes");
 
     renderSeasonDropdown();
