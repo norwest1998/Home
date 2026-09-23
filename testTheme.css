@@ -221,16 +221,12 @@
     padding: 20px 24px 0;
     border-bottom: 1px solid var(--glass-border);
     display: flex; 
-    flex-direction: row; 
     justify-content: space-between;
-    gap: 16px; 
+    align-items:center;
   }
  
   .panel-title {
-    gap: 10px;
-    margin-bottom: 16px;
-    display:flex;
-    align-items:center;
+    margin-bottom: 12px;
   }
  
   .panel-title .dot {
@@ -240,7 +236,7 @@
     animation: pulse 2.4s ease-in-out infinite;
     flex-shrink: 0;
   }
- 
+  
   @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
  
   .panel-title h3 {
