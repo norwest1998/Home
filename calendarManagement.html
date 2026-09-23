@@ -641,7 +641,7 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
             <i data-lucide="calendar-sync" size="15"></i>
           </button>
           <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Delete selected">
-            <i data-lucide="trash-2" size="15"></i>
+            <i data-lucide="calendar-x" size="15"></i>
           </button>
         </div>
       </div>
@@ -1825,17 +1825,6 @@ requestBtn.addEventListener("click", async () => {
   requestBtn.disabled = true;
   try {
     await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "Pending " + slotHex });
-    appendSheet(DOMAIN.audit, "AuditLog",{
-      hexCode: selectedHex,
-      name: "",
-      detail: "Rescheduled Date",
-      before: "",
-      after: "Pending " + slotHex,
-      status: "success"
-    });
-
-
-
     logAction(`Reschedule requested for ${currentEvent?.Class} → slot ${slotHex}`);
     await loadData();
   } catch (err) {
@@ -1863,15 +1852,17 @@ approveBtn.addEventListener("click", async () => {
     const d = parseLocalDate(slot.Date);
     const newMonth = d ? d.toLocaleString("en-AU", { month: "short" }) : "";
 
-    await updateSheet(DOMAIN.calendar, "Event Data", {
-      HexKey: slotHex,
+    await updateSheet(DOMAIN.calendar, "Event Data", slotHex,{
       Class: event.Class || "",
       ['Regatta Type']: event['Regatta Type'] || "",
       ['Event Type']: event["Event Type"] || "",
       Season: event.Season || ""
     });
 
-    await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": '${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}', Results: "Rescheduled" });
+    await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, {
+      "Rescheduled Date": '${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}',
+      Results: "Rescheduled" 
+    });
     logAction(`Reschedule approved: ${event.Class} → ${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`);
     await loadData();
   } catch (err) {
@@ -1913,13 +1904,13 @@ document.getElementById("bulkReschedBtn").addEventListener("click", () => {
 
 document.getElementById("bulkDeleteBtn").addEventListener("click", async () => {
   if (!selectedRows.size) { logAction("No events selected."); return; }
-  if (!confirm(`Delete ${selectedRows.size} selected event(s)? This cannot be undone.`)) return;
-  logAction(`Deleting ${selectedRows.size} event(s)...`);
+  if (!confirm(`Cancel ${selectedRows.size} selected event(s)? This cannot be undone.`)) return;
+  logAction(`Cancelling ${selectedRows.size} event(s)...`);
   for (const hex of selectedRows) {
     try {
-      await updateSheet(DOMAIN.calendar, "Event Data", hex, { Results: "Deleted" });
-      logAction(`Deleted event ${hex}`);
-    } catch(err) { logAction(`Error deleting ${hex}: ${err.message}`); }
+      await updateSheet(DOMAIN.calendar, "Event Data", hex, { Results: "Cancelled" });
+      logAction(`Cancelled event ${hex}`);
+    } catch(err) { logAction(`Error cancelling ${hex}: ${err.message}`); }
   }
   selectedRows.clear();
 });
