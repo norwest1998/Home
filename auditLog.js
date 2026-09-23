@@ -51,8 +51,8 @@ const AuditLog = {
         const q = document.getElementById('auditSearch').value.trim().toLowerCase();
         let entries = this.entries;
 
-        if (this.domainFilter === 'members') {
-            entries = entries.filter(e => String(e.domain || '').toLowerCase() === 'members');
+        if (this.domainFilter !== 'all') {
+            entries = entries.filter(e => String(e.domain || '').toLowerCase() === String(this.domainFilter).toLowerCase());
         }
         if (q) {
             entries = entries.filter(e =>

@@ -280,7 +280,39 @@
       </div>
 
     </div>
-
+    <!-- AUDIT LOG -->
+    <div class="section-head" id="audit-log">
+        <h2>Audit Log</h2>
+        <p>Actions recorded to the AuditLog sheet.</p>
+    </div>
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <span class="dot"></span>
+                <h3>Activity</h3>
+            </div>
+            <div class="panel-toolbar">
+                <div class="audit-toggle">
+                    <button id="auditFilterMembers" class="active">Members</button>
+                    <button id="auditFilterAll">All</button>
+                </div>
+                <div class="search-wrap">
+                    <i class="nav-icon" data-lucide="search"></i>
+                    <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
+                </div>
+                <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+            </div>
+        </div>
+        <div class="tab-content active">
+            <div class="log-table-wrap">
+                <table class="log-table">
+                    <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
+                    <tbody id="auditBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
+        </div>
+    </div>
   </main>
 
   <footer>
