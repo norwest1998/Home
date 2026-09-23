@@ -1569,7 +1569,6 @@ function updateModalVisibility() {
   const isAddMode = modalMode.value === "add";
   const eventType = modalEventType.value;
   const isCompOrSocial = ["Competition", "Social"].includes(eventType);
-console.log("in updateModalVisibility: isAddMode " + isAddMode + " eventType: " + eventType + " isCompOrSocial: " + isCompOrSocial);
   const fullFields = document.querySelectorAll(".full-field-only");
 
   // Rule: When adding an Event, if Event Type is NOT 'Competition' or 'Social':
@@ -1651,9 +1650,10 @@ function openAddEventModal() {
   
   modalEmblemImg.classList.add("hidden");
   modalEmblemPlaceholder.classList.remove("hidden");
-console.log("in open event modal: textContext " + modalTitle.textContent + " Mode value: " + modalMode.value);
+
   updateModalVisibility();
   eventModal.classList.remove("hidden");
+  eventModal.classList.add("active");
 }
 
 function openEditEventModal(hexKey) {
@@ -1695,7 +1695,8 @@ document.getElementById("closeModalBtn")?.addEventListener("click", () => eventM
 document.getElementById("cancelModalBtn")?.addEventListener("click", () => eventModal.classList.add("hidden"));
 
 function closeAddEventModal() {
-  document.getElementById("addEventModal").classList.remove("active");
+  EventModal.classList.remove("active");
+  EventModal.classList.add("hidden");
 }
 
 eventForm.addEventListener("submit", async (e) => {
