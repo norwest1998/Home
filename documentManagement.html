@@ -295,13 +295,13 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 
         </div>
         <div class="tab-content active">
-                        <div class="panel-toolbar">
+            <div class="panel-toolbar">
                 <div class="audit-toggle">
                     <button id="auditFilterMembers" class="active">Members</button>
                     <button id="auditFilterAll">All</button>
                 </div>
                 <div class="search-wrap">
-                    <i class="inline-icon search-icon" data-lucide="search"></i>
+                    <i class="nav-icon search-icon" data-lucide="search"></i>
                     <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
                 </div>
                 <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
@@ -635,9 +635,9 @@ function renderGrid() {
             <div class="doc-keywords">${String(d.Keywords || "").split(",").filter(Boolean).map(k => `<span class="kw-chip">${k.trim()}</span>`).join("")}</div>
             <div class="doc-meta">Last modified by ${d.LastModifiedBy || "—"} on ${d.LastModifiedDate || "—"}</div>
             <div class="doc-actions">
-                ${d.DriveLink ? `<a class="app-filter-btn" href="${d.DriveLink}" target="_blank" title="Open Document"><i class="nav-icon" data-lucide="search"></i></a>` : ""}
-                <button class="app-filter-btn" data-action="version" data-id="${d.RowID}" title="Open Document"><i class="nav-icon" data-lucide="search"></i></button>
-                <button class="app-filter-btn" data-action="detail" data-id="${d.RowID} title="Open Document""><i class="nav-icon" data-lucide="search"></i></button>
+                ${d.DriveLink ? `<a class="app-filter-btn" href="${d.DriveLink}" target="_blank" title="Open Document"><i class="nav-icon" data-lucide="book-open-text"></i></a>` : ""}
+                <button class="app-filter-btn" data-action="version" data-id="${d.RowID}" title="Upload Document"><i class="nav-icon" data-lucide="file-up"></i></button>
+                <button class="app-filter-btn" data-action="detail" data-id="${d.RowID} title="Signoff Document""><i class="nav-icon" data-lucide="file-pen-line"></i></button>
             </div>
             </div>
         </div>

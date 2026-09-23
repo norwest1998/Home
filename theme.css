@@ -89,6 +89,7 @@
     pointer-events:none;
   }
   .nav-icon {width: 35px; height: 35px; }
+  .search-wrap .nav-icon { position: absolute; left: 10px; width: 14px; height: 14px; pointer-events: none; color: var(--foam-dim); }
   .inline-icon { width: 15px; height: 15px; flex-shrink: 0; vertical-align: -3px; }
 
   /* =========================================================
