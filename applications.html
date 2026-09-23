@@ -297,7 +297,7 @@
                     <button id="auditFilterAll">All</button>
                 </div>
                 <div class="search-wrap">
-                    <i class="nav-icon search-icon" data-lucide="search"></i>
+                    <i class="nav-icon search-icon" data-lucide="search" size="8"></i>
                     <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
                 </div>
                 <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
@@ -471,13 +471,43 @@
 
     async function loadApplications() {
       try {
-        allApplications = await fetchSheet(DOMAIN.apps, "Membership Applications");
+        data = await fetchSheet(DOMAIN.apps, "Membership Applications");
+        allApplications = data.map(normaliseApp);
         renderTable();
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
         document.getElementById('appsTableBody').innerHTML =
           `<tr><td colspan="7"><div class="empty-state" style="color:var(--signal);"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"></i> Applications list unavailable/nError: ${err.message}</div></td></tr>`;
       }
+    }
+
+    function normaliseApp(r) {
+      return {
+        rowId:          r.RowID,
+        firstName:      r["First name"],
+        surname:        r.Surname,
+        membershipType: r["Membership Type"],
+        classOrBoat:    r["Name of Current Club"] || '',
+        lastUpdated:    r.LastStatusUpdated,
+        status:         r.Status,
+        votesFor:       r["Votes For"],
+        votesAgainst:   r["Votes Against"],
+        approved:       r["Membership Approved"],
+        turnAround:     r["Turnaround \nTime"],
+        // for openReview detail view:
+        fullName:       `${r["First name"]} ${r.Surname}`,
+        email:          r["Email address"],
+        phone:          r["Phone number"],
+        address:        r["Address Line"],
+        emergency:      `${r["Emergency Contact"]} — ${r["Emergency Contact Number"]}`,
+        nominator:      r["Nominating member name"],
+        seconder:       r["Seconders member name"],
+        nominatorComment: '',
+        seconderComment:  '',
+        disclaimer:     r.Disclaimer,
+        rejectionReason: r["Rejection Reason"],
+        log:            r["Processed Notes"],
+      };
     }
 
     function renderBoatDetails(boatsData) {
