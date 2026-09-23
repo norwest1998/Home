@@ -1713,11 +1713,24 @@ function closeAddEventModal() {
   EventModal.classList.add("hidden");
 }
 
+function generateUnique8DigitHex() {
+  // Create an array to hold 4 random bytes (which equals 8 hex digits)
+  const bytes = new Uint8Array(4);
+  window.crypto.getRandomValues(bytes);
+  
+  // Convert the byte array to a hex string
+  return Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+}
+
 eventForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   
   const isAdd = modalMode.value === "add";
   const rowData = {
+    "HexCode": generateUnique8DigitHex(),
     "Event Type": modalEventType.value,
     "Date": modalDate.value,
     "Start": modalStart.value,
