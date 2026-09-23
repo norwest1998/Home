@@ -800,6 +800,8 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
   <div class="panel">
       <div class="panel-header">
           <div class="panel-title-left"><span class="dot"></span><h3>Activity</h3></div>
+      </div>
+      <div class="tab-content active"></div>
           <div class="panel-toolbar">
               <div class="audit-toggle">
                   <button id="auditFilterMembers" class="active">Members</button>
@@ -811,8 +813,6 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
               </div>
               <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
           </div>
-      </div>
-      <div class="tab-content active">
           <div class="log-table-wrap">
               <table class="log-table">
                   <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
