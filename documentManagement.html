@@ -16,12 +16,6 @@
 /* =========================================================
    DOCUMENT MANAGEMENT — page-specific layout & workspace elements
    ========================================================= */
-.mm-header {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
-}
-.mm-title-group { display: flex; flex-direction: column; gap: 4px; }
-.mm-title-group h1 { font-family: var(--font-display); font-size: 28px; color: var(--foam); }
 
 .panel-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
 .panel-toolbar .search-wrap { flex: 1; min-width: 200px; margin-bottom: 0; }
@@ -243,8 +237,8 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 <main class="container">
 
     <!-- Admin Workspace Header (Matching memberManagement style) -->
-    <div class="mm-header">
-        <div class="mm-title-group">
+    <div class="admin-header">
+        <div class="admin-title-group">
             <h1>Document Management</h1>
             <p style="color:var(--foam-dim);font-size:13px;">Club document library — storage, keywords, versioning, review and sign-off.</p>
         </div>
