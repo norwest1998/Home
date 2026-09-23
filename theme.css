@@ -216,37 +216,39 @@
     box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 18px 40px rgba(2,10,18,0.35);
     overflow: hidden;
   }
- 
   .panel-header {
-    padding: 20px 24px 0;
+    padding: 20px 24px;
     border-bottom: 1px solid var(--glass-border);
-    display: flex; 
-    flex-direction: column; 
-    gap: 4px; 
-    align-items:center;
-    justify-content: space-between;
   }
- 
   .panel-title {
-    gap: 10px;
-    margin-bottom: 16px;
-    display:flex;
-    align-items:center;
+    display: flex;
+    align-items: center;
     justify-content: space-between;
+    width: 100%;
   }
- 
+  .panel-title-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   .panel-title .dot {
-    width: 7px; height: 7px; border-radius: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
     background: var(--signal);
     box-shadow: 0 0 8px var(--signal);
     animation: pulse 2.4s ease-in-out infinite;
     flex-shrink: 0;
   }
- 
-  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
- 
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
   .panel-title h3 {
-    font-size: 18px; font-weight: 600; color: var(--foam);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--foam);
+    margin: 0;
   }
  
   /* ── Tabs ── */
