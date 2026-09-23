@@ -1637,6 +1637,13 @@ function openAddEventModal() {
   modalEmblemImg.classList.add("hidden");
   modalEmblemPlaceholder.classList.remove("hidden");
 
+  // Populate class dropdown
+  modalClass.innerHTML = `<option value="">Select Class...</option>` +
+    classes
+      .filter(c => c.ClassName !== "M")
+      .map(c => `<option value="${c.ClassName}">${c.ClassName}</option>`)
+      .join("");
+
   updateModalVisibility();
   eventModal.classList.remove("hidden");
   eventModal.classList.add("active");
@@ -1657,7 +1664,7 @@ function openEditEventModal(hexKey) {
   modalMonth.value = event.Month || "";
   modalStart.value = event.Start || "";
   modalFinish.value = event.Finish || "";
-  modalClass.value = event.Class || "";
+
   modalRegattaType.value = event["Regatta Type"] || "";
   modalEventType.value = event["Event Type"] || "Competition";
   modalSeason.value = event.Season || "";
@@ -1665,6 +1672,14 @@ function openEditEventModal(hexKey) {
   modalResults.value = event["Event Type"] === "Competition" ? "Not Started" || "Not Scored";
   modalRescheduledDate.value = event["Rescheduled Date"] ? new Date(event["Rescheduled Date"]).toISOString().split("T")[0] : "";
   modalCalendarId.value = event["Updated to Calendar"] || "";
+  
+  // Populate class dropdown
+  modalClass.innerHTML = `<option value="">Select Class...</option>` +
+    classes
+      .filter(c => c.ClassName !== "M")
+      .map(c => `<option value="${c.ClassName}">${c.ClassName}</option>`)
+      .join("");
+  modalClass.value = event.Class || "";  // now this will match    
   
   const conflicts = Array.isArray(event["Regional Conflicts"]) 
     ? event["Regional Conflicts"].join(", ") 
