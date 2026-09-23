@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Management — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js"></script>
+
+<!-- Link Shared Theme -->
+<link rel="stylesheet" href="theme.css">
+<style>
+/* =========================================================
+   DOCUMENT MANAGEMENT — page-specific layout & workspace elements
+   ========================================================= */
+.mm-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
+}
+.mm-title-group { display: flex; flex-direction: column; gap: 4px; }
+.mm-title-group h1 { font-family: var(--font-display); font-size: 28px; color: var(--foam); }
+
+.panel-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.panel-toolbar .search-wrap { flex: 1; min-width: 200px; margin-bottom: 0; }
+.inline-icon { width: 15px; height: 15px; flex-shrink: 0; vertical-align: -3px; }
+
+.doc-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+.doc-toolbar .search-wrap { flex:1; min-width:220px; margin-bottom:0; }
+.doc-layout { display:grid; grid-template-columns: 240px 1fr; gap:20px; align-items:start; }
+@media (max-width: 820px) { .doc-layout { grid-template-columns: 1fr; } }
+
+.lib-tree { padding:16px; }
+.lib-tree h3 { font-size:13px; margin-bottom:10px; }
+.lib-node { display:block; width:100%; text-align:left; background:none; border:none; cursor:pointer;
+    padding:6px 8px; border-radius:6px; color:var(--foam-dim); font-size:13px; font-family:inherit; }
+.lib-node:hover { background: rgba(255,255,255,0.06); color:var(--foam); }
+.lib-node.active { background: rgba(37,127,182,0.18); color:var(--foam); font-weight:600; }
+.lib-node.child { padding-left:22px; font-size:12.5px; }
+
+.doc-card { padding:18px; display:flex; flex-direction:column; gap:10px; }
+.doc-card-top { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+.doc-title { font-weight:600; font-size:15px; }
+.doc-meta { font-size:11.5px; color:var(--foam-dim); }
+.doc-keywords { display:flex; flex-wrap:wrap; gap:6px; }
+.kw-chip { font-size:10.5px; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.08); color:var(--foam-dim); }
+.doc-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:auto; padding-top:6px; }
+.doc-actions button { font-size:11.5px; padding:6px 10px; }
+
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,10,20,0.6); display:none; align-items:center; justify-content:center; z-index:50; }
+.modal-backdrop.visible { display:flex; }
+.modal-box { max-width:480px; width:92%; padding:24px; max-height:86vh; overflow:auto; }
+.modal-box h3 { margin-bottom:14px; }
+.modal-box label { display:block; font-size:12px; color:var(--foam-dim); margin:10px 0 4px; }
+.modal-box input, .modal-box select, .modal-box textarea {
+    width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--glass-border);
+    background:rgba(255,255,255,0.04); color:var(--foam); font-family:inherit; font-size:13px;
+}
+.modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+
+.ver-row { display:flex; justify-content:space-between; gap:10px; font-size:12px; padding:8px 0; border-bottom:1px solid var(--glass-border); }
+.ver-row:last-child { border-bottom:none; }
+
+.progress-box { display:none; margin-top:14px; }
+.progress-box.visible { display:block; }
+.progress-spinner {
+    width:22px; height:22px; border-radius:50%;
+    border:3px solid rgba(255,255,255,0.15); border-top-color: var(--signal, #ff6a3d);
+    animation: progress-spin 0.8s linear infinite; margin:0 auto 12px;
+}
+@keyframes progress-spin { to { transform: rotate(360deg); } }
+.progress-steps { display:flex; flex-direction:column; gap:8px; }
+.progress-step { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--foam-dim); }
+.progress-step .step-icon {
+    width:16px; height:16px; border-radius:50%; border:2px solid var(--glass-border);
+    flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px;
+}
+.progress-step.active { color: var(--foam); font-weight:600; }
+.progress-step.active .step-icon { border-color: var(--signal, #ff6a3d); }
+.progress-step.active .step-icon::after { content:""; width:6px; height:6px; border-radius:50%; background: var(--signal, #ff6a3d); }
+.progress-step.done { color: var(--foam); }
+.progress-step.done .step-icon { border-color: var(--glow, #4ade80); background: var(--glow, #4ade80); }
+.progress-step.done .step-icon::after { content:"✓"; color:#08210f; font-size:10px; }
+.progress-step.error .step-icon { border-color:#ff6b6b; }
+.progress-step.error .step-icon::after { content:"✕"; color:#ff6b6b; font-size:10px; }
+.progress-step.error { color:#ff6b6b; }
+
+.gdrive-banner { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; margin-bottom:18px; }
+
+/* #driveBreadcrumbs{
+    grid-column:2;
+    grid-row:1;
+}
+
+#docGrid{
+    grid-column:2;
+    grid-row:2;
+} */
+
+.fn-grid{
+    display:flex;
+    flex-direction:column;
+    gap:12px
+}
+.fn-card{
+    width:100%;
+}
+
+.doc-layout { 
+    display: grid; 
+    grid-template-columns: 240px 1fr; 
+    gap: 20px; 
+    align-items: start; 
+}
+
+.doc-main-column {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Audit Log Table Styling */
+.log-table-wrap { max-height: 360px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.log-table th {
+    position: sticky; top: 0; background: var(--ocean-mid, #0f2030); text-align: left;
+    padding: 8px 10px; font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--foam-dim);
+    border-bottom: 1px solid var(--glass-border);
+}
+.log-table td { padding: 8px 10px; border-bottom: 1px solid var(--glass-border); color: var(--foam); vertical-align: top; }
+.log-table tr:last-child td { border-bottom: none; }
+
+.lib-node-wrap {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    border-radius: 6px;
+}
+.lib-node-wrap:hover { background: rgba(255,255,255,0.06); }
+.lib-node-wrap.active { background: rgba(37,127,182,0.18); }
+
+.tree-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    color: var(--foam-dim);
+    font-size: 9px;
+    flex-shrink: 0;
+    user-select: none;
+}
+.tree-toggle:hover { color: var(--foam); }
+.tree-spacer { width: 20px; flex-shrink: 0; }
+
+.lib-node-btn {
+    flex: 1;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 8px 6px 2px;
+    color: var(--foam-dim);
+    font-size: 13px;
+    font-family: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lib-node-wrap.active .lib-node-btn {
+    color: var(--foam);
+    font-weight: 600;
+}
+/* Interactive Status Pill Dropdown */
+.status-pill-select {
+    padding: 4px 14px 4px 10px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 12px;
+    padding-right: 22px;
+    transition: all 0.2s ease;
+}
+
+/* Color Mappings */
+.status-pill-select.status-draft { 
+    background-color: rgba(156, 163, 175, 0.18); 
+    color: #9ca3af; 
+    border-color: rgba(156, 163, 175, 0.4); 
+}
+.status-pill-select.status-review { 
+    background-color: rgba(249, 115, 22, 0.18); 
+    color: #fb923c; 
+    border-color: rgba(249, 115, 22, 0.4); 
+}
+.status-pill-select.status-final { 
+    background-color: rgba(34, 197, 94, 0.18); 
+    color: #4ade80; 
+    border-color: rgba(34, 197, 94, 0.4); 
+}
+.status-pill-select.status-urgent { 
+    background-color: rgba(239, 68, 68, 0.18); 
+    color: #f87171; 
+    border-color: rgba(239, 68, 68, 0.4); 
+}
+
+/* Dropdown menu item styling */
+.status-pill-select option {
+    background-color: var(--ocean-dark, #0b1724);
+    color: var(--foam, #e0f2fe);
+}
+</style>
+</head>
+<body>
+<header class="nav-glass">
+    <a href="admin.html" class="brand">
+        <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+        <div class="brand-text">
+            <strong>Sydney Maritime Modellers Club</strong>
+            <span>ADMINISTRATION PORTAL</span>
+        </div>
+        <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
+        <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
+    </a>
+    <ul class="nav-links">
+        <li class="nav-item"><a href="admin.html" class="nav-link">Admin Dashboard</a></li>
+        <li class="nav-item"><a href="#audit-log" class="nav-link">Audit Log</a></li>
+    </ul>
+</header>
+
+<main class="container">
+
+    <!-- Admin Workspace Header (Matching memberManagement style) -->
+    <div class="mm-header">
+        <div class="mm-title-group">
+            <h1>Document Management</h1>
+            <p style="color:var(--foam-dim);font-size:13px;">Club document library — storage, keywords, versioning, review and sign-off.</p>
+        </div>
+        <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
+    </div>
+
+    <!-- Google Drive Banner -->
+    <div class="glass gdrive-banner" id="driveBanner">
+        <div>
+            <div style="font-weight:600;font-size:13px;">Google Drive</div>
+            <div class="fn-usage" id="driveStatusText" style="color: #ff6b6b; font-weight: 600;">Not connected</div>
+        </div>
+        <button class="app-filter-btn" id="driveConnectBtn">Connect Google Drive</button>
+        <button class="app-filter-btn" id="browseDriveBtn">Browse Root Folder</button>
+        <button class="app-filter-btn" id="syncDriveBtn">Sync All Drive Files</button>
+    </div>
+
+    <div class="doc-toolbar">
+        <div class="search-wrap">
+            <input class="search-input" id="docSearch" placeholder="Search by title, keyword, category or owner…">
+        </div>
+        <select id="statusFilter">
+            <option value="all">All statuses</option>
+            <option value="Draft">Draft</option>
+            <option value="In Review">In Review</option>
+            <option value="Signed Off">Signed Off</option>
+            <option value="Archived">Archived</option>
+        </select>
+        <button class="app-filter-btn active" id="uploadBtn">+ Upload Document</button>
+    </div>
+
+    <div class="doc-layout">
+        <div class="glass lib-tree" id="libTree">
+            <h3>Library</h3>
+            <div id="libTreeBody"></div>
+        </div>
+        
+        <!-- Wrapper for right side content -->
+        <div class="doc-main-column">
+            <div id="driveBreadcrumbs" style="margin-bottom:14px; font-size:13px; display:none; color:var(--foam-dim);"></div>
+            <section class="fn-grid" id="docGrid"></section>
+        </div>
+    </div>
+
+    <!-- AUDIT LOG (Matching memberManagement style) -->
+    <div class="section-head" id="audit-log" style="margin-top: 36px;">
+        <h2>Audit Log</h2>
+        <p>Every Document Management action, recorded to the AuditLog sheet.</p>
+    </div>
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
+            <div class="panel-toolbar">
+                <div class="search-wrap">
+                    <span class="search-icon"><i class="inline-icon" data-lucide="search" color="#257fb6"></i></span>
+                    <input class="search-input" id="auditSearch" placeholder="Search by user, action, target, or ID…">
+                </div>
+                <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+            </div>
+        </div>
+        <div class="tab-content active">
+            <div class="log-table-wrap">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>User / Context</th>
+                            <th>Action</th>
+                            <th>Target Document</th>
+                            <th>Target ID</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="auditEmpty" style="display:none;">No activity recorded yet.</div>
+        </div>
+    </div>
+    <!-- AUDIT LOG -->
+    <div class="section-head" id="audit-log">
+        <h2>Audit Log</h2>
+        <p>Actions recorded to the AuditLog sheet.</p>
+    </div>
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
+            <div class="panel-toolbar">
+                <div class="audit-toggle">
+                    <button id="auditFilterMembers" class="active">Members</button>
+                    <button id="auditFilterAll">All</button>
+                </div>
+                <div class="search-wrap">
+                    <i class="nav-icon" data-lucide="search"></i>
+                    <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
+                </div>
+                <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+            </div>
+        </div>
+        <div class="tab-content active">
+            <div class="log-table-wrap">
+                <table class="log-table">
+                    <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
+                    <tbody id="auditBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+</footer>
+
+<!-- Upload / New Version modal -->
+<div class="modal-backdrop" id="uploadModal">
+    <div class="glass modal-box">
+        <h3 id="uploadModalTitle">Upload Document</h3>
+        <label>File</label>
+        <input type="file" id="fileInput">
+        <label>Title</label>
+        <input type="text" id="titleInput">
+        <label>Library category (e.g. Governance/Constitution)</label>
+        <input type="text" id="categoryInput" list="categoryList">
+        <datalist id="categoryList"></datalist>
+        <label>Keywords (comma separated)</label>
+        <input type="text" id="keywordsInput">
+        <label>Change notes</label>
+        <textarea id="notesInput" rows="2"></textarea>
+
+        <div class="progress-box" id="uploadProgress">
+            <div class="progress-spinner"></div>
+            <div class="progress-steps" id="progressSteps"></div>
+        </div>
+
+        <div class="modal-actions" id="uploadModalActions">
+            <button class="app-filter-btn" id="uploadCancelBtn">Cancel</button>
+            <button class="app-filter-btn active" id="uploadSaveBtn">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Detail / version history / review / sign-off modal -->
+<div class="modal-backdrop" id="detailModal">
+    <div class="glass modal-box">
+        <h3 id="detailTitle">Document</h3>
+        <div class="fn-desc" id="detailMeta"></div>
+        <div id="detailVersions" style="margin:14px 0;"></div>
+        <label>Your name</label>
+        <input type="text" id="actorName" placeholder="For review / sign-off / change records">
+        <div class="modal-actions" style="flex-wrap:wrap;">
+            <button class="app-filter-btn" id="markReviewBtn">Mark In Review</button>
+            <button class="app-filter-btn" id="markSignoffBtn">Sign Off</button>
+            <button class="app-filter-btn" id="detailCloseBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Drive Document Details Modal -->
+<div class="modal-backdrop" id="driveFileModal">
+    <div class="glass modal-box">
+        <h3 id="driveFileTitle">Document Details</h3>
+        <div class="fn-desc" id="driveFileMeta" style="line-height: 1.6; margin: 14px 0;"></div>
+        <div class="modal-actions" style="flex-wrap:wrap;">
+            <a class="app-filter-btn active" id="driveFileOpenBtn" href="#" target="_blank">Open Document</a>
+            <button class="app-filter-btn" id="driveFileArchiveBtn">Archive Document</button>
+            <button class="app-filter-btn" id="driveFileCloseBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Drive Sync Progress Modal -->
+<div class="modal-backdrop" id="syncModal">
+    <div class="glass modal-box" style="text-align:center;">
+        <h3 id="syncModalTitle">Syncing with Google Drive</h3>
+        <div class="progress-spinner" id="syncSpinner" style="margin:20px auto;"></div>
+        
+        <div id="syncStatusLabel" style="font-weight:600; font-size:14px; margin-bottom:12px; color:var(--foam);">Initializing...</div>
+        
+        <div style="background:rgba(255,255,255,0.08); border-radius:10px; height:10px; width:100%; overflow:hidden; margin-bottom:12px;">
+            <div id="syncProgressBar" style="background:var(--signal, #ff6a3d); height:100%; width:0%; transition:width 0.3s ease;"></div>
+        </div>
+
+        <div id="syncDetailText" style="font-size:12px; color:var(--foam-dim); margin-bottom:16px;">Preparing scan...</div>
+
+        <div class="modal-actions" id="syncModalActions" style="justify-content:center; display:none;">
+            <button class="app-filter-btn active" id="syncCloseBtn">Done</button>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+</footer>
+
+<script src="shared.js"></script>  
+<script src="auditLog.js"></script>
+<script>
+    AuditLog.init('documents',"Documents");  
+</script>
+<script>
+const DOC_CONFIG = {
+    docWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec",
+    documentsSheet: "Documents",
+    versionsSheet: "DocumentVersions",
+    driveClientId: "738246015685-4vk2o2l7nit598jvkl8r423sa4hff8rf.apps.googleusercontent.com",
+    driveApiKey: "AIzaSyDkxPD4NWTDKxUFhD2phSzxuL-f4NS0P7k",
+    rootFolderId: "1h-nPRC_EH2G-SG8PqDWU0WXfTTpO4feM",
+    driveScope: "https://www.googleapis.com/auth/drive.readonly"
+};
+
+/* ---------- Sheets helpers ---------- */
+
+function genRowId() {
+    const bytes = new Uint8Array(8);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function getStatusPillClass(status) {
+    switch (status) {
+        case "Final": return "status-final";
+        case "Open for Review":
+        case "In Review": return "status-review";
+        case "Urgent": return "status-urgent";
+        case "Draft":
+        default: return "status-draft";
+    }
+}
+
+/* ---------- Google Drive auth (Google Identity Services) ---------- */
+let driveToken = null;
+let tokenClient = null;
+
+function initGis() {
+    if (!window.google || DOC_CONFIG.driveClientId.startsWith("YOUR_")) return;
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: DOC_CONFIG.driveClientId,
+        scope: DOC_CONFIG.driveScope,
+        callback: (resp) => {
+            if (resp.error) { console.error(resp); return; }
+            driveToken = resp.access_token;
+            
+            const statusText = document.getElementById("driveStatusText");
+            statusText.textContent = "Connected";
+            statusText.style.color = "#4ade80";
+
+            document.getElementById("driveConnectBtn").textContent = "Reconnect";
+        }
+    });
+}
+document.getElementById("driveConnectBtn").addEventListener("click", () => {
+    if (!tokenClient) { alert("Set driveClientId / driveApiKey in DOC_CONFIG first."); return; }
+    tokenClient.requestAccessToken();
+});
+window.addEventListener("load", () => setTimeout(initGis, 300));
+
+async function driveUploadNew(file) {
+    const metadata = { name: file.name, parents: [DOC_CONFIG.rootFolderId] };
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+    form.append("file", file);
+    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink", {
+        method: "POST", headers: { Authorization: `Bearer ${driveToken}` }, body: form
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return { fileId: data.id, link: data.webViewLink };
+}
+async function driveUpdateContent(fileId, file) {
+    const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+        method: "PATCH", headers: { Authorization: `Bearer ${driveToken}`, "Content-Type": file.type || "application/octet-stream" }, body: file
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data;
+}
+
+/* ---------- State + rendering ---------- */
+let DOCS = [];
+let activeCategory = null;
+
+async function loadDocs() {
+    DOCS = await fetchSheet(DOMAIN.documents, "Documents");
+    renderLibraryTree();
+    renderGrid();
+    await loadAuditLog();
+}
+
+// Global set to track open folder paths (e.g. "Governance", "Governance/Policies")
+let expandedCategories = new Set();
+
+function renderLibraryTree() {
+    const body = document.getElementById("libTreeBody");
+
+    // 1. Collect all folder paths and direct parent relationships
+    const allPaths = new Set();
+    DOCS.forEach(d => {
+        if (!d.Category) return;
+        const parts = String(d.Category).trim().split("/");
+        let current = "";
+        parts.forEach(part => {
+            current = current ? `${current}/${part}` : part;
+            allPaths.add(current);
+        });
+    });
+
+    const sortedPaths = [...allPaths].sort();
+    
+    // Determine which paths contain subfolders
+    const parentPaths = new Set();
+    sortedPaths.forEach(path => {
+        const parent = path.substring(0, path.lastIndexOf("/"));
+        if (parent) parentPaths.add(parent);
+    });
+
+    // 2. Render Root "All documents" option
+    let html = `
+        <div class="lib-node-wrap ${activeCategory === null ? "active" : ""}">
+            <span class="tree-spacer"></span>
+            <button class="lib-node-btn" data-cat="">All documents</button>
+        </div>
+    `;
+
+    // 3. Render tree items
+    sortedPaths.forEach(catPath => {
+        const parts = catPath.split("/");
+        const depth = parts.length - 1;
+        const displayName = parts[parts.length - 1];
+        const hasChildren = parentPaths.has(catPath);
+        const isExpanded = expandedCategories.has(catPath);
+
+        // Check if all parent folders in this path are currently expanded
+        let isVisible = true;
+        let ancestorPath = "";
+        for (let i = 0; i < depth; i++) {
+            ancestorPath = ancestorPath ? `${ancestorPath}/${parts[i]}` : parts[i];
+            if (!expandedCategories.has(ancestorPath)) {
+                isVisible = false;
+                break;
+            }
+        }
+
+        // Hide item if any ancestor folder is collapsed
+        if (!isVisible) return;
+
+        const isActive = activeCategory === catPath;
+        const indentPadding = depth * 14;
+
+        html += `
+            <div class="lib-node-wrap ${isActive ? "active" : ""}" style="padding-left: ${indentPadding}px;">
+                ${hasChildren 
+                    ? `<span class="tree-toggle" data-toggle="${catPath}">${isExpanded ? "▼" : "►"}</span>` 
+                    : `<span class="tree-spacer"></span>`
+                }
+                <button class="lib-node-btn" data-cat="${catPath}">${displayName}</button>
+            </div>
+        `;
+    });
+
+    body.innerHTML = html;
+
+    // 4. Attach click listener to toggle arrows (expand/collapse without selecting category)
+    body.querySelectorAll(".tree-toggle").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const path = btn.dataset.toggle;
+            if (expandedCategories.has(path)) {
+                expandedCategories.delete(path);
+            } else {
+                expandedCategories.add(path);
+            }
+            renderLibraryTree();
+        });
+    });
+
+    // 5. Attach click listener to category names (selects category & auto-expands it)
+    body.querySelectorAll(".lib-node-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            activeCategory = btn.dataset.cat || null;
+            if (activeCategory) {
+                expandedCategories.add(activeCategory);
+            }
+            renderLibraryTree();
+            renderGrid();
+        });
+    });
+
+    // Update upload category dropdown
+    const dl = document.getElementById("categoryList");
+    if (dl) dl.innerHTML = sortedPaths.map(c => `<option value="${c}">`).join("");
+}
+
+function statusBadgeClass(status) {
+    return { "Draft": "badge-default", "In Review": "badge-renewal", "Signed Off": "badge-full", "Archived": "badge-expired" }[status] || "badge-default";
+}
+
+function renderGrid() {
+    const grid = document.getElementById("docGrid");
+    const q = document.getElementById("docSearch").value.trim().toLowerCase();
+    const statusF = document.getElementById("statusFilter").value;
+
+    let list = DOCS.slice();
+    if (activeCategory) list = list.filter(d => d.Category === activeCategory || String(d.Category || "").startsWith(activeCategory + "/"));
+    if (statusF !== "all") list = list.filter(d => d.Status === statusF);
+    if (q) list = list.filter(d =>
+        String(d.Title || "").toLowerCase().includes(q) ||
+        String(d.Keywords || "").toLowerCase().includes(q) ||
+        String(d.Category || "").toLowerCase().includes(q) ||
+        String(d.Owner || "").toLowerCase().includes(q)
+    );
+
+    grid.innerHTML = list.map(d => `
+        <div class="glass doc-card">
+            <div class="doc-card-top">
+                <div>
+                    <div class="doc-title">${d.Title || "Untitled"}</div>
+                    <div class="doc-meta">${d.Category || "Uncategorised"} · v${d.Version || "1"} · ${d.Owner || ""}</div>
+                </div>
+                <select class="status-pill-select ${getStatusPillClass(d.Status)}" 
+                        data-rowid="${d.RowID}" 
+                        onchange="handleStatusPillChange(this)">
+                    <option value="Draft" ${d.Status === 'Draft' ? 'selected' : ''}>Draft</option>
+                    <option value="Open for Review" ${d.Status === 'Open for Review' || d.Status === 'In Review' ? 'selected' : ''}>Open for Review</option>
+                    <option value="Final" ${d.Status === 'Final' ? 'selected' : ''}>Final</option>
+                    <option value="Urgent" ${d.Status === 'Urgent' ? 'selected' : ''}>Urgent</option>
+                </select>
+            </div>
+            <div>
+            <div class="doc-keywords">${String(d.Keywords || "").split(",").filter(Boolean).map(k => `<span class="kw-chip">${k.trim()}</span>`).join("")}</div>
+            <div class="doc-meta">Last modified by ${d.LastModifiedBy || "—"} on ${d.LastModifiedDate || "—"}</div>
+            <div class="doc-actions">
+                ${d.DriveLink ? `<a class="app-filter-btn" href="${d.DriveLink}" target="_blank" title="Open Document"><i class="nav-icon" data-lucide="search"></i></a>` : ""}
+                <button class="app-filter-btn" data-action="version" data-id="${d.RowID}" title="Open Document"><i class="nav-icon" data-lucide="search"></i></button>
+                <button class="app-filter-btn" data-action="detail" data-id="${d.RowID} title="Open Document""><i class="nav-icon" data-lucide="search"></i></button>
+            </div>
+            </div>
+        </div>
+    `).join("") || `<div class="empty-state">No documents match.</div>`;
+
+    grid.querySelectorAll('[data-action="version"]').forEach(b => b.addEventListener("click", () => openUploadModal(b.dataset.id)));
+    grid.querySelectorAll('[data-action="detail"]').forEach(b => b.addEventListener("click", () => openDetailModal(b.dataset.id)));
+}
+document.getElementById("docSearch").addEventListener("input", renderGrid);
+document.getElementById("statusFilter").addEventListener("change", renderGrid);
+
+async function fetchDriveFolderContents(folderId) {
+    if (!driveToken) { alert("Connect Google Drive first."); return []; }
+    const query = `'${folderId}' in parents and trashed = false`;
+    const fields = "files(id, name, mimeType, webViewLink)";
+    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}`;
+
+    const response = await fetch(url, { headers: { Authorization: `Bearer ${driveToken}` } });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.files || [];
+}
+
+async function handleStatusPillChange(selectEl) {
+    const rowId = selectEl.dataset.rowid;
+    const newStatus = selectEl.value;
+    const doc = DOCS.find(d => d.RowID === rowId);
+    if (!doc) return;
+
+    const oldStatus = doc.Status;
+    if (oldStatus === newStatus) return;
+
+    const actor = prompt("Enter your name to confirm status change:", doc.Owner || "Uploader") || "System User";
+    const now = new Date().toISOString();
+
+    // Dynamically update visual class immediately
+    selectEl.className = `status-pill-select ${getStatusPillClass(newStatus)}`;
+    selectEl.disabled = true;
+
+    try {
+        // 1. Update Database Record
+        await updateSheet(DOMAIN.documents, "Documents", rowId, {
+            Status: newStatus,
+            LastModifiedBy: actor,
+            LastModifiedDate: now
+        });
+
+        // 2. Trigger Email Notification if status changed to 'Open for Review'
+        if (newStatus === "Open for Review") {
+            await triggerReviewEmailNotification(doc, actor);
+            alert(`Document status updated to 'Open for Review'. An email notification has been dispatched to committee members.`);
+        }
+
+        // 3. Log Action & Refresh State
+        await loadDocs();
+
+    } catch (err) {
+        alert("Status update failed: " + err.message);
+        selectEl.value = oldStatus;
+        selectEl.className = `status-pill-select ${getStatusPillClass(oldStatus)}`;
+    } finally {
+        selectEl.disabled = false;
+    }
+}
+
+async function triggerReviewEmailNotification(doc, uploaderName) {
+    const response = await fetch(DOC_CONFIG.docWebAppUrl, {
+        method: "POST",
+        body: JSON.stringify({
+            action: "sendReviewNotification",
+            docTitle: doc.Title,
+            docLink: doc.DriveLink || "No link provided",
+            category: doc.Category || "Uncategorised",
+            version: doc.Version || "1",
+            uploader: uploaderName
+        })
+    });
+    const result = await response.json();
+    if (result.error) throw new Error(result.error);
+}
+
+let driveFolderStack = [{ id: DOC_CONFIG.rootFolderId, name: "Root" }];
+
+function renderBreadcrumbs() {
+    const container = document.getElementById("driveBreadcrumbs");
+    if (driveFolderStack.length <= 1) { container.style.display = "none"; return; }
+    container.style.display = "block";
+    container.innerHTML = "<strong>Path:</strong> " + driveFolderStack.map((item, index) => {
+        if (index === driveFolderStack.length - 1) return `<span style="color:var(--foam); font-weight:600;">${item.name}</span>`;
+        return `<a href="#" onclick="navigateToFolderIndex(${index}); return false;" style="color:var(--foam-dim); text-decoration:underline;">${item.name}</a>`;
+    }).join(" &gt; ");
+}
+
+async function navigateToFolderIndex(index) {
+    driveFolderStack = driveFolderStack.slice(0, index + 1);
+    const current = driveFolderStack[driveFolderStack.length - 1];
+    const items = await fetchDriveFolderContents(current.id);
+    renderDriveItems(items);
+    renderBreadcrumbs();
+}
+
+document.getElementById("browseDriveBtn").addEventListener("click", async () => {
+    try {
+        driveFolderStack = [{ id: DOC_CONFIG.rootFolderId, name: "Root" }];
+        const items = await fetchDriveFolderContents(DOC_CONFIG.rootFolderId);
+        renderDriveItems(items);
+        renderBreadcrumbs();
+    } catch (err) {
+        alert("Error fetching Drive files: " + err.message);
+    }
+});
+
+function renderDriveItems(items) {
+    const grid = document.getElementById("docGrid");
+    if (!items.length) { grid.innerHTML = `<div class="empty-state">No files or folders found.</div>`; return; }
+
+    grid.innerHTML = items.map(item => {
+        const isFolder = item.mimeType === "application/vnd.google-apps.folder";
+        const icon = isFolder ? "📁" : "📄";
+        const typeLabel = isFolder ? "Folder" : "File";
+        const safeName = item.name.replace(/'/g, "\\'");
+
+        return `
+            <div class="glass doc-card">
+                <div class="doc-card-top">
+                    <div>
+                        <div class="doc-title">${icon} ${item.name}</div>
+                        <div class="doc-meta">Type: ${typeLabel}</div>
+                    </div>
+                </div>
+                <div class="doc-actions">
+                    ${isFolder 
+                        ? `<button class="app-filter-btn active" onclick="openFolder('${item.id}', '${safeName}')">Open Folder</button>` 
+                        : item.webViewLink ? `<a class="app-filter-btn" href="${item.webViewLink}" target="_blank">Open in Drive</a>` : ""
+                    }
+                    ${!isFolder ? `<button class="app-filter-btn" onclick="selectDriveDocument('${item.id}')">Select Document</button>` : ""}
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+async function openFolder(folderId, folderName) {
+    try {
+        const items = await fetchDriveFolderContents(folderId);
+        driveFolderStack.push({ id: folderId, name: folderName });
+        renderDriveItems(items);
+        renderBreadcrumbs();
+    } catch (err) {
+        alert("Error opening folder: " + err.message);
+    }
+}
+
+document.getElementById("driveFileArchiveBtn").addEventListener("click", async () => {
+    if (!currentDriveFile) return;
+    if (!confirm(`Are you sure you want to move "${currentDriveFile.name}" to the Archive folder?`)) return;
+
+    try {
+        const archiveFolderId = await getOrCreateArchiveFolder();
+        const previousParents = (currentDriveFile.parents || []).join(",");
+        await logDocumentAction(currentDriveFile.id, currentDriveFile.name, "Archive Document");
+
+        const url = `https://www.googleapis.com/drive/v3/files/${currentDriveFile.id}?addParents=${archiveFolderId}&removeParents=${previousParents}`;
+        const res = await fetch(url, { method: "PATCH", headers: { Authorization: `Bearer ${driveToken}` } });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+
+        const matchedDoc = DOCS.find(d => d.DriveFileId === currentDriveFile.id);
+        if (matchedDoc) {
+            const who = prompt("Enter your name for the change log:") || "System Admin";
+            const now = new Date().toISOString();
+            await updateSheet(DOMAIN.documents, "Documents", matchedDoc.RowID, {
+                Status: "Archived", LastModifiedBy: who, LastModifiedDate: now
+            });
+            await loadDocs();
+        }
+
+        alert(`"${currentDriveFile.name}" moved to Archive${matchedDoc ? ' and updated in database.' : '.'}`);
+        document.getElementById("driveFileModal").classList.remove("visible");
+
+        const currentFolder = driveFolderStack[driveFolderStack.length - 1];
+        const items = await fetchDriveFolderContents(currentFolder.id);
+        renderDriveItems(items);
+        renderBreadcrumbs();
+    } catch (err) {
+        alert("Failed to archive document: " + err.message);
+    }
+});
+
+let currentDriveFile = null;
+
+async function selectDriveDocument(fileId) {
+    try {
+        const fields = "id, name, mimeType, size, createdTime, modifiedTime, webViewLink, parents, description, version, lastModifyingUser(displayName, emailAddress), owners(displayName, emailAddress)";
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=${encodeURIComponent(fields)}`, {
+            headers: { Authorization: `Bearer ${driveToken}` }
+        });
+        const file = await res.json();
+        if (file.error) throw new Error(file.error.message);
+
+        currentDriveFile = file;
+        await logDocumentAction(file.id, file.name, "View Document Details");
+
+        const matchedDoc = DOCS.find(d => d.DriveFileId === file.id);
+        const sizeKb = file.size ? (file.size / 1024).toFixed(1) + " KB" : "N/A";
+        const created = new Date(file.createdTime).toLocaleString();
+        const modified = new Date(file.modifiedTime).toLocaleString();
+        const driveEditor = file.lastModifyingUser ? `${file.lastModifyingUser.displayName}` : "Unknown";
+        const driveOwner = file.owners && file.owners.length > 0 ? file.owners[0].displayName : "Unknown";
+
+        document.getElementById("driveFileTitle").textContent = file.name;
+        document.getElementById("driveFileMeta").innerHTML = `
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin: 12px 0; text-align:left;">
+                <div>
+                    <div style="font-weight:600; color:var(--foam); margin-bottom:6px;">Google Drive Meta</div>
+                    <strong>Drive Owner:</strong> ${driveOwner}<br>
+                    <strong>Last Modified By:</strong> ${driveEditor}<br>
+                    <strong>Last Modified:</strong> ${modified}<br>
+                    <strong>Created:</strong> ${created}<br>
+                    <strong>File Size:</strong> ${sizeKb}<br>
+                    <strong>Drive Revision:</strong> v${file.version || 1}
+                </div>
+                <div>
+                    <div style="font-weight:600; color:var(--foam); margin-bottom:6px;">Database Record</div>
+                    ${matchedDoc ? `
+                        <strong>Status:</strong> <span class="badge ${statusBadgeClass(matchedDoc.Status)}">${matchedDoc.Status || "Draft"}</span><br>
+                        <strong>Doc Version:</strong> v${matchedDoc.Version || "1"}<br>
+                        <strong>Category:</strong> ${matchedDoc.Category || "Uncategorised"}<br>
+                        <strong>Doc Owner:</strong> ${matchedDoc.Owner || "—"}<br>
+                        <strong>Reviewed By:</strong> ${matchedDoc.ReviewedBy || "—"}<br>
+                        <strong>Signed Off By:</strong> ${matchedDoc.SignedOffBy || "—"}
+                    ` : `<em style="color:var(--foam-dim);">Not registered in database sheet</em>`}
+                </div>
+            </div>
+            ${file.description ? `<div style="margin-top:10px; padding:8px 10px; background:rgba(255,255,255,0.04); border-radius:6px; font-size:12px;"><strong>Description:</strong> ${file.description}</div>` : ""}
+            ${matchedDoc && matchedDoc.Keywords ? `<div class="doc-keywords" style="margin-top:10px;">${matchedDoc.Keywords.split(",").map(k => `<span class="kw-chip">${k.trim()}</span>`).join("")}</div>` : ""}
+        `;
+
+        document.getElementById("driveFileOpenBtn").href = file.webViewLink || "#";
+        document.getElementById("driveFileModal").classList.add("visible");
+    } catch (err) {
+        alert("Failed to load document details: " + err.message);
+    }
+}
+
+document.getElementById("driveFileCloseBtn").addEventListener("click", () => {
+    document.getElementById("driveFileModal").classList.remove("visible");
+});
+
+async function getOrCreateArchiveFolder() {
+    const q = `'${DOC_CONFIG.rootFolderId}' in parents and name = 'Archive' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+    const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}`, {
+        headers: { Authorization: `Bearer ${driveToken}` }
+    });
+    const searchData = await searchRes.json();
+    if (searchData.files && searchData.files.length > 0) return searchData.files[0].id;
+
+    const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${driveToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Archive", mimeType: "application/vnd.google-apps.folder", parents: [DOC_CONFIG.rootFolderId] })
+    });
+    const createData = await createRes.json();
+    await logDocumentAction("Archive", DOC_CONFIG.rootFolderId, "Create Archive Folder ");
+    return createData.id;
+}
+
+/* ---------- Audit Logging Functions ---------- */
+async function logDocumentAction(fileId, fileName, action) {
+    try {
+        const who = document.getElementById("actorName")?.value.trim() || "Web App User";
+        const now = new Date().toISOString();
+        
+        await appendSheet(DOMAIN.audit, "AuditLog", {
+
+            RowID: genRowId(),
+            Timestamp: now,   
+            User: who,         
+            Action: action,
+            Domain: "Documents",
+            Sheet: "Documents",
+            Detail: fileName,
+            OldValue: fileId,
+            Success: "Success"
+            
+            
+        });
+        await loadAuditLog();
+    } catch (err) {
+        console.error("Failed to log document action:", err);
+    }
+}
+
+let auditEntries = [];
+
+function fmtTime(v) {
+    if (!v) return "—";
+    const d = new Date(v);
+    return isNaN(d) ? String(v) : d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+}
+
+async function loadAuditLog() {
+    try {
+        const res = await fetch(`${DOC_CONFIG.audWebAppUrl}?action=fetch&sheet=${encodeURIComponent('AuditLog')}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        const rows = Array.isArray(data) ? data : (data.values || []);
+        if (!rows.length) { auditEntries = []; renderAuditLog(); return; }
+
+        let headerIdx = rows.findIndex(r => Array.isArray(r) && r.some(c => {
+            const v = String(c || "").trim().toLowerCase();
+            return v === "rowid" || v === "action" || v === "timestamp" || v === "user" || v === "membername" || v === "field";
+        }));
+        if (headerIdx === -1) headerIdx = 0;
+        const headers = rows[headerIdx].map(h => String(h || "").trim().toLowerCase());
+
+        const dataRows = rows.slice(headerIdx + 1).filter(r => r.some(c => String(c || "").trim() !== ""));
+        
+        auditEntries = dataRows.map(r => {
+            const getVal = (possibleKeys) => {
+                for (let k of possibleKeys) {
+                    const idx = headers.indexOf(k);
+                    if (idx !== -1 && r[idx] !== undefined) return r[idx];
+                }
+                return "";
+            };
+            return {
+                timestamp: getVal(["timestamp", "time", "date"]),
+                user: getVal(["user", "membername", "changedby", "actor"]),
+                action: getVal(["action", "field", "event"]),
+                target: getVal(["target", "before", "title", "object"]),
+                targetId: getVal(["targetid", "rowid", "after", "docid"]),
+                status: getVal(["status"]) || "success"
+            };
+        }).reverse();
+        renderAuditLog();
+    } catch (err) {
+        document.getElementById('auditBody').innerHTML = '';
+        document.getElementById('auditEmpty').style.display = 'block';
+        document.getElementById('auditEmpty').textContent = 'Error loading audit log: ' + err.message;
+    }
+}
+
+function renderAuditLog() {
+    const q = document.getElementById('auditSearch').value.trim().toLowerCase();
+    let entries = auditEntries;
+    if (q) {
+        entries = entries.filter(e =>
+            String(e.user || '').toLowerCase().includes(q) ||
+            String(e.action || '').toLowerCase().includes(q) ||
+            String(e.target || '').toLowerCase().includes(q) ||
+            String(e.targetId || '').toLowerCase().includes(q)
+        );
+    }
+
+    document.getElementById('auditBody').innerHTML = entries.map(e => {
+        const isError = String(e.status || '').toLowerCase().includes('error') || String(e.action || '').startsWith('ERROR:');
+        return `
+        <tr>
+            <td>${fmtTime(e.timestamp)}</td>
+            <td>${escapeHtml(e.user || '—')}</td>
+            <td>${escapeHtml(e.action || '—')}</td>
+            <td>${escapeHtml(e.target || '—')}</td>
+            <td>${escapeHtml(e.targetId || '—')}</td>
+            <td><span class="badge ${isError ? 'badge-expired' : 'badge-full'}">${isError ? 'error' : 'success'}</span></td>
+        </tr>`;
+    }).join('');
+    document.getElementById('auditEmpty').style.display = entries.length ? 'none' : 'block';
+}
+
+document.getElementById('auditSearch').addEventListener('input', renderAuditLog);
+document.getElementById('refreshLogBtn').addEventListener('click', loadAuditLog);
+
+/* ---------- Save progress indicator ---------- */
+let progressSteps = [];
+function initProgress(steps) {
+    progressSteps = steps;
+    const box = document.getElementById("uploadProgress");
+    const list = document.getElementById("progressSteps");
+    list.innerHTML = steps.map((s, i) => `
+        <div class="progress-step" id="pstep-${i}"><span class="step-icon"></span><span>${s}</span></div>
+    `).join("");
+    box.classList.add("visible");
+    document.getElementById("uploadModalActions").style.display = "none";
+    ["fileInput","titleInput","categoryInput","keywordsInput","notesInput"].forEach(id => document.getElementById(id).disabled = true);
+}
+function setStep(i, state) {
+    progressSteps.forEach((_, idx) => {
+        const el = document.getElementById(`pstep-${idx}`);
+        if (!el) return;
+        el.classList.remove("active", "done", "error");
+        if (idx < i || (idx === i && state === "done")) el.classList.add("done");
+        else if (idx === i && state === "active") el.classList.add("active");
+        else if (idx === i && state === "error") el.classList.add("error");
+    });
+}
+function resetProgress() {
+    document.getElementById("uploadProgress").classList.remove("visible");
+    document.getElementById("uploadModalActions").style.display = "flex";
+    ["fileInput","titleInput","categoryInput","keywordsInput","notesInput"].forEach(id => document.getElementById(id).disabled = false);
+}
+
+/* ---------- Upload / new version modal ---------- */
+let uploadTargetDocId = null;
+function openUploadModal(docId) {
+    uploadTargetDocId = docId || null;
+    const doc = docId ? DOCS.find(d => d.RowID === docId) : null;
+    document.getElementById("uploadModalTitle").textContent = doc ? `New version — ${doc.Title}` : "Upload Document";
+    document.getElementById("titleInput").value = doc ? doc.Title : "";
+    document.getElementById("titleInput").disabled = !!doc;
+    document.getElementById("categoryInput").value = doc ? doc.Category : "";
+    document.getElementById("categoryInput").disabled = !!doc;
+    document.getElementById("keywordsInput").value = doc ? doc.Keywords : "";
+    document.getElementById("notesInput").value = "";
+    document.getElementById("fileInput").value = "";
+    resetProgress();
+    document.getElementById("uploadSaveBtn").textContent = "Save";
+    document.getElementById("uploadModal").classList.add("visible");
+}
+document.getElementById("uploadBtn").addEventListener("click", () => openUploadModal(null));
+document.getElementById("uploadCancelBtn").addEventListener("click", () => { resetProgress(); document.getElementById("uploadModal").classList.remove("visible"); });
+
+document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
+    const file = document.getElementById("fileInput").files[0];
+    if (!file) { alert("Choose a file."); return; }
+    if (!driveToken) { alert("Connect Google Drive first."); return; }
+    const title = document.getElementById("titleInput").value.trim();
+    const category = document.getElementById("categoryInput").value.trim();
+    const keywords = document.getElementById("keywordsInput").value.trim();
+    const notes = document.getElementById("notesInput").value.trim();
+    const who = prompt("Your name (for the change record):") || "Unknown";
+    const now = new Date().toISOString();
+    const isNewVersion = !!uploadTargetDocId;
+
+    initProgress(isNewVersion
+        ? ["Uploading new version to Drive", "Updating document record", "Recording version history", "Refreshing library"]
+        : ["Uploading file to Drive", "Creating document record", "Recording version history", "Refreshing library"]);
+
+    try {
+        if (isNewVersion) {
+            const doc = DOCS.find(d => d.RowID === uploadTargetDocId);
+
+            setStep(0, "active");
+            await driveUpdateContent(doc.DriveFileId, file);
+            setStep(0, "done");
+
+            setStep(1, "active");
+            const newVersion = (parseInt(doc.Version, 10) || 1) + 1;
+            await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, doc.RowID, {
+                Version: newVersion, LastModifiedBy: who, LastModifiedDate: now, Status: "Draft"
+            });
+            setStep(1, "done");
+
+            setStep(2, "active");
+            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
+                RowID: genRowId(), DocID: doc.RowID, Version: newVersion,
+                DriveFileId: doc.DriveFileId, DriveLink: doc.DriveLink, ChangedBy: who, ChangedDate: now, Notes: notes
+            });
+            setStep(2, "done");
+        } else {
+            setStep(0, "active");
+            const { fileId, link } = await driveUploadNew(file);
+            setStep(0, "done");
+
+            setStep(1, "active");
+            const rowId = genRowId();
+            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, {
+                RowID: rowId, Title: title || file.name, Category: category, Keywords: keywords,
+                DriveFileId: fileId, DriveLink: link, Version: 1, Status: "Draft", Owner: who,
+                LastModifiedBy: who, LastModifiedDate: now, ReviewedBy: "", ReviewDate: "", SignedOffBy: "", SignOffDate: ""
+            });
+            setStep(1, "done");
+
+            setStep(2, "active");
+            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
+                RowID: genRowId(), DocID: rowId, Version: 1, DriveFileId: fileId, DriveLink: link, ChangedBy: who, ChangedDate: now, Notes: notes || "Initial upload"
+            });
+            setStep(2, "done");
+        }
+
+        setStep(3, "active");
+        await loadDocs();
+        setStep(3, "done");
+
+        setTimeout(() => {
+            resetProgress();
+            document.getElementById("uploadModal").classList.remove("visible");
+        }, 500);
+    } catch (err) {
+        const failedIndex = progressSteps.findIndex((_, i) => document.getElementById(`pstep-${i}`)?.classList.contains("active"));
+        setStep(failedIndex === -1 ? 0 : failedIndex, "error");
+        alert("Save failed: " + err.message);
+        document.getElementById("uploadModalActions").style.display = "flex";
+        document.getElementById("uploadSaveBtn").textContent = "Retry";
+    }
+});
+
+/* ---------- Detail / review / sign-off modal ---------- */
+let detailDocId = null;
+async function openDetailModal(docId) {
+    detailDocId = docId;
+    const doc = DOCS.find(d => d.RowID === docId);
+    document.getElementById("detailTitle").textContent = doc.Title;
+    document.getElementById("detailMeta").textContent =
+        `${doc.Category || "Uncategorised"} · Status: ${doc.Status} · Reviewed by: ${doc.ReviewedBy || "—"} (${doc.ReviewDate || "—"}) · Signed off by: ${doc.SignedOffBy || "—"} (${doc.SignOffDate || "—"})`;
+    document.getElementById("detailModal").classList.add("visible");
+
+    const versions = await fetchSheet(DOMAIN.documents, "DocumentVersions",docId);
+    document.getElementById("detailVersions").innerHTML = versions.map(v => `
+        <div class="ver-row">
+            <span>v${v.Version} — ${v.ChangedBy} — ${v.ChangedDate}</span>
+            <a href="${v.DriveLink}" target="_blank">Open</a>
+        </div>
+    `).join("") || `<div class="fn-desc">No version history yet.</div>`;
+}
+document.getElementById("detailCloseBtn").addEventListener("click", () => document.getElementById("detailModal").classList.remove("visible"));
+
+document.getElementById("markReviewBtn").addEventListener("click", async () => {
+    const who = document.getElementById("actorName").value.trim();
+    if (!who) { alert("Enter your name."); return; }
+    const doc = DOCS.find(d => d.RowID === detailDocId);
+    await updateSheet(DOMAIN.documents, "Documents", detailDocId, {
+        Status: "In Review", ReviewedBy: who, ReviewDate: new Date().toISOString()
+    });
+    document.getElementById("detailModal").classList.remove("visible");
+    await loadDocs();
+});
+document.getElementById("markSignoffBtn").addEventListener("click", async () => {
+    const who = document.getElementById("actorName").value.trim();
+    if (!who) { alert("Enter your name."); return; }
+    const doc = DOCS.find(d => d.RowID === detailDocId);
+    await updateSheet(DOMAIN.documents, "Documents", detailDocId, {
+        Status: "Signed Off", SignedOffBy: who, SignOffDate: new Date().toISOString()
+    });
+    document.getElementById("detailModal").classList.remove("visible");
+    await loadDocs();
+});
+
+document.getElementById("syncDriveBtn").addEventListener("click", syncDriveToSheet);
+document.getElementById("syncCloseBtn").addEventListener("click", () => {
+    document.getElementById("syncModal").classList.remove("visible");
+});
+
+async function fetchAllDriveFilesRecursively(folderId, updateScanStatus) {
+    let allFiles = [];
+    
+    async function scanFolder(fId, currentPath = "") {
+        const query = `'${fId}' in parents and trashed = false`;
+        const fields = "files(id, name, mimeType, webViewLink)";
+        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}`;
+
+        const response = await fetch(url, { headers: { Authorization: `Bearer ${driveToken}` } });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+
+        const items = data.files || [];
+
+        for (const item of items) {
+            if (item.mimeType === "application/vnd.google-apps.folder") {
+                if (updateScanStatus) updateScanStatus(`Scanning subfolder: ${item.name}...`);
+                const nextPath = currentPath ? `${currentPath}/${item.name}` : item.name;
+                await scanFolder(item.id, nextPath);
+            } else {
+                allFiles.push({ ...item, category: currentPath || "Root" });
+                if (updateScanStatus) updateScanStatus(`Discovered ${allFiles.length} file(s)...`);
+            }
+        }
+    }
+
+    await scanFolder(folderId, "");
+    return allFiles;
+}
+
+async function syncDriveToSheet() {
+    if (!driveToken) { alert("Connect Google Drive first."); return; }
+
+    const modal = document.getElementById("syncModal");
+    const spinner = document.getElementById("syncSpinner");
+    const statusLabel = document.getElementById("syncStatusLabel");
+    const progressBar = document.getElementById("syncProgressBar");
+    const detailText = document.getElementById("syncDetailText");
+    const actions = document.getElementById("syncModalActions");
+
+    modal.classList.add("visible");
+    spinner.style.display = "block";
+    actions.style.display = "none";
+    progressBar.style.width = "0%";
+    statusLabel.textContent = "Scanning Google Drive...";
+    detailText.textContent = "Checking root folder and subfolders...";
+
+    try {
+        const driveFiles = await fetchAllDriveFilesRecursively(DOC_CONFIG.rootFolderId, (msg) => {
+            detailText.textContent = msg;
+        });
+
+        statusLabel.textContent = "Comparing with database...";
+        detailText.textContent = `Found ${driveFiles.length} total file(s) in Drive. Checking registered items...`;
+
+        await loadDocs();
+
+        const existingFileIds = new Set(DOCS.map(d => d.DriveFileId));
+        const missingFiles = driveFiles.filter(f => !existingFileIds.has(f.id));
+
+        if (missingFiles.length === 0) {
+            spinner.style.display = "none";
+            progressBar.style.width = "100%";
+            statusLabel.textContent = "All Files Up To Date!";
+            detailText.textContent = `All ${driveFiles.length} files in Google Drive are already registered.`;
+            actions.style.display = "flex";
+            return;
+        }
+
+        const total = missingFiles.length;
+        const who = prompt(`Found ${total} new file(s) in Drive. Enter your name for the change log:`) || "Auto Sync";
+        const now = new Date().toISOString();
+
+        for (let i = 0; i < total; i++) {
+            const file = missingFiles[i];
+            const countNum = i + 1;
+            const percent = Math.round((countNum / total) * 100);
+
+            progressBar.style.width = `${percent}%`;
+            statusLabel.textContent = `Syncing File ${countNum} of ${total} (${percent}%)`;
+            detailText.textContent = `Adding: "${file.name}"`;
+
+            const rowId = genRowId();
+            
+            await appendSheet(DOMAIN.documents, "Documents", {
+                RowID: rowId,
+                Title: file.name,
+                Category: file.category || "Root",
+                Keywords: "drive-sync",
+                DriveFileId: file.id,
+                DriveLink: file.webViewLink,
+                Version: 1,
+                Status: "Draft",
+                Owner: who,
+                LastModifiedBy: who,
+                LastModifiedDate: now,
+                ReviewedBy: "",
+                ReviewDate: "",
+                SignedOffBy: "",
+                SignOffDate: ""
+            });
+
+            await appendSheet(DOMAIN.documents, "DocumentVersions", {
+                RowID: genRowId(),
+                DocID: rowId,
+                Version: 1,
+                DriveFileId: file.id,
+                DriveLink: file.webViewLink,
+                ChangedBy: who,
+                ChangedDate: now,
+                Notes: "Auto-synced from Google Drive"
+            });
+        }
+
+        spinner.style.display = "none";
+        progressBar.style.width = "100%";
+        statusLabel.textContent = "Sync Complete!";
+        detailText.textContent = `Successfully added ${total} new file(s) to the Google Sheet database.`;
+        actions.style.display = "flex";
+
+        await loadDocs();
+    } catch (err) {
+        spinner.style.display = "none";
+        statusLabel.textContent = "Sync Failed";
+        detailText.textContent = err.message;
+        actions.style.display = "flex";
+    }
+}
+
+loadDocs();
+lucide.createIcons();
+</script>
+</body>
+</html>

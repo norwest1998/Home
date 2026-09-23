@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notes — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* =========================================================
+    NOTES PAGE STYLES — matches admin.html conventions
+    ========================================================= */
+.notes-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
+}
+.admin-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
+}
+/* Stats board */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+.stat-card {
+    padding: 20px 18px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.stat-card .stat-val {
+    font-family: var(--font-display);
+    font-size: 32px;
+    color: var(--foam);
+    line-height: 1;
+}
+.stat-card .stat-val.warn { color: #ffb347; }
+.stat-card .stat-val.accent { color: var(--signal); }
+.stat-card .stat-label {
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--foam-dim);
+    text-transform: uppercase;
+}
+.stat-card .stat-sub { font-size: 11px; color: var(--foam-dim); }
+
+/* Toolbar */
+.notes-toolbar {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    align-items: center; margin-bottom: 16px;
+}
+.notes-toolbar .search-wrap { flex: 1; min-width: 220px; margin-bottom: 0; }
+
+/* Glass select — matches theme, readable text */
+.glass-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: rgba(255,255,255,0.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0b8c8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--foam);
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 12px;
+    padding: 5px 30px 5px 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    min-width: 120px;
+}
+.glass-select:hover  { background-color: rgba(255,255,255,0.12); border-color: var(--foam-dim); }
+.glass-select:focus  { outline: none; border-color: var(--foam); }
+.glass-select option { background: #0f2535; color: var(--foam); }
+
+/* Table */
+.notes-table-wrap { max-height: 480px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+table.notes-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.notes-table th {
+    position: sticky; top: 0; background: var(--ocean-mid);
+    text-align: left; padding: 8px 10px;
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim); border-bottom: 1px solid var(--glass-border);
+}
+
+.notes-table td {
+    padding: 8px 10px; border-bottom: 1px solid var(--glass-border);
+    color: var(--foam); vertical-align: top;
+}
+.notes-table tr:last-child td { border-bottom: none; }
+.notes-table tr.clickable { cursor: pointer; }
+.notes-table tr.clickable:hover td { background: rgba(255,255,255,0.04); }
+
+/* Action badges in table */
+.action-dot {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; margin-right: 4px;
+}
+.action-dot.due    { background: #ff6b6b; }
+.action-dot.soon   { background: #ffb347; }
+.action-dot.ok     { background: var(--glow); }
+
+/* Modal overlay */
+.modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); z-index: 1000;
+    align-items: center; justify-content: center;
+    padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+    background: var(--ocean-mid);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    width: 100%; max-width: 800px;
+    max-height: 90vh; overflow-y: auto;
+    padding: 28px;
+    display: flex; flex-direction: column; gap: 20px;
+}
+.modal-header {
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 12px;
+}
+.modal-header h3 { font-size: 18px; color: var(--foam); }
+.modal-close {
+    background: none; border: none; color: var(--foam-dim);
+    cursor: pointer; padding: 4px; line-height: 1;
+    font-size: 20px; transition: color 0.15s;
+}
+.modal-close:hover { color: var(--foam); }
+
+/* Form layout */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+.form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+.form-row.full   { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label {
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim);
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--foam);
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 13px;
+    padding: 8px 12px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--foam);
+}
+.form-group select option { background: var(--ocean-mid); }
+.form-group textarea { resize: vertical; min-height: 90px; }
+
+/* Action list sub-section */
+.action-list-section {
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 12px;
+}
+.action-list-section h4 {
+    font-size: 12px; color: var(--foam-dim);
+    font-family: var(--font-data); letter-spacing: 0.05em;
+    text-transform: uppercase; margin: 0;
+}
+.action-item {
+    display: grid;
+    grid-template-columns: 1fr 140px 1fr 28px;
+    gap: 8px; align-items: center;
+}
+.action-remove {
+    background: none; border: none; color: #ff6b6b;
+    cursor: pointer; padding: 4px; font-size: 16px; line-height: 1;
+}
+.action-remove:hover { opacity: 0.7; }
+
+/* Copy-in emails */
+.copyin-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
+.copyin-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border);
+    border-radius: 6px; padding: 3px 8px; font-size: 12px; color: var(--foam);
+}
+.copyin-tag button {
+    background: none; border: none; color: var(--foam-dim);
+    cursor: pointer; padding: 0; font-size: 13px; line-height: 1;
+}
+.copyin-tag button:hover { color: #ff6b6b; }
+
+/* Attachments */
+.attach-list { display: flex; flex-direction: column; gap: 6px; }
+.attach-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--foam);
+}
+.attach-item a { color: var(--glow); text-decoration: none; }
+.attach-item a:hover { text-decoration: underline; }
+
+/* Topic mgmt */
+.topic-mgmt {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.topic-mgmt input { flex: 1; min-width: 140px; }
+
+/* Modal footer */
+.modal-footer {
+    display: flex; justify-content: flex-end;
+    gap: 10px; flex-wrap: wrap; padding-top: 4px;
+}
+
+/* Status message inside modal */
+.modal-status { font-size: 12px; display: none; }
+.modal-status.visible { display: block; }
+.modal-status.success { color: var(--glow); }
+.modal-status.error   { color: #ff6b6b; }
+
+/* View-only mode */
+.view-field {
+    font-size: 13px; color: var(--foam); line-height: 1.5;
+    padding: 8px 0; border-bottom: 1px solid var(--glass-border);
+}
+.view-field:last-child { border-bottom: none; }
+.view-label {
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim); margin-bottom: 3px;
+}
+/* Spinner CSS */
+.spinner {
+display: inline-block;
+width: 18px; height: 18px;
+border: 2px solid rgba(255,255,255,0.15);
+border-top-color: var(--foam);
+border-radius: 50%;
+animation: spin 0.7s linear infinite;
+vertical-align: middle;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.spinner-row td {
+    text-align: center;
+    color: var(--foam-dim);
+    font-size: 12px;
+    padding: 24px;
+}
+/* Google Drive picker */
+.attach-picker-row {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.attach-picker-row input { flex: 1; min-width: 200px; }
+.drive-browse-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.07); border: 1px solid var(--glass-border);
+    border-radius: 8px; color: var(--foam); font-size: 12px;
+    padding: 7px 12px; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s;
+}
+.drive-browse-btn:hover { background: rgba(255,255,255,0.13); }
+
+/* Drive search modal */
+.drive-modal {
+    background: var(--ocean-mid);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    width: 100%; max-width: 560px;
+    max-height: 80vh; overflow-y: auto;
+    padding: 24px;
+    display: flex; flex-direction: column; gap: 14px;
+}
+.drive-result-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px; cursor: pointer;
+    border: 1px solid transparent; transition: all 0.15s;
+}
+.drive-result-item:hover { background: rgba(255,255,255,0.06); border-color: var(--glass-border); }
+.drive-result-item .dr-icon { font-size: 20px; flex-shrink: 0; }
+.drive-result-item .dr-name { font-size: 13px; color: var(--foam); flex: 1; word-break: break-word; }
+.drive-result-item .dr-meta { font-size: 10px; color: var(--foam-dim); }
+
+/* Action pills */
+.action-list-section {
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.action-list-section h4 {
+    font-size: 12px; color: var(--foam-dim);
+    font-family: var(--font-data); letter-spacing: 0.05em;
+    text-transform: uppercase; margin: 0;
+}
+.action-item {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    padding: 5px 10px 5px 14px;
+}
+.action-item input,
+.action-item select {
+    background: transparent; border: none; outline: none;
+    color: var(--foam);
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 12.5px; padding: 2px 4px; min-width: 80px;
+}
+.action-item input::placeholder { color: var(--foam-dim); }
+.action-item select option { background: #0f2535; color: var(--foam); }
+.action-pill-sep { color: var(--glass-border); font-size: 14px; user-select: none; flex-shrink: 0; }
+.act-bydate   { width: 130px; flex-shrink: 0; color-scheme: dark; }
+.act-action   { flex: 1; min-width: 120px; }
+.act-bymember {
+    min-width: 140px;
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 6px !important;
+    padding: 2px 8px !important;
+    cursor: pointer;
+}
+.action-remove {
+    background: none; border: none; color: var(--foam-dim);
+    cursor: pointer; padding: 2px 6px; font-size: 15px; line-height: 1;
+    margin-left: auto; flex-shrink: 0; border-radius: 50%;
+    transition: color 0.15s;
+}
+.action-remove:hover { color: #ff6b6b; }
+
+/* Search wrap — icon inside input */
+.search-wrap { position: relative; display: flex; align-items: center; }
+.search-wrap .nav-icon { position: absolute; left: 10px; width: 14px; height: 14px; pointer-events: none; color: var(--foam-dim); }
+.search-wrap .search-input { padding-left: 32px; }
+
+/* ── Action Items section ── */
+.actions-toolbar {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    align-items: center; margin-bottom: 16px;
+}
+.actions-toolbar .search-wrap { flex: 1; min-width: 220px; margin-bottom: 0; }
+
+.actions-table-wrap { max-height: 420px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.actions-table th {
+    position: sticky; top: 0; background: var(--ocean-mid);
+    text-align: left; padding: 8px 10px;
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim); border-bottom: 1px solid var(--glass-border);
+}
+.actions-table td {
+    padding: 8px 10px; border-bottom: 1px solid var(--glass-border);
+    color: var(--foam); vertical-align: middle;
+}
+.actions-table tr:last-child td { border-bottom: none; }
+.actions-table tr.clickable { cursor: pointer; }
+.actions-table tr.clickable:hover td { background: rgba(255,255,255,0.04); }
+
+/* Action edit modal status badge colours */
+.amodal-status { font-size: 12px; display: none; }
+.amodal-status.visible { display: block; }
+.amodal-status.success { color: var(--glow); }
+.amodal-status.error   { color: #ff6b6b; }
+
+</style>
+</head>
+<body>
+<!-- Shared Navigation Header -->
+<header class="nav-glass">
+    <a href="index.html" class="brand">
+        <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+        <div class="brand-text">
+            <strong>Sydney Maritime Modellers Club</strong>
+            <span>ADMINISTRATION PORTAL</span>
+        </div>
+        <i class="nav-icon" data-lucide="folder-key" color="#a51e1e"></i>
+        <p style="color:#a51e1e;"><strong>Restricted Area</strong></p>
+    </a>
+    <ul class="nav-links">
+        <li class="nav-item"><a href="admin.html" class="nav-link">Admin Home</a></li>
+        <li class="nav-item"><a href="#action-items" class="nav-link">Action Items</a></li>
+        <li class="nav-item"><a href="#audit-log" class="nav-link">Audit Log</a></li>
+        <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
+    </ul>
+</header>
+<main class="container">
+
+    <div class="admin-header">
+        <div class="admin-title-group">
+            <h1>Notes Management Console</h1>
+        </div>
+        <a href="admin.html" class="btn btn-ghost" style="flex-shrink:0;">Back to Dashboard</a>
+    </div>
+
+    <div class="section-head">
+        <h2>Notes Overview</h2>
+        <p>Summary of recorded notes and outstanding actions.</p>
+    </div>
+
+    <!-- Stats board -->
+    <section class="stats-grid" id="statsGrid">
+        <div class="glass stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-label">Total Notes</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-topics">—</div><div class="stat-label">Topics</div></div>
+        <div class="glass stat-card"><div class="stat-val warn" id="stat-actions">—</div><div class="stat-label">Open Actions</div></div>
+        <div class="glass stat-card"><div class="stat-val accent" id="stat-overdue">—</div><div class="stat-label">Overdue Actions</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-this-month">—</div><div class="stat-label">This Month</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-attachments">—</div><div class="stat-label">Attachments</div></div>
+    </section>
+
+    <!-- Notes table -->
+    <div class="section-head">
+        <h2>All Notes</h2>
+        <p>Click a row to view or edit. Use the button to add a new note.</p>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title"><span class="dot"></span><h3>Notes</h3></div>
+            <div class="notes-toolbar">
+                <div class="search-wrap">
+                    <i class="nav-icon" data-lucide="search" size="8"></i>
+                    <input class="search-input" id="notesSearch" placeholder='Search action, sheet, record…'>
+                </div>
+                <select class="glass-select" id="filterTopic">
+                    <option value="">All Topics</option>
+                </select>
+                <select class="glass-select" id="filterAction">
+                    <option value="">All Statuses</option>
+                    <option value="overdue">Overdue Actions</option>
+                    <option value="open">Open Actions</option>
+                    <option value="none">No Actions</option>
+                </select>
+                <button class="btn btn-ghost" id="refreshBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+                <button class="btn btn-primary" id="newNoteBtn" style="padding:5px 14px;font-size:12px;">+ New Note</button>
+            </div>
+        </div>
+        <div class="tab-content active">
+            <div class="notes-table-wrap">
+                <table class="notes-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Topic</th>
+                            <th>Sub Topic</th>
+                            <th>Note Preview</th>
+                            <th>Actions</th>
+                            <th>Attachments</th>
+                            <th>Status</th>
+                            <th>Export</th>
+                        </tr>
+                    </thead>
+                    <tbody id="notesBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="notesEmpty" style="display:none;">No notes found.</div>
+        </div>
+    </div>
+
+    <!-- ===================== NOTE MODAL ===================== -->
+    <div class="modal-overlay" id="noteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">New Note</h3>
+                <button class="modal-close" id="modalClose" title="Close">✕</button>
+            </div>
+
+            <!-- Date + Topic + Sub Topic -->
+            <div class="form-row triple">
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="fDate">
+                </div>
+                <div class="form-group">
+                    <label>Topic *</label>
+                    <div class="topic-mgmt">
+                        <select id="fTopic">
+                            <option value="">— Select Topic —</option>
+                        </select>
+                        <button class="btn btn-ghost" id="addTopicBtn" style="padding:5px 10px;font-size:11px;white-space:nowrap;" title="Add new topic">+ Topic</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Sub Topic</label>
+                    <input type="text" id="fSubTopic" placeholder="Optional">
+                </div>
+            </div>
+
+            <!-- Note body -->
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Note *</label>
+                    <textarea id="fNote" placeholder="Enter note content…" style="min-height:120px;"></textarea>
+                </div>
+            </div>
+
+            <!-- Attachments -->
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Attachments — Google Drive</label>
+                    <div class="attach-picker-row">
+                        <input type="text" id="fAttachments" placeholder="Paste Drive link or use Browse…">
+                        <button type="button" class="drive-browse-btn" id="driveBrowseBtn">
+                            <i class="nav-icon" data-lucide="folder" size="8" color="var(--folder)"></i> Browse Drive
+                        </button>
+                    </div>
+                    <div class="attach-list" id="attachPreview"></div>
+                </div>
+            </div>
+
+            <!-- Action List -->
+            <div class="action-list-section">
+                <h4>Action List</h4>
+                <div id="actionItems"></div>
+                <button class="btn btn-ghost" id="addActionBtn" style="padding:5px 12px;font-size:11px;width:fit-content;">+ Add Action</button>
+            </div>
+
+            <!-- Copy-in members -->
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Copy In (email addresses)</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="email" id="fCopyInInput" placeholder="member@example.com" style="flex:1;">
+                        <button class="btn btn-ghost" id="addCopyInBtn" style="padding:5px 12px;font-size:11px;white-space:nowrap;">Add</button>
+                    </div>
+                    <div class="copyin-wrap" id="copyInTags"></div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer">
+                <span class="modal-status" id="modalStatus"></span>
+                <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+                <button class="btn btn-ghost" id="modalDelete" style="color:#ff6b6b; display:none;">Delete</button>
+                <button class="btn btn-primary" id="modalSave">Save Note</button>
+                <button class="btn btn-ghost" id="exportSheetBtn" title="Save to Google Sheet" style="display:inline-flex;align-items:center;gap:6px;"><i data-lucide="file-input" size="14"></i> Export</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== ADD TOPIC MODAL ===================== -->
+    <div class="modal-overlay" id="topicModal">
+        <div class="modal" style="max-width:420px;">
+            <div class="modal-header">
+                <h3>Manage Topics</h3>
+                <button class="modal-close" id="topicModalClose">✕</button>
+            </div>
+            <div class="form-group">
+                <label>New Topic Name</label>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="newTopicInput" placeholder="e.g. Finance, Events…" style="flex:1;">
+                    <button class="btn btn-primary" id="saveTopicBtn" style="padding:6px 14px;font-size:12px;">Add</button>
+                </div>
+            </div>
+            <div id="topicList" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;"></div>
+            <div class="modal-footer">
+                <span class="modal-status" id="topicStatus"></span>
+                <button class="btn btn-ghost" id="topicModalCancel">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== DRIVE PICKER MODAL ===================== -->
+    <div class="modal-overlay" id="driveModal">
+        <div class="drive-modal">
+            <div class="modal-header">
+                <h3>Browse Google Drive</h3>
+                <button class="modal-close" id="driveModalClose">✕</button>
+            </div>
+            <div class="form-group">
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="driveSearchInput" placeholder="Search files…" style="flex:1;">
+                    <button class="btn btn-primary" id="driveSearchBtn" style="padding:6px 14px;font-size:12px;">Search</button>
+                </div>
+            </div>
+            <div id="driveResults" style="display:flex;flex-direction:column;gap:4px;min-height:80px;"></div>
+            <div class="modal-footer">
+                <span class="modal-status" id="driveStatus"></span>
+                <button class="btn btn-ghost" id="driveModalCancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== ACTION ITEMS TABLE ===================== -->
+    <div class="section-head" id="action-items">
+        <h2>All Action Items</h2>
+        <p>All actions across every note. Click a row to edit status, due date or assignment.</p>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title"><span class="dot"></span><h3>Actions</h3></div>
+            <div class="actions-toolbar">
+                <div class="search-wrap">
+                    <i class="nav-icon" data-lucide="search"></i>
+                    <input class="search-input" id="actionsSearch" placeholder="Search action, member, note…">
+                </div>
+                <select class="glass-select" id="filterActionStatus">
+                    <option value="">All Statuses</option>
+                    <option value="open">Open</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="done">Done</option>
+                </select>
+                <select class="glass-select" id="filterActionMember">
+                    <option value="">All Members</option>
+                </select>
+            </div>
+        </div>
+        <div class="tab-content active">
+            <div class="actions-table-wrap">
+                <table class="actions-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Action</th>
+                            <th>Assigned To</th>
+                            <th>Due Date</th>
+                            <th>Note Topic</th>
+                            <th>Note Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="actionsBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="actionsEmpty" style="display:none;">No actions found.</div>
+        </div>
+    </div>
+
+    <!-- ===================== ACTION EDIT MODAL ===================== -->
+    <div class="modal-overlay" id="actionEditModal">
+        <div class="modal" style="max-width:560px;">
+            <div class="modal-header">
+                <h3 id="actionModalTitle">Edit Action</h3>
+                <button class="modal-close" id="actionModalClose" title="Close">✕</button>
+            </div>
+
+            <!-- Read-only context -->
+            <div style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;">
+                <div class="view-label">From Note</div>
+                <div class="view-field" id="aModalNoteContext" style="border:none;padding:0;font-size:13px;color:var(--foam);"></div>
+            </div>
+
+            <!-- Editable fields -->
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Action *</label>
+                    <textarea id="aModalAction" placeholder="Describe the action…" style="min-height:80px;"></textarea>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Due Date</label>
+                    <input type="date" id="aModalByDate">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="aModalStatus">
+                        <option value="Open">Open</option>
+                        <option value="Done">Done</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Assigned To</label>
+                    <select id="aModalByMember">
+                        <option value="">— Assign —</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <span class="amodal-status" id="aModalStatusMsg"></span>
+                <button class="btn btn-ghost" id="actionModalCancel">Cancel</button>
+                <button class="btn btn-primary" id="actionModalSave">Save Action</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIT LOG -->
+    <div class="section-head" id="audit-log">
+        <h2>Audit Log</h2>
+        <p>Actions recorded to the AuditLog sheet.</p>
+    </div>
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
+            <div class="panel-toolbar">
+                <div class="audit-toggle">
+                    <button id="auditFilterMembers" class="active">Members</button>
+                    <button id="auditFilterAll">All</button>
+                </div>
+                <div class="search-wrap">
+                    <i class="nav-icon" data-lucide="search"></i>
+                    <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
+                </div>
+                <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+            </div>
+        </div>
+        <div class="tab-content active">
+            <div class="log-table-wrap">    
+                <table class="log-table">
+                    <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
+                    <tbody id="auditBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+</footer>
+
+<script src="shared.js"></script>  
+<script src="auditLog.js"></script>
+<script>
+    AuditLog.init('notes',"Notes");  
+</script>
+<script>
+    /* =========================================================
+       CONFIG
+       ========================================================= */
+
+    let GOOGLE_EXPORT_FOLDER_ID = "";
+    const NOTES_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzq-iw5CGc59VbnJEviaD0wmT5CAWuxP5wqbVg6Ea03sSBfYuEp1uOaZuGvXyNkzGBnlw/exec";
+    const currentUserName = localStorage.getItem("memberName") || localStorage.getItem("userName") || "Unknown";
+
+    /* =========================================================
+       STATE
+       ========================================================= */
+    let notes   = [];
+    let topics  = [];
+    let actions = [];
+    let members = [];
+    let auditRows = [];
+    let logFilter = "notes";
+    let editingNoteId = null;
+    let copyInEmails  = [];
+    let actionRows    = [];
+    let _oldNoteSnapshot = null; // captures pre-edit state for audit diff
+
+    /* =========================================================
+       AUDIT LOG WRITER
+       ========================================================= */
+    function isoNow() {
+        // Local date-time without timezone, e.g. "2026-09-21 14:35:00"
+        const d = new Date();
+        const pad = n => String(n).padStart(2,"0");
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    /* =========================================================
+       HELPERS
+       ========================================================= */
+    function gv(row, ...keys) {
+        for (const k of keys) {
+            const match = Object.keys(row).find(r => r.toLowerCase().trim() === k.toLowerCase());
+            if (match && row[match] !== undefined) return String(row[match]).trim();
+        }
+        return "";
+    }
+    function today() { return new Date().toISOString().split("T")[0]; }
+    function fmtDate(iso) {
+        if (!iso) return "";
+        const d = new Date(iso);
+        return isNaN(d) ? iso : d.toLocaleDateString("en-AU", { day:"2-digit", month:"short", year:"numeric" });
+    }
+    function fmtTime(val) {
+        if (!val) return "";
+        const d = new Date(val);
+        return isNaN(d) ? val : d.toLocaleString("en-AU", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" });
+    }
+    function noteId() { return Date.now().toString(36).toUpperCase(); }
+
+    /* =========================================================
+       LOAD ALL
+       ========================================================= */
+    async function loadAll() {
+        document.getElementById("notesBody").innerHTML =
+            `<tr class="spinner-row"><td colspan="7"><span class="spinner"></span> Loading notes…</td></tr>`;
+        document.getElementById("notesEmpty").style.display = "none";
+        ["stat-total","stat-topics","stat-actions","stat-overdue","stat-this-month","stat-attachments"]
+            .forEach(id => document.getElementById(id).innerHTML = `<span class="spinner"></span>`);
+        document.getElementById("filterTopic").innerHTML = `<option>Loading…</option>`;
+        document.getElementById("fTopic").innerHTML = `<option>Loading…</option>`;
+
+        try {
+            [notes, topics, actions, members] = await Promise.all([
+                fetchSheet(DOMAIN.notes, "Notes"),
+                fetchSheet(DOMAIN.notes, "Topics"),
+                fetchSheet(DOMAIN.notes, "Actions"),
+                fetchSheet(DOMAIN.members, "Members").catch(() => [])
+            ]);
+            // Filter active members — boolean TRUE or string "TRUE"
+            members = members.filter(m => {
+                const active = m["Active"] ?? m["active"];
+                return active === true || String(active).toUpperCase() === "TRUE";
+            }).filter(m => gv(m,"MemberName","Member", "Membername","name","membername"));
+        } catch(e) {
+            console.error("Load error:", e);
+            notes = []; topics = []; actions = []; members = [];
+            document.getElementById("notesBody").innerHTML =
+                `<tr class="spinner-row"><td colspan="7" style="color:#ff6b6b;">Failed to load. Check connection./nError: ${e.message}</td></tr>`;
+            return;
+        }
+
+        renderStats();
+        renderTopicDropdowns();
+        renderTable();
+        populateMemberFilter();
+        renderActionsTable();
+    }
+
+    /* =========================================================
+       STATS
+       ========================================================= */
+    function renderStats() {
+        const now  = new Date();
+        const mon0 = new Date(now.getFullYear(), now.getMonth(), 1);
+        const openActions    = actions.filter(a => gv(a,"Status").toLowerCase() !== "done");
+        const overdueActions = openActions.filter(a => { const d = new Date(gv(a,"By Date")); return !isNaN(d) && d < now; });
+        const thisMonth      = notes.filter(n => { const d = new Date(gv(n,"Date")); return !isNaN(d) && d >= mon0; });
+        const withAttach     = notes.filter(n => gv(n,"Attachments").trim()).length;
+        const uniqueTopics   = [...new Set(notes.map(n => gv(n,"Topic")).filter(Boolean))];
+        document.getElementById("stat-total").textContent       = notes.length;
+        document.getElementById("stat-topics").textContent      = uniqueTopics.length;
+        document.getElementById("stat-actions").textContent     = openActions.length;
+        document.getElementById("stat-overdue").textContent     = overdueActions.length;
+        document.getElementById("stat-this-month").textContent  = thisMonth.length;
+        document.getElementById("stat-attachments").textContent = withAttach;
+    }
+
+    /* =========================================================
+       TOPIC DROPDOWNS
+       ========================================================= */
+    function renderTopicDropdowns() {
+        const topicNames = topics.map(t => t["Topic"] || t["topic"] || "").filter(Boolean).sort();
+        const ft = document.getElementById("filterTopic");
+        const ftVal = ft.value;
+        ft.innerHTML = `<option value="">All Topics</option>` +
+            topicNames.map(t => `<option value="${t}">${t}</option>`).join("");
+        if (topicNames.includes(ftVal)) ft.value = ftVal;
+        else ft.value = "";
+        const fs = document.getElementById("fTopic");
+        const fsVal = fs.value;
+        fs.innerHTML = `<option value="">— Select Topic —</option>` +
+            topicNames.map(t => `<option value="${t}">${t}</option>`).join("");
+        fs.value = fsVal;
+    }
+
+    /* =========================================================
+       TABLE
+       ========================================================= */
+    function renderTable() {
+        const q       = document.getElementById("notesSearch").value.trim().toLowerCase();
+        const topicF  = document.getElementById("filterTopic").value;
+        const actionF = document.getElementById("filterAction").value;
+        const now     = new Date();
+        let rows = [...notes].filter(n => gv(n,"Status").toLowerCase() !== "archived");
+        if (q) rows = rows.filter(n =>
+            gv(n,"Topic").toLowerCase().includes(q) ||
+            gv(n,"SubTopic","Sub Topic").toLowerCase().includes(q) ||
+            gv(n,"Note").toLowerCase().includes(q)
+        );
+        if (topicF) rows = rows.filter(n => gv(n,"Topic") === topicF);
+        if (actionF === "overdue") {
+            const ids = new Set(actions.filter(a => { const d = new Date(gv(a,"By Date")); return gv(a,"Status").toLowerCase() !== "done" && !isNaN(d) && d < now; }).map(a => gv(a,"NoteID")));
+            rows = rows.filter(n => ids.has(gv(n,"NoteID")));
+        } else if (actionF === "open") {
+            const ids = new Set(actions.filter(a => gv(a,"Status").toLowerCase() !== "done").map(a => gv(a,"NoteID")));
+            rows = rows.filter(n => ids.has(gv(n,"NoteID")));
+        } else if (actionF === "none") {
+            const ids = new Set(actions.map(a => gv(a,"NoteID")));
+            rows = rows.filter(n => !ids.has(gv(n,"NoteID")));
+        }
+        rows.sort((a,b) => new Date(gv(b,"Date")) - new Date(gv(a,"Date")));
+
+        const body  = document.getElementById("notesBody");
+        const empty = document.getElementById("notesEmpty");
+        body.innerHTML = rows.map(n => {
+            const nid = gv(n,"NoteID");
+            const noteActions = actions.filter(a => gv(a,"NoteID") === nid);
+            const openA = noteActions.filter(a => gv(a,"Status").toLowerCase() !== "done");
+            let dotClass = "ok";
+            if (openA.some(a => { const d = new Date(gv(a,"By Date")); return !isNaN(d) && d < now; })) dotClass = "due";
+            else if (openA.some(a => { const d = new Date(gv(a,"By Date")); const diff = (d-now)/86400000; return !isNaN(d) && diff >= 0 && diff <= 7; })) dotClass = "soon";
+            const attachCount = gv(n,"Attachments").split(",").filter(s => s.trim()).length;
+            const notePreview = gv(n,"Note").slice(0,80) + (gv(n,"Note").length > 80 ? "…" : "");
+            return `<tr class="clickable" data-id="${nid}">
+                <td>${fmtDate(gv(n,"Date"))}</td>
+                <td>${gv(n,"Topic")}</td>
+                <td>${gv(n,"SubTopic","Sub Topic")}</td>
+                <td style="max-width:260px;">${notePreview}</td>
+                <td>${openA.length > 0 ? `<span class="action-dot ${dotClass}"></span>${openA.length} open` : '<span style="color:var(--foam-dim)">—</span>'}</td>
+                <td>${attachCount > 0 ? `📎 ${attachCount}` : '—'}</td>
+                <td><span class="badge ${openA.length > 0 ? (dotClass==="due"?"badge-expired":"badge-renewal") : "badge-full"}">${openA.length > 0 ? (dotClass==="due"?"Overdue":"Active") : "Complete"}</span></td>
+                <td><button class="export-note" data-id="${nid}" title="Export to Google Sheet" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--foam-dim);display:inline-flex;align-items:center;border-radius:6px;transition:color 0.15s;" onmouseover="this.style.color='var(--foam)'" onmouseout="this.style.color='var(--foam-dim)'"><i data-lucide="file-input" size="14"></i></button></td>
+                </tr>`;
+        }).join("");
+        empty.style.display = rows.length ? "none" : "block";
+        body.querySelectorAll("tr.clickable").forEach(tr =>
+            tr.addEventListener("click", () => openNoteModal(tr.dataset.id))
+        );
+        body.querySelectorAll(".export-note").forEach(btn =>
+            btn.addEventListener("click", e => {
+            e.stopPropagation();
+            exportNoteToSheet(btn.dataset.id);
+            })
+        );
+    }
+
+    /* =========================================================
+       MODAL OPEN / CLOSE
+       ========================================================= */
+    function openNoteModal(nid = null) {
+        editingNoteId = nid;
+        copyInEmails  = [];
+        actionRows    = [];
+        _oldNoteSnapshot = null;
+        const isNew   = !nid;
+        document.getElementById("modalTitle").textContent        = isNew ? "New Note" : "Edit Note";
+        document.getElementById("modalDelete").style.display     = isNew ? "none" : "inline-flex";
+        document.getElementById("modalStatus").className         = "modal-status";
+        document.getElementById("modalStatus").textContent       = "";
+        if (isNew) {
+            document.getElementById("fDate").value      = today();
+            document.getElementById("fTopic").value     = "";
+            document.getElementById("fSubTopic").value  = "";
+            document.getElementById("fNote").value      = "";
+            document.getElementById("fAttachments").value = "";
+        } else {
+            const n = notes.find(n => gv(n,"NoteID") === nid);
+            if (!n) return;
+            document.getElementById("fDate").value        = gv(n,"Date");
+            document.getElementById("fTopic").value       = gv(n,"Topic");
+            document.getElementById("fSubTopic").value    = gv(n,"SubTopic","Sub Topic");
+            document.getElementById("fNote").value        = gv(n,"Note");
+            document.getElementById("fAttachments").value = gv(n,"Attachments");
+            const ci = gv(n,"CopyIn","Copy In");
+            copyInEmails = ci ? ci.split(",").map(s=>s.trim()).filter(Boolean) : [];
+            actionRows = actions.filter(a => gv(a,"NoteID") === nid).map(a => ({
+                id:            gv(a,"ActionID"),
+                action:        gv(a,"Action"),
+                byDate:        gv(a,"By Date"),
+                byMember:      gv(a,"By Member"),
+                byMemberEmail: gv(a,"By Member Email"),
+                status:        gv(a,"Status")
+            }));
+            // Snapshot for audit diff
+            _oldNoteSnapshot = {
+                Date:        gv(n,"Date"),
+                Topic:       gv(n,"Topic"),
+                SubTopic:    gv(n,"SubTopic","Sub Topic"),
+                Note:        gv(n,"Note"),
+                Attachments: gv(n,"Attachments"),
+                CopyIn:      gv(n,"CopyIn","Copy In"),
+                Actions:     actionRows.map(a => `${a.action} (${a.byMember||"—"}, ${a.byDate||"—"})`).join("; ")
+            };
+        }
+        renderAttachPreview();
+        renderCopyInTags();
+        renderActionItems();
+        document.getElementById("noteModal").classList.add("open");
+    }
+
+    function closeNoteModal() {
+        document.getElementById("noteModal").classList.remove("open");
+        editingNoteId = null;
+    }
+
+    /* =========================================================
+       ATTACH PREVIEW
+       ========================================================= */
+    function renderAttachPreview() {
+        const raw   = document.getElementById("fAttachments").value;
+        const links = raw.split(",").map(s => s.trim()).filter(Boolean);
+        document.getElementById("attachPreview").innerHTML = links.map(l =>
+            `<div class="attach-item">📎 <a href="${l}" target="_blank" rel="noopener">${l.slice(0,60)}${l.length>60?"…":""}</a>
+             <button type="button" onclick="removeAttachment('${l.replace(/'/g,"\\'")}');" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:12px;padding:0 4px;">✕</button>
+             </div>`
+        ).join("");
+    }
+    function removeAttachment(link) {
+        const inp  = document.getElementById("fAttachments");
+        const links = inp.value.split(",").map(s=>s.trim()).filter(s => s && s !== link);
+        inp.value = links.join(", ");
+        renderAttachPreview();
+    }
+
+    /* =========================================================
+       DRIVE PICKER
+       ========================================================= */
+    function openDriveModal() {
+        document.getElementById("driveModal").classList.add("open");
+        document.getElementById("driveSearchInput").value = "";
+        document.getElementById("driveResults").innerHTML = `<div style="font-size:12px;color:var(--foam-dim);padding:8px;">Type to search your Drive files.</div>`;
+        document.getElementById("driveStatus").textContent = "";
+        document.getElementById("driveSearchInput").focus();
+    }
+    function closeDriveModal() { document.getElementById("driveModal").classList.remove("open"); }
+
+    function driveFileIcon(mimeType) {
+        const defaultIcon = `<i class="nav-icon" data-lucide="file" color="#b41d1d"></i>`;
+        
+        if (!mimeType) return defaultIcon;
+        if (mimeType.includes("spreadsheet")) return `<i class="nav-icon" data-lucide="file-spreadsheet" color="#b41d1d"></i>`;
+        if (mimeType.includes("document")) return `<i class="nav-icon" data-lucide="file-text" color="#b41d1d"></i>`;
+        if (mimeType.includes("presentation")) return `<i class="nav-icon" data-lucide="presentation" color="#b41d1d"></i>`;
+        if (mimeType.includes("pdf")) return `<i class="nav-icon" data-lucide="file-text" color="#b41d1d"></i>`;
+        if (mimeType.includes("image")) return `<i class="nav-icon" data-lucide="image" color="#b41d1d"></i>`;
+        if (mimeType.includes("folder")) return `<i class="nav-icon" data-lucide="folder" color="#b41d1d"></i>`;
+        
+        return defaultIcon;
+    }
+
+    async function searchDrive(query) {
+        const btn = document.getElementById("driveSearchBtn");
+        const res = document.getElementById("driveResults");
+        const st  = document.getElementById("driveStatus");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span>`;
+        res.innerHTML = `<div style="font-size:12px;color:var(--foam-dim);padding:8px;">Searching…</div>`;
+        st.textContent = "";
+
+        try {
+            const data = await fetch(`${NOTES_WEBAPP_URL}?action=drivesearch&q=${encodeURIComponent(query)}`
+            ).then(r => r.json());
+
+            if (data.error) throw new Error(data.error);
+            const files = data.files || [];
+            if (!files.length) {
+                res.innerHTML = `<div style="font-size:12px;color:var(--foam-dim);padding:8px;">No files found for "${query}".</div>`;
+                return;
+            }
+            res.innerHTML = files.map(f => `
+                <div class="drive-result-item" data-url="${f.url}" data-name="${f.name.replace(/"/g,'&quot;')}">
+                    <span class="dr-icon">${driveFileIcon(f.mimeType)}</span>
+                    <div style="flex:1;">
+                        <div class="dr-name">${f.name}</div>
+                        <div class="dr-meta">${f.mimeType ? f.mimeType.split("/").pop().split(".").pop() : "file"}${f.modifiedTime ? " · " + fmtDate(f.modifiedTime) : ""}</div>
+                    </div>
+                </div>`).join("");
+
+            res.querySelectorAll(".drive-result-item").forEach(item => {
+                item.addEventListener("click", () => {
+                    const inp  = document.getElementById("fAttachments");
+                    const cur  = inp.value.trim();
+                    const url  = item.dataset.url;
+                    inp.value  = cur ? cur + ", " + url : url;
+                    renderAttachPreview();
+                    closeDriveModal();
+                });
+            });
+        } catch(e) {
+            st.textContent = "Search failed: " + e.message;
+            st.className   = "modal-status visible error";
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Search";
+        }
+    }
+
+    document.getElementById("driveBrowseBtn").addEventListener("click", openDriveModal);
+    document.getElementById("driveModalClose").addEventListener("click", closeDriveModal);
+    document.getElementById("driveModalCancel").addEventListener("click", closeDriveModal);
+    document.getElementById("driveSearchBtn").addEventListener("click", () => {
+        const q = document.getElementById("driveSearchInput").value.trim();
+        if (q) searchDrive(q);
+    });
+    document.getElementById("driveSearchInput").addEventListener("keydown", e => {
+        if (e.key === "Enter") { e.preventDefault(); const q = e.target.value.trim(); if (q) searchDrive(q); }
+    });
+    document.getElementById("driveModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeDriveModal(); });
+
+    /* =========================================================
+       COPY-IN TAGS
+       ========================================================= */
+    function renderCopyInTags() {
+        document.getElementById("copyInTags").innerHTML = copyInEmails.map((e,i) =>
+            `<span class="copyin-tag">${e}<button data-i="${i}" class="copyin-remove">✕</button></span>`
+        ).join("");
+        document.querySelectorAll(".copyin-remove").forEach(btn =>
+            btn.addEventListener("click", () => { copyInEmails.splice(+btn.dataset.i,1); renderCopyInTags(); })
+        );
+    }
+    function addCopyIn() {
+        const inp = document.getElementById("fCopyInInput");
+        const v   = inp.value.trim();
+        if (v && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && !copyInEmails.includes(v)) {
+            copyInEmails.push(v); renderCopyInTags();
+        }
+        inp.value = "";
+    }
+
+    /* =========================================================
+       ACTION ITEMS — pill layout with member dropdown
+       ========================================================= */
+    function memberOptions(selected) {
+        const opts = members.map(m => {
+            const name  = gv(m,"MemberName","membername","memberName", "name", "Name");
+            const email = gv(m,"Email","Email Address", "email","eMail");
+            return { name, email };
+        }).filter(m => m.name);
+
+        return `<option value="">— Assign —</option>` +
+            opts.map(m =>
+                `<option value="${m.name}" data-email="${m.email}" ${selected === m.name ? "selected" : ""}>${m.name}</option>`
+            ).join("");
+    }
+    function renderActionItems() {
+        const container = document.getElementById("actionItems");
+        if (!actionRows.length) { container.innerHTML = ""; return; }
+        container.innerHTML = actionRows.map((a, i) => `
+            <div class="action-item" data-i="${i}">
+                <input type="text" class="act-action" value="${(a.action||"").replace(/"/g,'&quot;')}" placeholder="Describe the action…">
+                <span class="action-pill-sep">·</span>
+                <input type="date" class="act-bydate" value="${a.byDate || ""}">
+                <span class="action-pill-sep">·</span>
+                <select class="act-bymember">${memberOptions(a.byMember||"")}</select>
+                <span style="font-size:10px; color:var(--foam-dim); padding:0 4px; border-radius:4px; background:rgba(255,255,255,0.06);">
+                    ${a.id ? 'Saved' : 'Draft'}
+                </span>
+                <button class="action-remove" data-i="${i}" title="Remove">✕</button>
+            </div>`
+        ).join("");
+
+        container.querySelectorAll(".action-remove").forEach(btn =>
+            btn.addEventListener("click", () => { actionRows.splice(+btn.dataset.i,1); renderActionItems(); })
+        );
+        container.querySelectorAll(".action-item").forEach(row => {
+            const i = +row.dataset.i;
+            row.querySelector(".act-action").addEventListener("input", e => { actionRows[i].action = e.target.value; });
+            row.querySelector(".act-bydate").addEventListener("change", e => { actionRows[i].byDate = e.target.value; });
+            row.querySelector(".act-bymember").addEventListener("change", e => {
+                const sel = e.target;
+                actionRows[i].byMember = sel.value;
+                const opt = [...sel.options].find(o => o.value === sel.value);
+                actionRows[i].byMemberEmail = opt ? (opt.dataset.email || "") : "";
+            }); 
+        });
+    }
+
+    function addActionRow() {
+        actionRows.push({ id:"", action:"", byDate:"", byMember:"", byMemberEmail:"", status:"Open" });
+        renderActionItems();
+    }
+
+    /* =========================================================
+       SAVE NOTE
+       ========================================================= */
+    async function saveNote() {
+        const date  = document.getElementById("fDate").value.trim();
+        const topic = document.getElementById("fTopic").value.trim();
+        const note  = document.getElementById("fNote").value.trim();
+        if (!date || !topic || !note) { showModalStatus("Date, Topic and Note are required.", "error"); return; }
+
+        const btn = document.getElementById("modalSave");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> Saving Note & Actions…`;
+
+        try {
+            const nid = editingNoteId || noteId();
+            const rowData = {
+                NoteID:      nid,
+                Date:        date,
+                Topic:       topic,
+                SubTopic:    document.getElementById("fSubTopic").value.trim(),
+                Note:        note,
+                Attachments: document.getElementById("fAttachments").value.trim(),
+                CopyIn:      copyInEmails.join(", "),
+                LastUpdated: new Date().toISOString()
+            };
+
+            if (editingNoteId) {
+                await updateSheet(DOMAIN.notes, "Notes", editingNoteId, rowData);
+            } else {
+                rowData.CreatedAt = new Date().toISOString();
+                await appendSheet(DOMAIN.notes, "Notes", rowData);
+            }
+
+            const newActions = [];
+            for (const a of actionRows) {
+                if (!a.action.trim()) continue;
+                const aid   = a.id || noteId();
+                const aData = {
+                    ActionID:          aid,
+                    NoteID:            nid,
+                    Action:            a.action,
+                    "By Date":         a.byDate,
+                    "By Member":       a.byMember,
+                    "By Member Email": a.byMemberEmail || "",
+                    Status:            a.status || "Open"
+                };
+
+                if (a.id) {
+                    await updateSheet(DOMAIN.notes, "Actions", a.id, aData);
+                } else {
+                    // Corrected: Passed 3 arguments (domain, sheet, rowData)
+                    await appendSheet(DOMAIN.notes, "Actions", aData);
+                    newActions.push(aData);
+                }
+            }
+
+            if (newActions.length) await sendActionEmails(newActions, nid, topic, date);
+
+            showModalStatus("Note and actions saved successfully.", "success");
+            await loadAll();
+            await AuditLog.load();
+            setTimeout(closeNoteModal, 800);
+        } catch(e) {
+            showModalStatus("Error saving: " + e.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Save Note";
+        }
+    }
+
+    async function exportNoteToSheet(noteId){
+
+        const result = await fetch(NOTES_WEBAPP_URL,{
+            method: "POST",
+            body: JSON.stringify({
+                action: "exportNoteSheet",
+                noteId,
+                folderId: GOOGLE_EXPORT_FOLDER_ID
+            })
+            }
+        );
+
+        const data = await result.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        window.open(data.url, "_blank");
+    }
+
+    /* =========================================================
+       DELETE NOTE
+       ========================================================= */
+    async function deleteNote() {
+        if (!editingNoteId) return;
+        if (!confirm("Delete this note and all its actions? This cannot be undone.")) return;
+        try {
+            const n = notes.find(n => gv(n,"NoteID") === editingNoteId);
+            const oldSummary = n
+                ? `Topic:${gv(n,"Topic")} | Date:${gv(n,"Date")} | Note:${gv(n,"Note").slice(0,100)}`
+                : editingNoteId;
+            await deleteRow(DOMAIN.notes, "Notes", editingNoteId);
+            const related = actions.filter(a => gv(a,"NoteID") === editingNoteId);
+            for (const a of related) {
+                await deleteRow(DOMAIN.notes, "Actions", gv(a,"ActionID"));
+            }
+            await loadAll();
+            await AuditLog.load();;
+            closeNoteModal();
+        } catch(e) { showModalStatus("Delete failed: " + e.message, "error"); }
+    }
+
+    function showModalStatus(msg, type) {
+        const el = document.getElementById("modalStatus");
+        el.textContent = msg; el.className = `modal-status visible ${type}`;
+    }
+
+    /* =========================================================
+       EMAIL NOTIFICATIONS
+       ========================================================= */
+    async function sendActionEmails(newActions, nid, topic, date) {
+        const byEmail = {};
+        for (const a of newActions) {
+            const email = (a["By Member Email"] || "").trim();
+            if (!email) continue;
+            if (!byEmail[email]) byEmail[email] = { name: a["By Member"], actions: [] };
+            byEmail[email].actions.push(a);
+        }
+        if (!Object.keys(byEmail).length) return;
+        const noteLink = `${location.origin}${location.pathname}?note=${nid}`;
+        try {
+            await fetch(NOTES_WEBAPP_URL, { method:"POST", body: JSON.stringify({
+                action: "sendActionEmails", noteId: nid, topic, date, noteLink,
+                recipients: Object.entries(byEmail).map(([email, d]) => ({
+                    email, name: d.name,
+                    actions: d.actions.map(a => ({ action: a.Action, byDate: a["By Date"], byMember: a["By Member"] }))
+                }))
+            })});
+            AuditLog.load();
+        } catch(e) { console.warn("Email failed:", e.message); }
+    }
+
+    /* =========================================================
+       ACTION ITEMS TABLE
+       ========================================================= */
+    function renderActionsTable() {
+        const q       = (document.getElementById("actionsSearch").value || "").trim().toLowerCase();
+        const statusF = document.getElementById("filterActionStatus").value.toLowerCase();
+        const memberF = document.getElementById("filterActionMember").value.toLowerCase();
+        const now     = new Date();
+
+        let rows = [...actions];
+        if (q) rows = rows.filter(a =>
+            gv(a,"Action").toLowerCase().includes(q) ||
+            gv(a,"By Member").toLowerCase().includes(q) ||
+            (parentNoteContext(gv(a,"NoteID"))).toLowerCase().includes(q)
+        );
+        if (statusF === "done")    rows = rows.filter(a => gv(a,"Status").toLowerCase() === "done");
+        else if (statusF === "overdue") rows = rows.filter(a => {
+            const d = new Date(gv(a,"By Date"));
+            return gv(a,"Status").toLowerCase() !== "done" && !isNaN(d) && d < now;
+        });
+        else if (statusF === "open") rows = rows.filter(a => gv(a,"Status").toLowerCase() !== "done");
+        if (memberF) rows = rows.filter(a => gv(a,"By Member").toLowerCase() === memberF);
+
+        // Sort: overdue first, then by date asc, done last
+        rows.sort((a,b) => {
+            const aDone = gv(a,"Status").toLowerCase() === "done";
+            const bDone = gv(b,"Status").toLowerCase() === "done";
+            if (aDone !== bDone) return aDone ? 1 : -1;
+            return new Date(gv(a,"By Date")) - new Date(gv(b,"By Date"));
+        });
+
+        const body  = document.getElementById("actionsBody");
+        const empty = document.getElementById("actionsEmpty");
+
+        body.innerHTML = rows.map(a => {
+            const aid    = gv(a,"ActionID");
+            const status = gv(a,"Status") || "Open";
+            const isDone = status.toLowerCase() === "done";
+            const byDate = gv(a,"By Date");
+            const d      = new Date(byDate);
+            const isOverdue = !isDone && byDate && !isNaN(d) && d < now;
+            const isSoon    = !isDone && !isOverdue && byDate && !isNaN(d) && ((d-now)/86400000) <= 7;
+            const dotCls    = isDone ? "ok" : isOverdue ? "due" : isSoon ? "soon" : "ok";
+            const badgeCls  = isDone ? "badge-full" : isOverdue ? "badge-expired" : "badge-renewal";
+            const badgeLbl  = isDone ? "Done" : isOverdue ? "Overdue" : "Open";
+            const parentNote = notes.find(n => gv(n,"NoteID") === gv(a,"NoteID"));
+            const noteTopic  = parentNote ? gv(parentNote,"Topic") : "—";
+            const noteDate   = parentNote ? fmtDate(gv(parentNote,"Date")) : "—";
+            return `<tr class="clickable" data-aid="${aid}">
+                <td><span class="action-dot ${dotCls}"></span><span class="badge ${badgeCls}">${badgeLbl}</span></td>
+                <td style="max-width:260px;">${gv(a,"Action").slice(0,90)}${gv(a,"Action").length > 90 ? "…" : ""}</td>
+                <td>${gv(a,"By Member") || '<span style="color:var(--foam-dim)">—</span>'}</td>
+                <td style="color:${isOverdue ? "#ff6b6b" : "var(--foam)"}">${byDate ? fmtDate(byDate) : '<span style="color:var(--foam-dim)">—</span>'}</td>
+                <td>${noteTopic}</td>
+                <td>${noteDate}</td>
+            </tr>`;
+        }).join("");
+
+        empty.style.display = rows.length ? "none" : "block";
+
+        body.querySelectorAll("tr.clickable").forEach(tr =>
+            tr.addEventListener("click", () => openActionEditModal(tr.dataset.aid))
+        );
+
+        lucide.createIcons();
+    }
+
+    function parentNoteContext(nid) {
+        const n = notes.find(n => gv(n,"NoteID") === nid);
+        return n ? `${gv(n,"Topic")} — ${fmtDate(gv(n,"Date"))}` : "";
+    }
+
+    function populateMemberFilter() {
+        const sel  = document.getElementById("filterActionMember");
+        const prev = sel.value;
+        const names = [...new Set(actions.map(a => gv(a,"By Member")).filter(Boolean))].sort();
+        sel.innerHTML = `<option value="">All Members</option>` +
+            names.map(n => `<option value="${n.toLowerCase()}">${n}</option>`).join("");
+        if (names.map(n => n.toLowerCase()).includes(prev)) sel.value = prev;
+    }
+
+    /* =========================================================
+       ACTION EDIT MODAL
+       ========================================================= */
+    let editingActionId = null;
+
+    function openActionEditModal(aid) {
+        const a = actions.find(a => gv(a,"ActionID") === aid);
+        if (!a) return;
+        editingActionId = aid;
+
+        // Context (read-only)
+        document.getElementById("aModalNoteContext").textContent = parentNoteContext(gv(a,"NoteID")) || "—";
+
+        // Editable fields
+        document.getElementById("aModalAction").value   = gv(a,"Action");
+        document.getElementById("aModalByDate").value   = gv(a,"By Date");
+        document.getElementById("aModalStatus").value   = gv(a,"Status") || "Open";
+
+        // Member dropdown
+        const memberSel = document.getElementById("aModalByMember");
+        memberSel.innerHTML = memberOptions(gv(a,"By Member"));
+
+        // Clear status msg
+        const msg = document.getElementById("aModalStatusMsg");
+        msg.textContent = ""; msg.className = "amodal-status";
+
+        document.getElementById("actionEditModal").classList.add("open");
+    }
+
+    function closeActionEditModal() {
+        document.getElementById("actionEditModal").classList.remove("open");
+        editingActionId = null;
+    }
+
+    async function saveActionEdit() {
+        if (!editingActionId) return;
+        const action  = document.getElementById("aModalAction").value.trim();
+        const byDate  = document.getElementById("aModalByDate").value;
+        const status  = document.getElementById("aModalStatus").value;
+        const sel     = document.getElementById("aModalByMember");
+        const byMember = sel.value;
+        const byMemberEmail = sel.value
+            ? (([...sel.options].find(o => o.value === sel.value) || {}).dataset?.email || "")
+            : "";
+
+        if (!action) {
+            showAModalStatus("Action text is required.", "error"); return;
+        }
+
+        const btn = document.getElementById("actionModalSave");
+        btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> Saving…`;
+
+        try {
+            const a = actions.find(a => gv(a,"ActionID") === editingActionId);
+            const nid = a ? gv(a,"NoteID") : "";
+            const aData = {
+                ActionID:          editingActionId,
+                NoteID:            nid,
+                Action:            action,
+                "By Date":         byDate,
+                "By Member":       byMember,
+                "By Member Email": byMemberEmail,
+                Status:            status
+            };
+            await updateSheet(DOMAIN.notes, "Actions", editingActionId, aData);
+            showAModalStatus("Saved.", "success");
+            await loadAll();
+            await AuditLog.load();
+            setTimeout(closeActionEditModal, 700);
+        } catch(e) {
+            showAModalStatus("Error: " + e.message, "error");
+        } finally {
+            btn.disabled = false; btn.textContent = "Save Action";
+        }
+    }
+
+    function showAModalStatus(msg, type) {
+        const el = document.getElementById("aModalStatusMsg");
+        el.textContent = msg; el.className = `amodal-status visible ${type}`;
+    }
+
+    /* =========================================================
+       TOPIC MODAL
+       ========================================================= */
+    function openTopicModal() { document.getElementById("topicModal").classList.add("open"); renderTopicList(); }
+    function closeTopicModal() { document.getElementById("topicModal").classList.remove("open"); }
+
+    function renderTopicList() {
+        const topicNames = topics.map(t => t["Topic"] || "").filter(Boolean).sort();
+        document.getElementById("topicList").innerHTML = topicNames.length
+            ? topicNames.map(t => `<div style="padding:6px 8px;border-bottom:1px solid var(--glass-border);font-size:13px;color:var(--foam);">${t}</div>`).join("")
+            : `<div style="font-size:12px;color:var(--foam-dim);padding:8px;">No topics yet.</div>`;
+    }
+
+    async function saveTopic() {
+        const inp = document.getElementById("newTopicInput");
+        const btn = document.getElementById("saveTopicBtn");
+        const ts  = document.getElementById("topicStatus");
+        const v   = inp.value.trim();
+        if (!v) return;
+        btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
+        try {
+            await appendSheet(DOMAIN.notes, "Topics", { TopicID: noteId(), Topic: v});
+            inp.value = "";
+            await loadAll();
+            AuditLog.load();
+            renderTopicList();
+            ts.textContent = `"${v}" added.`; ts.className = "modal-status visible success";
+        } catch(e) {
+            ts.textContent = "Error: " + e.message; ts.className = "modal-status visible error";
+        } finally { btn.disabled = false; btn.textContent = "Add"; }
+    }
+
+    document.querySelectorAll(".export-note").forEach(btn =>
+      btn.addEventListener("click", e => {
+          e.stopPropagation();
+          exportNoteToSheet(btn.dataset.id);
+      }));
+
+    /* =========================================================
+       EVENT WIRING
+       ========================================================= */
+    document.getElementById("newNoteBtn").addEventListener("click", () => openNoteModal());
+    document.getElementById("modalClose").addEventListener("click", closeNoteModal);
+    document.getElementById("modalCancel").addEventListener("click", closeNoteModal);
+    document.getElementById("modalSave").addEventListener("click", saveNote);
+    document.getElementById("modalDelete").addEventListener("click", deleteNote);
+    document.getElementById("addActionBtn").addEventListener("click", addActionRow);
+    document.getElementById("addCopyInBtn").addEventListener("click", addCopyIn);
+    document.getElementById("fCopyInInput").addEventListener("keydown", e => { if (e.key==="Enter") { e.preventDefault(); addCopyIn(); } });
+    document.getElementById("fAttachments").addEventListener("input", renderAttachPreview);
+    document.getElementById("addTopicBtn").addEventListener("click", openTopicModal);
+    document.getElementById("topicModalClose").addEventListener("click", closeTopicModal);
+    document.getElementById("topicModalCancel").addEventListener("click", closeTopicModal);
+    document.getElementById("saveTopicBtn").addEventListener("click", saveTopic);
+    document.getElementById("newTopicInput").addEventListener("keydown", e => { if (e.key==="Enter") { e.preventDefault(); saveTopic(); } });
+    document.getElementById("refreshBtn").addEventListener("click", async () => {
+        const btn = document.getElementById("refreshBtn");
+        btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
+        await loadAll(); btn.disabled = false; btn.textContent = "Refresh";
+    });
+    document.getElementById("notesSearch").addEventListener("input", renderTable);
+    document.getElementById("filterTopic").addEventListener("change", renderTable);
+    document.getElementById("filterAction").addEventListener("change", renderTable);
+    document.getElementById("noteModal").addEventListener("click", e => { if (e.target===e.currentTarget) closeNoteModal(); });
+    document.getElementById("topicModal").addEventListener("click", e => { if (e.target===e.currentTarget) closeTopicModal(); });
+
+    // Action Items table filters
+    document.getElementById("actionsSearch").addEventListener("input", renderActionsTable);
+    document.getElementById("filterActionStatus").addEventListener("change", renderActionsTable);
+    document.getElementById("filterActionMember").addEventListener("change", renderActionsTable);
+
+    // Action Edit Modal
+    document.getElementById("actionModalClose").addEventListener("click", closeActionEditModal);
+    document.getElementById("actionModalCancel").addEventListener("click", closeActionEditModal);
+    document.getElementById("actionModalSave").addEventListener("click", saveActionEdit);
+    document.getElementById("actionEditModal").addEventListener("click", e => { if (e.target===e.currentTarget) closeActionEditModal(); });
+
+    /* =========================================================
+       INIT
+       ========================================================= */
+    loadAll().then(() => { lucide.createIcons(); AuditLog.load(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Portal — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Link Shared Theme -->
+<link rel="stylesheet" href="theme.css">
+
+<style>
+  /* =========================================================
+     ADMIN LAYOUT & WORKSPACE STYLES
+     ========================================================= */
+  .admin-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 36px auto 20px; flex-wrap: wrap;
+  }
+  .admin-title-group { display: flex; flex-direction: column; gap: 4px; }
+  .admin-title-group h1 { font-family: var(--font-display); font-size: 28px; color: var(--foam); }
+  .admin-badge {
+    display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-data);
+    font-size: 9px; color: var(--signal); padding: 4px 10px; border-radius: 4px;
+    background: rgba(255,106,61,0.12); border: 1px solid rgba(255,106,61,0.3); width: fit-content;
+  }
+
+  /* Admin Quick Stats Bar */
+  .admin-stats-bar {
+    display: flex; align-items: stretch; gap: 16px; margin-bottom: 24px;
+  }
+  .admin-stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; flex: 1;
+  }
+  .admin-stat-card--turnaround { flex: 0 0 180px; justify-content: center; }
+  @media (max-width: 860px) { .admin-stats-row { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .admin-stats-row { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) { .admin-stats-bar { flex-wrap: wrap; } .admin-stat-card--turnaround { flex-basis: 100%; } }
+
+  .admin-stat-card {
+    padding: 16px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .admin-stat-card .num { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--foam); text-align: center; }
+  .admin-stat-card .lbl { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; color: var(--foam-dim); }
+
+  /* Approval Table Component */
+  .admin-table-wrap {
+    overflow-x: auto; border-radius: 12px; border: 1px solid var(--glass-border);
+  }
+  table.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.admin-table th {
+    font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--glow); text-align: left; padding: 12px 14px;
+    background: rgba(15,53,80,0.92); border-bottom: 1px solid var(--glass-border); white-space: nowrap;
+  }
+  table.admin-table th:nth-child(n+3),
+  table.admin-table td:nth-child(n+3) {
+    text-align: center;
+  }
+  table.admin-table td {
+    padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    color: var(--foam); /* vertical-align: middle; */
+  }
+  table.admin-table tbody tr { transition: background 0.12s ease; cursor: pointer; }
+  table.admin-table tbody tr:hover { background: var(--glass-fill-hi); }
+
+  /* Approval Action Panel Grid */
+  .action-panel-grid {
+    display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 24px;
+  }
+
+  /* Approved / Rejected outcome pills */
+  .app-status-badge.status-approved {
+    background: rgba(74,222,128,0.18); color: #4ade80; border: 1px solid rgba(74,222,128,0.4);
+  }
+  .app-status-badge.status-rejected {
+    background: rgba(248,113,113,0.18); color: #f87171; border: 1px solid rgba(248,113,113,0.4);
+  }
+
+  /* Audit Tally Visualizer */
+  .tally-box {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-radius: 10px; background: rgba(0,0,0,0.25);
+    border: 1px solid var(--glass-border); margin-top: 10px;
+  }
+
+  /* ── Boat Register Grid Styles ── */
+  .boat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    margin-top: 10px;
+  }
+
+  .boat-card-view {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+  }
+
+  .boat-card-view:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+  }
+
+  .boat-card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--glow, #5eead4);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .boat-field-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+  }
+
+  .boat-field-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .boat-field-label {
+    color: var(--foam-dim, rgba(255, 255, 255, 0.65));
+    font-family: var(--font-data);
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+  }
+
+  .boat-field-value {
+    color: var(--foam, #ffffff);
+    font-weight: 600;
+  }
+
+  .empty-boats-msg {
+    font-size: 0.88rem;
+    color: var(--foam-dim, rgba(255, 255, 255, 0.6));
+    font-style: italic;
+    padding: 12px 0;
+  }
+
+  .app-status-badge { vertical-align: middle; }
+  #reviewContent > .app-status-badge { margin-bottom: 16px; }
+  .app-detail-section { margin-top: 16px; }
+  .app-detail-section:first-of-type { margin-top: 0; }
+
+  .app-status-badge.status-deliberation {
+    background: rgba(248,113,113,0.15); color: #fb923c; border: 1px solid rgba(251,146,60,0.4);
+  }
+</style>
+</head>
+<body>
+
+    <header class="nav-glass">
+    <a href="index.html" class="brand">
+
+        <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+        <div class="brand-text">
+            <strong>Sydney Maritime Modellers Club</strong>
+            <span>APPLICATIONS PORTAL</span>
+        </div>
+        <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
+        <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
+    </a>
+    <ul class="nav-links">
+        <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
+        <li class="nav-item"><a href="#reviews" class="nav-link">Application Review</a></li>
+        <li class="nav-item"><a href="#audit-log" class="nav-link">Committee Logs</a></li>
+    </ul>
+    </header>
+
+  <main class="container">
+    
+    <!-- Admin Workspace Header -->
+    <div class="admin-header">
+      <div class="admin-title-group">
+        <h1>Membership Applications</h1>
+      </div>
+      <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
+    </div>
+
+    <!-- Admin Quick Stats -->
+    <div class="admin-stats-bar">
+      <div class="admin-stats-row">
+        <div class="admin-stat-card glass">
+          <span class="lbl">Received</span>
+          <span class="num" id="statReceived" style="color:#60a5fa;">—</span>
+        </div>
+        <div class="admin-stat-card glass">
+          <span class="lbl">In Progress</span>
+          <span class="num" id="statInProgress" style="color:#fbbf24;">—</span>
+        </div>
+        <div class="admin-stat-card glass">
+          <span class="lbl">Awaiting Approval</span>
+          <span class="num" id="statAwaitingApproval" style="color:var(--signal);">—</span>
+        </div>
+        <div class="admin-stat-card glass">
+          <span class="lbl">Processed</span>
+          <span class="num" id="statProcessed" style="color:var(--glow);">—</span>
+        </div>
+      </div>
+      <div class="admin-stat-card glass admin-stat-card--turnaround">
+        <span class="lbl">Avg Turnaround</span>
+        <span class="num" id="statAvgTurnaround" style="color:#a78bfa;">—</span>
+      </div>
+    </div>
+
+    <!-- Main Approvals Queue Panel -->
+    <div class="panel" id="approvals">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="dot"></span>
+          <h3>Applications List</h3>
+        </div>
+      </div>
+      
+      <div class="tab-content active">
+        <div class="search-wrap">
+          <input class="search-input" type="text" placeholder="Filter pending applications by applicant name, sail #, or class...">
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Applicant</th>
+                <th>Type</th>
+                <th>Class / Boat</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th>Votes</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="appsTableBody">
+              <tr><td colspan="7"><div class="empty-state"><div class="spinner"></div> Loading applications…</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Approval Action Panel & Vote Audit Log -->
+    <div class="action-panel-grid">
+      
+      <!-- Selected Item Review Panel -->
+      <div class="panel" id="reviews">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h3 id="reviewTitle">Application Review</h3>
+          </div>
+        </div>
+        <div class="tab-content active" id="reviewContent">
+          <div class="empty-state">Select an application from the queue to review it.</div>
+        </div>
+      </div>
+
+      <!-- Committee Decision Log -->
+      <div class="panel" id="audit-log">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h3>Committee Voting Audit</h3>
+          </div>
+        </div>
+        <div class="tab-content active" id="auditContent">
+          <div class="empty-state">No application selected.</div>
+        </div>
+      </div>
+
+    </div>
+    <!-- AUDIT LOG -->
+    <div class="section-head" id="audit-log">
+        <h2>Audit Log</h2>
+        <p>Actions recorded to the AuditLog sheet.</p>
+    </div>
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <span class="dot"></span>
+                <h3>Activity</h3>
+            </div>
+            <div class="panel-toolbar">
+                <div class="audit-toggle">
+                    <button id="auditFilterMembers" class="active">Members</button>
+                    <button id="auditFilterAll">All</button>
+                </div>
+                <div class="search-wrap">
+                    <i class="nav-icon" data-lucide="search"></i>
+                    <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
+                </div>
+                <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+            </div>
+        </div>
+        <div class="tab-content active">
+            <div class="log-table-wrap">
+                <table class="log-table">
+                    <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
+                    <tbody id="auditBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
+        </div>
+    </div>
+  </main>
+
+  <footer>
+    <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+  </footer>
+  <script src="shared.js"></script>   <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
+  <script src="auditLog.js"></script>
+  <script>
+      AuditLog.init('calendar', 'Events');  // or 'all' to default to unfiltered
+  </script>
+  <script>
+    /* =========================================================
+    GOOGLE SHEETS MODULE
+    ========================================================= */
+    // config.js  (or inline in a shared include)
+    const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
+
+    // domain keys must match REGISTRY keys in Gateway.gs
+    const DOMAIN = {
+    members:   "members",
+    documents: "documents",
+    calendar:  "calendar",
+    apps:      "apps",
+    clubs:     "clubs",
+    notes:     "notes",
+    tracking:  "tracking"
+    };
+    
+
+
+    /* =========================================================
+    APPLICATIONS DATA MODULE
+    ========================================================= */
+    const HOME_DATA_API = "https://script.google.com/macros/s/AKfycbzGgNMh8KNWYquGuOoGvmrasDR5npiPoNXTouuzVeY9sRwrhDo29BVDbWGrh_FfgoieXQ/exec";
+    const APP_DETAIL_API = 'https://script.google.com/macros/s/AKfycbyWulPkIPBPaLA4f85ygVDpJUa-e3fWpY-XOYzTQ_2gF8h9EfuWinBdTiR1DtjYWSwl9g/exec';
+
+    let selectedRowId = null;
+    let allApplications = [];
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = (s === null || s === undefined) ? '' : String(s);
+      return d.innerHTML;
+    }
+
+    function voteCount(v) {
+      if (Array.isArray(v)) return v.length;
+      if (typeof v === 'string') {
+        const trimmed = v.trim();
+        return trimmed === '' ? 0 : trimmed.split(',').filter(s => s.trim() !== '').length;
+      }
+      const n = Number(v);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function countVotesRequired(status, log) {
+      if (!String(status).toLowerCase().includes('awaiting') || !log) return null;
+
+      const lines = String(log).split('\n').map(l => l.trim()).filter(Boolean);
+      const isRequestLine = l => /Approval (re-)?vote request sent/.test(l);
+
+      // find the last contiguous block of request lines
+      let end = -1;
+      for (let i = lines.length - 1; i >= 0; i--) {
+        if (isRequestLine(lines[i])) { end = i; break; }
+      }
+      if (end === -1) return null;
+
+      let start = end;
+      while (start > 0 && isRequestLine(lines[start - 1])) start--;
+
+      return end - start + 1;
+    }
+
+    function appStatusCSSClass(status) {
+      const s = String(status).toLowerCase();
+      if (s.includes('received'))     return 'status-received';
+      if (s.includes('deliberation')) return 'status-deliberation';
+      if (s.includes('progress'))     return 'status-progress';
+      if (s.includes('awaiting'))     return 'status-awaiting';
+      if (s.includes('processed'))    return 'status-processed';
+      if (s.includes('urgent'))       return 'status-urgent';
+      return 'status-received';
+    }
+
+    function processedOutcome(a) {
+      const approved = a.approved;
+
+      if (
+        approved === false ||
+        String(approved).trim().toUpperCase() === 'FALSE'
+      ) {
+        return 'Rejected';
+      }
+
+      if (
+        approved === true ||
+        String(approved).trim().toUpperCase() === 'TRUE'
+      ) {
+        return 'Approved';
+      }
+
+      return 'Processed';
+    }
+
+    function daysSince(dateStr) {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return null;
+      return (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
+    }
+
+    function statusBadge(a) {
+      const s = String(a.status || '').toLowerCase();
+      if (s.includes('processed')) {
+        const outcome = processedOutcome(a);
+        return { label: outcome, cls: outcome.toLowerCase().includes('reject') ? 'status-rejected' : 'status-approved' };
+      }
+      const age = daysSince(a.lastUpdated);
+      if (age !== null && age > 3) {
+        return { label: 'Urgent, Attention required', cls: 'status-urgent' };
+      }
+      return { label: a.status, cls: appStatusCSSClass(a.status) };
+    }
+
+    function updateStats(apps) {
+      const counts = { received: 0, progress: 0, awaiting: 0, deliberation: 0, processed: 0 };
+      apps.forEach(a => {
+        const s = String(a.status || '').toLowerCase();
+        if (s.includes('progress'))          counts.progress++;
+        else if (s.includes('deliberation')) counts.deliberation++;
+        else if (s.includes('awaiting'))     counts.awaiting++;
+        else if (s.includes('processed'))    counts.processed++;
+        else                                 counts.received++;
+      });
+      document.getElementById('statReceived').textContent         = counts.received;
+      document.getElementById('statInProgress').textContent       = counts.progress;
+      document.getElementById('statAwaitingApproval').textContent = counts.awaiting;
+      document.getElementById('statProcessed').textContent        = counts.processed;
+
+      const turnArounds = apps
+        .map(a => Number(a.turnAround))
+        .filter(n => !isNaN(n));
+      const avgTurnaround = turnArounds.length
+        ? (turnArounds.reduce((sum, n) => sum + n, 0) / turnArounds.length)
+        : null;
+      document.getElementById('statAvgTurnaround').textContent =
+        avgTurnaround === null ? '—' : `${avgTurnaround.toFixed(1)}d`;
+    }
+
+    function renderTable() {
+      const body = document.getElementById('appsTableBody');
+      updateStats(allApplications);
+      if (!allApplications.length) {
+        body.innerHTML = `<tr><td colspan="7"><div class="empty-state">No pending applications.</div></td></tr>`;
+        return;
+      }
+      body.innerHTML = allApplications.map(a => {
+        const badge = statusBadge(a);
+        return `
+        <tr data-rowid="${esc(a.rowId)}">
+          <td class="member-name">${esc(a.firstName)} ${esc(a.surname)}</td>
+          <td>${esc(a.membershipType)}</td>
+          <td>${esc(a.classOrBoat || '—')}</td>
+          <td>${esc(a.lastUpdated)}</td>
+          <td><span class="app-status-badge ${badge.cls}">${esc(badge.label)}</span></td>
+          <td><span class="votes-for">${esc(voteCount(a.votesFor))}</span> / <span class="votes-against">${esc(voteCount(a.votesAgainst))}</span></td>
+          <td><button class="btn btn-ghost review-btn" style="padding:4px 10px; font-size:11px;">${String(a.status||'').toLowerCase().includes('processed') ? 'View' : 'Review'}</button></td>
+        </tr>`;
+      }).join('');
+
+      body.querySelectorAll('tr[data-rowid]').forEach(row => {
+        row.addEventListener('click', () => openReview(row.dataset.rowid));
+      });
+    }
+
+    async function loadApplications() {
+      try {
+        allApplications = await fetchSheet(DOMAIN.apps, "Membership Applications");
+        renderTable();
+      } catch (err) {
+        console.warn('Applications API unavailable:', err.message);
+        document.getElementById('appsTableBody').innerHTML =
+          `<tr><td colspan="7"><div class="empty-state" style="color:var(--signal);"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"></i> Applications list unavailable/nError: ${err.message}</div></td></tr>`;
+      }
+    }
+
+    function renderBoatDetails(boatsData) {
+      const container = document.getElementById('boatsContainer');
+      if (!container) return;
+
+      let boats = [];
+
+      // Parse JSON string or accept raw array
+      if (typeof boatsData === 'string' && boatsData.trim().length > 0) {
+        try {
+          boats = JSON.parse(boatsData);
+        } catch (e) {
+          console.error('Failed to parse boat JSON:', e);
+          boats = [];
+        }
+      } else if (Array.isArray(boatsData)) {
+        boats = boatsData;
+      }
+
+      // Empty state
+      if (!boats || boats.length === 0) {
+        container.innerHTML = '<p class="empty-boats-msg">No boat records registered for this applicant.</p>';
+        return;
+      }
+
+      // Render grid of boat cards
+      let html = '<div class="boat-grid">';
+      boats.forEach(boat => {
+        html += `
+          <div class="boat-card-view">
+            <div class="boat-card-title">${esc(boat.boatClass || boat.class || 'Unspecified Class')}</div>
+            
+            <div class="boat-field-row">
+              <span class="boat-field-label">Model</span>
+              <span class="boat-field-value">${esc(boat.model || '—')}</span>
+            </div>
+            
+            <div class="boat-field-row">
+              <span class="boat-field-label">Sail No.</span>
+              <span class="boat-field-value">${esc(boat.sailNumber || boat.sailNo || '—')}</span>
+            </div>
+
+            <div class="boat-field-row">
+              <span class="boat-field-label">HRN</span>
+              <span class="boat-field-value">${esc(boat.hrn || '—')}</span>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      container.innerHTML = html;
+    }
+
+    async function openReview(rowId) {
+      selectedRowId = rowId;
+      const app  = allApplications.find(a => a.rowId === rowId);
+      const name = app ? `${app.firstName} ${app.surname}` : 'Application';
+
+      document.getElementById('reviewTitle').textContent = `Application Review: ${name}`;
+      document.getElementById('reviewContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
+      document.getElementById('auditContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
+
+      try {
+        const d = await fetchSheet(DOMAIN.apps, "Membership Applications", encodeURIComponent(rowId));
+        if (d.error) throw new Error(d.error);
+
+        document.getElementById('reviewTitle').textContent = `Application Review: ${d.fullName || name}`;
+
+        const badge = statusBadge(d);
+        if (badge === 'processed') console.log('raw record:', d, ' badge:', badge);
+        document.getElementById('reviewContent').innerHTML = `
+          <div class="app-status-badge ${badge.cls}">
+            ${esc(badge.label) || '—'}
+            ${d.statusClass === 'status-urgent' ? `<span class="urgent-note"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"</i> Requires attention — last updated: ${esc(d.lastUpdatedStr)}</span>` : ''}
+          </div>
+
+          <div class="app-detail-section">
+            <span class="app-detail-section-title">Personal Information</span>
+            <div class="app-detail-grid">
+              <div class="app-detail-item">
+                <span class="app-detail-label">Name</span>
+                <span class="app-detail-value">${esc(d.fullName) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Email</span>
+                <span class="app-detail-value">${esc(d.email) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Phone</span>
+                <span class="app-detail-value">${esc(d.phone) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Address</span>
+                <span class="app-detail-value">${esc(d.address) || '—'}</span>
+              </div>
+              <div class="app-detail-item full-width">
+                <span class="app-detail-label">Emergency Contact</span>
+                <span class="app-detail-value">${esc(d.emergency) || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="app-detail-section">
+            <span class="app-detail-section-title">Club Details</span>
+            <div class="app-detail-grid">
+              <div class="app-detail-item">
+                <span class="app-detail-label">Membership Type</span>
+                <span class="app-detail-value">${esc(d.type) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Current Club</span>
+                <span class="app-detail-value">${esc(d.currentClub) || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Boats Owned Section -->
+          <div class="app-detail-section">
+            <span class="app-detail-section-title">Boats Owned</span>
+            <div id="boatsContainer">
+              <!-- Dynamically populated by renderBoatDetails -->
+            </div>
+          </div>
+
+          <div class="app-detail-section">
+            <span class="app-detail-section-title">Governance &amp; Votes</span>
+            <div class="app-detail-grid">
+              <div class="app-detail-item full-width">
+                <span class="app-detail-label">Disclaimer Signed</span>
+                <span class="app-detail-value">${esc(d.disclaimer) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Nominator</span>
+                <span class="app-detail-value">${esc(d.nominator) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Seconder</span>
+                <span class="app-detail-value">${esc(d.seconder) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Nominator Comment</span>
+                <span class="app-detail-value">${esc(d.nominatorComment) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Seconder Comment</span>
+                <span class="app-detail-value">${esc(d.seconderComment) || '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Votes For</span>
+                <span class="app-detail-value votes-for">${esc(d.votesFor) ?? '—'}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Votes Against</span>
+                <span class="app-detail-value votes-against">${esc(d.votesAgainst) ?? '—'}</span>
+              </div>
+              ${d.rejectionReason ? `
+              <div class="app-detail-item full-width">
+                <span class="app-detail-label">Rejection Reason</span>
+                <span class="app-detail-value" style="color:var(--signal);">${esc(d.rejectionReason)}</span>
+              </div>` : ''}
+            </div>
+          </div>`;
+
+        // Render Boat Details into #boatsContainer
+        renderBoatDetails(d.boats);
+
+        const votesForCount     = voteCount(d.votesFor);
+        const votesAgainstCount = voteCount(d.votesAgainst);
+        const votesRequired     = countVotesRequired(d.status, d.log);
+        const votesReceived     = votesForCount + votesAgainstCount;
+
+        document.getElementById('auditContent').innerHTML = `
+          <div class="tally-box">
+            <span class="app-detail-label">
+              Votes Received: ${esc(votesReceived)}${votesRequired !== null ? ` of ${esc(votesRequired)}` : ''}
+            </span>
+            <span class="votes-for">${esc(d.votesFor)}</span>${votesAgainstCount > 0 ? ` / <span class="votes-against">${esc(d.votesAgainst)}</span>` : ''}
+          </div>
+          <div style="margin-top:14px;">
+            <span class="app-detail-label">Decision Audit Trail</span>
+            <div class="log-box" style="margin-top:6px;">${esc(d.log) || 'No activity recorded yet.'}</div>
+          </div>`;
+
+        if (window.lucide) lucide.createIcons();
+      } catch (err) {
+        document.getElementById('reviewContent').innerHTML =
+          `<div class="empty-state" style="color:var(--signal);"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"></i> Could not load application — ${esc(err.message)}</div>`;
+        document.getElementById('auditContent').innerHTML = '';
+      }
+    }
+
+    if (window.lucide) lucide.createIcons();
+    loadApplications();
+  </script>
+</body>
+</html>
