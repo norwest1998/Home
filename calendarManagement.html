@@ -1365,7 +1365,7 @@ function renderTable() {
           <input type="checkbox" class="row-check-input" data-hex="${e.HexKey}" ${selectedRows.has(e.HexKey) ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--glow);cursor:pointer;display:block;">
         </td>
         <td>${formatDate(e.Date)}</td>
-        <td>`${e.Class} ${e["Regatta Type"]}`</td>
+        <td>${e.Class} ${e["Regatta Type"]}</td>
         <td>${e.Competition || e["Event Type"] || e.Event || ""}</td>
         <td>${e.AddedStatus || e["Calendar Synced"] 
               ? `<span class="app-status-badge status-progress">In Calendar</span>` 
