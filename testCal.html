@@ -9,7 +9,7 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <!-- Link Shared Theme -->
-<link rel="stylesheet" href="testTheme.css">
+<link rel="stylesheet" href="theme.css">
 
 <style>
   /* =========================================================
@@ -625,7 +625,7 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
 <!-- Season Operations Panel (3 Columns) -->
 <div class="season-operations-panel" id="season-operations">
   <div class="panel-header">
-    <div class="panel-title-left">
+    <div class="panel-title">
       <span class="dot"></span>
       <h3>Season Operations</h3>
     </div>
@@ -691,26 +691,16 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
 
   <!-- Main Events Table Queue -->
   <div class="panel" id="queue">
-    <div class="panel-header"> 
-      <div class="panel-title-left"> 
-        <div>
-            <span class="dot"></span><h3 style="margin: 0;">Scheduled Events</h3>
-        </div>
-        <div>
-            <button class="btn btn-ghost" id="addEventBtn" style="flex-shrink: 0;"><i data-lucide="plus" size="14"></i> Event</button>
-        </div>
-      </div> 
+    <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div class="panel-title"><span class="dot"></span><h3>Scheduled Events</h3></div>
+      <button class="btn btn-ghost" id="addEventBtn" style="flex-shrink:0;"><i data-lucide="plus" size="14"></i> Add Event</button>
     </div>
-    
-    <div class="tab-content active">    
+    <div class="tab-content active">
+      
       <!-- Filter Bar -->
       <div class="filter-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
         <!-- Left: Filters -->
         <div class="filter-controls" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding-left:4px;">
-            <label for="selectAllChk" class="select-all-label" style="font-family:var(--font-data);font-size:9px;text-transform:uppercase;color:var(--glow);letter-spacing:0.06em;">Select</label>
-            <input type="checkbox" id="selectAllChk" style="width:16px;height:16px;accent-color:var(--glow);cursor:pointer;">
-          </div>          
           <select id="seasonSelect" class="season-dropdown"></select>
           <select id="monthSelect" class="season-dropdown" style="min-width:140px;"></select>
           <button class="filter-pill" id="rescheduledToggle">Rescheduled Only</button>
@@ -727,7 +717,10 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
           <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Delete selected">
             <i data-lucide="trash-2" size="15"></i>
           </button>
-
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding-left:4px;">
+            <label for="selectAllChk" class="select-all-label" style="font-family:var(--font-data);font-size:9px;text-transform:uppercase;color:var(--glow);letter-spacing:0.06em;">Select</label>
+            <input type="checkbox" id="selectAllChk" style="width:16px;height:16px;accent-color:var(--glow);cursor:pointer;">
+          </div>
         </div>
       </div>
 
@@ -818,23 +811,21 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
       <p>Actions recorded to the AuditLog sheet.</p>
   </div>
   <div class="panel">
-    <div class="panel-title-left">
-      <span class="dot"></span>
-      <h3>Activity</h3>
-    </div>
-      <div class="tab-content active">
+      <div class="panel-header">
+          <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
           <div class="panel-toolbar">
-            <div class="audit-toggle">
-                <button id="auditFilterMembers" class="active">Members</button>
-                <button id="auditFilterAll">All</button>
-            </div>
-            <div class="search-wrap">
-                <i class="nav-icon" data-lucide="search"></i>
-                <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
-            </div>
-            <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
-            </div>
+              <div class="audit-toggle">
+                  <button id="auditFilterMembers" class="active">Members</button>
+                  <button id="auditFilterAll">All</button>
+              </div>
+              <div class="search-wrap">
+                  <i class="nav-icon" data-lucide="search"></i>
+                  <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
+              </div>
+              <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
           </div>
+      </div>
+      <div class="tab-content active">
           <div class="log-table-wrap">
               <table class="log-table">
                   <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
