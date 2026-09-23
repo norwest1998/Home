@@ -1826,6 +1826,17 @@ requestBtn.addEventListener("click", async () => {
   try {
     await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "Pending " + slotHex });
     AdminLog.add({ hexCode: selectedHex, name: currentEvent?.Class, field: "Rescheduled Date", before: "", after: "Pending " + slotHex });
+    appendSheet(DOMAIN.audit, "AuditLog",{
+      hexCode: hexKey,
+      name: "",
+      detail: "Rescheduled Date",
+      before: "",
+      after: "Pending " + slotHex,
+      status: "success"
+    });
+
+
+
     logAction(`Reschedule requested for ${currentEvent?.Class} → slot ${slotHex}`);
     await loadData();
   } catch (err) {
