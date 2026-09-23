@@ -229,7 +229,7 @@
     margin-bottom: 12px;
   }
 
-  .panel-title .dot {
+  .panel-title .dot, .panel-title-left .dot {
     display: inline-block;
     width: 7px;
     height: 7px;
