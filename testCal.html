@@ -691,12 +691,12 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
 
   <!-- Main Events Table Queue -->
   <div class="panel" id="queue">
-    <div class="panel-header" style="display:flex; justify-content:space-between;">
-      <div class="panel-title">
-        <span class="dot"></span>
-        <h3>Scheduled Events</h3>
-      </div>
-      <button class="btn btn-ghost" id="addEventBtn" style="flex-shrink:0;"><i data-lucide="plus" size="14"></i> Add Event</button>
+    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;"> 
+      <div class="panel-title" style="display: flex; align-items: center;"> 
+        <span class="dot"></span> 
+        <h3 style="margin: 0;">Scheduled Events</h3> 
+      </div> 
+      <button class="btn btn-ghost" id="addEventBtn" style="flex-shrink: 0;"><i data-lucide="plus" size="14"></i> Add Event</button> 
     </div>
     <div class="tab-content active">
       
@@ -704,7 +704,10 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
       <div class="filter-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
         <!-- Left: Filters -->
         <div class="filter-controls" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;">
-          <input type="checkbox" id="selectAllChk" style="width:16px;height:16px;accent-color:var(--glow);cursor:pointer;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding-left:4px;">
+            <label for="selectAllChk" class="select-all-label" style="font-family:var(--font-data);font-size:9px;text-transform:uppercase;color:var(--glow);letter-spacing:0.06em;">Select</label>
+            <input type="checkbox" id="selectAllChk" style="width:16px;height:16px;accent-color:var(--glow);cursor:pointer;">
+          </div>          
           <select id="seasonSelect" class="season-dropdown"></select>
           <select id="monthSelect" class="season-dropdown" style="min-width:140px;"></select>
           <button class="filter-pill" id="rescheduledToggle">Rescheduled Only</button>
@@ -721,10 +724,7 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
           <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Delete selected">
             <i data-lucide="trash-2" size="15"></i>
           </button>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding-left:4px;">
-            <label for="selectAllChk" class="select-all-label" style="font-family:var(--font-data);font-size:9px;text-transform:uppercase;color:var(--glow);letter-spacing:0.06em;">Select</label>
-            
-          </div>
+
         </div>
       </div>
 
