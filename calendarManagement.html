@@ -1809,10 +1809,11 @@ btnBulkExport.addEventListener("click", () => {
 
 /* Modal Controls */
 function openEditModal(hexKey) {
+console.log("Looking for event: " + event.HexKey)
   editingHex = hexKey;
   const event = eventData.find(e => e.HexKey === hexKey);
   if (!event) return;
-console.log("Found event: " + event.hexKey)
+console.log("Found event: " + event.HexKey)
   document.getElementById("editEventName").value = event.Event || event.Competition || event["Event Type"] || "";
   document.getElementById("editEventDate").value = formatDate(event.Date).replace(/\//g, "-");
   document.getElementById("editStartTime").value = event.Start || "";
