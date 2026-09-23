@@ -2018,8 +2018,7 @@ async function loadData() {
   if (selectedEventCard) selectedEventCard.innerHTML = `<div class="section-loading"><span class="spinner"></span> Loading…</div>`;
 
   try {
-    data = await fetchSheet(DOMAIN.calendar, "Event Data");
-    eventData = data.map(normaliseApp);
+    eventData = await fetchSheet(DOMAIN.calendar, "Event Data");
     classes   = await fetchSheet(DOMAIN.members, "Classes");
 
     renderSeasonDropdown();
