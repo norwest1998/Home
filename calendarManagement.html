@@ -1508,7 +1508,7 @@ function renderSelectedEventDetails() {
       </div>
       <div class="event-detail-item">
         <span class="lbl">Event Name</span>
-        <span class="val">${event.Event || event.Competition || event["Event Type"] || event["Regatta Type"] || '—'}</span>
+        <span class="val">${event.Event || event["Regatta Type"] || '—'}</span>
       </div>
       <div class="event-detail-item">
         <span class="lbl">Time</span>
@@ -1540,7 +1540,7 @@ function renderNewEventPreview() {
       </div>
       <div class="event-detail-item">
         <span class="lbl">Event Name</span>
-        <span class="val">${selectedEvent.Event || selectedEvent.Competition || selectedEvent["Event Type"] || selectedEvent["Regatta Type"] || '—'}</span>
+        <span class="val">${selectedEvent.Event || selectedEvent["Event Type"] || selectedEvent["Regatta Type"] || '—'}</span>
       </div>
     </div>
   `;
@@ -1755,7 +1755,7 @@ async function addToCalendar(hexKey) {
   if (!event) return;
 
   const targetCalName = "Regattas - " + event.Class;
-  logAction(`Exporting "${event.Class} - ${event.Event || event.Competition || event["Event Type"]}" to ${targetCalName}...`);
+  logAction(`Exporting "${event.Class} - ${event.Event || event["Event Type"]}" to ${targetCalName}...`);
 
   try {
     const res = await fetch(SHEETS.calWebAppUrl, {
@@ -1813,8 +1813,8 @@ console.log("Looking for event: " + hexKey);
   editingHex = hexKey;
   const event = eventData.find(e => e.HexKey === hexKey);
   if (!event) return;
-console.log("Found event: " + event.HexKey  + " Event: " + event.Event + " Competition: " +  event.Competition + " Event type: " +  event["Event Type"]);
-  document.getElementById("editEventName").value = event.Event || event.Competition || event["Event Type"] || "";
+console.log("Found event: " + event.HexKey  + " Event: " + event.Event + " Event type: " +  event["Event Type"]);
+  document.getElementById("editEventName").value = event.Event || event["Event Type"] || "";
   document.getElementById("editEventDate").value = formatDate(event.Date).replace(/\//g, "-");
   document.getElementById("editStartTime").value = event.Start || "";
   document.getElementById("editFinishTime").value = event.Finish || "";
@@ -1866,7 +1866,7 @@ approveBtn.addEventListener("click", async () => {
     await appendSheet(DOMAIN.calendar, "Event Data", {
       HexKey: crypto.randomUUID(), Month: newMonth, Date: newDateFmt,
       Start: "11:00", Finish: "16:00", Emblem: event.Emblem || "",
-      Class: event.Class || "", Competition: event.Competition || event["Event Type"] || "",
+      Class: event.Class || "", 'Event Type': event["Event Type"] || "",
       Season: event.Season || ""
     });
 
