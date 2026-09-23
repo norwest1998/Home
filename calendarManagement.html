@@ -1380,9 +1380,10 @@ function renderTable() {
             <button class="icon-btn btn-resched" title="Reschedule Event" onclick="selectEvent('${e.HexKey}')">
               <i data-lucide="calendar-sync" size="15"></i>
             </button>
+            ${e.Results !== "Processed" ? `
             <button class="icon-btn btn-edit" title="Edit Event" onclick="openEditEventModal('${e.HexKey}')">
               <i data-lucide="pencil" size="15"></i>
-            </button>
+            </button>` : ""}
           </div>
         </td>
         <td class="col-actions-narrow" style="text-align:right; padding-right:10px;">
@@ -1393,7 +1394,8 @@ function renderTable() {
             <div class="row-dropdown" id="menu-${e.HexKey}" style="display:none;">
               <button onclick="addToCalendar('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="calendar-plus" size="13"></i> Add to Calendar</button>
               <button onclick="selectEvent('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="calendar-sync" size="13"></i> Reschedule</button>
-              <button onclick="openEditEventModal('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="pencil" size="13"></i> Edit</button>
+              ${e.Results !== "Processed" ? `
+              <button onclick="openEditEventModal('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="pencil" size="13"></i> Edit</button>` : ""}
             </div>
           </div>
         </td>
