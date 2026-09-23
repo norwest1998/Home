@@ -1447,28 +1447,24 @@ function getAvailableDates() {
   return openSlots.length > 0 ? openSlots : futureSaturdays;
 }
 
-function renderAvailableDates(extraDate = null) {
-  let dates = getAvailableDates();
-  const uniqueDatesMap = new Map();
-  dates.forEach(e => {
-    const dateKey = formatDate(e.Date);
-    if (!uniqueDatesMap.has(dateKey)) uniqueDatesMap.set(dateKey, e);
-  });
+function renderAvailableDates(extraSlotHex = null) {
+  let slots = getAvailableDates();
 
-  if (extraDate) {
-    const extraFmt = formatDate(extraDate);
-    if (!uniqueDatesMap.has(extraFmt)) {
-      const match = eventData.find(e => formatDate(e.Date) === extraFmt);
-      if (match) uniqueDatesMap.set(extraFmt, match);
-      else uniqueDatesMap.set(extraFmt, { Date: extraDate, Start: "11:00", Finish: "16:00", Event: "Rescheduled Target" });
+  // If there's a previously selected reschedule target, ensure it's included
+  if (extraSlotHex) {
+    const already = slots.find(e => e.HexKey === extraSlotHex);
+    if (!already) {
+      const match = eventData.find(e => e.HexKey === extraSlotHex);
+      if (match) slots = [match, ...slots];
     }
   }
 
-  const sortedDates = Array.from(uniqueDatesMap.values()).sort((a, b) => (parseLocalDate(a.Date) || 0) - (parseLocalDate(b.Date) || 0));
+  slots.sort((a, b) => (parseLocalDate(a.Date) || 0) - (parseLocalDate(b.Date) || 0));
 
-  availableDates.innerHTML = sortedDates.map(e => {
+  availableDates.innerHTML = slots.map(e => {
+    const label = e.Class || "Open";
     const title = e.Event || e.Competition || e["Event Type"] || e["Regatta Type"] || "Open Slot";
-    return `<option value="${e.Date}">${formatDate(e.Date)} (${formatTime(e.Start)}–${formatTime(e.Finish)}) - ${title}</option>`;
+    return `<option value="${e.HexKey}">${formatDate(e.Date)} | ${label} | ${formatTime(e.Start)}–${formatTime(e.Finish)} | ${title}</option>`;
   }).join("");
 
   renderNewEventPreview();
@@ -1478,22 +1474,21 @@ function selectEvent(hex) {
   selectedHex = hex;
   const selectedEvent = eventData.find(e => e.HexKey === hex);
 
-  let targetResDate = "";
+  let targetSlotHex = "";
   if (selectedEvent && selectedEvent["Rescheduled Date"]) {
-    targetResDate = selectedEvent["Rescheduled Date"].replace(/^Pending\s+/, "").trim();
+    const pendingHex = selectedEvent["Rescheduled Date"].replace(/^Pending\s+/, "").trim();
+    targetSlotHex = pendingHex;
   }
 
-  renderAvailableDates(targetResDate);
-  if (targetResDate) availableDates.value = targetResDate;
+  renderAvailableDates(targetSlotHex);
+  if (targetSlotHex) availableDates.value = targetSlotHex;
 
   renderTable();
   renderSelectedEventDetails();
   renderNewEventPreview();
 
   const panel = document.getElementById("reschedulePanel");
-  if (panel) {
-    panel.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+  if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderSelectedEventDetails() {
@@ -1531,10 +1526,11 @@ function renderSelectedEventDetails() {
 function renderNewEventPreview() {
   const container = document.getElementById("newEventPreviewCard");
   const selectedEvent = eventData.find(e => e.HexKey === selectedHex);
-  const targetDateStr = availableDates.value;
+  const slotHex = availableDates.value;
+  const slot = eventData.find(e => e.HexKey === slotHex);
 
-  if (!selectedEvent || !targetDateStr) {
-    container.innerHTML = `<p style="color: var(--foam-dim); margin: 0; font-style: italic;">Select an event and date above to preview.</p>`;
+  if (!selectedEvent || !slot) {
+    container.innerHTML = `<p style="color: var(--foam-dim); margin: 0; font-style: italic;">Select an event and slot above to preview.</p>`;
     return;
   }
 
@@ -1542,15 +1538,19 @@ function renderNewEventPreview() {
     <div class="event-details-grid">
       <div class="event-detail-item">
         <span class="lbl">Rescheduled Date</span>
-        <span class="val" style="color: var(--glow);">${formatDate(targetDateStr)}</span>
+        <span class="val" style="color: var(--glow);">${formatDate(slot.Date)}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Time Slot</span>
+        <span class="val">${formatTime(slot.Start)}–${formatTime(slot.Finish)}</span>
       </div>
       <div class="event-detail-item">
         <span class="lbl">Class</span>
         <span class="val">${selectedEvent.Class || '—'}</span>
       </div>
       <div class="event-detail-item">
-        <span class="lbl">Event Name</span>
-        <span class="val">${selectedEvent.Event || selectedEvent["Event Type"] || selectedEvent["Regatta Type"] || '—'}</span>
+        <span class="lbl">Event</span>
+        <span class="val">${selectedEvent.Event || selectedEvent.Competition || selectedEvent["Event Type"] || '—'}</span>
       </div>
     </div>
   `;
@@ -1820,15 +1820,15 @@ btnBulkExport.addEventListener("click", () => {
 /* --- Request Reschedule --- */
 requestBtn.addEventListener("click", async () => {
   if (!selectedHex) { logAction("No event selected."); return; }
-  const newDate = availableDates.value;
-  if (!newDate) { logAction("No available date selected."); return; }
+  const slotHex = availableDates.value;
+  if (!slotHex) { logAction("No slot selected."); return; }
 
   const currentEvent = eventData.find(e => e.HexKey === selectedHex);
   requestBtn.disabled = true;
   try {
-    await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "Pending " + newDate });
-    AdminLog.add({ hexCode: selectedHex, name: currentEvent ? currentEvent.Class : selectedHex, field: "Rescheduled Date", before: "", after: "Pending " + newDate });
-    logAction(`Reschedule requested for ${currentEvent ? currentEvent.Class : selectedHex} → ${formatDate(newDate)}`);
+    await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "Pending " + slotHex });
+    AdminLog.add({ hexCode: selectedHex, name: currentEvent?.Class, field: "Rescheduled Date", before: "", after: "Pending " + slotHex });
+    logAction(`Reschedule requested for ${currentEvent?.Class} → slot ${slotHex}`);
     await loadData();
   } catch (err) {
     logAction(`Error: ${err.message}`);
@@ -1846,22 +1846,29 @@ approveBtn.addEventListener("click", async () => {
     return;
   }
 
+  const slotHex = event["Rescheduled Date"].replace("Pending ", "").trim();
+  const slot = eventData.find(e => e.HexKey === slotHex);
+  if (!slot) { logAction("Target slot not found."); return; }
+
   approveBtn.disabled = true;
   try {
-    const newDate = event["Rescheduled Date"].replace("Pending ", "");
-    const d = parseLocalDate(newDate);
+    const d = parseLocalDate(slot.Date);
     const newMonth = d ? d.toLocaleString("en-AU", { month: "short" }) : "";
-    const newDateFmt = formatDate(newDate);
 
     await appendSheet(DOMAIN.calendar, "Event Data", {
-      HexKey: crypto.randomUUID(), Month: newMonth, Date: newDateFmt,
-      Start: "11:00", Finish: "16:00", Emblem: event.Emblem || "",
-      Class: event.Class || "", 'Event Type': event["Event Type"] || "",
+      HexKey: crypto.randomUUID(),
+      Month: newMonth,
+      Date: slot.Date,
+      Start: slot.Start,
+      Finish: slot.Finish,
+      Emblem: event.Emblem || "",
+      Class: event.Class || "",
+      Competition: event.Competition || event["Event Type"] || "",
       Season: event.Season || ""
     });
 
     await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "", Results: "Rescheduled" });
-    logAction(`Reschedule approved for ${event.Class} → ${newDateFmt}`);
+    logAction(`Reschedule approved: ${event.Class} → ${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`);
     await loadData();
   } catch (err) {
     logAction(`Error: ${err.message}`);
