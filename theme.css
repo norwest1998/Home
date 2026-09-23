@@ -223,10 +223,11 @@
     display: flex; 
     flex-direction: column; 
     gap: 4px; 
-    align-items: center;
   }
  
   .panel-title {
+    display: flex; 
+    align-items: center;
     gap: 10px;
     margin-bottom: 16px;
   }
