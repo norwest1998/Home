@@ -225,12 +225,10 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-  }
-  .panel-title-left {
-    display: flex;
-    align-items: center;
     gap: 8px;
+    margin-bottom: 12px;
   }
+
   .panel-title .dot {
     width: 7px;
     height: 7px;
