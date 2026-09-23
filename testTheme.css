@@ -221,8 +221,9 @@
     padding: 20px 24px 0;
     border-bottom: 1px solid var(--glass-border);
     display: flex; 
-    flex-direction: column; 
-    gap: 4px; 
+    flex-direction: row; 
+    justify-content: space-between;
+    gap: 16px; 
   }
  
   .panel-title {
@@ -230,7 +231,6 @@
     margin-bottom: 16px;
     display:flex;
     align-items:center;
-    justify-content: space-between;
   }
  
   .panel-title .dot {
