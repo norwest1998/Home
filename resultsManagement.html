@@ -582,12 +582,23 @@ async function loadOverallSheets() {
 }
 
 async function loadAvgRequests() {
-    // Placeholder — replace with real fetch when the sheet exists
-    const res = fetchSheet(DOMAIN.results, "AvgScrReq")
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    allAvgRequests = data.values;
-
+    try {
+        const rows = await fetchSheet(DOMAIN.results, "AvgScoreRequests");
+        allAvgRequests = rows.map(r => ({
+            hexKey:     r["HexCode"]       || "",
+            memberName: r["Member"]        || "",
+            raceClass:  r["Class"]         || "",
+            raceType:   r["Regatta Type"]  || "",
+            raceDate:   r["Race Date"]     || "",
+            reason:     r["Reason"]        || "",
+            submitted:  r["Submitted"]     || "",
+            status:     (r["Status"] || "pending").toLowerCase(),
+            decidedBy:  r["Decided By"]    || ""
+        }));
+    } catch (err) {
+        // Sheet doesn't exist yet — silently default to empty
+        allAvgRequests = [];
+    }
     renderAvgRequests();
     renderStats();
 }
