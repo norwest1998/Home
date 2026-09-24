@@ -1553,15 +1553,13 @@
             <div class="panel-header">
               <div class="panel-title">
                 <span class="dot"></span>
-                <h3>Members &amp; Applications</h3>
+                <h3>Requests &amp; Applications</h3>
               </div>
               <div class="tab-row-wrap">
                 <div class="tab-row">
-                  <button class="tab active" data-tab="members">Members List</button>
-                  <button class="tab" data-tab="applications">Applications</button>
+                  <button class="tab active" data-tab="requests">Members List</button>
+                  <button class="tab" data-tab="avgScoreForm">Applications</button>
                 </div>
-                <button class="add-app-pill" id="addApplicationPill" type="button" title="Add Application">
-                  <span>+</span> Add Application
                 </button>
               </div>
             </div>
@@ -3207,6 +3205,34 @@
   }
   
   function renderRequests() {
+      const list     = applyRequestFilters();
+      const container = document.getElementById('requestList');
+      const countEl  = document.getElementById('requestCount');
+
+      countEl.innerHTML = `Showing <strong>${list.length}</strong> of <strong>${allRequests.length}</strong> requests`;
+
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state">No requests match the current filters.</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map((m, idx) => {
+        const flags = [
+          m.status    ? `<span class="committee-yes">Status</span>`    : '',
+        ].filter(Boolean).join(' ');
+
+        return `
+          <div class="app-row" data-idx="${idx}" style="cursor:pointer;">
+            <div>
+              <div class="app-name">${esc(m.name)}</div>
+              <div class="app-meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;">
+                <span class="badge ${requestBadgeClass(m.status)}">${esc(m.status)}</span>
+                ${flags}
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="member-chevron"></i>
+          </div>`;
+      }).join('');
 
   }
 
