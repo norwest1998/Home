@@ -1541,115 +1541,125 @@
           <span class="tag">Registry Module</span>
         </div>
 
-        <!-- Placeholder 3: Add Race Result App --> 
-        <div class="tile glass" id="average-score-request">
-          <div class="tile-title">
-            <i data-lucide="calculator" color="#257fb6"></i>
-            <h3>Average Score Request</h3>
+        <!-- Placeholder 3: Request Applications Panel Component --> 
+        <div class="tile glass" id="request-applications-panel">
+          <!-- Common Header with Tabs -->
+          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.1)); padding-bottom: 12px; margin-bottom: 16px;">
+            <div class="tile-title" style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="clipboard-list" color="#257fb6"></i>
+              <h3 style="margin: 0;">Request applications</h3>
+            </div>
+            
+            <!-- Tab Controls -->
+            <div class="tab-controls" style="display: flex; gap: 8px;">
+              <button type="button" id="tab-btn-list" class="tab-btn active" onclick="switchReqTab('list')" style="padding: 6px 14px; border-radius: 6px; cursor: pointer; border: 1px solid var(--glass-border); background: var(--glow, #257fb6); color: #fff; font-weight: 500;">Request List</button>
+              <button type="button" id="tab-btn-app" class="tab-btn" onclick="switchReqTab('app')" style="padding: 6px 14px; border-radius: 6px; cursor: pointer; border: 1px solid var(--glass-border); background: transparent; color: var(--foam, #ccc); font-weight: 500;">Applications</button>
+            </div>
           </div>
-          <p class="subh">Request average scoring for a missed club regatta due to an ARYA Ranking event clash.</p>
 
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <span class="dot"></span>
-                <h3>Requests &amp; Applications</h3>
-              </div>
-              <div class="tab-row-wrap">
-                <div class="tab-row">
-                  <button class="tab active" data-tab="requests">Members List</button>
-                  <button class="tab" data-tab="avgScoreForm">Applications</button>
-                </div>
-                </button>
-              </div>
+          <!-- TAB 1: Request List (Active by Default) -->
+          <div id="tab-content-list" class="tab-content" style="display: block;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <p class="subh" style="margin:0;">Submitted average score requests and current statuses.</p>
+              <button type="button" onclick="loadRequestList()" style="background: transparent; border: none; color: var(--glow, #257fb6); cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px;">
+                <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Refresh
+              </button>
             </div>
-              
-            <!-- Members tab -->
-            <div id="tab-requests" class="tab-content active">
-              <div class="search-wrap">
-                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <input class="search-input" type="text" id="requestSearch"
-                      placeholder="Search by name…" autocomplete="off">
-              </div>
 
-              <!-- Filters -->
-              <div class="app-filters" id="requestFilters">
-                <select class="request-filter-select" id="filterRequestStatus">
-                  <option value="">All Types</option>
-                  <option value="received">Received</option>
-                  <option value="pending">In Progress</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
+            <div id="request-list-table-container" style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--glass-border); color: var(--glow, #257fb6);">
+                    <th style="padding: 10px;">ID</th>
+                    <th style="padding: 10px;">Member</th>
+                    <th style="padding: 10px;">Event Name</th>
+                    <th style="padding: 10px;">Missed Date</th>
+                    <th style="padding: 10px;">Status</th>
+                    <th style="padding: 10px; text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="request-list-tbody">
+                  <tr>
+                    <td colspan="6" style="padding: 16px; text-align: center; color: var(--foam);">Loading requests...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 2: Applications (Form) -->
+          <div id="tab-content-app" class="tab-content" style="display: none;">
+            <p class="subh">Request average scoring for a missed club regatta due to an ARYA Ranking event clash.</p>
+
+            <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:16px;">
+              <!-- Member Dropdown populated from allMembers -->
+              <div class="form-group">
+                <label for="reqMemberName" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px;">Member Name</label>
+                <select id="reqMemberName" name="memberName" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border); color:var(--foam, #fff);">
+                  <option value="">Select active member...</option>
                 </select>
-                <button class="member-filter-btn" data-filter="approved">Approved</button>
-                <button class="member-filter-btn" data-filter="rejected">Rejected</button>
-                <button class="member-filter-btn" data-filter="pending">Pending</button>
+                <input type="hidden" id="reqMemberEmail" name="memberEmail">
               </div>
 
-              <div class="count-chip" id="requestCount"></div>
-              <div class="app-list" id="requestList">
-                <div class="empty-state"><div class="spinner"></div><div>Loading requests…</div></div>
+              <!-- Missed Event Date -->
+              <div class="form-group">
+                <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px;">Missed Event Date</label>
+                <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border); color:var(--foam, #fff);">
               </div>
-            </div>
 
-            <div id="tab-form" class="tab-content active"></div>
-              <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:16px;">
-                
-                <!-- Member Selection Dropdown -->
+              <!-- Event Class & Type -->
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                 <div class="form-group">
-                  <label for="reqMemberName" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Member Name</label>
-                  <select id="reqMemberName" name="memberName" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
-                    <option value="">Loading active members...</option>
-                  </select>
-                  <input type="hidden" id="reqMemberEmail" name="memberEmail">
-                </div>
-
-                <!-- Event Date -->
-                <div class="form-group">
-                  <label for="reqEventDate" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Missed Event Date</label>
-                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
-                </div>
-
-                <!-- Event Name: Class + Regatta Type -->
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                  <div class="form-group">
-                    <label for="reqBoatClass" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Class</label>
-                    <select id="reqBoatClass" name="boatClass" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
-                      <option value="IOM">IOM</option>
-                      <option value="DF95">DF95</option>
-                      <option value="DF65">DF65</option>
-                      <option value="Soling">Soling</option>
-                      <option value="General Handicap">General Handicap</option>
-                    </select>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="reqRegattaType" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Regatta Type</label>
-                    <select id="reqRegattaType" name="regattaType" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
-                      <option value="Championship">Championship</option>
-                      <option value="Scratch">Scratch</option>
-                      <option value="Handicap">Handicap</option>
-                      <option value="Sprint Series">Sprint Series</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Conflicting Regatta Dropdown -->
-                <div class="form-group">
-                  <label for="reqConflictingRegatta" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Conflicting ARYA Event Name</label>
-                  <select id="reqConflictingRegatta" name="conflictingRegatta" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
-                    <option value="">Loading ARYA Regional Conflicts...</option>
+                  <label for="reqBoatClass" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px;">Class</label>
+                  <select id="reqBoatClass" name="boatClass" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border); color:var(--foam, #fff);">
+                    <option value="IOM">IOM</option>
+                    <option value="DF95">DF95</option>
+                    <option value="DF65">DF65</option>
+                    <option value="Soling">Soling</option>
+                    <option value="General Handicap">General Handicap</option>
                   </select>
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="margin-top:8px; justify-content:center;">Submit Request</button>
-                <div id="formStatus" style="font-size:12px; margin-top:6px; text-align:center;"></div>
-              </form>
+                <div class="form-group">
+                  <label for="reqRegattaType" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px;">Regatta Type</label>
+                  <select id="reqRegattaType" name="regattaType" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border); color:var(--foam, #fff);">
+                    <option value="Championship">Championship</option>
+                    <option value="Scratch">Scratch</option>
+                    <option value="Handicap">Handicap</option>
+                    <option value="Sprint Series">Sprint Series</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Conflicting Regatta -->
+              <div class="form-group">
+                <label for="reqConflictingRegatta" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px;">Conflicting ARYA Event Name</label>
+                <input type="text" id="reqConflictingRegatta" name="conflictingRegatta" placeholder="e.g. 2026 NSW IOM State Championship" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border); color:var(--foam, #fff);">
+              </div>
+
+              <button type="submit" id="btnSubmitApp" class="btn btn-primary" style="margin-top:8px; padding: 10px; justify-content:center; cursor:pointer;">Submit Request</button>
+              <div id="formStatus" style="font-size:12px; margin-top:6px; text-align:center;"></div>
+            </form>
           </div>
           <span class="tag">Average Points Request Module</span>
+        </div>
+
+        <!-- Modal for Viewing Request Details -->
+        <div id="reqDetailModal" style="display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; padding: 20px;">
+          <div class="glass" style="width: 100%; max-width: 520px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-surface, #1e293b); padding: 24px; color: var(--foam, #fff); position: relative;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; margin-bottom: 16px;">
+              <h3 id="modalReqTitle" style="margin:0; font-size: 18px;">Request Details</h3>
+              <button type="button" onclick="closeReqModal()" style="background:transparent; border:none; color:var(--foam); font-size:20px; cursor:pointer;">&times;</button>
+            </div>
+
+            <div id="modalReqBody" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
+              <!-- Populated dynamically -->
+            </div>
+
+            <div style="margin-top: 20px; text-align: right;">
+              <button type="button" onclick="closeReqModal()" style="padding: 8px 16px; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--glass-fill); color: var(--foam); cursor: pointer;">Close</button>
+            </div>
+          </div>
         </div>
 
         <!-- Placeholder 4: Reschedule Event App 
@@ -3157,124 +3167,197 @@
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="memberStatsModal.js"></script>
-  <script>
-  // Dynamic initialization of dropdowns on load
-  let allRequests = [];
+<script>
+  let rawRequestsData = [];
 
-  async function loadAvgScrReq() {
-      showSpinner('reqList');
-      try {
-        const res  = await fetch(`${HOME_DATA_API}?action=reqList`);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        allRequests = data.requests;
-        renderRequests();
-      } catch (err) {
-        console.warn('Requests API unavailable:', err.message);
-        showError('requestList', 'Request list temporarily unavailable');
-        allRequests = [];
-      }
+  document.addEventListener("DOMContentLoaded", function() {
+    initActiveMembersDropdown();
+    loadRequestList();
+  });
+
+  // Tab Switch Logic
+  function switchReqTab(tab) {
+    const listTab = document.getElementById("tab-content-list");
+    const appTab = document.getElementById("tab-content-app");
+    const btnList = document.getElementById("tab-btn-list");
+    const btnApp = document.getElementById("tab-btn-app");
+
+    if (tab === 'list') {
+      listTab.style.display = "block";
+      appTab.style.display = "none";
+      btnList.style.background = "var(--glow, #257fb6)";
+      btnList.style.color = "#fff";
+      btnApp.style.background = "transparent";
+      btnApp.style.color = "var(--foam, #ccc)";
+    } else {
+      listTab.style.display = "none";
+      appTab.style.display = "block";
+      btnApp.style.background = "var(--glow, #257fb6)";
+      btnApp.style.color = "#fff";
+      btnList.style.background = "transparent";
+      btnList.style.color = "var(--foam, #ccc)";
     }
-
-  let activeMemberData = [];
-
-  function getActiveMembers() {
-    const filtersArray = [{ key: "Active", value: true }];
-    
-    // Query the Members domain using the shared search utility
-    const activeMembers = searchSheet(DOMAIN.members, "Members", filtersArray);
-
-    if (!activeMembers || !Array.isArray(activeMembers)) {
-      return [];
-    }
-
-    // Map search results into the payload expected by the frontend UI
-    return activeMembers.map(member => ({
-      name: member.Name || member.memberName || "",
-      email: member.Email || member.email || ""
-    }));
   }
 
-  function populateMembers(members) {
-    activeMemberData = members;
+  // Active Members derivation from global variable `allMembers`
+  function initActiveMembersDropdown() {
     const select = document.getElementById("reqMemberName");
-    select.innerHTML = '<option value="">-- Select Member --</option>';
-    members.forEach(m => {
-      select.innerHTML += `<option value="${m.name}">${m.name}</option>`;
-    });
-  }
-  
-  function renderRequests() {
-      const list     = applyRequestFilters();
-      const container = document.getElementById('requestList');
-      const countEl  = document.getElementById('requestCount');
+    select.innerHTML = '<option value="">Select active member...</option>';
 
-      countEl.innerHTML = `Showing <strong>${list.length}</strong> of <strong>${allRequests.length}</strong> requests`;
-
-      if (!list.length) {
-        container.innerHTML = `<div class="empty-state">No requests match the current filters.</div>`;
-        return;
-      }
-
-      container.innerHTML = list.map((m, idx) => {
-        const flags = [
-          m.status    ? `<span class="committee-yes">Status</span>`    : '',
-        ].filter(Boolean).join(' ');
-
-        return `
-          <div class="app-row" data-idx="${idx}" style="cursor:pointer;">
-            <div>
-              <div class="app-name">${esc(m.name)}</div>
-              <div class="app-meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;">
-                <span class="badge ${requestBadgeClass(m.status)}">${esc(m.status)}</span>
-                ${flags}
-              </div>
-            </div>
-            <i data-lucide="chevron-right" class="member-chevron"></i>
-          </div>`;
-      }).join('');
-
+    if (typeof allMembers !== 'undefined' && Array.isArray(allMembers)) {
+      const activeMembers = allMembers.filter(m => m.Active === true || m.Active === "true" || m.Active === "TRUE");
+      
+      activeMembers.forEach(m => {
+        const name = m.Name || m.memberName || m.memberNameFull || "";
+        const email = m.Email || m.email || "";
+        if (name) {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          opt.dataset.email = email;
+          select.appendChild(opt);
+        }
+      });
+    }
   }
 
   document.getElementById("reqMemberName").addEventListener("change", function(e) {
-    const selected = activeMemberData.find(m => m.name === e.target.value);
-    document.getElementById("reqMemberEmail").value = selected ? selected.email : "";
+    const selectedOpt = e.target.options[e.target.selectedIndex];
+    document.getElementById("reqMemberEmail").value = selectedOpt.dataset.email || "";
   });
 
-  function populateConflicts(conflicts) {
-    const select = document.getElementById("reqConflictingRegatta");
-    select.innerHTML = '<option value="">-- Select Conflicting ARYA Event --</option>';
-    conflicts.forEach(c => {
-      select.innerHTML += `<option value="${c}">${c}</option>`;
-    });
+  // Fetch and display request list using fetchSheet
+  async function loadRequestList() {
+    const tbody = document.getElementById("request-list-tbody");
+    tbody.innerHTML = '<tr><td colspan="6" style="padding: 16px; text-align: center; color: var(--foam);">Loading requests...</td></tr>';
+
+    try {
+      if (typeof fetchSheet === 'function') {
+        rawRequestsData = await fetchSheet("calendar", "AvgScrReq");
+      } else {
+        rawRequestsData = [];
+      }
+
+      renderRequestTable(rawRequestsData);
+    } catch (err) {
+      console.error("Error fetching AvgScrReq sheet:", err);
+      tbody.innerHTML = `<tr><td colspan="6" style="padding: 16px; text-align: center; color: var(--signal, #ef4444);">Failed to load requests: ${err.message}</td></tr>`;
+    }
   }
 
-  document.getElementById("avgScoreForm").addEventListener("submit", function(e) {
+  function renderRequestTable(data) {
+    const tbody = document.getElementById("request-list-tbody");
+    tbody.innerHTML = "";
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="padding: 16px; text-align: center; color: var(--foam);">No requests found.</td></tr>';
+      return;
+    }
+
+    data.forEach((item, idx) => {
+      const tr = document.createElement("tr");
+      tr.style.borderBottom = "1px solid var(--glass-border)";
+
+      const status = item.Status || item.status || "Received";
+      const statusBg = status === "Approved" ? "rgba(74, 222, 128, 0.2)" : status === "Rejected" ? "rgba(239, 68, 68, 0.2)" : "rgba(234, 179, 8, 0.2)";
+      const statusColor = status === "Approved" ? "#4ade80" : status === "Rejected" ? "#ef4444" : "#eab308";
+
+      tr.innerHTML = `
+        <td style="padding: 10px; font-weight: 600;">${item["Request ID"] || item.requestId || `REQ-${idx+1}`}</td>
+        <td style="padding: 10px;">${item["Member Name"] || item.memberName || "-"}</td>
+        <td style="padding: 10px;">${item["Event Name"] || item.eventName || "-"}</td>
+        <td style="padding: 10px;">${item["Event Date"] || item.eventDate || "-"}</td>
+        <td style="padding: 10px;">
+          <span style="padding: 3px 8px; border-radius: 12px; font-size: 12px; background: ${statusBg}; color: ${statusColor};">
+            ${status}
+          </span>
+        </td>
+        <td style="padding: 10px; text-align: right;">
+          <button type="button" onclick="openReqModal(${idx})" style="padding: 4px 10px; border-radius: 4px; border: 1px solid var(--glass-border); background: var(--glass-fill); color: var(--foam); cursor: pointer; font-size: 12px;">View</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+    
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // Modal displaying request details
+  function openReqModal(index) {
+    const item = rawRequestsData[index];
+    if (!item) return;
+
+    document.getElementById("modalReqTitle").textContent = `Request Details: ${item["Request ID"] || item.requestId || ''}`;
+    
+    const body = document.getElementById("modalReqBody");
+    body.innerHTML = `
+      <div><strong style="color:var(--glow);">Member Name:</strong><br>${item["Member Name"] || item.memberName || "-"}</div>
+      <div><strong style="color:var(--glow);">Member Email:</strong><br>${item["Member Email"] || item.memberEmail || "-"}</div>
+      <div><strong style="color:var(--glow);">Missed Event Date:</strong><br>${item["Event Date"] || item.eventDate || "-"}</div>
+      <div><strong style="color:var(--glow);">Missed Event:</strong><br>${item["Event Name"] || item.eventName || "-"}</div>
+      <div style="grid-column: span 2;"><strong style="color:var(--glow);">Conflicting ARYA Regatta:</strong><br>${item["Conflicting Regatta"] || item.conflictingRegatta || "-"}</div>
+      <div><strong style="color:var(--glow);">Status:</strong><br>${item["Status"] || item.status || "Received"}</div>
+      <div><strong style="color:var(--glow);">Decision Date:</strong><br>${item["Decision Date"] || item.decisionDate || "-"}</div>
+      <div><strong style="color:var(--glow);">Decision By:</strong><br>${item["Decision By"] || item.decisionBy || "-"}</div>
+      <div style="grid-column: span 2;"><strong style="color:var(--glow);">Rejection Reason:</strong><br>${item["Rejected Reason"] || item.rejectedReason || "N/A"}</div>
+    `;
+
+    document.getElementById("reqDetailModal").style.display = "flex";
+  }
+
+  function closeReqModal() {
+    document.getElementById("reqDetailModal").style.display = "none";
+  }
+
+  // Form Submit Handler
+  document.getElementById("avgScoreForm").addEventListener("submit", async function(e) {
     e.preventDefault();
     const statusDiv = document.getElementById("formStatus");
-    statusDiv.style.color = "var(--glow)";
-    statusDiv.innerHTML = "Submitting request...";
+    const submitBtn = document.getElementById("btnSubmitApp");
 
-    const formData = {
+    statusDiv.style.color = "var(--glow, #257fb6)";
+    statusDiv.innerHTML = "Submitting application...";
+    submitBtn.disabled = true;
+
+    const payload = {
+      requestId: "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
+      timestamp: new Date().toISOString(),
       memberName: document.getElementById("reqMemberName").value,
       memberEmail: document.getElementById("reqMemberEmail").value,
       eventDate: document.getElementById("reqEventDate").value,
       boatClass: document.getElementById("reqBoatClass").value,
       regattaType: document.getElementById("reqRegattaType").value,
-      conflictingRegatta: document.getElementById("reqConflictingRegatta").value
+      eventName: document.getElementById("reqBoatClass").value + " " + document.getElementById("reqRegattaType").value,
+      conflictingRegatta: document.getElementById("reqConflictingRegatta").value,
+      status: "Received"
     };
 
     try {
-      submitAverageScoreRequest(formData);
+      // Execute post/save action if defined or call backend interface
+      if (typeof submitAverageScoreRequest === 'function') {
+        await submitAverageScoreRequest(payload);
+      }
+
       statusDiv.style.color = "#4ade80";
-      statusDiv.innerHTML = `Request submitted successfully! Reference ID: ${res.requestId}`;
-      document.getElementById("avgScoreForm").reset();
-    } catch (e) 
-    {
-      statusDiv.style.color = "var(--signal)";
-      statusDiv.innerHTML = `Error: ${err.message}`;
+      statusDiv.innerHTML = "Submitted successfully! Returning to list...";
+
+      setTimeout(() => {
+        document.getElementById("avgScoreForm").reset();
+        statusDiv.innerHTML = "";
+        submitBtn.disabled = false;
+        
+        // Return focus to Request List tab & reload data
+        switchReqTab('list');
+        loadRequestList();
+      }, 1200);
+
+    } catch (err) {
+      console.error("Submission error:", err);
+      statusDiv.style.color = "var(--signal, #ef4444)";
+      statusDiv.innerHTML = "Error submitting application: " + err.message;
+      submitBtn.disabled = false;
     }
   });
-</script>
+</script
 </body>
 </html>
