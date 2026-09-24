@@ -67,7 +67,7 @@ const AuditLog = {
             const uid = `al${i}`;
             return `
             <tr class="${isError ? 'audit-error' : ''}">
-                <td style="white-space:nowrap;">${fmtTime(e.timestamp)}</td>
+                <td style="white-space:nowrap;">${e.timestamp ? new Date(e.timestamp).toISOString().slice(0,10).replace(/-/g,'/') : '—'}</td>
                 <td>${escapeHtml(e.memberName)}</td>
                 <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(e.domain)}</td>
                 <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(e.sheet)}</td>

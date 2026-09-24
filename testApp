@@ -417,7 +417,7 @@
           <td class="member-name">${esc(a.firstName)} ${esc(a.surname)}</td>
           <td>${esc(a.membershipType)}</td>
           <td>${esc(a.classOrBoat || '—')}</td>
-          <td>${esc(a.lastUpdated)}</td>
+          <td>${a.lastUpdated ? new Date(a.lastUpdated).toISOString().slice(0,10).replace(/-/g,'/') : '—'}</td>
           <td><span class="app-status-badge ${badge.cls}">${esc(badge.label)}</span></td>
           <td><span class="votes-for">${esc(voteCount(a.votesFor))}</span> / <span class="votes-against">${esc(voteCount(a.votesAgainst))}</span></td>
           <td><button class="btn btn-ghost review-btn" style="padding:4px 10px; font-size:11px;">${String(a.status||'').toLowerCase().includes('processed') ? 'View' : 'Review'}</button></td>
