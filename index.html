@@ -3105,6 +3105,8 @@
       loadMembers();    
       loadApplications();
       loadBoats();
+      getActiveMembers();
+      getConflictingRegattas()
     });
 
   </script>
@@ -3112,10 +3114,6 @@
   <script src="memberStatsModal.js"></script>
   <script>
   // Dynamic initialization of dropdowns on load
-  document.addEventListener("DOMContentLoaded", function() {
-    google.script.run.withSuccessHandler(populateMembers).getActiveMembers();
-    google.script.run.withSuccessHandler(populateConflicts).getConflictingRegattas();
-  });
 
   let activeMemberData = [];
 
@@ -3156,17 +3154,16 @@
       conflictingRegatta: document.getElementById("reqConflictingRegatta").value
     };
 
-    google.script.run
-      .withSuccessHandler(res => {
-        statusDiv.style.color = "#4ade80";
-        statusDiv.innerHTML = `Request submitted successfully! Reference ID: ${res.requestId}`;
-        document.getElementById("avgScoreForm").reset();
-      })
-      .withFailureHandler(err => {
-        statusDiv.style.color = "var(--signal)";
-        statusDiv.innerHTML = `Error: ${err.message}`;
-      })
-      .submitAverageScoreRequest(formData);
+    try {
+      submitAverageScoreRequest(formData);
+      statusDiv.style.color = "#4ade80";
+      statusDiv.innerHTML = `Request submitted successfully! Reference ID: ${res.requestId}`;
+      document.getElementById("avgScoreForm").reset();
+    } catch (e) 
+    {
+      statusDiv.style.color = "var(--signal)";
+      statusDiv.innerHTML = `Error: ${err.message}`;
+    }
   });
 </script>
 </body>
