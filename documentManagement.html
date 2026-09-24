@@ -458,7 +458,6 @@ async function loadDocs() {
     DOCS = await fetchSheet(DOMAIN.documents, "Documents");
     renderLibraryTree();
     renderGrid();
-    await loadAuditLog();
     if (window.lucide) lucide.createIcons();
 }
 
@@ -900,7 +899,6 @@ async function logDocumentAction(fileId, fileName, action) {
             
             
         });
-        await loadAuditLog();
     } catch (err) {
         console.error("Failed to log document action:", err);
     }
