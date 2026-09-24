@@ -3105,8 +3105,7 @@
       loadMembers();    
       loadApplications();
       loadBoats();
-      getActiveMembers();
-      getConflictingRegattas()
+      loadAvgScrReq()
     });
 
   </script>
@@ -3114,8 +3113,41 @@
   <script src="memberStatsModal.js"></script>
   <script>
   // Dynamic initialization of dropdowns on load
+  let allRequests = [];
+
+  async function loadAvgScrReq() {
+      showSpinner('reqList');
+      try {
+        const res  = await fetch(`${HOME_DATA_API}?action=reqList`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        allRequests = data.requests;
+        renderRequests();
+      } catch (err) {
+        console.warn('Requests API unavailable:', err.message);
+        showError('requestList', 'Request list temporarily unavailable');
+        allRequests = [];
+      }
+    }
 
   let activeMemberData = [];
+
+  function getActiveMembers() {
+    const filtersArray = [{ key: "Active", value: true }];
+    
+    // Query the Members domain using the shared search utility
+    const activeMembers = searchSheet(DOMAIN.members, "Members", filtersArray);
+
+    if (!activeMembers || !Array.isArray(activeMembers)) {
+      return [];
+    }
+
+    // Map search results into the payload expected by the frontend UI
+    return activeMembers.map(member => ({
+      name: member.Name || member.memberName || "",
+      email: member.Email || member.email || ""
+    }));
+  }
 
   function populateMembers(members) {
     activeMemberData = members;
