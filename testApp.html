@@ -643,11 +643,11 @@
             <span class="app-detail-label">
               Votes Received: ${esc(votesReceived)}${votesRequired !== null ? ` of ${esc(votesRequired)}` : ''}
             </span>
-            <span class="votes-for">${esc(d.votesFor)}</span>${votesAgainstCount > 0 ? ` / <span class="votes-against">${esc(d.votesAgainst)}</span>` : ''}
+            <span class="votes-for">${esc(app.votesFor)}</span>${votesAgainstCount > 0 ? ` / <span class="votes-against">${esc(d.votesAgainst)}</span>` : ''}
           </div>
           <div style="margin-top:14px;">
             <span class="app-detail-label">Decision Audit Trail</span>
-            <div class="log-box" style="margin-top:6px;">${esc(d.log) || 'No activity recorded yet.'}</div>
+            <div class="log-box" style="margin-top:6px;">${esc(app.log) || 'No activity recorded yet.'}</div>
           </div>`;
 
         if (window.lucide) lucide.createIcons();
