@@ -536,7 +536,7 @@
       container.innerHTML = html;
     }
 
-    async function openReview(rowId) {
+async function openReview(rowId) {
       selectedRowId = rowId;
       const app  = allApplications.find(a => a.rowId === rowId);
       const name = app ? `${app.firstName} ${app.surname}` : 'Application';
@@ -544,6 +544,14 @@
       document.getElementById('reviewTitle').textContent = `Application Review: ${name}`;
       document.getElementById('reviewContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
       document.getElementById('auditContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
+
+      // Smooth scroll to the review panel and shift focus for accessibility
+      const reviewSection = document.getElementById('reviews');
+      if (reviewSection) {
+        reviewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        reviewSection.setAttribute('tabindex', '-1');
+        reviewSection.focus({ preventScroll: true });
+      }
 
       try {
         document.getElementById('reviewTitle').textContent = `Application Review: ${app.fullName || name}`;
