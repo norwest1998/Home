@@ -271,7 +271,7 @@
     </div>
 
     <!-- AUDIT LOG -->
-    <div id="header-placeholder"></div>
+    <div id="auditLog-placeholder"></div>
     
   </main>
 
@@ -281,12 +281,7 @@
   <script src="shared.js"></script>   <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
   <script src="auditLog.js"></script>
   <script>
-      AuditLog.init('calendar', 'Events');  // or 'all' to default to unfiltered
-      fetch('auditLog.html')
-        .then(response => response.text())
-        .then(data => {
-          document.getElementById('header-placeholder').innerHTML = data;
-        });
+    AuditLog.init('calendar', 'Events');  // or 'all' to default to unfiltered
   </script>
   <script>
 /* =========================================================
@@ -668,6 +663,13 @@
 
     if (window.lucide) lucide.createIcons();
     loadApplications();
+  </script>
+  <script>
+    fetch('auditLog.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('auditLog-placeholder').innerHTML = data;
+      });
   </script>
 </body>
 </html>
