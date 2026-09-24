@@ -402,26 +402,7 @@ const FUNCTIONS = [
                 </svg>`,
         title: "Results Management",
         description: "Manage Regatta Results.",
-        href: "resultManagement.html",
-        status: async () => {
-            const [noteRows, actionRows] = await Promise.all([
-                fetchSheet(DOMAIN.results, "Results"),
-                fetchSheet(DOMAIN.notes, "Actions")
-            ]);
-            const now = new Date();
-            const open = actionRows.filter(a => getRowVal(a,["Status"]).toLowerCase() !== "done").length;
-            const overdue = actionRows.filter(a => {
-                const d = new Date(getRowVal(a,["By Date"]));
-                return getRowVal(a,["Status"]).toLowerCase() !== "done" && !isNaN(d) && d < now;
-            }).length;
-            return {
-                pills: [
-                    { label: "Notes",           value: noteRows.length, className: "badge-full" },
-                    { label: "Open Actions",    value: open,            className: "badge-renewal" },
-                    { label: "Overdue",         value: overdue,         className: overdue > 0 ? "badge-expired" : "badge-default" }
-                ]
-            };
-        }
+        href: "resultManagement.html"
     },
     { id: "add-new-function", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
 ];
