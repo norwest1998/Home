@@ -583,7 +583,7 @@ async function loadOverallSheets() {
 
 async function loadAvgRequests() {
     try {
-        const rows = await fetchSheet(DOMAIN.results, "AvgScoreRequests");
+        const rows = await fetchSheet(DOMAIN.results, "AvgScrReq");
         allAvgRequests = rows.map(r => ({
             hexKey:     r["HexCode"]       || "",
             memberName: r["Member"]        || "",
@@ -821,7 +821,7 @@ function closeAvgReqModal() {
 
 async function decideAvgReq(decision) {
     if (!activeAvgReq) return;
-    // TODO: call updateSheet(DOMAIN.results, "AvgScoreRequests", activeAvgReq.hexKey, { status: decision, decidedBy: currentUser })
+    // TODO: call updateSheet(DOMAIN.results, "AvgScrReq", activeAvgReq.hexKey, { status: decision, decidedBy: currentUser })
     //       then send email notification via CLB_WEBAPP_URL if approved
     showMsg('avgReqMsg', `Request ${decision}. Email notification will be sent on approval.`, false);
     activeAvgReq.status = decision;
