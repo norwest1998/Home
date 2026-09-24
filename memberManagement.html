@@ -326,39 +326,7 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
     </div>
 
     <!-- AUDIT LOG -->
-    <div class="section-head" id="audit-log">
-        <h2>Audit Log</h2>
-        <p>Actions recorded to the AuditLog sheet.</p>
-    </div>
-    <div class="panel">
-        <div class="panel-header">
-            <div class="panel-title-left">
-                <span class="dot"></span>
-                <h3>Activity</h3>
-            </div>
-
-        </div>
-        <div class="tab-content active">
-                        <div class="panel-toolbar">
-                <div class="audit-toggle">
-                    <button id="auditFilterMembers" class="active">Members</button>
-                    <button id="auditFilterAll">All</button>
-                </div>
-                <div class="search-wrap">
-                    <i class="inline-icon" data-lucide="search"></i>
-                    <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
-                </div>
-                <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
-            </div>
-            <div class="log-table-wrap">
-                <table class="log-table">
-                    <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
-                    <tbody id="auditBody"></tbody>
-                </table>
-            </div>
-            <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
-        </div>
-    </div>
+    <div id="auditLog-placeholder"></div>
 </main>
 
 <!-- SECTIONED MEMBER MODAL -->
@@ -395,9 +363,7 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
 </footer>
 <script src="shared.js"></script>   <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
 <script src="auditLog.js"></script>
-<script>
-    AuditLog.init('members', 'Members');  // or 'all' to default to unfiltered
-</script>
+
 <script>
     // config.js  (or inline in a shared include)
     const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
@@ -1097,5 +1063,14 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
     AuditLog.load();
     if (window.lucide) lucide.createIcons();
 </script>
+  <script>
+    fetch('auditLog.html')
+      .then(r => r.text())
+      .then(data => {
+        document.getElementById('auditLog-placeholder').innerHTML = data;
+        AuditLog.init('members', 'Members');  // adjust domain/label as needed
+        if (window.lucide) lucide.createIcons();
+      });
+  </script>
 </body>
 </html>

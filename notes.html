@@ -1401,6 +1401,17 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
         btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> Saving…`;
 
         try {
+            document.querySelectorAll("#actionItems .action-item").forEach(row => {
+                const i = +row.dataset.i;
+                if (actionRows[i]) {
+                    actionRows[i].action   = row.querySelector(".act-action").value;
+                    actionRows[i].byDate   = row.querySelector(".act-bydate").value;
+                    const sel              = row.querySelector(".act-bymember");
+                    actionRows[i].byMember = sel.value;
+                    const opt              = [...sel.options].find(o => o.value === sel.value);
+                    actionRows[i].byMemberEmail = opt ? (opt.dataset.email || "") : "";
+                }
+            });
             const a = actions.find(a => gv(a,"ActionID") === editingActionId);
             const nid = a ? gv(a,"NoteID") : "";
             const aData = {

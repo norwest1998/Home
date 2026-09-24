@@ -282,38 +282,10 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
             <section class="fn-grid" id="docGrid"></section>
         </div>
     </div>
-
-
+  
     <!-- AUDIT LOG -->
-    <div class="section-head" id="audit-log">
-        <h2>Audit Log</h2>
-        <p>Actions recorded to the AuditLog sheet.</p>
-    </div>
-    <div class="panel">
-        <div class="panel-header">
-            <div class="panel-title-left"><span class="dot"></span><h3>Activity</h3></div>
-        </div>
-        <div class="tab-content active">
-            <div class="panel-toolbar">
-                <div class="audit-toggle">
-                    <button id="auditFilterMembers" class="active">Members</button>
-                    <button id="auditFilterAll">All</button>
-                </div>
-                <div class="search-wrap">
-                    <i class="inline-icon" data-lucide="search"></i>
-                    <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
-                </div>
-                <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
-            </div>
-            <div class="log-table-wrap">
-                <table class="log-table">
-                    <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
-                    <tbody id="auditBody"></tbody>
-                </table>
-            </div>
-            <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
-        </div>
-    </div>
+    <div id="auditLog-placeholder"></div>
+
 </main>
 
 <!-- Upload / New Version modal -->
@@ -399,9 +371,7 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 
 <script src="shared.js"></script>  
 <script src="auditLog.js"></script>
-<script>
-    AuditLog.init('documents',"Documents");  
-</script>
+
 <script>
 const DOC_CONFIG = {
     docWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec",
@@ -1318,6 +1288,15 @@ async function syncDriveToSheet() {
 
 loadDocs();
 lucide.createIcons();
+</script>
+<script>
+fetch('auditLog.html')
+    .then(r => r.text())
+    .then(data => {
+    document.getElementById('auditLog-placeholder').innerHTML = data;
+    AuditLog.init('members', 'Members');  // adjust domain/label as needed
+    if (window.lucide) lucide.createIcons();
+    });
 </script>
 </body>
 </html>
