@@ -28,6 +28,19 @@ async function fetchSheet(domain, sheetName, hexKey = null) {
     return rows;
 }
 
+async function searchSheet(domain, sheetName, filtersArray) {
+    const action = "search"
+    const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}&filter=${encodeURIComponent(filtersArray)}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+ 
+    if (data.record) return data.record; // single-record display
+ 
+    const rows = data.values ?? [];
+    return rows;
+}
+
 async function registerSchema(domain, sheetName, rows) {
     if (!Array.isArray(rows) || rows.length === 0) return;
     const columns = Object.keys(rows[0]);
