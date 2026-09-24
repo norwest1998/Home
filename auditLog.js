@@ -1,14 +1,20 @@
 // auditLog.js — shared audit log module
 // Requires: GATEWAY_URL, DOMAIN, fetchSheet, escapeHtml, fmtTime to be defined in host page
+// Each page should include: <meta name="smmc-domain" content="members">
+// Valid values: any DOMAIN key, or "all" for no default filter.
 
 const AuditLog = {
     entries: [],
-    domainFilter: 'members',
+    domainFilter: 'all',
 
-    init(defaultFilter = 'members', filterLabel = 'Members') {
-        this.domainFilter = defaultFilter;
-        this.primaryDomain = defaultFilter;  // store for toggle
-        document.getElementById('auditFilterMembers').textContent = filterLabel;
+    init() {
+        const meta        = document.querySelector('meta[name="smmc-domain"]');
+        const domain      = meta?.content?.toLowerCase() || 'all';
+        const label       = domain === 'all' ? 'All' : domain.charAt(0).toUpperCase() + domain.slice(1);
+
+        this.domainFilter  = domain;
+        this.primaryDomain = domain;
+        document.getElementById('auditFilterMembers').textContent = label;
         document.getElementById('auditSearch').addEventListener('input', () => this.render());
         document.getElementById('refreshLogBtn').addEventListener('click', () => this.load());
         document.getElementById('auditFilterMembers').addEventListener('click', () => this.setFilter('members'));

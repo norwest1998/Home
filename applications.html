@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Portal — Sydney Maritime Modellers Club</title>
+<meta name="smmc-domain" content="apps">
+<title>Applications Management Console — Sydney Maritime Modellers Club</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -12,10 +13,6 @@
 <link rel="stylesheet" href="theme.css">
 
 <style>
-  /* =========================================================
-     ADMIN LAYOUT & WORKSPACE STYLES
-     ========================================================= */
-
   /* Admin Quick Stats Bar */
   .admin-stats-bar {
     display: flex; align-items: stretch; gap: 16px; margin-bottom: 24px;
@@ -151,156 +148,141 @@
 </style>
 </head>
 <body>
+  <!-- Shared Navigation Header -->
+  <div id="nav-placeholder"></div>
 
-    <header class="nav-glass">
-    <a href="index.html" class="brand">
+  <main class="container">
 
-        <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
-        <div class="brand-text">
-            <strong>Sydney Maritime Modellers Club</strong>
-            <span>APPLICATIONS PORTAL</span>
+      <!-- Admin Workspace Header -->
+      <div class="admin-header">
+      <div class="admin-title-group">
+          <h1>Membership Applications</h1>
+      </div>
+      <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
+      </div>
+
+      <!-- Admin Quick Stats -->
+      <div class="admin-stats-bar">
+        <div class="admin-stats-row">
+            <div class="admin-stat-card glass">
+            <span class="lbl">Received</span>
+            <span class="num" id="statReceived" style="color:#60a5fa;">—</span>
+            </div>
+            <div class="admin-stat-card glass">
+            <span class="lbl">In Progress</span>
+            <span class="num" id="statInProgress" style="color:#fbbf24;">—</span>
+            </div>
+            <div class="admin-stat-card glass">
+            <span class="lbl">Awaiting Approval</span>
+            <span class="num" id="statAwaitingApproval" style="color:var(--signal);">—</span>
+            </div>
+            <div class="admin-stat-card glass">
+            <span class="lbl">Processed</span>
+            <span class="num" id="statProcessed" style="color:var(--glow);">—</span>
+            </div>
         </div>
-        <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
-        <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
-    </a>
-    <ul class="nav-links">
-        <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
-        <li class="nav-item"><a href="#reviews" class="nav-link">Application Review</a></li>
-        <li class="nav-item"><a href="#audit-log" class="nav-link">Committee Logs</a></li>
-    </ul>
-    </header>
+      <div class="admin-stat-card glass admin-stat-card--turnaround">
+          <span class="lbl">Avg Turnaround</span>
+          <span class="num" id="statAvgTurnaround" style="color:#a78bfa;">—</span>
+      </div>
+      </div>
 
-    <main class="container">
+      <!-- Main Approvals Queue Panel -->
+      <div class="section-head">
+        <h2>Application Details</h2>
+        <p>Select an application above to review information and record committee decisions.</p>
+      </div>
 
-        <!-- Admin Workspace Header -->
-        <div class="admin-header">
-        <div class="admin-title-group">
-            <h1>Membership Applications</h1>
-        </div>
-        <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
-        </div>
-
-        <!-- Admin Quick Stats -->
-        <div class="admin-stats-bar">
-          <div class="admin-stats-row">
-              <div class="admin-stat-card glass">
-              <span class="lbl">Received</span>
-              <span class="num" id="statReceived" style="color:#60a5fa;">—</span>
-              </div>
-              <div class="admin-stat-card glass">
-              <span class="lbl">In Progress</span>
-              <span class="num" id="statInProgress" style="color:#fbbf24;">—</span>
-              </div>
-              <div class="admin-stat-card glass">
-              <span class="lbl">Awaiting Approval</span>
-              <span class="num" id="statAwaitingApproval" style="color:var(--signal);">—</span>
-              </div>
-              <div class="admin-stat-card glass">
-              <span class="lbl">Processed</span>
-              <span class="num" id="statProcessed" style="color:var(--glow);">—</span>
-              </div>
+      <div class="panel" id="approvals">
+      <div class="panel-header">
+          <div class="panel-title-left">
+          <span class="dot"></span>
+          <h3>Applications List</h3>
           </div>
-        <div class="admin-stat-card glass admin-stat-card--turnaround">
-            <span class="lbl">Avg Turnaround</span>
-            <span class="num" id="statAvgTurnaround" style="color:#a78bfa;">—</span>
-        </div>
-        </div>
+      </div>
+      
+      <div class="tab-content active">
+          <div class="panel-toolbar">
+            <div class="audit-toggle">
+              <button class="active" data-status="all">All</button>
+              <button data-status="received">Received</button>
+              <button data-status="progress">In Progress</button>
+              <button data-status="awaiting">Awaiting</button>
+              <button data-status="processed">Processed</button>
+            </div>
+            <div class="search-wrap" style="flex:1; min-width:200px; margin-bottom:0;">
+              <i class="nav-icon search-icon" data-lucide="search"></i>
+              <input class="search-input" type="text" id="appsSearch" placeholder="Filter by name, sail #, or class…">
+            </div>
+          </div>
 
-        <!-- Main Approvals Queue Panel -->
+          <div class="admin-table-wrap">
+          <table class="admin-table">
+              <thead>
+              <tr>
+                  <th>Applicant</th>
+                  <th>Type</th>
+                  <th>Class / Boat</th>
+                  <th>Submitted</th>
+                  <th>Status</th>
+                  <th>Votes</th>
+                  <th>Action</th>
+              </tr>
+              </thead>
+              <tbody id="appsTableBody">
+              <tr><td colspan="7"><div class="empty-state"><div class="spinner"></div> Loading applications…</div></td></tr>
+              </tbody>
+          </table>
+          </div>
+      </div>
+      </div>
+
+      <!-- Approval Action Panel & Vote Audit Log -->
         <div class="section-head">
-          <h2>Application Details</h2>
-          <p>Select an application above to review information and record committee decisions.</p>
-        </div>
+        <h2>Application Review</h2>
+        <p>Review and action pending membership applications.</p>
+      </div>
+      <div class="action-panel-grid">
+      
+      <!-- Selected Item Review Panel -->
+      <div class="panel" id="reviews">
+          <div class="panel-header">
+          <div class="panel-title">
+              <h3 id="reviewTitle">Application Review</h3>
+          </div>
+          </div>
+          <div class="tab-content active" id="reviewContent">
+          <div class="empty-state">Select an application from the queue to review it.</div>
+          </div>
+      </div>
 
-        <div class="panel" id="approvals">
-        <div class="panel-header">
-            <div class="panel-title-left">
-            <span class="dot"></span>
-            <h3>Applications List</h3>
-            </div>
-        </div>
-        
-        <div class="tab-content active">
-            <div class="panel-toolbar">
-              <div class="audit-toggle">
-                <button class="active" data-status="all">All</button>
-                <button data-status="received">Received</button>
-                <button data-status="progress">In Progress</button>
-                <button data-status="awaiting">Awaiting</button>
-                <button data-status="processed">Processed</button>
-              </div>
-              <div class="search-wrap" style="flex:1; min-width:200px; margin-bottom:0;">
-                <i class="nav-icon search-icon" data-lucide="search"></i>
-                <input class="search-input" type="text" id="appsSearch" placeholder="Filter by name, sail #, or class…">
-              </div>
-            </div>
+      <!-- Committee Decision Log -->
+      <div class="panel" id="audit-log">
+          <div class="panel-header">
+          <div class="panel-title">
+              <h3>Committee Voting Audit</h3>
+          </div>
+          </div>
+          <div class="tab-content active" id="auditContent">
+          <div class="empty-state">No application selected.</div>
+          </div>
+      </div>
 
-            <div class="admin-table-wrap">
-            <table class="admin-table">
-                <thead>
-                <tr>
-                    <th>Applicant</th>
-                    <th>Type</th>
-                    <th>Class / Boat</th>
-                    <th>Submitted</th>
-                    <th>Status</th>
-                    <th>Votes</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                <tbody id="appsTableBody">
-                <tr><td colspan="7"><div class="empty-state"><div class="spinner"></div> Loading applications…</div></td></tr>
-                </tbody>
-            </table>
-            </div>
-        </div>
-        </div>
+      </div>
 
-        <!-- Approval Action Panel & Vote Audit Log -->
-         <div class="section-head">
-          <h2>Application Review</h2>
-          <p>Review and action pending membership applications.</p>
-        </div>
-        <div class="action-panel-grid">
-        
-        <!-- Selected Item Review Panel -->
-        <div class="panel" id="reviews">
-            <div class="panel-header">
-            <div class="panel-title">
-                <h3 id="reviewTitle">Application Review</h3>
-            </div>
-            </div>
-            <div class="tab-content active" id="reviewContent">
-            <div class="empty-state">Select an application from the queue to review it.</div>
-            </div>
-        </div>
+      <!-- AUDIT LOG -->
+      <div id="auditLog-placeholder"></div>
+      
+  </main>
 
-        <!-- Committee Decision Log -->
-        <div class="panel" id="audit-log">
-            <div class="panel-header">
-            <div class="panel-title">
-                <h3>Committee Voting Audit</h3>
-            </div>
-            </div>
-            <div class="tab-content active" id="auditContent">
-            <div class="empty-state">No application selected.</div>
-            </div>
-        </div>
+  <footer>
+  <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+  </footer>
 
-        </div>
-
-        <!-- AUDIT LOG -->
-        <div id="auditLog-placeholder"></div>
-        
-    </main>
-
-    <footer>
-    <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
-    </footer>
-
-    <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
-    <script src="shared.js"></script>   
-    <script src="auditLog.js"></script>
+  <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
+  <script src="shared.js"></script>
+  <script src="nav.js"></script>  
+  <script src="auditLog.js"></script>
 
   <script>
 /* =========================================================
@@ -707,14 +689,20 @@
 
     
   </script>
-  <script>
-    fetch('auditLog.html')
-      .then(r => r.text())
-      .then(data => {
-        document.getElementById('auditLog-placeholder').innerHTML = data;
-        AuditLog.init('apps', 'Applications');  // adjust domain/label as needed
+<script>
+    Promise.all([
+        fetch('nav.html').then(r => r.text()),
+        fetch('auditLog.html').then(r => r.text()),
+        fetch('systemHealth.html').then(r => r.text()),
+    ]).then(([navHtml, auditHtml, healthHtml]) => {
+        document.getElementById('nav-placeholder').innerHTML = navHtml;
+        document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
+
+        AuditLog.init();
+        Nav.init();  // scans after all panels are in the DOM
+
         if (window.lucide) lucide.createIcons();
-      });
-  </script>
+    });
+</script>
 </body>
 </html>

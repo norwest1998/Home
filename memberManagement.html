@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="smmc-domain" content="members">
 <title>Member Management — Sydney Maritime Modellers Club</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -183,20 +184,9 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
 </style>
 </head>
 <body>
-<header class="nav-glass">
-    <a href="index.html" class="brand">
-        <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
-        <div class="brand-text">
-            <strong>Sydney Maritime Modellers Club</strong>
-            <span>ADMINISTRATION PORTAL</span>
-        </div> 
-    </a>
-    <ul class="nav-links">
-        <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
-        <li class="nav-item"><a href="#communications" class="nav-link">Communications</a></li>
-        <li class="nav-item"><a href="#audit-log" class="nav-link">Audit Log</a></li>
-    </ul>
-</header>
+
+<!-- Shared Navigation Header -->
+<div id="nav-placeholder"></div>    
 
 <main class="container">
     <!-- Admin Workspace Header -->
@@ -361,9 +351,10 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
 <footer>
     <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
 </footer>
-<script src="shared.js"></script>   <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
+<!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
+<script src="shared.js"></script>
+<script src="nav.js"></script>   
 <script src="auditLog.js"></script>
-
 <script>
     // config.js  (or inline in a shared include)
     const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
@@ -1064,14 +1055,20 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
     if (window.lucide) lucide.createIcons();
     document.addEventListener('DOMContentLoaded', () => AuditLog.init('members', 'Members'))
 </script>
-  <script>
-    fetch('auditLog.html')
-      .then(r => r.text())
-      .then(data => {
-        document.getElementById('auditLog-placeholder').innerHTML = data;
-        AuditLog.init('members', 'Members');  // adjust domain/label as needed
+<script>
+    Promise.all([
+        fetch('nav.html').then(r => r.text()),
+        fetch('auditLog.html').then(r => r.text()),
+        fetch('systemHealth.html').then(r => r.text()),
+    ]).then(([navHtml, auditHtml, healthHtml]) => {
+        document.getElementById('nav-placeholder').innerHTML = navHtml;
+        document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
+
+        AuditLog.init();
+        Nav.init();  // scans after all panels are in the DOM
+
         if (window.lucide) lucide.createIcons();
-      });
-  </script>
+    });
+</script>
 </body>
 </html>

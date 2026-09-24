@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="smmc-domain" content="all">
 <title>Admin Portal — Sydney Maritime Modellers Club</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -11,12 +12,6 @@
 <!-- Link Shared Theme -->
 <link rel="stylesheet" href="theme.css">
 <style>
-/* =========================================================
-    ADMIN LAYOUT & WORKSPACE STYLES 
-    ========================================================= */
-
-
-
 /* Member Health stat board 
 
 */
@@ -94,8 +89,10 @@
 </style>
 </head>
 <body>
+
 <!-- Shared Navigation Header -->
 <div id="nav-placeholder"></div>
+
 <main class="container"></main>
 
     <div class="section-head">
@@ -158,8 +155,6 @@
 
     <!-- AUDIT LOG -->
     <div id="auditLog-placeholder"></div>
-
-    <div id="systemHealth-placeholder"></div>
 
     <footer>
         <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
@@ -593,35 +588,21 @@ renderGrid();
 loadMemberHealth();
 </script>
 <script>
-    fetch('systemHealth.html')
-        .then(r => r.text())
-        .then(data => {
-            document.getElementById('systemHealth-placeholder').innerHTML = data;
-            SystemHealth.init();
-            if (window.lucide) lucide.createIcons();
-        });
+    Promise.all([
+        fetch('nav.html').then(r => r.text()),
+        fetch('auditLog.html').then(r => r.text()),
+        fetch('systemHealth.html').then(r => r.text()),
+    ]).then(([navHtml, auditHtml, healthHtml]) => {
+        document.getElementById('nav-placeholder').innerHTML = navHtml;
+        document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
+        document.getElementById('systemHealth-placeholder').innerHTML = healthHtml;
 
-    fetch('auditLog.html')
-        .then(r => r.text())
-        .then(data => {
-        document.getElementById('auditLog-placeholder').innerHTML = data;
-        AuditLog.init('All', 'All');  // adjust domain/label as needed
+        AuditLog.init();
+        SystemHealth.init();
+        Nav.init();  // scans after all panels are in the DOM
+
         if (window.lucide) lucide.createIcons();
-        });
-
-    fetch('nav.html')
-        .then(r => r.text())
-        .then(html => {
-            document.getElementById('nav-placeholder').innerHTML = html;
-            Nav.init({
-                sections: [
-                    { label: "Member Health",    href: "#member-health" },
-                    { label: "Admin Operations", href: "#admin-ops" },
-                    { label: "System Health",    href: "#system-health" },
-                    { label: "Audit Log",        href: "#audit-log" },
-                ]
-            });
-        });
+    });
 </script>
 </body>
-</html>
+</html> 

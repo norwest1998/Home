@@ -1,16 +1,14 @@
 // nav.js — shared navigation module
 // Requires: nav.html injected into #nav-placeholder before Nav.init() is called
 //
-// Usage:
-//   Nav.init({
-//     label: "ADMINISTRATION PORTAL",   // optional, defaults to that string
-//     sections: [
-//       { label: "Member Health",   href: "#member-health" },
-//       { label: "Admin Operations", href: "#admin-ops" },
-//       { label: "Audit Log",       href: "#audit-log" },
-//       { label: "System Health",   href: "#system-health" },
-//     ]
-//   });
+// Usage — no sections array needed, page is scanned automatically:
+//   Nav.init();                                   // default label
+//   Nav.init({ label: "MEMBER PORTAL" });         // custom portal subtitle
+//
+// Sections are discovered from any .section-head element that has an h2.
+// If the .section-head has no id, one is auto-generated from the h2 text
+// (e.g. "Admin Operations" → "section-admin-operations") and written to the DOM
+// so anchor links work immediately.
 
 const DOMAINS = [
     { label: "Applications", href: "applications.html" },
@@ -21,10 +19,34 @@ const DOMAINS = [
 ];
 
 const Nav = {
-    init({ label = "ADMINISTRATION PORTAL", sections = [] } = {}) {
+    init({ label = "ADMINISTRATION PORTAL" } = {}) {
         const portalLabel = document.getElementById('nav-portal-label');
         if (portalLabel) portalLabel.textContent = label;
 
+        // Defer scan briefly so injected panels (auditLog, systemHealth) are in the DOM
+        setTimeout(() => {
+            const sections = this._scanSections();
+            this._render(sections);
+        }, 0);
+    },
+
+    // Scans all .section-head elements, auto-assigns ids where missing,
+    // returns [{ label, href }] in DOM order.
+    _scanSections() {
+        return Array.from(document.querySelectorAll('.section-head')).reduce((acc, el) => {
+            const h2 = el.querySelector('h2');
+            if (!h2) return acc;
+
+            if (!el.id) {
+                el.id = 'section-' + h2.textContent.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            }
+
+            acc.push({ label: h2.textContent.trim(), href: '#' + el.id });
+            return acc;
+        }, []);
+    },
+
+    _render(sections) {
         const sectionsDropdown = sections.length ? `
             <li class="nav-item">
                 <span class="nav-link">
