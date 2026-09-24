@@ -1209,7 +1209,6 @@ lucide.createIcons();
     Promise.all([
         fetch('nav.html').then(r => r.text()),
         fetch('auditLog.html').then(r => r.text()),
-        fetch('systemHealth.html').then(r => r.text()),
     ]).then(([navHtml, auditHtml, healthHtml]) => {
         document.getElementById('nav-placeholder').innerHTML = navHtml;
         document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
