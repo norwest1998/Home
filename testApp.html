@@ -312,6 +312,7 @@
     let selectedRowId = null;
     let allApplications = [];
 
+
     function esc(s) {
       const d = document.createElement('div');
       d.textContent = (s === null || s === undefined) ? '' : String(s);
@@ -424,25 +425,24 @@
 
     function renderTable() {
       const body = document.getElementById('appsTableBody');
+      const q = document.getElementById('appsSearch')?.value.trim().toLowerCase() || '';
       updateStats(allApplications);
-      if (!allApplications.length) {
-        body.innerHTML = `<tr><td colspan="7"><div class="empty-state">No pending applications.</div></td></tr>`;
+
+      let apps = allApplications;
+      if (activeStatusFilter !== 'all') {
+        apps = apps.filter(a => String(a.status || '').toLowerCase().includes(activeStatusFilter));
+      }
+      if (q) {
+        apps = apps.filter(a =>
+          ['firstName','surname','membershipType','classOrBoat'].some(k => String(a[k]||'').toLowerCase().includes(q))
+        );
+      }
+
+      if (!apps.length) {
+        body.innerHTML = `<tr><td colspan="7"><div class="empty-state">No applications match this filter.</div></td></tr>`;
         return;
       }
-      body.innerHTML = allApplications.map(a => {
-        const badge = statusBadge(a);
-        return `
-        <tr data-rowid="${esc(a.rowId)}">
-          <td class="member-name">${esc(a.firstName)} ${esc(a.surname)}</td>
-          <td>${esc(a.membershipType)}</td>
-          <td>${esc(a.classOrBoat || '—')}</td>
-          <td>${a.lastUpdated ? new Date(a.lastUpdated).toISOString().slice(0,10).replace(/-/g,'/') : '—'}</td>
-          <td><span class="app-status-badge ${badge.cls}">${esc(badge.label)}</span></td>
-          <td><span class="votes-for">${esc(voteCount(a.votesFor))}</span> / <span class="votes-against">${esc(voteCount(a.votesAgainst))}</span></td>
-          <td><button class="btn btn-ghost review-btn" style="padding:4px 10px; font-size:11px;">${String(a.status||'').toLowerCase().includes('processed') ? 'View' : 'Review'}</button></td>
-        </tr>`;
-      }).join('');
-
+      body.innerHTML = apps.map(a => { ...existing row render... }).join('');
       body.querySelectorAll('tr[data-rowid]').forEach(row => {
         row.addEventListener('click', () => openReview(row.dataset.rowid));
       });
@@ -677,8 +677,23 @@
       }
     }
 
+    let activeStatusFilter = 'all';
+
+    document.querySelectorAll('.audit-toggle button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.audit-toggle button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeStatusFilter = btn.dataset.status;
+        renderTable();
+      });
+    });
+
+    document.getElementById('appsSearch').addEventListener('input', renderTable);
+
     if (window.lucide) lucide.createIcons();
     loadApplications();
+
+    
   </script>
   <script>
     fetch('auditLog.html')
