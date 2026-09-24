@@ -806,6 +806,15 @@
   .log-table td {
       vertical-align: middle;
   }
+
+  .log-table-wrap {
+    scrollbar-width: none;        /* Firefox */
+    -ms-overflow-style: none;     /* IE/Edge */
+  }
+  .log-table-wrap::-webkit-scrollbar {
+      display: none;                /* Chrome/Safari */
+  }
+  
   /* =========================================================
     FOOTER
     ========================================================= */
