@@ -803,7 +803,9 @@
   .panel-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
   .panel-toolbar .search-wrap { flex: 1; min-width: 200px; margin-bottom: 0; }
   
-
+  .log-table td {
+      vertical-align: middle;
+  }
   /* =========================================================
     FOOTER
     ========================================================= */
