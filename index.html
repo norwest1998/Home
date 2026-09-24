@@ -1698,7 +1698,7 @@
   <script>
     // Find Overall and Round sheets per Championship
     const DISCOVERY_URL = "https://script.google.com/macros/s/AKfycbxaLDa75WGJ8yqzEnAoLQbvfIyxT9ZDG-YJLP2qSQFtDTEvnbgbjZpsX_7aFcOu0sdl/exec"; 
-    
+    const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
     // Updated RESULTS_CONFIG with insignia image URLs per class
     const RESULTS_CONFIG = {
       df95:   { label: 'DF95 Scratch',     className: 'DF95',    spreadsheetId: '1J8CUk1VCDeOYAXfI00acv9YBScgGvH_BrirOBOIfW90', insignia: '/Home/images/classes/DF95.png' },
@@ -3232,8 +3232,8 @@
     tbody.innerHTML = '<tr><td colspan="6" style="padding: 16px; text-align: center; color: var(--foam);">Loading requests...</td></tr>';
 
     try {
-      if (typeof fetchSheet === 'function') {
-        rawRequestsData = await fetchSheet("calendar", "AvgScrReq");
+      if (typeof fetchRequests === 'function') {
+        rawRequestsData = await fetchRequests("calendar", "AvgScrReq");
       } else {
         rawRequestsData = [];
       }
@@ -3244,6 +3244,21 @@
       tbody.innerHTML = `<tr><td colspan="6" style="padding: 16px; text-align: center; color: var(--signal, #ef4444);">Failed to load requests: ${err.message}</td></tr>`;
     }
   }
+
+  async function fetchRequests(domain, sheetName, hexKey = null) {
+    const action = hexKey ? "display" : "fetch";
+    const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
+                 + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+ 
+    if (data.record) return data.record;                // single-record display
+ 
+    const rows = data.values ?? [];
+    if (rows.length > 0) registerSchema(domain, sheetName, rows); // fire-and-forget
+    return rows;
+}
 
   function renderRequestTable(data) {
     const tbody = document.getElementById("request-list-tbody");
