@@ -490,6 +490,7 @@ async function loadDocs() {
     renderLibraryTree();
     renderGrid();
     await loadAuditLog();
+    if (window.lucide) lucide.createIcons();
 }
 
 // Global set to track open folder paths (e.g. "Governance", "Governance/Policies")
@@ -594,6 +595,8 @@ function renderLibraryTree() {
     // Update upload category dropdown
     const dl = document.getElementById("categoryList");
     if (dl) dl.innerHTML = sortedPaths.map(c => `<option value="${c}">`).join("");
+    
+    if (window.lucide) lucide.createIcons();
 }
 
 function statusBadgeClass(status) {
@@ -645,6 +648,7 @@ function renderGrid() {
 
     grid.querySelectorAll('[data-action="version"]').forEach(b => b.addEventListener("click", () => openUploadModal(b.dataset.id)));
     grid.querySelectorAll('[data-action="detail"]').forEach(b => b.addEventListener("click", () => openDetailModal(b.dataset.id)));
+    if (window.lucide) lucide.createIcons();
 }
 document.getElementById("docSearch").addEventListener("input", renderGrid);
 document.getElementById("statusFilter").addEventListener("change", renderGrid);
@@ -778,6 +782,7 @@ function renderDriveItems(items) {
             </div>
         `;
     }).join("");
+    if (window.lucide) lucide.createIcons();
 }
 
 async function openFolder(folderId, folderName) {
@@ -822,6 +827,7 @@ document.getElementById("driveFileArchiveBtn").addEventListener("click", async (
         const items = await fetchDriveFolderContents(currentFolder.id);
         renderDriveItems(items);
         renderBreadcrumbs();
+        if (window.lucide) lucide.createIcons();
     } catch (err) {
         alert("Failed to archive document: " + err.message);
     }
@@ -991,6 +997,7 @@ function renderAuditLog() {
             String(e.target || '').toLowerCase().includes(q) ||
             String(e.targetId || '').toLowerCase().includes(q)
         );
+        if (window.lucide) lucide.createIcons();
     }
 
     document.getElementById('auditBody').innerHTML = entries.map(e => {

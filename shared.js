@@ -118,10 +118,10 @@
 
         // 4. Fetch the layout from Gateway
         try {
-            const url = `${GATEWAY_URL}?action=layout&domain=${encodeURIComponent(domain)}&sheetName=${encodeURIComponent(sheetName)}`;
-            const res = await fetch(url);
-            const data = await res.json();
-            
+            //const url = `${GATEWAY_URL}?action=layout&domain=${encodeURIComponent(domain)}&sheetName=${encodeURIComponent(sheetName)}`;
+            //const res = await fetch(url);
+            //const data = await res.json();
+            const data = record;
             if (data.error) throw new Error(data.error);
             
             // Fallback to the object's raw keys if the layout isn't configured in the Gateway yet
