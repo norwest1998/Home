@@ -1045,6 +1045,9 @@ let classes = [];
 let selectedHex = null;
 let editingHex = null;
 
+const calWebAppUrl = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
+const ssnWebAppUrl = "https://script.google.com/macros/library/d/1UHhsKNh1mJntPZVUd5IXbgX1c6kSUCayrysJTZc5EeZtGGyxdrbptUnG/4";
+
 const INSIGNIA_OVERRIDES = { General: 'smmc-logo.png', Social: 'SmileyFace.png' };
 function classInsignia(className) {
   return `<img src="images/classes/${INSIGNIA_OVERRIDES[className] || className + '.png'}" alt="${className}">`;
@@ -1749,7 +1752,7 @@ async function addToCalendar(hexKey) {
   logAction(`Exporting "${event.Class} - ${event.Event || event["Event Type"]}" to ${targetCalName}...`);
 
   try {
-    const res = await fetch(SHEETS.calWebAppUrl, {
+    const res = await fetch(calWebAppUrl, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ action: "exportToCalendar", hexKey: hexKey })
@@ -1783,7 +1786,7 @@ btnBulkExport.addEventListener("click", () => {
     msgElem: msgElem,
     loadingMsg: "Syncing events with Google Calendar...",
     actionFn: async () => {
-      const res = await fetch(SHEETS.calWebAppUrl, {
+      const res = await fetch(calWebAppUrl, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "exportToCalendar", hexKey: null })
@@ -1950,7 +1953,7 @@ regionalConflictBtn?.addEventListener("click", () => {
     msgElem: msgElem,
     loadingMsg: "Scanning regional championship calendars...",
     actionFn: async () => {
-      const res = await fetch(SHEETS.calWebAppUrl, {
+      const res = await fetch(calWebAppUrl, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "runRegionalConflicts" })
@@ -1977,7 +1980,7 @@ generateSeasonBtn?.addEventListener("click", () => {
     msgElem: msgElem,
     loadingMsg: `Generating fixtures for season ${nextSeason}...`,
     actionFn: async () => {
-      const res = await fetch(SHEETS.ssnWebAppUrl, {
+      const res = await fetch(ssnWebAppUrl, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "generateSeasonFixtures" })
