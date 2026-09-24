@@ -10,8 +10,9 @@ const DOMAIN = {
     clubs:     "clubs",
     notes:     "notes",
     audit:     "audit",
-    tracking:  "tracking"
-    };
+    tracking:  "tracking",
+    results:   "results"   // ← add this
+};
 
 async function fetchSheet(domain, sheetName, hexKey = null) {
     const action = hexKey ? "display" : "fetch";

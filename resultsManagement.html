@@ -551,11 +551,7 @@ async function loadProcessedFiles() {
 
     document.getElementById('resultRows').innerHTML = '<div class="empty-state"><span class="spinner"></span></div>';
     try {
-        const res = await gapi.client.drive.files.list({
-            'q': `'${FOLDER_PROCESSED}' in parents and trashed = false`,
-            'pageSize': 50,
-            'fields': 'files(id, name, mimeType)',
-        });
+        const res = await fetch(`${GATEWAY_URL}?action=listFolder&folderId=${FOLDER_PROCESSED}`);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         allProcessedFiles = (data.files || []).map(f => {
@@ -574,7 +570,7 @@ async function loadProcessedFiles() {
 async function loadOverallSheets() {
     document.getElementById('overallSheetRows').innerHTML = '<div class="empty-state"><span class="spinner"></span></div>';
     try {
-        const res  = await fetch(`${CLB_WEBAPP_URL}?action=listFolder&folderId=${FOLDER_OVERALL}`);
+        const res = await fetch(`${GATEWAY_URL}?action=listFolder&folderId=${FOLDER_OVERALL}`);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         allOverallSheets = (data.files || []).map(f => ({ ...f, ...parseSheetName(f.name || '') }));
@@ -587,8 +583,11 @@ async function loadOverallSheets() {
 
 async function loadAvgRequests() {
     // Placeholder — replace with real fetch when the sheet exists
-    // e.g. fetchSheet(DOMAIN.results, "AvgScoreRequests")
-    allAvgRequests = [];
+    const res = fetchSheet(DOMAIN.results, "AvgScrReq")
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    allAvgRequests = data.values;
+
     renderAvgRequests();
     renderStats();
 }
@@ -723,7 +722,7 @@ async function openScoresheet(fileId, fileName) {
 
     try {
         // Fetch the raw JSON from Drive via CLB webapp
-        const res  = await fetch(`${CLB_WEBAPP_URL}?action=readFile&fileId=${encodeURIComponent(fileId)}`);
+        const res = await fetch(`${GATEWAY_URL}?action=readFile&fileId=${encodeURIComponent(fileId)}`);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
 
@@ -826,9 +825,10 @@ async function decideAvgReq(decision) {
 async function initiateProcessing() {
     showMsg('processingMsg', 'Initiating processing… checking upload folder.', false);
     try {
-        const res  = await fetch(`${CLB_WEBAPP_URL}?action=triggerProcessing`, { method: 'POST',
+        const res = await fetch(GATEWAY_URL, {
+            method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'triggerResultsScheduler' })
+            body: JSON.stringify({ action: 'triggerProcessing' })
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
@@ -842,7 +842,7 @@ async function initiateProcessing() {
 async function checkUploadFolder() {
     showMsg('processingMsg', 'Checking upload folder…', false);
     try {
-        const res  = await fetch(`${CLB_WEBAPP_URL}?action=listFolder&folderId=${FOLDER_UPLOAD}`);
+        const res = await fetch(`${GATEWAY_URL}?action=listFolder&folderId=${FOLDER_UPLOAD}`);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         const count = (data.files || []).length;
