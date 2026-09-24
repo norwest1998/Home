@@ -534,7 +534,7 @@
 
       try {
         const raw = await fetchSheet(DOMAIN.apps, "Membership Applications", encodeURIComponent(rowId));
-        if (d.error) throw new Error(d.error);
+        if (raw.error) throw new Error(raw.error);
         const d = raw(normaliseApp);
         document.getElementById('reviewTitle').textContent = `Application Review: ${d.fullName || name}`;
 
