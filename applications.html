@@ -535,7 +535,7 @@
       try {
         const raw = await fetchSheet(DOMAIN.apps, "Membership Applications", encodeURIComponent(rowId));
         if (raw.error) throw new Error(raw.error);
-        const d = raw(normaliseApp);
+        const d = raw.map(normaliseApp);
         document.getElementById('reviewTitle').textContent = `Application Review: ${d.fullName || name}`;
 
         const badge = statusBadge(d);
