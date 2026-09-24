@@ -12,15 +12,40 @@ const AuditLog = {
         document.getElementById('auditSearch').addEventListener('input', () => this.render());
         document.getElementById('refreshLogBtn').addEventListener('click', () => this.load());
         document.getElementById('auditFilterMembers').addEventListener('click', () => this.setFilter('members'));
-        document.getElementById('auditFilterAll').addEventListener('click', () => this.setFilter('all'));
+        const ddWrap = this._buildDomainDropdown();
+        document.getElementById('auditFilterAll').replaceWith(ddWrap);
         this.load();
     },
 
     setFilter(filter) {
-        this.domainFilter = filter === 'all' ? 'all' : this.primaryDomain;
-        document.getElementById('auditFilterMembers').classList.toggle('active', filter === 'members');
-        document.getElementById('auditFilterAll').classList.toggle('active', filter === 'all');
+        this.domainFilter = filter === 'all' ? 'all' : filter;
+        document.getElementById('auditFilterMembers').classList.toggle('active', filter === this.primaryDomain);
+        const dd = document.getElementById('auditFilterAllBtn');
+        if (dd) dd.classList.toggle('active', filter !== this.primaryDomain);
         this.render();
+    },
+
+    _buildDomainDropdown() {
+        const allDomains = Object.keys(DOMAIN).filter(k => k !== this.primaryDomain);
+        const wrapper = document.createElement('div');
+        wrapper.className = 'audit-dropdown-wrap';
+        wrapper.style.cssText = 'position:relative;display:inline-block;';
+        wrapper.innerHTML = `
+            <button id="auditFilterAllBtn" onclick="AuditLog._toggleDropdown()">All ▾</button>
+            <div id="auditDomainMenu" style="display:none;position:absolute;top:100%;left:0;z-index:100;
+                background:var(--surface);border:1px solid var(--border);border-radius:6px;min-width:120px;padding:4px 0;margin-top:2px;">
+                <div class="audit-domain-item" onclick="AuditLog.setFilter('all')" style="padding:6px 12px;cursor:pointer;font-size:12px;">All</div>
+                ${allDomains.map(k => `
+                <div class="audit-domain-item" onclick="AuditLog.setFilter('${k}');AuditLog._toggleDropdown()" 
+                    style="padding:6px 12px;cursor:pointer;font-size:12px;text-transform:capitalize;">${k}</div>
+                `).join('')}
+            </div>`;
+        return wrapper;
+    },
+
+    _toggleDropdown() {
+        const menu = document.getElementById('auditDomainMenu');
+        if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
     },
 
     async load() {
@@ -87,9 +112,11 @@ const AuditLog = {
         
         // Inject a view button for Appended records containing JSON
         let viewBtn = '';
-        if (e.action.toLowerCase().includes('append') && String(e.after).trim().startsWith('{')) {
-            // Encode the JSON string to safely pass it into the inline onclick handler
-            const encodedData = encodeURIComponent(e.after);
+        const isAppend = e.action.toLowerCase().includes('append') && String(e.after).trim().startsWith('{');
+        const isDelete = e.action.toLowerCase().includes('delete') && String(e.before).trim().startsWith('{');
+
+        if (isAppend || isDelete) {
+            const encodedData = encodeURIComponent(isAppend ? e.after : e.before);
             viewBtn = `
                 <div style="margin-top: 8px;">
                     <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 11px;" 
@@ -97,6 +124,10 @@ const AuditLog = {
                         View Record
                     </button>
                 </div>`;
+        }
+
+        if (isAppend || isDelete) {
+            return viewBtn;
         }
 
         return `
@@ -108,7 +139,6 @@ const AuditLog = {
             <div class="val-content" id="val-${uid}">${bSafe || '<span style="opacity:.4">—</span>'}</div>
             <div class="val-content" id="val-${uid}-after" style="display:none;">
                 ${isError ? `<span class="val-error">${aSafe}</span>` : (aSafe || '<span style="opacity:.4">—</span>')}
-                ${viewBtn}
             </div>
         </div>`;
     },
