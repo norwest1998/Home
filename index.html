@@ -1541,18 +1541,69 @@
           <span class="tag">Registry Module</span>
         </div>
 
-        <!-- Placeholder 3: Add Race Result App 
-        <div id="add-result" class="tile glass">
+        <!-- Placeholder 3: Add Race Result App --> 
+
+        <div class="tile glass" id="average-score-request">
           <div class="tile-title">
-            <i class="tile-icon" data-lucide="podium" color="#257fb6"></i>
-            <h3>Race Scoring App</h3>
+            <i data-lucide="calculator" color="#257fb6"></i>
+            <h3>Average Score Request</h3>
           </div>
-          <p class="subh">OOD score entry for IOM, DF95, DF65, Soling, and GH classes.</p>
-          <div class="app-placeholder">
-            <code>Apps Script: Race Scoring Form</code>
-            <!-- <span style="font-size:11px; color:var(--foam-dim);">[Embed Scoring App Script Here]</span> 
-          </div>
-          <span class="tag">Scoring Module</span>
+          <p class="subh">Request average scoring for a missed club regatta due to an ARYA Ranking event clash.</p>
+
+          <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:16px;">
+            
+            <!-- Member Selection Dropdown -->
+            <div class="form-group">
+              <label for="reqMemberName" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Member Name</label>
+              <select id="reqMemberName" name="memberName" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
+                <option value="">Loading active members...</option>
+              </select>
+              <input type="hidden" id="reqMemberEmail" name="memberEmail">
+            </div>
+
+            <!-- Event Date -->
+            <div class="form-group">
+              <label for="reqEventDate" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Missed Event Date</label>
+              <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
+            </div>
+
+            <!-- Event Name: Class + Regatta Type -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+              <div class="form-group">
+                <label for="reqBoatClass" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Class</label>
+                <select id="reqBoatClass" name="boatClass" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
+                  <option value="IOM">IOM</option>
+                  <option value="DF95">DF95</option>
+                  <option value="DF65">DF65</option>
+                  <option value="Soling">Soling</option>
+                  <option value="General Handicap">General Handicap</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="reqRegattaType" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Regatta Type</label>
+                <select id="reqRegattaType" name="regattaType" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
+                  <option value="Championship">Championship</option>
+                  <option value="Scratch">Scratch</option>
+                  <option value="Handicap">Handicap</option>
+                  <option value="Sprint Series">Sprint Series</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Conflicting Regatta Dropdown -->
+            <div class="form-group">
+              <label for="reqConflictingRegatta" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Conflicting ARYA Event Name</label>
+              <select id="reqConflictingRegatta" name="conflictingRegatta" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
+                <option value="">Loading ARYA Regional Conflicts...</option>
+              </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:8px; justify-content:center;">Submit Request</button>
+            <div id="formStatus" style="font-size:12px; margin-top:6px; text-align:center;"></div>
+          </form>
+
+          <span class="tag">Average Points Request Module</span>
         </div>
 
         <!-- Placeholder 4: Reschedule Event App 
@@ -3059,6 +3110,64 @@
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="memberStatsModal.js"></script>
+  <script>
+  // Dynamic initialization of dropdowns on load
+  document.addEventListener("DOMContentLoaded", function() {
+    google.script.run.withSuccessHandler(populateMembers).getActiveMembers();
+    google.script.run.withSuccessHandler(populateConflicts).getConflictingRegattas();
+  });
 
+  let activeMemberData = [];
+
+  function populateMembers(members) {
+    activeMemberData = members;
+    const select = document.getElementById("reqMemberName");
+    select.innerHTML = '<option value="">-- Select Member --</option>';
+    members.forEach(m => {
+      select.innerHTML += `<option value="${m.name}">${m.name}</option>`;
+    });
+  }
+
+  document.getElementById("reqMemberName").addEventListener("change", function(e) {
+    const selected = activeMemberData.find(m => m.name === e.target.value);
+    document.getElementById("reqMemberEmail").value = selected ? selected.email : "";
+  });
+
+  function populateConflicts(conflicts) {
+    const select = document.getElementById("reqConflictingRegatta");
+    select.innerHTML = '<option value="">-- Select Conflicting ARYA Event --</option>';
+    conflicts.forEach(c => {
+      select.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+  }
+
+  document.getElementById("avgScoreForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const statusDiv = document.getElementById("formStatus");
+    statusDiv.style.color = "var(--glow)";
+    statusDiv.innerHTML = "Submitting request...";
+
+    const formData = {
+      memberName: document.getElementById("reqMemberName").value,
+      memberEmail: document.getElementById("reqMemberEmail").value,
+      eventDate: document.getElementById("reqEventDate").value,
+      boatClass: document.getElementById("reqBoatClass").value,
+      regattaType: document.getElementById("reqRegattaType").value,
+      conflictingRegatta: document.getElementById("reqConflictingRegatta").value
+    };
+
+    google.script.run
+      .withSuccessHandler(res => {
+        statusDiv.style.color = "#4ade80";
+        statusDiv.innerHTML = `Request submitted successfully! Reference ID: ${res.requestId}`;
+        document.getElementById("avgScoreForm").reset();
+      })
+      .withFailureHandler(err => {
+        statusDiv.style.color = "var(--signal)";
+        statusDiv.innerHTML = `Error: ${err.message}`;
+      })
+      .submitAverageScoreRequest(formData);
+  });
+</script>
 </body>
 </html>
