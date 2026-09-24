@@ -1516,7 +1516,7 @@ fetch('auditLog.html')
     .then(r => r.text())
     .then(data => {
     document.getElementById('auditLog-placeholder').innerHTML = data;
-    AuditLog.init('apps', 'Applications');  // adjust domain/label as needed
+    AuditLog.init('notes', 'Notes');  // adjust domain/label as needed
     if (window.lucide) lucide.createIcons();
     });
 </script>
