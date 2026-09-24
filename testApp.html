@@ -171,7 +171,7 @@
     </header>
 
     <main class="container">
-    
+
         <!-- Admin Workspace Header -->
         <div class="admin-header">
         <div class="admin-title-group">
@@ -182,24 +182,24 @@
 
         <!-- Admin Quick Stats -->
         <div class="admin-stats-bar">
-        <div class="admin-stats-row">
-            <div class="admin-stat-card glass">
-            <span class="lbl">Received</span>
-            <span class="num" id="statReceived" style="color:#60a5fa;">—</span>
-            </div>
-            <div class="admin-stat-card glass">
-            <span class="lbl">In Progress</span>
-            <span class="num" id="statInProgress" style="color:#fbbf24;">—</span>
-            </div>
-            <div class="admin-stat-card glass">
-            <span class="lbl">Awaiting Approval</span>
-            <span class="num" id="statAwaitingApproval" style="color:var(--signal);">—</span>
-            </div>
-            <div class="admin-stat-card glass">
-            <span class="lbl">Processed</span>
-            <span class="num" id="statProcessed" style="color:var(--glow);">—</span>
-            </div>
-        </div>
+          <div class="admin-stats-row">
+              <div class="admin-stat-card glass">
+              <span class="lbl">Received</span>
+              <span class="num" id="statReceived" style="color:#60a5fa;">—</span>
+              </div>
+              <div class="admin-stat-card glass">
+              <span class="lbl">In Progress</span>
+              <span class="num" id="statInProgress" style="color:#fbbf24;">—</span>
+              </div>
+              <div class="admin-stat-card glass">
+              <span class="lbl">Awaiting Approval</span>
+              <span class="num" id="statAwaitingApproval" style="color:var(--signal);">—</span>
+              </div>
+              <div class="admin-stat-card glass">
+              <span class="lbl">Processed</span>
+              <span class="num" id="statProcessed" style="color:var(--glow);">—</span>
+              </div>
+          </div>
         <div class="admin-stat-card glass admin-stat-card--turnaround">
             <span class="lbl">Avg Turnaround</span>
             <span class="num" id="statAvgTurnaround" style="color:#a78bfa;">—</span>
@@ -207,6 +207,11 @@
         </div>
 
         <!-- Main Approvals Queue Panel -->
+        <div class="section-head">
+          <h2>Application Details</h2>
+          <p>Select an application above to review information and record committee decisions.</p>
+        </div>
+
         <div class="panel" id="approvals">
         <div class="panel-header">
             <div class="panel-title-left">
@@ -216,8 +221,18 @@
         </div>
         
         <div class="tab-content active">
-            <div class="search-wrap">
-            <input class="search-input" type="text" placeholder="Filter pending applications by applicant name, sail #, or class...">
+            <div class="panel-toolbar">
+              <div class="audit-toggle">
+                <button class="active" data-status="all">All</button>
+                <button data-status="received">Received</button>
+                <button data-status="progress">In Progress</button>
+                <button data-status="awaiting">Awaiting</button>
+                <button data-status="processed">Processed</button>
+              </div>
+              <div class="search-wrap" style="flex:1; min-width:200px; margin-bottom:0;">
+                <i class="nav-icon search-icon" data-lucide="search"></i>
+                <input class="search-input" type="text" id="appsSearch" placeholder="Filter by name, sail #, or class…">
+              </div>
             </div>
 
             <div class="admin-table-wrap">
@@ -242,6 +257,10 @@
         </div>
 
         <!-- Approval Action Panel & Vote Audit Log -->
+         <div class="section-head">
+          <h2>Application Review</h2>
+          <p>Review and action pending membership applications.</p>
+        </div>
         <div class="action-panel-grid">
         
         <!-- Selected Item Review Panel -->
