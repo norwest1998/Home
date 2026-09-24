@@ -548,13 +548,10 @@ async function loadAll() {
 }
 
 async function loadProcessedFiles() {
-
     document.getElementById('resultRows').innerHTML = '<div class="empty-state"><span class="spinner"></span></div>';
     try {
-        const res = await fetch(`${GATEWAY_URL}?action=listFolder&folderId=${FOLDER_PROCESSED}`);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        allProcessedFiles = (data.files || []).map(f => {
+        const files = await fetchDriveFolder("processed");
+        allProcessedFiles = files.map(f => {
             const parsed = parseFileName(f.name || '');
             return { ...f, ...parsed };
         }).sort((a, b) => (b.date || 0) - (a.date || 0));
@@ -570,10 +567,8 @@ async function loadProcessedFiles() {
 async function loadOverallSheets() {
     document.getElementById('overallSheetRows').innerHTML = '<div class="empty-state"><span class="spinner"></span></div>';
     try {
-        const res = await fetch(`${GATEWAY_URL}?action=listFolder&folderId=${FOLDER_OVERALL}`);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        allOverallSheets = (data.files || []).map(f => ({ ...f, ...parseSheetName(f.name || '') }));
+        const files = await fetchDriveFolder("overall");
+        allOverallSheets = files.map(f => ({ ...f, ...parseSheetName(f.name || '') }));
         renderOverallSheets();
     } catch (err) {
         document.getElementById('overallSheetRows').innerHTML =
@@ -737,8 +732,8 @@ async function openScoresheet(fileId, fileName) {
         const data = await res.json();
         if (data.error) throw new Error(data.error);
 
-        const json = data.content || data;
-        renderScoresheetModal(json, parsed);
+        const content = await fetchDriveFile(fileId);
+        renderScoresheetModal(content, parsed);
     } catch (err) {
         document.getElementById('scoresheetBody').innerHTML =
             `<tr><td colspan="99" style="color:var(--signal);padding:16px;">${escHtml(err.message)}</td></tr>`;
@@ -837,14 +832,8 @@ async function decideAvgReq(decision) {
 async function initiateProcessing() {
     showMsg('processingMsg', 'Initiating processing… checking upload folder.', false);
     try {
-        const res = await fetch(GATEWAY_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'triggerProcessing' })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        showMsg('processingMsg', data.message || 'Processing triggered successfully. Check back shortly.', false);
+        const msg = await triggerResultsProcessing();
+        showMsg('processingMsg', msg, false);
         setTimeout(loadAll, 5000);
     } catch (err) {
         showMsg('processingMsg', 'Error: ' + err.message, true);
@@ -854,13 +843,12 @@ async function initiateProcessing() {
 async function checkUploadFolder() {
     showMsg('processingMsg', 'Checking upload folder…', false);
     try {
-        const res = await fetch(`${GATEWAY_URL}?action=listFolder&folderId=${FOLDER_UPLOAD}`);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        const count = (data.files || []).length;
-        showMsg('processingMsg', count
-            ? `${count} file(s) found in upload folder. Ready to process.`
-            : 'Upload folder is empty — no file to process.', !count);
+        const files = await fetchDriveFolder("upload");
+        document.getElementById('statOutstanding').textContent = files.length;
+        showMsg('processingMsg', files.length
+            ? `${files.length} file(s) ready to process.`
+            : 'Upload folder is empty.', !files.length);
+        const count = files.length;
         // Update outstanding stat
         document.getElementById('statOutstanding').textContent = count;
     } catch (err) {

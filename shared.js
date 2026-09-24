@@ -1,5 +1,6 @@
 // config.js  (or inline in a shared include)
 const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
+const RESULTS_GATEWAY_URL = "https://script.google.com/macros/s/AKfycbwHYDa3Jg-4pojZ6zCeU_fT6Xc17Rwz_B3aFl7UbafDnb61UzuzI-uY3kagrSOo77L3/exec";
 
 // domain keys must match REGISTRY keys in Gateway.gs
 const DOMAIN = {
@@ -104,6 +105,31 @@ function fmtTime(iso){
 function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
+async function fetchDriveFolder(folderKey) {
+    const res  = await fetch(`${RESULTS_GATEWAY_URL}?action=listFolder&folder=${folderKey}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data.files || [];
+}
+
+async function fetchDriveFile(fileId) {
+    const res  = await fetch(`${RESULTS_GATEWAY_URL}?action=readFile&fileId=${encodeURIComponent(fileId)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data.content;
+}
+
+async function triggerResultsProcessing() {
+    const res  = await fetch(RESULTS_GATEWAY_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body:    JSON.stringify({ action: "triggerProcessing" })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data.message;
 }
 
 
