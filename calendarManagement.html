@@ -1333,7 +1333,7 @@ function renderTable() {
         <td>${formatDate(e.Date)}</td>
         <td>${e.Class} ${e["Regatta Type"]}</td>
         <td>${e["Event Type"] || e.Event || ""}</td>
-        <td>${e.AddedStatus || e["Calendar Synced"] 
+        <td>${e.AddedStatus || e['Calendar Synced'] 
               ? `<span class="app-status-badge status-progress">In Calendar</span>` 
               : `<span class="app-status-badge status-awaiting">Not Synced</span>`}</td>
         <td>${(e["Rescheduled Date"] || "").includes("Pending")
@@ -1341,7 +1341,7 @@ function renderTable() {
               : e["Rescheduled Date"]
                 ? `<span class="app-status-badge status-progress">Rescheduled</span>`
                 : `<span class="app-status-badge">—</span>`}</td>
-        <td class="col-actions-full" style="text-align:right; padding-right:10px;">
+        <td class="col-actions-full" style="text-align:center; padding-right:10px;">
           ${(e.Results !== "Processed" && !(e["Event Type"] !== "Competition" && new Date(e.Date) <= new Date())) ? `
           <div class="row-actions" style="justify-content:flex-end;">
             <button class="icon-btn btn-cal" title="Add to Calendar" onclick="addToCalendar('${e.HexKey}')">
@@ -1355,7 +1355,7 @@ function renderTable() {
             </button>
           </div>` : "Processed"}
         </td>
-        <td class="col-actions-narrow" style="text-align:right; padding-right:10px;">
+        <td class="col-actions-narrow" style="text-align:center; padding-right:10px;">
           ${(e.Results !== "Processed" && !(e["Event Type"] !== "Competition" && new Date(e.Date) <= new Date())) ? `
           <div class="row-ellipsis-wrap" style="position:relative; display:inline-block;">
             <button class="icon-btn" title="Actions" onclick="toggleRowMenu(event,'${e.HexKey}')">
