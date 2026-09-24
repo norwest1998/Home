@@ -535,7 +535,7 @@
       try {
         document.getElementById('reviewTitle').textContent = `Application Review: ${app.fullName || name}`;
 
-        const badge = statusBadge(d);
+        const badge = statusBadge(app);
         if (badge === 'processed') console.log('raw record:', d, ' badge:', badge);
         document.getElementById('reviewContent').innerHTML = `
           <div class="app-status-badge ${badge.cls}">
