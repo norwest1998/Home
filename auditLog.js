@@ -31,15 +31,39 @@ const AuditLog = {
         wrapper.className = 'audit-dropdown-wrap';
         wrapper.style.cssText = 'position:relative;display:inline-block;';
         wrapper.innerHTML = `
-            <button id="auditFilterAllBtn" onclick="AuditLog._toggleDropdown()">All ▾</button>
+            <button id="auditFilterAllBtn">All ▾</button>
             <div id="auditDomainMenu" style="display:none;position:absolute;top:100%;left:0;z-index:100;
                 background:var(--surface);border:1px solid var(--border);border-radius:6px;min-width:120px;padding:4px 0;margin-top:2px;">
-                <div class="audit-domain-item" onclick="AuditLog.setFilter('all')" style="padding:6px 12px;cursor:pointer;font-size:12px;">All</div>
+                <div class="audit-domain-item" style="padding:6px 12px;cursor:pointer;font-size:12px;">All</div>
                 ${allDomains.map(k => `
-                <div class="audit-domain-item" onclick="AuditLog.setFilter('${k}');AuditLog._toggleDropdown()" 
+                <div class="audit-domain-item" data-domain="${k}"
                     style="padding:6px 12px;cursor:pointer;font-size:12px;text-transform:capitalize;">${k}</div>
                 `).join('')}
             </div>`;
+
+        wrapper.querySelector('#auditFilterAllBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._toggleDropdown();
+        });
+
+        wrapper.querySelector('.audit-domain-item').addEventListener('click', () => {
+            this.setFilter('all');
+            this._toggleDropdown();
+        });
+
+        wrapper.querySelectorAll('.audit-domain-item[data-domain]').forEach(el => {
+            el.addEventListener('click', () => {
+                this.setFilter(el.dataset.domain);
+                this._toggleDropdown();
+            });
+        });
+
+        // Close on outside click
+        document.addEventListener('click', () => {
+            const menu = document.getElementById('auditDomainMenu');
+            if (menu) menu.style.display = 'none';
+        });
+
         return wrapper;
     },
 
@@ -150,3 +174,4 @@ const AuditLog = {
         document.getElementById(`val-${uid}-after`).style.display    = tab === 'after'  ? '' : 'none';
     }
 };
+window.AuditLog = AuditLog;
