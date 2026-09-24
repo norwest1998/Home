@@ -342,11 +342,6 @@ vertical-align: middle;
 }
 .action-remove:hover { color: #ff6b6b; }
 
-/* Search wrap — icon inside input */
-.search-wrap { position: relative; display: flex; align-items: center; }
-.search-wrap .nav-icon { position: absolute; left: 10px; width: 14px; height: 14px; pointer-events: none; color: var(--foam-dim); }
-.search-wrap .search-input { padding-left: 32px; }
-
 /* ── Action Items section ── */
 .actions-toolbar {
     display: flex; gap: 10px; flex-wrap: wrap;
@@ -405,11 +400,6 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
             <h1>Notes Management Console</h1>
         </div>
         <a href="admin.html" class="btn btn-ghost" style="flex-shrink:0;">Back to Dashboard</a>
-    </div>
-
-    <div class="section-head">
-        <h2>Notes Overview</h2>
-        <p>Summary of recorded notes and outstanding actions.</p>
     </div>
 
     <!-- Stats board -->
@@ -695,47 +685,16 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
     </div>
 
     <!-- AUDIT LOG -->
-    <div class="section-head" id="audit-log">
-        <h2>Audit Log</h2>
-        <p>Actions recorded to the AuditLog sheet.</p>
-    </div>
-    <div class="panel">
-        <div class="panel-header">
-            <div class="panel-title-left"><span class="dot"></span><h3>Activity</h3></div>
+    <div id="auditLog-placeholder"></div>
 
-        </div>
-        <div class="tab-content active">
-                        <div class="panel-toolbar">
-                <div class="audit-toggle">
-                    <button id="auditFilterMembers" class="active">Members</button>
-                    <button id="auditFilterAll">All</button>
-                </div>
-                <div class="search-wrap">
-                    <i class="nav-icon search-icon" data-lucide="search"></i>
-                    <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
-                </div>
-                <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
-            </div>
-            <div class="log-table-wrap">    
-                <table class="log-table">
-                    <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
-                    <tbody id="auditBody"></tbody>
-                </table>
-            </div>
-            <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
-        </div>
-    </div>
+    <footer>
+        <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+    </footer>
 </main>
-
-<footer>
-    <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
-</footer>
 
 <script src="shared.js"></script>  
 <script src="auditLog.js"></script>
-<script>
-    AuditLog.init('notes',"Notes");  
-</script>
+
 <script>
     /* =========================================================
        CONFIG
@@ -1551,6 +1510,15 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
        INIT
        ========================================================= */
     loadAll().then(() => { lucide.createIcons(); AuditLog.load(); });
+</script>
+<script>
+fetch('auditLog.html')
+    .then(r => r.text())
+    .then(data => {
+    document.getElementById('auditLog-placeholder').innerHTML = data;
+    AuditLog.init('apps', 'Applications');  // adjust domain/label as needed
+    if (window.lucide) lucide.createIcons();
+    });
 </script>
 </body>
 </html>
