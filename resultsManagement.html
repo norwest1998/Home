@@ -547,10 +547,39 @@ async function loadAll() {
     loadAvgRequests();
 }
 
+async function listFolderContents() {
+    let output = '';
+    try {
+    const response = await gapi.client.drive.files.list({
+        'q': `'${FOLDER_PROCESSED}' in parents and trashed = false`,
+        'pageSize': 50,
+        'fields': 'files(id, name, mimeType)',
+    });
+    
+    const files = response.result.files;
+    if (!files || files.length === 0) {
+        output = 'No files found in this folder.';
+    } else {
+        output = 'Files found:\n';
+        files.forEach(file => {
+        output += `- ${file.name} (ID: ${file.id}, Type: ${file.mimeType})\n`;
+        });
+    }
+    } catch (err) {
+       output = `Error: ${err.message || JSON.stringify(err)}`;
+    }
+    document.getElementById('resultRows').innerText = output;
+}
+
 async function loadProcessedFiles() {
+
     document.getElementById('resultRows').innerHTML = '<div class="empty-state"><span class="spinner"></span></div>';
     try {
-        const res  = await fetch(`${CLB_WEBAPP_URL}?action=listFolder&folderId=${FOLDER_PROCESSED}`);
+        const res = await gapi.client.drive.files.list({
+            'q': `'${FOLDER_PROCESSED}' in parents and trashed = false`,
+            'pageSize': 50,
+            'fields': 'files(id, name, mimeType)',
+        });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         allProcessedFiles = (data.files || []).map(f => {
