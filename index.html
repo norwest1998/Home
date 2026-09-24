@@ -1542,7 +1542,6 @@
         </div>
 
         <!-- Placeholder 3: Add Race Result App --> 
-
         <div class="tile glass" id="average-score-request">
           <div class="tile-title">
             <i data-lucide="calculator" color="#257fb6"></i>
@@ -1550,59 +1549,108 @@
           </div>
           <p class="subh">Request average scoring for a missed club regatta due to an ARYA Ranking event clash.</p>
 
-          <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:16px;">
-            
-            <!-- Member Selection Dropdown -->
-            <div class="form-group">
-              <label for="reqMemberName" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Member Name</label>
-              <select id="reqMemberName" name="memberName" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
-                <option value="">Loading active members...</option>
-              </select>
-              <input type="hidden" id="reqMemberEmail" name="memberEmail">
-            </div>
-
-            <!-- Event Date -->
-            <div class="form-group">
-              <label for="reqEventDate" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Missed Event Date</label>
-              <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
-            </div>
-
-            <!-- Event Name: Class + Regatta Type -->
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-              <div class="form-group">
-                <label for="reqBoatClass" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Class</label>
-                <select id="reqBoatClass" name="boatClass" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
-                  <option value="IOM">IOM</option>
-                  <option value="DF95">DF95</option>
-                  <option value="DF65">DF65</option>
-                  <option value="Soling">Soling</option>
-                  <option value="General Handicap">General Handicap</option>
-                </select>
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span class="dot"></span>
+                <h3>Members &amp; Applications</h3>
               </div>
-
-              <div class="form-group">
-                <label for="reqRegattaType" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Regatta Type</label>
-                <select id="reqRegattaType" name="regattaType" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
-                  <option value="Championship">Championship</option>
-                  <option value="Scratch">Scratch</option>
-                  <option value="Handicap">Handicap</option>
-                  <option value="Sprint Series">Sprint Series</option>
-                </select>
+              <div class="tab-row-wrap">
+                <div class="tab-row">
+                  <button class="tab active" data-tab="members">Members List</button>
+                  <button class="tab" data-tab="applications">Applications</button>
+                </div>
+                <button class="add-app-pill" id="addApplicationPill" type="button" title="Add Application">
+                  <span>+</span> Add Application
+                </button>
               </div>
             </div>
+              
+            <!-- Members tab -->
+            <div id="tab-requests" class="tab-content active">
+              <div class="search-wrap">
+                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input class="search-input" type="text" id="requestSearch"
+                      placeholder="Search by name…" autocomplete="off">
+              </div>
 
-            <!-- Conflicting Regatta Dropdown -->
-            <div class="form-group">
-              <label for="reqConflictingRegatta" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Conflicting ARYA Event Name</label>
-              <select id="reqConflictingRegatta" name="conflictingRegatta" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
-                <option value="">Loading ARYA Regional Conflicts...</option>
-              </select>
+              <!-- Filters -->
+              <div class="app-filters" id="requestFilters">
+                <select class="request-filter-select" id="filterRequestStatus">
+                  <option value="">All Types</option>
+                  <option value="received">Received</option>
+                  <option value="pending">In Progress</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <button class="member-filter-btn" data-filter="approved">Approved</button>
+                <button class="member-filter-btn" data-filter="rejected">Rejected</button>
+                <button class="member-filter-btn" data-filter="pending">Pending</button>
+              </div>
+
+              <div class="count-chip" id="requestCount"></div>
+              <div class="app-list" id="requestList">
+                <div class="empty-state"><div class="spinner"></div><div>Loading requests…</div></div>
+              </div>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="margin-top:8px; justify-content:center;">Submit Request</button>
-            <div id="formStatus" style="font-size:12px; margin-top:6px; text-align:center;"></div>
-          </form>
+            <div id="tab-form" class="tab-content active"></div>
+              <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:16px;">
+                
+                <!-- Member Selection Dropdown -->
+                <div class="form-group">
+                  <label for="reqMemberName" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Member Name</label>
+                  <select id="reqMemberName" name="memberName" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
+                    <option value="">Loading active members...</option>
+                  </select>
+                  <input type="hidden" id="reqMemberEmail" name="memberEmail">
+                </div>
 
+                <!-- Event Date -->
+                <div class="form-group">
+                  <label for="reqEventDate" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Missed Event Date</label>
+                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
+                </div>
+
+                <!-- Event Name: Class + Regatta Type -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                  <div class="form-group">
+                    <label for="reqBoatClass" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Class</label>
+                    <select id="reqBoatClass" name="boatClass" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
+                      <option value="IOM">IOM</option>
+                      <option value="DF95">DF95</option>
+                      <option value="DF65">DF65</option>
+                      <option value="Soling">Soling</option>
+                      <option value="General Handicap">General Handicap</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="reqRegattaType" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Regatta Type</label>
+                    <select id="reqRegattaType" name="regattaType" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
+                      <option value="Championship">Championship</option>
+                      <option value="Scratch">Scratch</option>
+                      <option value="Handicap">Handicap</option>
+                      <option value="Sprint Series">Sprint Series</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Conflicting Regatta Dropdown -->
+                <div class="form-group">
+                  <label for="reqConflictingRegatta" style="font-size:12px; color:var(--glow); display:block; margin-bottom:4px;">Conflicting ARYA Event Name</label>
+                  <select id="reqConflictingRegatta" name="conflictingRegatta" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam);">
+                    <option value="">Loading ARYA Regional Conflicts...</option>
+                  </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="margin-top:8px; justify-content:center;">Submit Request</button>
+                <div id="formStatus" style="font-size:12px; margin-top:6px; text-align:center;"></div>
+              </form>
+          </div>
           <span class="tag">Average Points Request Module</span>
         </div>
 
@@ -3156,6 +3204,10 @@
     members.forEach(m => {
       select.innerHTML += `<option value="${m.name}">${m.name}</option>`;
     });
+  }
+  
+  function renderRequests() {
+
   }
 
   document.getElementById("reqMemberName").addEventListener("change", function(e) {
