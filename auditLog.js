@@ -17,7 +17,7 @@ const AuditLog = {
         document.getElementById('auditFilterMembers').textContent = label;
         document.getElementById('auditSearch').addEventListener('input', () => this.render());
         document.getElementById('refreshLogBtn').addEventListener('click', () => this.load());
-        document.getElementById('auditFilterMembers').addEventListener('click', () => this.setFilter('members'));
+        document.getElementById('auditFilterMembers').addEventListener('click', () => this.setFilter(this.primaryDomain));
         const ddWrap = this._buildDomainDropdown();
         document.getElementById('auditFilterAll').replaceWith(ddWrap);
         this.load();
@@ -32,7 +32,7 @@ const AuditLog = {
     },
 
     _buildDomainDropdown() {
-        const allDomains = Object.keys(DOMAIN).filter(k => k !== this.primaryDomain);
+        const allDomains = Object.keys(DOMAIN).filter(k => this.primaryDomain === 'all' || k !== this.primaryDomain);
         const wrapper = document.createElement('div');
         wrapper.className = 'audit-dropdown-wrap';
         wrapper.style.cssText = 'position:relative;display:inline-block;';
