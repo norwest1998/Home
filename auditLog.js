@@ -45,6 +45,9 @@ const AuditLog = {
             e.stopPropagation();
             this._toggleDropdown();
         });
+        wrapper.querySelector('#auditDomainMenu').addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
 
         wrapper.querySelector('.audit-domain-item').addEventListener('click', () => {
             this.setFilter('all');
