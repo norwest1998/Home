@@ -1051,9 +1051,8 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
     INIT
     ============================================================ */
     loadMembers();
-    AuditLog.load();
     if (window.lucide) lucide.createIcons();
-    document.addEventListener('DOMContentLoaded', () => AuditLog.init('members', 'Members'))
+
 </script>
 <script>
     Promise.all([

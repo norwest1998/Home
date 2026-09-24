@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="smmc-domain" content="results">
+<title>Results Management — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Link Shared Theme -->
+<link rel="stylesheet" href="theme.css">
+<style>
+/* Use liquid glass styling */
+
+</style>
+</head>
+<body>
+
+<!-- Shared Navigation Header -->
+<div id="nav-placeholder"></div>    
+
+<main class="container">
+    <!-- Admin Workspace Header -->
+    <div class="admin-header">
+        <div class="admin-title-group">
+            <h1>Results Management</h1>
+            <p style="color:var(--foam-dim);font-size:13px;">Update payments, request Result updates and send renewal notices.</p>
+        </div>
+        <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
+    </div>
+
+    <!-- Results STATS -->
+    <div class="stat-grid" id="reultsStats" >
+        <div class="glass stat-glass">
+            <div class="stat-total" id="statProcessed" ><span class="spinner"></div>
+            <div class="stat-text" >Processed Results</div>
+        </div>
+        <div class="glass stat-glass">
+            <div class="stat-total" id="statOutstanding"><span class="spinner"></div>
+            <div class="stat-text">Outstanding Results</div>
+        </div>
+        <div class="glass stat-glass">
+            <div class="stat-total" id="statComplete" ><span class="spinner"></div>
+            <div class="stat-text">Complete Records</div>
+        </div>
+        <div class="glass stat-glass">
+            <div class="stat-total" id="statAvgScoreReq"><span class="spinner"></div>
+            <div class="stat-text">Average Score Requests</div>
+        </div>
+        <div class="glass stat-glass">
+            <div class="stat-total" id="statAvgScoreApp"><span class="spinner"></div>
+            <div class="stat-text">Avg Score Req Approved</div>
+        </div>
+    </div>
+
+    <!-- Admin ACTIONS -->
+    <div class="section-head" id="admin-actions" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div>
+            <h2>Admin Actions</h2>
+            <p>Search, filter, and act on results.</p>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;"">
+            <div class="panel-title-left"><span class="dot"></span><h3>Select Results</h3></div>
+        </div>
+
+        <div class="tab-content active">
+            <div class="panel-toolbar">
+                <div class="search-wrap">
+                    <i class="inline-icon" data-lucide="search"></i>
+                    <input
+                        id="resultsListSearch"
+                        class="search-input"
+                        type="text"
+                        placeholder="Search results by class..."
+                        oninput="filterResultsDirectory()"
+                    >
+                </div>
+                <select id="classFilter" class="mm-select mm-select-inline">
+                    <option value="all">All Classes</option>
+                    <option value="other classes">create dropdown of all classes</option>
+                </select>
+                <select id="typeFilter" class="mm-select mm-select-inline">
+                    <option value="all">All Regatta Types</option>
+                    <option value="other types">create dropdown of all regatta types</option>
+
+                </select>
+                <button type="button" class="btn btn-ghost" id="refreshResultsBtn" onclick="loadResults()" title="Refresh Result list">
+                    <i class="inline-icon" data-lucide="refresh-cw" color="#257fb6"></i> Refresh
+                </button>
+            </div>
+
+
+            <div class="list-header-row" id="ResultActionsHeader" style="display:none;justify-content:flex-end;">
+                <div class="row-actions">
+                    <button type="button" class="icon-btn" title="view scoresheet" onclick="viewscoresheet(result)"><i class="inline-icon" data-lucide="book-open-text"></i></button>
+                    <button type="button" class="icon-btn" title="Initiate Processing" onclick="initiateProcessing()"><i class="inline-icon" data-lucide="exit"></i></button>
+
+                </div>
+            </div>
+
+            <div id="ResultListsResults" class="Result-rows">
+                <div class="empty-state">Type a name above or choose a filter to see Results.</div>
+            </div>
+            <div class="fn-message" id="ResultActionsMsg"></div>
+        </div>
+    </div>
+
+
+
+    <!-- AUDIT LOG -->
+    <div id="auditLog-placeholder"></div>
+</main>
+
+<!-- SECTIONED Result MODAL -->
+<div class="modal-overlay" id="ResultModalOverlay" onclick="if(event.target===this) closeResultModal()">
+    <div class="modal-box">
+        <div class="modal-header">
+
+</div>
+
+<footer>
+    <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+</footer>
+<!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
+<script src="shared.js"></script>
+<script src="nav.js"></script>   
+<script src="auditLog.js"></script>
+<script>
+    // config.js  (or inline in a shared include)
+    const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
+    let allResults = [];
+    let allBoats = [];
+
+
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+    }
+
+    function debounce(fn, delay = 150) {
+        let t;
+        return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+    }
+
+    function showMsg(elId, text, isError) {
+        const el = document.getElementById(elId);
+        el.textContent = text;
+        el.className = "fn-message visible " + (isError ? "error" : "success");
+    }
+
+    let selectedResultRows = new Set();
+    let activeModalResult = null;
+    let lastSearchValue = '';
+
+    const ACTION_LABELS = {
+        viewScoresheet: 'View Scoresheet',
+        approveAvgScr: 'Approve Average Score',
+        rejectAvgScr: 'Reject Average Score',
+
+    };
+
+    function parseBoolLike(v) {
+        if (v === true) return true;
+        if (v === false || v === undefined || v === null || v === '') return false;
+        const s = String(v).trim().toLowerCase();
+        return s === 'true' || s === 'yes' || s === 'active' || s === '1';
+    }
+
+    function getResultClasses(name) {
+        const n = String(name || '').trim().toLowerCase();
+        const classes = allBoats
+            .filter(b => String(b.Result || '').trim().toLowerCase() === n && b.active)
+            .map(b => b.class).filter(Boolean);
+        return classes.length ? classes.join(', ') : '—';
+    }
+
+    async function loadResults() {
+        try {
+            const [ResultsRaw, boatsRaw] = await Promise.all([
+                fetchSheet(DOMAIN.results, "Results"),
+                fetchSheet(DOMAIN.members, "ClassResults"),
+                fetchSheet(DOMAIN.members, "Members"),
+            ]);
+
+            filterResultsDirectory();
+            renderResultsStats();
+        } catch (err) {
+            document.getElementById('ResultListsResults').innerHTML =
+                `<div class="empty-state">Error loading Results: ${escapeHtml(err.message)}</div>`;
+        }
+    }
+
+
+
+    const filterResultsDirectory = debounce(function filterResultsDirectoryImpl() {
+        const searchInput = document.getElementById('ResultListSearch');
+        lastSearchValue = searchInput.value;
+
+Filter by Class and Regatta Type
+
+        renderResultDirectory(filtered, false);
+    }, 150);
+
+    function handleQueryKeyDown(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const currentSearch = document.getElementById('ResultListSearch').value;
+            if (currentSearch !== lastSearchValue) {
+                filterResultsDirectory();
+            }
+        }
+    }
+Use results stats defined in the html 
+
+    function renderResultsStats() {
+        const REQUIRED_FIELDS = ['name','email','phone','ResultshipType','startDate','endDate','addressLine','suburb','postcode','emergencyContactName','emergencyContactNumber'];
+        const active = allResults.filter(m => isActiveStatus(m.status));
+        const paid = allResults.filter(m => m.isPaid);
+        const complete = allResults.filter(m => REQUIRED_FIELDS.every(f => m[f] && String(m[f]).trim() !== ''));
+        const affiliate = allResults.filter(m => String(m.ResultshipType || '').toLowerCase().includes('affiliate'));
+        document.getElementById('statActive').textContent = active.length;
+        document.getElementById('statPaid').textContent = paid.length;
+        document.getElementById('statComplete').textContent = complete.length;
+        document.getElementById('statAffiliate').textContent = affiliate.length;
+        document.getElementById('statTotal').textContent = allResults.length;
+    }
+
+    document.getElementById('ResultstatusFilter').addEventListener('change', filterResultsDirectory);
+
+    
+    function handleRowClick(row) {
+        const result = allResults.find(m => m.row === row);
+        if (result) openResultModal(result);
+    }
+
+    function toggleResultselect(row, checked) {
+        if (checked) selectedResultRows.add(row); else selectedResultRows.delete(row);
+        const boxes = [...document.querySelectorAll('.result-select-chk')];
+        document.getElementById('selectAllResults').checked = boxes.length > 0 && boxes.every(c => c.checked);
+    }
+
+    function toggleSelectAllResults(chk) {
+        document.querySelectorAll('.result-select-chk').forEach(c => {
+            c.checked = chk.checked;
+            const row = parseInt(c.dataset.row, 10);
+            if (chk.checked) selectedResultRows.add(row); else selectedResultRows.delete(row);
+        });
+    }
+
+    /* ============================================================
+    SECTIONED Result MODAL LOGIC
+    ============================================================ */
+    const MODAL_SECTIONS = [
+        {
+            title: 'Placeholder',
+            fields: [
+                { key: placeholder, label: "Placeholder" },
+                { key: placeholder, label: "Placeholder" },
+                { key: placeholder, label: "Placeholder" }
+            ]
+        },
+        {
+            title: 'placehiolder',
+            fields: [
+                { key: placeholder, label: "Placeholder" },
+                { key: placeholder, label: "Placeholder" },
+                { key: placeholder, label: "Placeholder" }
+            ]   
+        }
+    ];
+
+
+
+    /* ============================================================
+    INIT
+    ============================================================ */
+    loadResults();
+    if (window.lucide) lucide.createIcons();
+
+</script>
+<script>
+    Promise.all([
+        fetch('nav.html').then(r => r.text()),
+        fetch('auditLog.html').then(r => r.text()),
+    ]).then(([navHtml, auditHtml, healthHtml]) => {
+        document.getElementById('nav-placeholder').innerHTML = navHtml;
+        document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
+
+        AuditLog.init();
+        Nav.init();  // scans after all panels are in the DOM
+
+        if (window.lucide) lucide.createIcons();
+    });
+</script>
+</body>
+</html>

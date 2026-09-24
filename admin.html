@@ -383,81 +383,47 @@ const FUNCTIONS = [
             };
         }
     },
-    // Calendar management
+    // Regatta Result management
     {
-        id: "calendar-management",
-        icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
-        title: "test Management",
-        description: "Manage Calendar Events.",
-        href: "testCalMan.html",
+        id: "race-management",
+        icon: `<svg xmlns="http://w3.org" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 4h2a2 2 0 0 1 2 2v3" />
+                <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6" />
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+
+                <line x1="8" y1="10" x2="14" y2="10" />
+                <line x1="8" y1="14" x2="11" y2="14" />
+                <line x1="8" y1="18" x2="11" y2="18" />
+
+                <path d="M17 11v8h4c0 0-1-6-4-8z" />
+                <path d="M15 14.5v4.5h1.5c0 0-.5-3.5-1.5-4.5z" />
+
+                <path d="M18 22l1.5 1.5L23 20" />
+                </svg>`,
+        title: "Results Management",
+        description: "Manage Regatta Results.",
+        href: "resultManagement.html",
         status: async () => {
-            const events = await fetchSheet(DOMAIN.calendar, "Event Data");
-
-            // helper to pull Competition regattas
-            const getCompVal = (row) => getRowVal(row, [
-                "Competition", 
-                "competition"
-            ]).trim().toLowerCase();
-
-            // Helper to pull the Rescheduled Date field across header variations
-            const getReschedVal = (row) => getRowVal(row, [
-                "Rescheduled Date", 
-                "RescheduledDate", 
-                "Reschedule Date"
-            ]).trim().toLowerCase();
-
-            // count competitions
-            const compCount = events.filter(e => {
-                const val = getCompVal(e);
-                return val.includes("competition");
+            const [noteRows, actionRows] = await Promise.all([
+                fetchSheet(DOMAIN.results, "Results"),
+                fetchSheet(DOMAIN.notes, "Actions")
+            ]);
+            const now = new Date();
+            const open = actionRows.filter(a => getRowVal(a,["Status"]).toLowerCase() !== "done").length;
+            const overdue = actionRows.filter(a => {
+                const d = new Date(getRowVal(a,["By Date"]));
+                return getRowVal(a,["Status"]).toLowerCase() !== "done" && !isNaN(d) && d < now;
             }).length;
-
-            // count maintenance days
-            const maintCount = events.filter(e => {
-                const val = getCompVal(e);
-                return val.includes("maintenance");
-            }).length;
-
-            // 1. Pending: Column contains "pending" (e.g., "Pending 15/10/2026")
-            const pendingCount = events.filter(e => {
-                const val = getReschedVal(e);
-                return val.includes("pending");
-            }).length;
-
-            // 2. Rescheduled: Column is populated with a date string and is no longer pending
-            const rescheduledCount = events.filter(e => {
-                const val = getReschedVal(e);
-                return val !== "" && !val.includes("pending");
-            }).length;
-
             return {
                 pills: [
-                    {
-                        label: "Regattas",
-                        value: compCount,
-                        className: "badge-full"
-                    },{
-                        label: "Socials",
-                        value: events.length - compCount,
-                        className: "badge-full"
-                    },{
-                        label: "Maintenance",
-                        value: maintCount,
-                        className: "badge-full"
-                    },{
-                        label: "Rescheduled",
-                        value: rescheduledCount,
-                        className: "badge-full"
-                    },{
-                        label: "Pending",
-                        value: pendingCount,
-                        className: "badge-renewal"
-                    },
+                    { label: "Notes",           value: noteRows.length, className: "badge-full" },
+                    { label: "Open Actions",    value: open,            className: "badge-renewal" },
+                    { label: "Overdue",         value: overdue,         className: overdue > 0 ? "badge-expired" : "badge-default" }
                 ]
             };
         }
     },
-    { id: "add-function-slot", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
+    { id: "add-new-function", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
 ];
 
 // Case-insensitive field reader
