@@ -91,29 +91,12 @@
 .fn-message.success { color: var(--glow); }
 .fn-message.error { color: #ff6b6b; }
 
-
 </style>
 </head>
 <body>
 <!-- Shared Navigation Header -->
-<header class="nav-glass">
-    <a href="index.html" class="brand">
-        <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
-        <div class="brand-text">
-            <strong>Sydney Maritime Modellers Club</strong>
-            <span>ADMINISTRATION PORTAL</span>
-        </div>
-        <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
-        <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
-    </a>
-    
-    <ul class="nav-links">
-        <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
-        <li class="nav-item"><a href="#audit-log" class="nav-link">Committee Logs</a></li>
-    </ul>
-</header>
-
-<main class="container">
+<div id="nav-placeholder"></div>
+<main class="container"></main>
 
     <div class="section-head">
         <h2>Member Health</h2>
@@ -163,24 +146,31 @@
         </div>
     </section>
 
-    <div class="section-head">
+    <div class="section-head" id="admin-ops">
         <h2>Admin Operations</h2>
         <p>Launch functions that update the Google Sheet backing index.html.</p>
     </div>
 
     <section class="fn-grid" id="fnGrid"></section>
 
+    <!-- Sheet Layout monitor-->
+    <div id="systemHealth-placeholder"></div>
+
     <!-- AUDIT LOG -->
     <div id="auditLog-placeholder"></div>
+
+    <div id="systemHealth-placeholder"></div>
 
     <footer>
         <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
     </footer>
 </main>
 
-
-<script src="shared.js"></script>   <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
+<!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
+<script src="shared.js"></script>  
+<script src="nav.js"></script> 
 <script src="auditLog.js"></script>
+<script src="systemHealth.js"></script>
 <script>
 // Case-insensitive cell value retriever across header variations
 function getRowVal(row, possibleKeys) {
@@ -603,12 +593,34 @@ renderGrid();
 loadMemberHealth();
 </script>
 <script>
+    fetch('systemHealth.html')
+        .then(r => r.text())
+        .then(data => {
+            document.getElementById('systemHealth-placeholder').innerHTML = data;
+            SystemHealth.init();
+            if (window.lucide) lucide.createIcons();
+        });
+
     fetch('auditLog.html')
         .then(r => r.text())
         .then(data => {
         document.getElementById('auditLog-placeholder').innerHTML = data;
         AuditLog.init('All', 'All');  // adjust domain/label as needed
         if (window.lucide) lucide.createIcons();
+        });
+
+    fetch('nav.html')
+        .then(r => r.text())
+        .then(html => {
+            document.getElementById('nav-placeholder').innerHTML = html;
+            Nav.init({
+                sections: [
+                    { label: "Member Health",    href: "#member-health" },
+                    { label: "Admin Operations", href: "#admin-ops" },
+                    { label: "System Health",    href: "#system-health" },
+                    { label: "Audit Log",        href: "#audit-log" },
+                ]
+            });
         });
 </script>
 </body>
