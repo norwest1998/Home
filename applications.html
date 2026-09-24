@@ -280,10 +280,9 @@
                 <span class="dot"></span>
                 <h3>Activity</h3>
             </div>
-
         </div>
         <div class="tab-content active">
-                      <div class="panel-toolbar">
+              <div class="panel-toolbar">
                 <div class="audit-toggle">
                     <button id="auditFilterMembers" class="active">Members</button>
                     <button id="auditFilterAll">All</button>
@@ -581,7 +580,7 @@
             <div class="app-detail-grid">
               <div class="app-detail-item">
                 <span class="app-detail-label">Name</span>
-                <span class="app-detail-value">${esc(d.fullName) || '—'}</span>
+                <span class="app-detail-value">`${esc(d.['First Name']) ${esc(d.surame)`|| '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Email</span>
