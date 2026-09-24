@@ -562,9 +562,9 @@
       document.getElementById('auditContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
 
       try {
-        const d = await fetchSheet(DOMAIN.apps, "Membership Applications", encodeURIComponent(rowId));
+        const raw = await fetchSheet(DOMAIN.apps, "Membership Applications", encodeURIComponent(rowId));
         if (d.error) throw new Error(d.error);
-
+        const d = raw(normaliseApp);
         document.getElementById('reviewTitle').textContent = `Application Review: ${d.fullName || name}`;
 
         const badge = statusBadge(d);
@@ -580,7 +580,7 @@
             <div class="app-detail-grid">
               <div class="app-detail-item">
                 <span class="app-detail-label">Name</span>
-                <span class="app-detail-value">`${esc(d.['First Name']) ${esc(d.surame)`|| '—'}</span>
+                <span class="app-detail-value">${name|| '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Email</span>
@@ -606,11 +606,11 @@
             <div class="app-detail-grid">
               <div class="app-detail-item">
                 <span class="app-detail-label">Membership Type</span>
-                <span class="app-detail-value">${esc(d.type) || '—'}</span>
+                <span class="app-detail-value">${esc(d.membershipType) || '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Current Club</span>
-                <span class="app-detail-value">${esc(d.currentClub) || '—'}</span>
+                <span class="app-detail-value">${esc(d.classOrBoat) || '—'}</span>
               </div>
             </div>
           </div>
