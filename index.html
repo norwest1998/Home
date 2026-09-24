@@ -1541,125 +1541,139 @@
           <span class="tag">Registry Module</span>
         </div>
 
-        <!-- Placeholder 3: Request Applications Panel Component --> 
-        <div class="tile glass" id="request-applications-panel">
-          <!-- Common Header with Tabs -->
-          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.1)); padding-bottom: 12px; margin-bottom: 16px;">
-            <div class="tile-title" style="display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="clipboard-list" color="#257fb6"></i>
-              <h3 style="margin: 0;">Request applications</h3>
-            </div>
-            
-            <!-- Tab Controls -->
-            <div class="tab-controls" style="display: flex; gap: 8px;">
-              <button type="button" id="tab-btn-list" class="tab-btn active" onclick="switchReqTab('list')" style="padding: 6px 14px; border-radius: 6px; cursor: pointer; border: 1px solid var(--glass-border); background: var(--glow, #257fb6); color: #fff; font-weight: 500;">Request List</button>
-              <button type="button" id="tab-btn-app" class="tab-btn" onclick="switchReqTab('app')" style="padding: 6px 14px; border-radius: 6px; cursor: pointer; border: 1px solid var(--glass-border); background: transparent; color: var(--foam, #ccc); font-weight: 500;">Applications</button>
-            </div>
+        <!-- Average Score Requests Module -->
+        <div id="avg-score-requests" class="tile glass">
+          <div class="tile-title">
+            <i class="tile-icon" data-lucide="calculator" color="#257fb6"></i>
+            <h3>Average Score Requests</h3>
           </div>
+          <p class="subh">Request average scoring for a missed club regatta due to an ARYA Ranking event clash.</p>
 
-          <!-- TAB 1: Request List (Active by Default) -->
-          <div id="tab-content-list" class="tab-content" style="display: block;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <p class="subh" style="margin:0;">Submitted average score requests and current statuses.</p>
-              <button type="button" onclick="loadRequestList()" style="background: transparent; border: none; color: var(--glow, #257fb6); cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px;">
-                <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Refresh
-              </button>
-            </div>
-
-            <div id="request-list-table-container" style="overflow-x: auto;">
-              <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-                <thead>
-                  <tr style="border-bottom: 1px solid var(--glass-border); color: var(--glow, #257fb6);">
-                    <th style="padding: 10px;">ID</th>
-                    <th style="padding: 10px;">Member</th>
-                    <th style="padding: 10px;">Event Name</th>
-                    <th style="padding: 10px;">Missed Date</th>
-                    <th style="padding: 10px;">Status</th>
-                    <th style="padding: 10px; text-align: right;">Action</th>
-                  </tr>
-                </thead>
-                <tbody id="request-list-tbody">
-                  <tr>
-                    <td colspan="6" style="padding: 16px; text-align: center; color: var(--foam);">Loading requests...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- TAB 2: Applications (Form) -->
-          <div id="tab-content-app" class="tab-content" style="display: none;">
-            <p class="subh">Request average scoring for a missed club regatta due to an ARYA Ranking event clash.</p>
-
-            <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:16px;">
-              <!-- Member Dropdown populated from allMembers -->
-              <div class="form-group">
-                <label for="reqMemberName" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px;">Member Name</label>
-                <select id="reqMemberName" name="memberName" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border); color:var(--foam, #fff);">
-                  <option value="">Select active member...</option>
-                </select>
-                <input type="hidden" id="reqMemberEmail" name="memberEmail">
+          <div class="panel">
+            <!-- Panel Header with Tabs and Pill Button -->
+            <div class="panel-header">
+              <div class="panel-title">
+                <span class="dot"></span>
+                <h3>Requests &amp; Applications</h3>
               </div>
-
-              <!-- Missed Event Date -->
-              <div class="form-group">
-                <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px;">Missed Event Date</label>
-                <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border); color:var(--foam, #fff);">
-              </div>
-
-              <!-- Event Class & Type -->
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                <div class="form-group">
-                  <label for="reqBoatClass" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px;">Class</label>
-                  <select id="reqBoatClass" name="boatClass" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border); color:var(--foam, #fff);">
-                    <option value="IOM">IOM</option>
-                    <option value="DF95">DF95</option>
-                    <option value="DF65">DF65</option>
-                    <option value="Soling">Soling</option>
-                    <option value="General Handicap">General Handicap</option>
-                  </select>
+              <div class="tab-row-wrap">
+                <div class="tab-row" id="avgReqTabRow">
+                  <button class="tab active" data-tab="req-list">Request List</button>
+                  <button class="tab" data-tab="req-app">New Application</button>
                 </div>
+                <button class="add-app-pill" id="addAvgReqPill" type="button" title="New Request">
+                  <span>+</span> New Request
+                </button>
+              </div>
+            </div>
 
-                <div class="form-group">
-                  <label for="reqRegattaType" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px;">Regatta Type</label>
-                  <select id="reqRegattaType" name="regattaType" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border); color:var(--foam, #fff);">
-                    <option value="Championship">Championship</option>
-                    <option value="Scratch">Scratch</option>
-                    <option value="Handicap">Handicap</option>
-                    <option value="Sprint Series">Sprint Series</option>
-                  </select>
+            <!-- TAB 1: Request List (Active) -->
+            <div id="tab-req-list" class="tab-content active">
+              <!-- Search Wrap -->
+              <div class="search-wrap">
+                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input class="search-input" type="text" id="avgReqSearch"
+                      placeholder="Search requests by member name or event…" autocomplete="off">
+              </div>
+
+              <!-- Filters -->
+              <div class="app-filters" id="avgReqFilters">
+                <button class="app-filter-btn active" data-status="all">All</button>
+                <button class="app-filter-btn" data-status="Received">Received</button>
+                <button class="app-filter-btn" data-status="Pending">Pending</button>
+                <button class="app-filter-btn" data-status="Approved">Approved</button>
+                <button class="app-filter-btn" data-status="Rejected">Rejected</button>
+              </div>
+
+              <div class="count-chip" id="avgReqCount">0 Requests</div>
+
+              <!-- App / Request List -->
+              <div class="app-list" id="avgReqList">
+                <div class="empty-state">
+                  <div class="spinner"></div>
+                  <div>Loading requests…</div>
                 </div>
               </div>
+            </div>
 
-              <!-- Conflicting Regatta -->
-              <div class="form-group">
-                <label for="reqConflictingRegatta" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px;">Conflicting ARYA Event Name</label>
-                <input type="text" id="reqConflictingRegatta" name="conflictingRegatta" placeholder="e.g. 2026 NSW IOM State Championship" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border); color:var(--foam, #fff);">
-              </div>
+            <!-- TAB 2: Applications / Form -->
+            <div id="tab-req-app" class="tab-content">
+              <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
+                <!-- Member Select populated from allMembers -->
+                <div class="form-group">
+                  <label for="reqMemberName" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Member Name</label>
+                  <select id="reqMemberName" name="memberName" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); color:var(--foam, #fff);">
+                    <option value="">Select active member…</option>
+                  </select>
+                  <input type="hidden" id="reqMemberEmail" name="memberEmail">
+                </div>
 
-              <button type="submit" id="btnSubmitApp" class="btn btn-primary" style="margin-top:8px; padding: 10px; justify-content:center; cursor:pointer;">Submit Request</button>
-              <div id="formStatus" style="font-size:12px; margin-top:6px; text-align:center;"></div>
-            </form>
+                <!-- Missed Event Date -->
+                <div class="form-group">
+                  <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Missed Event Date</label>
+                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); color:var(--foam, #fff);">
+                </div>
+
+                <!-- Event Class & Type -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                  <div class="form-group">
+                    <label for="reqBoatClass" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Class</label>
+                    <select id="reqBoatClass" name="boatClass" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); color:var(--foam, #fff);">
+                      <option value="IOM">IOM</option>
+                      <option value="DF95">DF95</option>
+                      <option value="DF65">DF65</option>
+                      <option value="Soling">Soling</option>
+                      <option value="General Handicap">General Handicap</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="reqRegattaType" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Regatta Type</label>
+                    <select id="reqRegattaType" name="regattaType" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); color:var(--foam, #fff);">
+                      <option value="Championship">Championship</option>
+                      <option value="Scratch">Scratch</option>
+                      <option value="Handicap">Handicap</option>
+                      <option value="Sprint Series">Sprint Series</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Conflicting Regatta -->
+                <div class="form-group">
+                  <label for="reqConflictingRegatta" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Conflicting ARYA Event Name</label>
+                  <input type="text" id="reqConflictingRegatta" name="conflictingRegatta" placeholder="e.g. 2026 NSW IOM State Championship" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); color:var(--foam, #fff);">
+                </div>
+
+                <button type="submit" id="btnSubmitAvgReq" class="add-app-pill" style="margin-top:10px; height:40px; justify-content:center; width:100%; font-size:14px; font-weight:600; cursor:pointer;">
+                  Submit Application
+                </button>
+                <div id="avgReqFormStatus" style="font-size:12px; margin-top:4px; text-align:center;"></div>
+              </form>
+            </div>
           </div>
+
+          <!-- Request Detail Drawer -->
+          <div class="drawer-overlay" id="avgReqDrawer">
+            <div class="drawer drawer-wide">
+              <div class="drawer-header">
+                <div class="drawer-header-left">
+                  <h4 id="avgReqDrawerTitle">Request Details</h4>
+                  <span class="drawer-header-sub" id="avgReqDrawerSub"></span>
+                </div>
+                <button class="drawer-close" id="closeAvgReqDrawer">✕</button>
+              </div>
+              <div class="drawer-body" id="avgReqDrawerBody">
+                <div class="drawer-loading">
+                  <div class="spinner"></div>
+                  <span>Loading details…</span>
+                </div>
+              </div>
+            </div>
+          </div>          
           <span class="tag">Average Points Request Module</span>
-        </div>
-
-        <!-- Modal for Viewing Request Details -->
-        <div id="reqDetailModal" style="display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; padding: 20px;">
-          <div class="glass" style="width: 100%; max-width: 520px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-surface, #1e293b); padding: 24px; color: var(--foam, #fff); position: relative;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; margin-bottom: 16px;">
-              <h3 id="modalReqTitle" style="margin:0; font-size: 18px;">Request Details</h3>
-              <button type="button" onclick="closeReqModal()" style="background:transparent; border:none; color:var(--foam); font-size:20px; cursor:pointer;">&times;</button>
-            </div>
-
-            <div id="modalReqBody" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
-              <!-- Populated dynamically -->
-            </div>
-
-            <div style="margin-top: 20px; text-align: right;">
-              <button type="button" onclick="closeReqModal()" style="padding: 8px 16px; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--glass-fill); color: var(--foam); cursor: pointer;">Close</button>
-            </div>
-          </div>
         </div>
 
         <!-- Placeholder 4: Reschedule Event App 
@@ -3251,12 +3265,9 @@
                  + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
     const res  = await fetch(url);
     const data = await res.json();
-    if (data.error) throw new Error(data.error);
- 
-    if (data.record) return data.record;                // single-record display
- 
+    if (data.error) throw new Error(data.error); 
+    if (data.record) return data.record;                // single-record display 
     const rows = data.values ?? [];
-    if (rows.length > 0) registerSchema(domain, sheetName, rows); // fire-and-forget
     return rows;
 }
 
