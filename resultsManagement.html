@@ -823,6 +823,7 @@ async function decideAvgReq(decision) {
     if (!activeAvgReq) return;
     // TODO: call updateSheet(DOMAIN.results, "AvgScrReq", activeAvgReq.hexKey, { status: decision, decidedBy: currentUser })
     //       then send email notification via CLB_WEBAPP_URL if approved
+    // 
     showMsg('avgReqMsg', `Request ${decision}. Email notification will be sent on approval.`, false);
     activeAvgReq.status = decision;
     closeAvgReqModal();
