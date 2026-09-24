@@ -10,9 +10,6 @@
 
 <!-- Link Shared Theme -->
 <link rel="stylesheet" href="theme.css">
-<!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
-<script src="shared.js"></script>   
-<script src="auditLog.js"></script>
 
 <style>
   /* =========================================================
@@ -173,118 +170,138 @@
     </ul>
     </header>
 
-  <main class="container">
-    
-    <!-- Admin Workspace Header -->
-    <div class="admin-header">
-      <div class="admin-title-group">
-        <h1>Membership Applications</h1>
-      </div>
-      <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
-    </div>
+    <main class="container">
 
-    <!-- Admin Quick Stats -->
-    <div class="admin-stats-bar">
-      <div class="admin-stats-row">
-        <div class="admin-stat-card glass">
-          <span class="lbl">Received</span>
-          <span class="num" id="statReceived" style="color:#60a5fa;">—</span>
+        <!-- Admin Workspace Header -->
+        <div class="admin-header">
+        <div class="admin-title-group">
+            <h1>Membership Applications</h1>
         </div>
-        <div class="admin-stat-card glass">
-          <span class="lbl">In Progress</span>
-          <span class="num" id="statInProgress" style="color:#fbbf24;">—</span>
-        </div>
-        <div class="admin-stat-card glass">
-          <span class="lbl">Awaiting Approval</span>
-          <span class="num" id="statAwaitingApproval" style="color:var(--signal);">—</span>
-        </div>
-        <div class="admin-stat-card glass">
-          <span class="lbl">Processed</span>
-          <span class="num" id="statProcessed" style="color:var(--glow);">—</span>
-        </div>
-      </div>
-      <div class="admin-stat-card glass admin-stat-card--turnaround">
-        <span class="lbl">Avg Turnaround</span>
-        <span class="num" id="statAvgTurnaround" style="color:#a78bfa;">—</span>
-      </div>
-    </div>
-
-    <!-- Main Approvals Queue Panel -->
-    <div class="panel" id="approvals">
-      <div class="panel-header">
-        <div class="panel-title-left">
-          <span class="dot"></span>
-          <h3>Applications List</h3>
-        </div>
-      </div>
-      
-      <div class="tab-content active">
-        <div class="search-wrap">
-          <input class="search-input" type="text" placeholder="Filter pending applications by applicant name, sail #, or class...">
+        <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
         </div>
 
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Applicant</th>
-                <th>Type</th>
-                <th>Class / Boat</th>
-                <th>Submitted</th>
-                <th>Status</th>
-                <th>Votes</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="appsTableBody">
-              <tr><td colspan="7"><div class="empty-state"><div class="spinner"></div> Loading applications…</div></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Approval Action Panel & Vote Audit Log -->
-    <div class="action-panel-grid">
-      
-      <!-- Selected Item Review Panel -->
-      <div class="panel" id="reviews">
-        <div class="panel-header">
-          <div class="panel-title">
-            <h3 id="reviewTitle">Application Review</h3>
+        <!-- Admin Quick Stats -->
+        <div class="admin-stats-bar">
+          <div class="admin-stats-row">
+              <div class="admin-stat-card glass">
+              <span class="lbl">Received</span>
+              <span class="num" id="statReceived" style="color:#60a5fa;">—</span>
+              </div>
+              <div class="admin-stat-card glass">
+              <span class="lbl">In Progress</span>
+              <span class="num" id="statInProgress" style="color:#fbbf24;">—</span>
+              </div>
+              <div class="admin-stat-card glass">
+              <span class="lbl">Awaiting Approval</span>
+              <span class="num" id="statAwaitingApproval" style="color:var(--signal);">—</span>
+              </div>
+              <div class="admin-stat-card glass">
+              <span class="lbl">Processed</span>
+              <span class="num" id="statProcessed" style="color:var(--glow);">—</span>
+              </div>
           </div>
+        <div class="admin-stat-card glass admin-stat-card--turnaround">
+            <span class="lbl">Avg Turnaround</span>
+            <span class="num" id="statAvgTurnaround" style="color:#a78bfa;">—</span>
         </div>
-        <div class="tab-content active" id="reviewContent">
-          <div class="empty-state">Select an application from the queue to review it.</div>
         </div>
-      </div>
 
-      <!-- Committee Decision Log -->
-      <div class="panel" id="audit-log">
+        <!-- Main Approvals Queue Panel -->
+        <div class="section-head">
+          <h2>Application Details</h2>
+          <p>Select an application above to review information and record committee decisions.</p>
+        </div>
+
+        <div class="panel" id="approvals">
         <div class="panel-header">
-          <div class="panel-title">
-            <h3>Committee Voting Audit</h3>
-          </div>
+            <div class="panel-title-left">
+            <span class="dot"></span>
+            <h3>Applications List</h3>
+            </div>
         </div>
-        <div class="tab-content active" id="auditContent">
-          <div class="empty-state">No application selected.</div>
+        
+        <div class="tab-content active">
+            <div class="panel-toolbar">
+              <div class="audit-toggle">
+                <button class="active" data-status="all">All</button>
+                <button data-status="received">Received</button>
+                <button data-status="progress">In Progress</button>
+                <button data-status="awaiting">Awaiting</button>
+                <button data-status="processed">Processed</button>
+              </div>
+              <div class="search-wrap" style="flex:1; min-width:200px; margin-bottom:0;">
+                <i class="nav-icon search-icon" data-lucide="search"></i>
+                <input class="search-input" type="text" id="appsSearch" placeholder="Filter by name, sail #, or class…">
+              </div>
+            </div>
+
+            <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Applicant</th>
+                    <th>Type</th>
+                    <th>Class / Boat</th>
+                    <th>Submitted</th>
+                    <th>Status</th>
+                    <th>Votes</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody id="appsTableBody">
+                <tr><td colspan="7"><div class="empty-state"><div class="spinner"></div> Loading applications…</div></td></tr>
+                </tbody>
+            </table>
+            </div>
         </div>
-      </div>
+        </div>
 
-    </div>
+        <!-- Approval Action Panel & Vote Audit Log -->
+         <div class="section-head">
+          <h2>Application Review</h2>
+          <p>Review and action pending membership applications.</p>
+        </div>
+        <div class="action-panel-grid">
+        
+        <!-- Selected Item Review Panel -->
+        <div class="panel" id="reviews">
+            <div class="panel-header">
+            <div class="panel-title">
+                <h3 id="reviewTitle">Application Review</h3>
+            </div>
+            </div>
+            <div class="tab-content active" id="reviewContent">
+            <div class="empty-state">Select an application from the queue to review it.</div>
+            </div>
+        </div>
 
-    <!-- AUDIT LOG -->
-    <div id="auditLog-placeholder"></div>
-    
-  </main>
+        <!-- Committee Decision Log -->
+        <div class="panel" id="audit-log">
+            <div class="panel-header">
+            <div class="panel-title">
+                <h3>Committee Voting Audit</h3>
+            </div>
+            </div>
+            <div class="tab-content active" id="auditContent">
+            <div class="empty-state">No application selected.</div>
+            </div>
+        </div>
 
-  <footer>
+        </div>
+
+        <!-- AUDIT LOG -->
+        <div id="auditLog-placeholder"></div>
+        
+    </main>
+
+    <footer>
     <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
-  </footer>
+    </footer>
 
-  <script>
-    AuditLog.init('calendar', 'Events');  // or 'all' to default to unfiltered
-  </script>
+    <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
+    <script src="shared.js"></script>   
+    <script src="auditLog.js"></script>
+
   <script>
 /* =========================================================
     APPLICATIONS DATA MODULE
@@ -294,6 +311,7 @@
 
     let selectedRowId = null;
     let allApplications = [];
+
 
     function esc(s) {
       const d = document.createElement('div');
@@ -407,25 +425,36 @@
 
     function renderTable() {
       const body = document.getElementById('appsTableBody');
+      const q = document.getElementById('appsSearch')?.value.trim().toLowerCase() || '';
       updateStats(allApplications);
-      if (!allApplications.length) {
-        body.innerHTML = `<tr><td colspan="7"><div class="empty-state">No pending applications.</div></td></tr>`;
+
+      let apps = allApplications;
+      if (activeStatusFilter !== 'all') {
+        apps = apps.filter(a => String(a.status || '').toLowerCase().includes(activeStatusFilter));
+      }
+      if (q) {
+        apps = apps.filter(a =>
+          ['firstName','surname','membershipType','classOrBoat'].some(k => String(a[k]||'').toLowerCase().includes(q))
+        );
+      }
+
+      if (!apps.length) {
+        body.innerHTML = `<tr><td colspan="7"><div class="empty-state">No applications match this filter.</div></td></tr>`;
         return;
       }
-      body.innerHTML = allApplications.map(a => {
+      body.innerHTML = apps.map(a => {
         const badge = statusBadge(a);
         return `
         <tr data-rowid="${esc(a.rowId)}">
           <td class="member-name">${esc(a.firstName)} ${esc(a.surname)}</td>
           <td>${esc(a.membershipType)}</td>
           <td>${esc(a.classOrBoat || '—')}</td>
-          <td>${esc(a.lastUpdated)}</td>
+          <td>${a.lastUpdated ? new Date(a.lastUpdated).toISOString().slice(0,10).replace(/-/g,'/') : '—'}</td>
           <td><span class="app-status-badge ${badge.cls}">${esc(badge.label)}</span></td>
           <td><span class="votes-for">${esc(voteCount(a.votesFor))}</span> / <span class="votes-against">${esc(voteCount(a.votesAgainst))}</span></td>
           <td><button class="btn btn-ghost review-btn" style="padding:4px 10px; font-size:11px;">${String(a.status||'').toLowerCase().includes('processed') ? 'View' : 'Review'}</button></td>
         </tr>`;
       }).join('');
-
       body.querySelectorAll('tr[data-rowid]').forEach(row => {
         row.addEventListener('click', () => openReview(row.dataset.rowid));
       });
@@ -535,17 +564,14 @@
       document.getElementById('auditContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
 
       try {
-        const raw = await fetchSheet(DOMAIN.apps, "Membership Applications", encodeURIComponent(rowId));
-        if (raw.error) throw new Error(raw.error);
-        const d = raw.map(normaliseApp);
-        document.getElementById('reviewTitle').textContent = `Application Review: ${d.fullName || name}`;
+        document.getElementById('reviewTitle').textContent = `Application Review: ${app.fullName || name}`;
 
-        const badge = statusBadge(d);
+        const badge = statusBadge(app);
         if (badge === 'processed') console.log('raw record:', d, ' badge:', badge);
         document.getElementById('reviewContent').innerHTML = `
           <div class="app-status-badge ${badge.cls}">
             ${esc(badge.label) || '—'}
-            ${d.statusClass === 'status-urgent' ? `<span class="urgent-note"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"</i> Requires attention — last updated: ${esc(d.lastUpdatedStr)}</span>` : ''}
+            ${app.statusClass === 'status-urgent' ? `<span class="urgent-note"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"</i> Requires attention — last updated: ${esc(app.lastUpdatedStr)}</span>` : ''}
           </div>
 
           <div class="app-detail-section">
@@ -557,19 +583,19 @@
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Email</span>
-                <span class="app-detail-value">${esc(d.email) || '—'}</span>
+                <span class="app-detail-value">${esc(app.email) || '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Phone</span>
-                <span class="app-detail-value">${esc(d.phone) || '—'}</span>
+                <span class="app-detail-value">${esc(app.phone) || '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Address</span>
-                <span class="app-detail-value">${esc(d.address) || '—'}</span>
+                <span class="app-detail-value">${esc(app.address) || '—'}</span>
               </div>
               <div class="app-detail-item full-width">
                 <span class="app-detail-label">Emergency Contact</span>
-                <span class="app-detail-value">${esc(d.emergency) || '—'}</span>
+                <span class="app-detail-value">${esc(app.emergency) || '—'}</span>
               </div>
             </div>
           </div>
@@ -579,11 +605,11 @@
             <div class="app-detail-grid">
               <div class="app-detail-item">
                 <span class="app-detail-label">Membership Type</span>
-                <span class="app-detail-value">${esc(d.membershipType) || '—'}</span>
+                <span class="app-detail-value">${esc(app.membershipType) || '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Current Club</span>
-                <span class="app-detail-value">${esc(d.classOrBoat) || '—'}</span>
+                <span class="app-detail-value">${esc(app.classOrBoat) || '—'}</span>
               </div>
             </div>
           </div>
@@ -601,46 +627,46 @@
             <div class="app-detail-grid">
               <div class="app-detail-item full-width">
                 <span class="app-detail-label">Disclaimer Signed</span>
-                <span class="app-detail-value">${esc(d.disclaimer) || '—'}</span>
+                <span class="app-detail-value">${esc(app.disclaimer) || '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Nominator</span>
-                <span class="app-detail-value">${esc(d.nominator) || '—'}</span>
+                <span class="app-detail-value">${esc(app.nominator) || '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Seconder</span>
-                <span class="app-detail-value">${esc(d.seconder) || '—'}</span>
+                <span class="app-detail-value">${esc(app.seconder) || '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Nominator Comment</span>
-                <span class="app-detail-value">${esc(d.nominatorComment) || '—'}</span>
+                <span class="app-detail-value">${esc(app.nominatorComment) || '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Seconder Comment</span>
-                <span class="app-detail-value">${esc(d.seconderComment) || '—'}</span>
+                <span class="app-detail-value">${esc(app.seconderComment) || '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Votes For</span>
-                <span class="app-detail-value votes-for">${esc(d.votesFor) ?? '—'}</span>
+                <span class="app-detail-value votes-for">${esc(app.votesFor) ?? '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Votes Against</span>
-                <span class="app-detail-value votes-against">${esc(d.votesAgainst) ?? '—'}</span>
+                <span class="app-detail-value votes-against">${esc(app.votesAgainst) ?? '—'}</span>
               </div>
-              ${d.rejectionReason ? `
+              ${app.rejectionReason ? `
               <div class="app-detail-item full-width">
                 <span class="app-detail-label">Rejection Reason</span>
-                <span class="app-detail-value" style="color:var(--signal);">${esc(d.rejectionReason)}</span>
+                <span class="app-detail-value" style="color:var(--signal);">${esc(app.rejectionReason)}</span>
               </div>` : ''}
             </div>
           </div>`;
 
         // Render Boat Details into #boatsContainer
-        renderBoatDetails(d.boats);
+        renderBoatDetails(app.boats);
 
-        const votesForCount     = voteCount(d.votesFor);
-        const votesAgainstCount = voteCount(d.votesAgainst);
-        const votesRequired     = countVotesRequired(d.status, d.log);
+        const votesForCount     = voteCount(app.votesFor);
+        const votesAgainstCount = voteCount(app.votesAgainst);
+        const votesRequired     = countVotesRequired(app.status, app.log);
         const votesReceived     = votesForCount + votesAgainstCount;
 
         document.getElementById('auditContent').innerHTML = `
@@ -648,11 +674,11 @@
             <span class="app-detail-label">
               Votes Received: ${esc(votesReceived)}${votesRequired !== null ? ` of ${esc(votesRequired)}` : ''}
             </span>
-            <span class="votes-for">${esc(d.votesFor)}</span>${votesAgainstCount > 0 ? ` / <span class="votes-against">${esc(d.votesAgainst)}</span>` : ''}
+            <span class="votes-for">${esc(app.votesFor)}</span>${votesAgainstCount > 0 ? ` / <span class="votes-against">${esc(d.votesAgainst)}</span>` : ''}
           </div>
           <div style="margin-top:14px;">
             <span class="app-detail-label">Decision Audit Trail</span>
-            <div class="log-box" style="margin-top:6px;">${esc(d.log) || 'No activity recorded yet.'}</div>
+            <div class="log-box" style="margin-top:6px;">${esc(app.log) || 'No activity recorded yet.'}</div>
           </div>`;
 
         if (window.lucide) lucide.createIcons();
@@ -663,8 +689,23 @@
       }
     }
 
+    let activeStatusFilter = 'all';
+
+    document.querySelectorAll('.audit-toggle button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.audit-toggle button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeStatusFilter = btn.dataset.status;
+        renderTable();
+      });
+    });
+
+    document.getElementById('appsSearch').addEventListener('input', renderTable);
+
     if (window.lucide) lucide.createIcons();
     loadApplications();
+
+    
   </script>
   <script>
     fetch('auditLog.html')
@@ -676,4 +717,4 @@
       });
   </script>
 </body>
-</html>
+</html>Input applications.html code here
