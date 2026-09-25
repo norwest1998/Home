@@ -3551,6 +3551,8 @@
 
       /* Find ranked events for date of missed event */
       function getConflictingEvents(className, date) {      
+        const fromDate = new Date(date);
+        const toDate = new Date(date);
         fromDate.setDate(fromDate.getDate() - 3);
         toDate.setDate(toDate.getDate() + 3);
         var result = `No conflicting event found for ${className} in the period: ${fromDate} to ${toDate}`;
