@@ -851,6 +851,7 @@
 .dash-table-wrap::-webkit-scrollbar,
 .batch-contacts-wrap::-webkit-scrollbar,
 .list-scroll::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar,
 .drawer-body::-webkit-scrollbar,
 .drawer-overlay .drawer::-webkit-scrollbar,
 .modal::-webkit-scrollbar,
