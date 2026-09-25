@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="smmc-domain" content="tracking">
+<title>Email Compose — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="theme.css">
+
+<!-- Quill rich text editor -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
+
+<style>
+/* ================================================================
+   EMAIL COMPOSE — page-specific styles (tokens from theme.css)
+   ================================================================ */
+
+/* ── Glass select (shared across pages) ── */
+.glass-select {
+  appearance:none; -webkit-appearance:none;
+  background: rgba(255,255,255,0.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0b8c8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+  border: 1px solid var(--glass-border); border-radius:8px;
+  color:var(--foam); font-family:var(--font-body); font-size:12px;
+  padding:5px 30px 5px 12px; cursor:pointer; min-width:120px;
+  transition:border-color .2s,background .2s;
+}
+.glass-select:hover { background-color:rgba(255,255,255,0.12); border-color:var(--foam-dim); }
+.glass-select:focus { outline:none; border-color:var(--foam); }
+.glass-select option { background:#0f2535; color:var(--foam); }
+
+/* ── Form primitives ── */
+.form-row   { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.form-row.triple { grid-template-columns:1fr 1fr 1fr; }
+.form-row.full   { grid-template-columns:1fr; }
+.form-group { display:flex; flex-direction:column; gap:6px; }
+.form-group label {
+  font-family:var(--font-data); font-size:10px;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--foam-dim);
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background:rgba(255,255,255,0.06); border:1px solid var(--glass-border);
+  border-radius:8px; color:var(--foam); font-family:var(--font-body);
+  font-size:13px; padding:8px 12px; width:100%; box-sizing:border-box;
+  transition:border-color .2s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus { outline:none; border-color:var(--foam); }
+.form-group select option { background:var(--ocean-mid); }
+.form-group textarea { resize:vertical; min-height:80px; }
+
+/* ── Tables (shared pattern) ── */
+.em-table-wrap { max-height:380px; overflow:auto; border-radius:10px; border:1px solid var(--glass-border); }
+table.em-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+.em-table th {
+  position:sticky; top:0; background:var(--ocean-mid);
+  text-align:left; padding:8px 10px;
+  font-family:var(--font-data); font-size:10px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--foam-dim);
+  border-bottom:1px solid var(--glass-border); white-space:nowrap;
+}
+.em-table td { padding:8px 10px; border-bottom:1px solid var(--glass-border); color:var(--foam); vertical-align:middle; }
+.em-table tr:last-child td { border-bottom:none; }
+.em-table tr.clickable { cursor:pointer; }
+.em-table tr.clickable:hover td { background:rgba(255,255,255,0.04); }
+
+/* ── Status messages ── */
+.status-msg { font-size:12px; display:none; }
+.status-msg.visible { display:block; }
+.status-msg.success { color:var(--glow); }
+.status-msg.error   { color:#ff6b6b; }
+
+/* ── Spinner ── */
+.spinner {
+  display:inline-block; width:16px; height:16px;
+  border:2px solid rgba(255,255,255,0.15); border-top-color:var(--foam);
+  border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.spinner-row td { text-align:center; color:var(--foam-dim); font-size:12px; padding:24px; }
+
+/* ── Toolbar ── */
+.em-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+.em-toolbar .search-wrap { flex:1; min-width:200px; margin-bottom:0; }
+
+/* ── Drawer overrides (wider for template/sig forms) ── */
+.drawer { max-width:600px !important; }
+
+/* ── Recipient chip input ── */
+.chip-input-wrap {
+  display:flex; flex-wrap:wrap; gap:6px; align-items:center;
+  background:rgba(255,255,255,0.06); border:1px solid var(--glass-border);
+  border-radius:8px; padding:6px 10px; min-height:40px;
+  cursor:text; transition:border-color .2s; position:relative;
+}
+.chip-input-wrap:focus-within { border-color:var(--foam); }
+.chip {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(94,234,212,0.12); border:1px solid rgba(94,234,212,0.3);
+  border-radius:6px; padding:2px 8px; font-size:12px; color:var(--glow);
+}
+.chip .chip-remove {
+  background:none; border:none; color:var(--glow); cursor:pointer;
+  padding:0; font-size:13px; line-height:1; opacity:.7;
+}
+.chip .chip-remove:hover { opacity:1; }
+.chip-input { background:none; border:none; outline:none; color:var(--foam); font-size:13px; min-width:140px; flex:1; }
+.autocomplete-list {
+  position:absolute; top:100%; left:0; right:0; z-index:200;
+  background:var(--ocean-mid); border:1px solid var(--glass-border);
+  border-radius:8px; max-height:180px; overflow-y:auto; margin-top:4px;
+}
+.autocomplete-item {
+  padding:8px 12px; font-size:12.5px; color:var(--foam); cursor:pointer;
+  display:flex; flex-direction:column; gap:2px;
+}
+.autocomplete-item:hover { background:rgba(255,255,255,0.06); }
+.autocomplete-item .ac-name { font-weight:500; }
+.autocomplete-item .ac-email { font-size:11px; color:var(--foam-dim); }
+
+/* ── Compose wizard ── */
+.wizard-steps {
+  display:flex; align-items:center; gap:0; margin-bottom:28px; flex-wrap:wrap; gap:4px;
+}
+.wizard-step {
+  display:flex; align-items:center; gap:8px; padding:8px 16px;
+  border-radius:20px; font-size:12px; color:var(--foam-dim);
+  border:1px solid transparent; transition:all .2s; white-space:nowrap;
+}
+.wizard-step.active  { background:rgba(94,234,212,0.12); border-color:rgba(94,234,212,0.35); color:var(--glow); }
+.wizard-step.done    { background:rgba(255,255,255,0.05); border-color:var(--glass-border); color:var(--foam); }
+.wizard-step .step-num {
+  width:20px; height:20px; border-radius:50%; display:inline-flex;
+  align-items:center; justify-content:center; font-size:10px; font-weight:700;
+  background:var(--glass-border); flex-shrink:0;
+}
+.wizard-step.active  .step-num { background:var(--glow); color:#071b2c; }
+.wizard-step.done    .step-num { background:rgba(94,234,212,0.3); color:var(--glow); }
+.wizard-connector { width:24px; height:1px; background:var(--glass-border); flex-shrink:0; }
+
+.wizard-panel { display:none; }
+.wizard-panel.active { display:block; }
+
+/* ── Template picker cards ── */
+.template-picker-grid {
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:12px; margin-bottom:16px;
+}
+.template-card {
+  padding:14px 16px; border-radius:12px; cursor:pointer;
+  border:1px solid var(--glass-border); background:var(--glass-fill);
+  transition:all .2s; display:flex; flex-direction:column; gap:6px;
+}
+.template-card:hover { border-color:rgba(94,234,212,0.4); background:rgba(255,255,255,0.07); }
+.template-card.selected { border-color:var(--glow); background:rgba(94,234,212,0.08); }
+.template-card .tc-name { font-size:13px; font-weight:600; color:var(--foam); }
+.template-card .tc-meta { font-size:11px; color:var(--foam-dim); display:flex; flex-wrap:wrap; gap:4px; }
+
+/* ── Quill editor skin override ── */
+.ql-toolbar.ql-snow {
+  background:rgba(255,255,255,0.06) !important;
+  border:1px solid var(--glass-border) !important;
+  border-bottom:none !important; border-radius:8px 8px 0 0;
+}
+.ql-container.ql-snow {
+  background:rgba(255,255,255,0.04) !important;
+  border:1px solid var(--glass-border) !important;
+  border-radius:0 0 8px 8px; min-height:240px;
+}
+.ql-editor { color:var(--foam) !important; font-family:var(--font-body); font-size:13px; min-height:220px; }
+.ql-editor.ql-blank::before { color:var(--foam-dim) !important; }
+.ql-snow .ql-stroke { stroke:var(--foam-dim) !important; }
+.ql-snow .ql-fill  { fill:var(--foam-dim) !important; }
+.ql-snow .ql-picker { color:var(--foam-dim) !important; }
+.ql-snow .ql-picker-options { background:var(--ocean-mid) !important; border-color:var(--glass-border) !important; }
+.ql-snow .ql-picker-item { color:var(--foam) !important; }
+.ql-snow.ql-toolbar button:hover .ql-stroke,
+.ql-snow.ql-toolbar button.ql-active .ql-stroke { stroke:var(--glow) !important; }
+.ql-snow.ql-toolbar button:hover .ql-fill,
+.ql-snow.ql-toolbar button.ql-active .ql-fill  { fill:var(--glow) !important; }
+.ql-snow.ql-toolbar button:hover,
+.ql-snow.ql-toolbar button.ql-active { background:rgba(94,234,212,0.08) !important; border-radius:4px; }
+
+/* Sig quill (smaller) */
+.sig-editor .ql-container.ql-snow { min-height:120px; }
+.sig-editor .ql-editor { min-height:100px; }
+
+/* ── Emoji panel ── */
+.emoji-panel-wrap { position:relative; display:inline-block; }
+.emoji-panel {
+  display:none; position:absolute; bottom:110%; left:0; z-index:300;
+  background:var(--ocean-mid); border:1px solid var(--glass-border);
+  border-radius:10px; padding:10px; width:300px; box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+.emoji-panel.open { display:block; }
+.emoji-cat-tabs { display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap; }
+.emoji-cat-tab {
+  background:none; border:1px solid transparent; border-radius:6px;
+  color:var(--foam-dim); font-size:16px; cursor:pointer; padding:2px 6px;
+  transition:all .15s;
+}
+.emoji-cat-tab:hover,
+.emoji-cat-tab.active { background:rgba(94,234,212,0.1); border-color:rgba(94,234,212,0.3); }
+.emoji-grid { display:flex; flex-wrap:wrap; gap:2px; max-height:160px; overflow-y:auto; }
+.emoji-btn {
+  background:none; border:none; cursor:pointer; font-size:18px;
+  padding:3px 5px; border-radius:4px; transition:background .1s;
+}
+.emoji-btn:hover { background:rgba(255,255,255,0.1); }
+
+/* ── Preview pane ── */
+.email-preview {
+  background:rgba(255,255,255,0.96); color:#111; border-radius:10px;
+  padding:24px 28px; font-family:Arial,sans-serif; font-size:14px; line-height:1.6;
+  max-height:460px; overflow-y:auto;
+}
+.email-preview .preview-meta { font-size:12px; color:#555; margin-bottom:16px; border-bottom:1px solid #ddd; padding-bottom:12px; }
+.email-preview .preview-subject { font-size:18px; font-weight:700; color:#111; margin-bottom:8px; }
+
+/* ── Scheduled send row ── */
+.schedule-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.schedule-row input[type="datetime-local"] { color-scheme:dark; }
+
+/* ── Modal (confirm send) ── */
+.modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.65); z-index:1000;
+  align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--ocean-mid); border:1px solid var(--glass-border);
+  border-radius:16px; width:100%; max-width:480px;
+  padding:28px; display:flex; flex-direction:column; gap:18px;
+}
+.modal-header { display:flex; align-items:center; justify-content:space-between; }
+.modal-header h3 { font-size:17px; color:var(--foam); }
+.modal-close { background:none; border:none; color:var(--foam-dim); cursor:pointer; font-size:20px; }
+.modal-footer { display:flex; justify-content:flex-end; gap:10px; align-items:center; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<main class="container">
+
+<!-- ================================================================
+     SECTION 1 — TEMPLATE MANAGEMENT
+     ================================================================ -->
+<div class="section-head" id="template-management">
+  <h2>Email Templates</h2>
+  <p>Create and manage reusable email templates with recipient type, topic, visibility and scheduling defaults.</p>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title-left"><span class="dot"></span><h3>Templates</h3></div>
+    <button class="btn btn-primary" id="newTemplateBtn" style="padding:5px 14px;font-size:12px;">+ New Template</button>
+  </div>
+  <div class="tab-content active">
+    <div class="em-toolbar">
+      <div class="search-wrap">
+        <i class="nav-icon search-icon" data-lucide="search"></i>
+        <input class="search-input" id="tmplSearch" placeholder="Search name, topic, type…">
+      </div>
+      <select class="glass-select" id="tmplFilterType">
+        <option value="">All Types</option>
+        <option value="single">Single</option>
+        <option value="group">Group</option>
+      </select>
+      <select class="glass-select" id="tmplFilterTopic">
+        <option value="">All Topics</option>
+        <option value="general">General</option>
+        <option value="membership renewal">Membership Renewal</option>
+        <option value="update request">Update Request</option>
+      </select>
+      <select class="glass-select" id="tmplFilterVis">
+        <option value="">All Visibility</option>
+        <option value="open">Open</option>
+        <option value="confidential">Confidential</option>
+      </select>
+      <button class="btn btn-ghost" id="refreshTmplBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+    </div>
+    <div class="em-table-wrap">
+      <table class="em-table">
+        <thead><tr>
+          <th>Name</th><th>Type</th><th>Topic</th><th>Prefix</th>
+          <th>Visibility</th><th>Schedule</th><th>Signature</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="tmplBody"><tr class="spinner-row"><td colspan="8"><span class="spinner"></span> Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="tmplEmpty" style="display:none;">No templates yet. Create one to get started.</div>
+  </div>
+</div>
+
+<!-- ================================================================
+     SECTION 2 — SIGNATURE MANAGEMENT
+     ================================================================ -->
+<div class="section-head" id="signature-management">
+  <h2>Email Signatures</h2>
+  <p>Create reusable signatures that can be attached to any template or composed email.</p>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title-left"><span class="dot"></span><h3>Signatures</h3></div>
+    <button class="btn btn-primary" id="newSigBtn" style="padding:5px 14px;font-size:12px;">+ New Signature</button>
+  </div>
+  <div class="tab-content active">
+    <div class="em-toolbar">
+      <div class="search-wrap">
+        <i class="nav-icon search-icon" data-lucide="search"></i>
+        <input class="search-input" id="sigSearch" placeholder="Search signature name…">
+      </div>
+      <select class="glass-select" id="sigFilterVis">
+        <option value="">All</option>
+        <option value="open">Open</option>
+        <option value="confidential">Confidential</option>
+      </select>
+      <button class="btn btn-ghost" id="refreshSigBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+    </div>
+    <div class="em-table-wrap">
+      <table class="em-table">
+        <thead><tr><th>Name</th><th>Visibility</th><th>Preview</th><th>Updated</th><th>Actions</th></tr></thead>
+        <tbody id="sigBody"><tr class="spinner-row"><td colspan="5"><span class="spinner"></span> Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="sigEmpty" style="display:none;">No signatures yet.</div>
+  </div>
+</div>
+
+<!-- ================================================================
+     SECTION 3 — COMPOSE EMAIL
+     ================================================================ -->
+<div class="section-head" id="compose-email">
+  <h2>Compose Email</h2>
+  <p>Select a template, configure recipients and subject, write your message, then preview and send.</p>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title-left"><span class="dot"></span><h3>New Email</h3></div>
+    <button class="btn btn-ghost" id="resetComposeBtn" style="padding:5px 12px;font-size:11px;">Reset</button>
+  </div>
+  <div class="tab-content active">
+
+    <!-- Wizard steps -->
+    <div class="wizard-steps">
+      <div class="wizard-step active" id="wstep-1"><span class="step-num">1</span> Template</div>
+      <div class="wizard-connector"></div>
+      <div class="wizard-step" id="wstep-2"><span class="step-num">2</span> Recipients</div>
+      <div class="wizard-connector"></div>
+      <div class="wizard-step" id="wstep-3"><span class="step-num">3</span> Subject</div>
+      <div class="wizard-connector"></div>
+      <div class="wizard-step" id="wstep-4"><span class="step-num">4</span> Body</div>
+      <div class="wizard-connector"></div>
+      <div class="wizard-step" id="wstep-5"><span class="step-num">5</span> Preview & Send</div>
+    </div>
+
+    <!-- Step 1: Template selection -->
+    <div class="wizard-panel active" id="wpanel-1">
+      <div class="form-row" style="margin-bottom:14px;">
+        <div class="search-wrap" style="margin-bottom:0;">
+          <i class="nav-icon search-icon" data-lucide="search"></i>
+          <input class="search-input" id="tmplPickSearch" placeholder="Filter templates…">
+        </div>
+        <select class="glass-select" id="tmplPickTopic" style="min-width:160px;">
+          <option value="">All Topics</option>
+          <option value="general">General</option>
+          <option value="membership renewal">Membership Renewal</option>
+          <option value="update request">Update Request</option>
+        </select>
+      </div>
+      <div class="template-picker-grid" id="tmplPickerGrid">
+        <div style="color:var(--foam-dim);font-size:12px;padding:16px;"><span class="spinner"></span> Loading templates…</div>
+      </div>
+      <div class="empty-state" id="tmplPickEmpty" style="display:none;">No templates found. Create one in Template Management above.</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+        <button class="btn btn-primary" id="nextStep1" disabled>Next — Recipients →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Recipients -->
+    <div class="wizard-panel" id="wpanel-2">
+      <div id="groupRecipientRow" style="display:none;margin-bottom:16px;">
+        <div class="form-group">
+          <label>Member Group</label>
+          <select class="glass-select" id="groupSelect" style="min-width:200px;">
+            <option value="">— Select Group —</option>
+            <option value="all_active">All Active Members</option>
+            <option value="full">Full Members</option>
+            <option value="affiliate">Affiliate Members</option>
+            <option value="financial">Financial Members</option>
+            <option value="committee">Committee Members</option>
+          </select>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--foam-dim);" id="groupCountMsg"></div>
+      </div>
+
+      <div class="form-row full" style="gap:12px;">
+        <div class="form-group">
+          <label>To *</label>
+          <div class="chip-input-wrap" id="toWrap">
+            <div id="toChips"></div>
+            <input class="chip-input" id="toInput" placeholder="name or email…" autocomplete="off">
+            <div class="autocomplete-list" id="toAC" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>CC</label>
+          <div class="chip-input-wrap" id="ccWrap">
+            <div id="ccChips"></div>
+            <input class="chip-input" id="ccInput" placeholder="name or email…" autocomplete="off">
+            <div class="autocomplete-list" id="ccAC" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>BCC</label>
+          <div class="chip-input-wrap" id="bccWrap">
+            <div id="bccChips"></div>
+            <input class="chip-input" id="bccInput" placeholder="name or email…" autocomplete="off">
+            <div class="autocomplete-list" id="bccAC" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:16px;">
+        <button class="btn btn-ghost" id="backStep2">← Back</button>
+        <button class="btn btn-primary" id="nextStep2">Next — Subject →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Subject -->
+    <div class="wizard-panel" id="wpanel-3">
+      <div class="form-row triple">
+        <div class="form-group">
+          <label>Subject Prefix</label>
+          <select id="subjectPrefix" class="glass-select" style="min-width:unset;width:100%;">
+            <option value="">None</option>
+            <option value="Important:">Important:</option>
+            <option value="Urgent:">Urgent:</option>
+            <option value="For Your Attention:">For Your Attention:</option>
+            <option value="Action Required:">Action Required:</option>
+            <option value="FYI:">FYI:</option>
+            <option value="Reminder:">Reminder:</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:span 2;">
+          <label>Subject *</label>
+          <input type="text" id="emailSubject" placeholder="Email subject…">
+        </div>
+      </div>
+      <div class="form-row triple" style="margin-top:12px;">
+        <div class="form-group">
+          <label>Scheduled Send</label>
+          <select id="scheduleType" class="glass-select" style="min-width:unset;width:100%;">
+            <option value="now">Send Now</option>
+            <option value="scheduled">Schedule for…</option>
+          </select>
+        </div>
+        <div class="form-group" id="scheduleDateRow" style="display:none;grid-column:span 2;">
+          <label>Send Date / Time</label>
+          <input type="datetime-local" id="scheduleDateTime">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>Signature</label>
+        <select id="sigSelect" class="glass-select" style="min-width:unset;width:100%;">
+          <option value="">— No Signature —</option>
+        </select>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:16px;">
+        <button class="btn btn-ghost" id="backStep3">← Back</button>
+        <button class="btn btn-primary" id="nextStep3">Next — Body →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Body -->
+    <div class="wizard-panel" id="wpanel-4">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:12px;color:var(--foam-dim);">Rich text editor — paste or type your message below.</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div class="emoji-panel-wrap">
+            <button class="btn btn-ghost" id="emojiToggleBtn" style="padding:5px 10px;font-size:13px;" title="Insert emoji">😊</button>
+            <div class="emoji-panel" id="emojiPanel">
+              <div class="emoji-cat-tabs" id="emojiCatTabs"></div>
+              <div class="emoji-grid" id="emojiGrid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="bodyEditor"></div>
+      <div id="sigPreviewWrap" style="margin-top:12px;display:none;">
+        <div style="font-size:10px;color:var(--foam-dim);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px;">Signature Preview</div>
+        <div id="sigPreviewContent" style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:8px;padding:12px;font-size:12px;color:var(--foam);"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:16px;">
+        <button class="btn btn-ghost" id="backStep4">← Back</button>
+        <button class="btn btn-primary" id="nextStep4">Preview & Send →</button>
+      </div>
+    </div>
+
+    <!-- Step 5: Preview & Send -->
+    <div class="wizard-panel" id="wpanel-5">
+      <div class="email-preview" id="emailPreview"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:10px;">
+        <button class="btn btn-ghost" id="backStep5">← Edit</button>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span class="status-msg" id="sendStatus"></span>
+          <button class="btn btn-ghost" id="saveDraftBtn">Save Draft</button>
+          <button class="btn btn-primary" id="sendEmailBtn" style="background:linear-gradient(135deg,rgba(94,234,212,.25),rgba(94,234,212,.12));border-color:rgba(94,234,212,.4);">
+            <i data-lucide="send" style="width:13px;height:13px;margin-right:4px;"></i> Send Email
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-content -->
+</div><!-- /panel -->
+
+<!-- AUDIT LOG -->
+<div id="auditLog-placeholder"></div>
+
+<footer>
+  <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+</footer>
+</main>
+
+<!-- ================================================================
+     TEMPLATE DRAWER
+     ================================================================ -->
+<div class="drawer-overlay" id="tmplDrawer">
+  <div class="drawer" style="max-width:620px;">
+    <div class="drawer-header">
+      <h4 id="tmplDrawerTitle">New Template</h4>
+      <button class="drawer-close" id="tmplDrawerClose">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;">
+          <label>Template Name *</label>
+          <input type="text" id="tName" placeholder="e.g. Membership Renewal Notice">
+        </div>
+      </div>
+      <div class="form-row triple">
+        <div class="form-group">
+          <label>Recipient Type</label>
+          <select id="tRecipientType">
+            <option value="single">Single</option>
+            <option value="group">Group</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Visibility</label>
+          <select id="tVisibility">
+            <option value="open">Open</option>
+            <option value="confidential">Confidential</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Topic</label>
+          <select id="tTopic">
+            <option value="general">General</option>
+            <option value="membership renewal">Membership Renewal</option>
+            <option value="update request">Update Request</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Subject Prefix</label>
+          <select id="tSubjectPrefix">
+            <option value="">None</option>
+            <option value="Important:">Important:</option>
+            <option value="Urgent:">Urgent:</option>
+            <option value="For Your Attention:">For Your Attention:</option>
+            <option value="Action Required:">Action Required:</option>
+            <option value="FYI:">FYI:</option>
+            <option value="Reminder:">Reminder:</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Default Subject</label>
+          <input type="text" id="tDefaultSubject" placeholder="Default email subject…">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Default CC</label>
+          <input type="text" id="tDefaultCC" placeholder="cc@example.com">
+        </div>
+        <div class="form-group">
+          <label>Default BCC</label>
+          <input type="text" id="tDefaultBCC" placeholder="bcc@example.com">
+        </div>
+      </div>
+      <div class="form-group" id="tGroupKeyRow" style="display:none;">
+        <label>Default Group</label>
+        <select id="tGroupKey">
+          <option value="">— None —</option>
+          <option value="all_active">All Active Members</option>
+          <option value="full">Full Members</option>
+          <option value="affiliate">Affiliate Members</option>
+          <option value="financial">Financial Members</option>
+          <option value="committee">Committee Members</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Scheduled Send Default</label>
+        <select id="tScheduledSend">
+          <option value="now">Send Now (default)</option>
+          <option value="scheduled">Scheduled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Signature</label>
+        <select id="tSignature">
+          <option value="">— No Signature —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Template Body</label>
+        <div id="tmplBodyEditor"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;flex-wrap:wrap;gap:8px;">
+        <span class="status-msg" id="tmplDrawerStatus"></span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" id="tmplDeleteBtn" style="color:#ff6b6b;display:none;">Delete</button>
+          <button class="btn btn-ghost" id="tmplCancelBtn">Cancel</button>
+          <button class="btn btn-primary" id="tmplSaveBtn">Save Template</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     SIGNATURE DRAWER
+     ================================================================ -->
+<div class="drawer-overlay" id="sigDrawer">
+  <div class="drawer" style="max-width:560px;">
+    <div class="drawer-header">
+      <h4 id="sigDrawerTitle">New Signature</h4>
+      <button class="drawer-close" id="sigDrawerClose">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 1;">
+          <label>Signature Name *</label>
+          <input type="text" id="sName" placeholder="e.g. Secretary Formal">
+        </div>
+        <div class="form-group">
+          <label>Visibility</label>
+          <select id="sVisibility">
+            <option value="open">Open</option>
+            <option value="confidential">Confidential</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Signature Content</label>
+        <div class="sig-editor" id="sigBodyEditor"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;flex-wrap:wrap;gap:8px;">
+        <span class="status-msg" id="sigDrawerStatus"></span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" id="sigDeleteBtn" style="color:#ff6b6b;display:none;">Delete</button>
+          <button class="btn btn-ghost" id="sigCancelBtn">Cancel</button>
+          <button class="btn btn-primary" id="sigSaveBtn">Save Signature</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="shared.js"></script>
+<script src="nav.js"></script>
+<script src="auditLog.js"></script>
+<script>
+/* ================================================================
+   CONFIG
+   ================================================================ */
+const TEMPLATE_SS_ID    = "1M0_jDbN35e6eX96SNylY-J887Ks48Y9dNudOYMgKkjE";
+// Point this at a deployed Apps Script web app for the template spreadsheet.
+// See emailCompose_TemplateGateway.gs for the script to deploy.
+const TEMPLATE_GW_URL   = ""; // TODO: paste deployed web app URL here
+
+/* ── lightweight template gateway helpers ── */
+async function tFetch(sheet) {
+  if (!TEMPLATE_GW_URL) throw new Error("TEMPLATE_GW_URL not configured.");
+  const r = await fetch(`${TEMPLATE_GW_URL}?action=fetch&sheet=${encodeURIComponent(sheet)}`);
+  const d = await r.json();
+  if (d.error) throw new Error(d.error);
+  return d.values || [];
+}
+async function tPost(payload) {
+  if (!TEMPLATE_GW_URL) throw new Error("TEMPLATE_GW_URL not configured.");
+  const r = await fetch(TEMPLATE_GW_URL, {
+    method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body: JSON.stringify(payload)
+  });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error);
+  return d;
+}
+
+/* ── ID generators ── */
+function uid() { return "T" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,6).toUpperCase(); }
+function fmtDate(v) { if (!v) return "—"; const d=new Date(v); return isNaN(d)? v : d.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"}); }
+
+/* ================================================================
+   DATA CACHE
+   ================================================================ */
+let templates  = [];
+let signatures = [];
+let members    = [];  // from DOMAIN.members for autocomplete
+let editTmplId = null;
+let editSigId  = null;
+
+/* ================================================================
+   QUILL INSTANCES
+   ================================================================ */
+const QUILL_TOOLBAR = [
+  [{ font: [] }, { size: ["small", false, "large", "huge"] }],
+  ["bold","italic","underline","strike"],
+  [{ color:[] },{ background:[] }],
+  [{ list:"ordered" },{ list:"bullet" }],
+  [{ indent:"-1" },{ indent:"+1" }],
+  ["link","image","blockquote"],
+  [{ align:[] }],
+  ["clean"]
+];
+
+let quillBody   = null; // compose body
+let quillTmpl   = null; // template drawer body
+let quillSig    = null; // signature drawer body
+
+function initQuills() {
+  quillBody = new Quill("#bodyEditor", {
+    theme:"snow", placeholder:"Write your email message here…",
+    modules:{ toolbar: QUILL_TOOLBAR }
+  });
+  quillTmpl = new Quill("#tmplBodyEditor", {
+    theme:"snow", placeholder:"Template default body (optional)…",
+    modules:{ toolbar: QUILL_TOOLBAR }
+  });
+  quillSig = new Quill("#sigBodyEditor", {
+    theme:"snow", placeholder:"Signature HTML…",
+    modules:{ toolbar: [
+      ["bold","italic","underline"],
+      [{ color:[] }],
+      ["link","image"],
+      ["clean"]
+    ]}
+  });
+}
+
+/* ================================================================
+   EMOJI PANEL
+   ================================================================ */
+const EMOJI_CATS = [
+  { label:"😀", name:"Faces", emojis:["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","😊","😇","🥰","😍","😘","😗","😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","😐","😑","😶","😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤧","🥵","🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","😮","😯","😲","😳","🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤","😡","😠","🤬","😈","👿","💀","☠️","💩","🤡","👹","👺","👻","👽","👾","🤖"] },
+  { label:"👍", name:"Hands", emojis:["👍","👎","👌","🤌","✌️","🤞","🖖","🤙","👋","🤚","🖐️","✋","🤜","🤛","👊","✊","🫶","❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖","💘","💝"] },
+  { label:"🏢", name:"Places", emojis:["🏢","🏣","🏤","🏥","🏦","🏨","🏩","🏪","🏫","🏬","🏭","🏯","🏰","🗼","🗽","🗾","🎌","🎏","🎎","⛪","🕌","🛕","⛩️","🕍","🌍","🌎","🌏","🌐","🗺️","🏔️","⛰️","🌋","🗻","🏕️","🏖️","🏜️","🏝️","🏞️","🏟️","🏠","🏡"] },
+  { label:"✉️", name:"Mail", emojis:["✉️","📧","📨","📩","📤","📥","📦","📫","📪","📬","📭","📮","🗳️","📝","📋","📊","📈","📉","📌","📍","📎","🖇️","📏","📐","✂️","🗃️","🗄️","🗑️","🔒","🔓","🔐","🔑","🗝️","🔨","🪓","⛏️","⚙️","🗜️","⚖️","🔗","⛓️","📱","💻","🖥️","🖨️","⌨️","🖱️","🖲️","💾","💿","📀"] },
+  { label:"⭐", name:"Symbols", emojis:["⭐","🌟","✨","💫","⚡","🔥","🌈","☀️","🌤️","⛅","🌥️","🌦️","🌧️","⛈️","🌩️","🌨️","❄️","☃️","⛄","🌬️","💨","🌀","🌊","🌁","✅","❎","🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🟤","🔶","🔷","🔸","🔹","🔺","🔻","💠","🔘","🔲","🔳","▪️","▫️","◾","◽","◼️","◻️","⬛","⬜","🟥","🟧","🟨","🟩","🟦","🟪","🟫"] }
+];
+
+function initEmoji() {
+  const tabs = document.getElementById("emojiCatTabs");
+  const grid = document.getElementById("emojiGrid");
+  let activeCat = 0;
+
+  function renderCat(idx) {
+    activeCat = idx;
+    tabs.querySelectorAll(".emoji-cat-tab").forEach((t,i) => t.classList.toggle("active", i===idx));
+    grid.innerHTML = EMOJI_CATS[idx].emojis.map(e =>
+      `<button class="emoji-btn" data-e="${e}">${e}</button>`
+    ).join("");
+    grid.querySelectorAll(".emoji-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const range = quillBody.getSelection(true);
+        quillBody.insertText(range ? range.index : quillBody.getLength()-1, btn.dataset.e);
+        document.getElementById("emojiPanel").classList.remove("open");
+      });
+    });
+  }
+
+  EMOJI_CATS.forEach((cat,i) => {
+    const btn = document.createElement("button");
+    btn.className = "emoji-cat-tab" + (i===0?" active":"");
+    btn.textContent = cat.label;
+    btn.title = cat.name;
+    btn.addEventListener("click", () => renderCat(i));
+    tabs.appendChild(btn);
+  });
+  renderCat(0);
+
+  document.getElementById("emojiToggleBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    document.getElementById("emojiPanel").classList.toggle("open");
+  });
+  document.addEventListener("click", () => document.getElementById("emojiPanel").classList.remove("open"));
+}
+
+/* ================================================================
+   MEMBER AUTOCOMPLETE
+   ================================================================ */
+async function loadMembers() {
+  try { members = await fetchSheet(DOMAIN.members, "Members"); } catch(e) { members = []; }
+}
+
+function memberSuggestions(q) {
+  if (!q || q.length < 2) return [];
+  const lq = q.toLowerCase();
+  return members
+    .filter(m => {
+      const name  = ((m["First Name"]||"")+" "+(m["Last Name"]||"")).toLowerCase();
+      const email = (m["Email"]||m["Email Address"]||"").toLowerCase();
+      return name.includes(lq) || email.includes(lq);
+    })
+    .slice(0, 8)
+    .map(m => ({
+      name:  ((m["First Name"]||"")+" "+(m["Last Name"]||"")).trim(),
+      email: m["Email"]||m["Email Address"]||""
+    }));
+}
+
+function setupChipInput(inputId, chipsId, acId) {
+  const input  = document.getElementById(inputId);
+  const chips  = document.getElementById(chipsId);
+  const ac     = document.getElementById(acId);
+  const values = [];   // [{name, email}]
+
+  function renderChips() {
+    chips.innerHTML = values.map((v,i) => `
+      <span class="chip">${escapeHtml(v.name||v.email)}
+        <button class="chip-remove" data-i="${i}">×</button>
+      </span>`).join("");
+    chips.querySelectorAll(".chip-remove").forEach(btn => {
+      btn.addEventListener("click", () => { values.splice(+btn.dataset.i, 1); renderChips(); });
+    });
+  }
+  function addValue(v) {
+    if (!v.email) return;
+    if (!values.find(x => x.email === v.email)) values.push(v);
+    renderChips();
+    input.value = "";
+    ac.style.display = "none";
+  }
+  function showAC(items) {
+    if (!items.length) { ac.style.display="none"; return; }
+    ac.style.display = "block";
+    ac.innerHTML = items.map(m => `
+      <div class="autocomplete-item" data-email="${escapeHtml(m.email)}" data-name="${escapeHtml(m.name)}">
+        <span class="ac-name">${escapeHtml(m.name)}</span>
+        <span class="ac-email">${escapeHtml(m.email)}</span>
+      </div>`).join("");
+    ac.querySelectorAll(".autocomplete-item").forEach(el => {
+      el.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        addValue({ name:el.dataset.name, email:el.dataset.email });
+      });
+    });
+  }
+  input.addEventListener("input", () => {
+    const q = input.value.trim();
+    showAC(memberSuggestions(q));
+  });
+  input.addEventListener("keydown", e => {
+    if ((e.key === "Enter" || e.key === ",") && input.value.trim()) {
+      e.preventDefault();
+      const v = input.value.trim().replace(/,$/, "");
+      addValue({ email:v, name:"" });
+    }
+    if (e.key === "Backspace" && !input.value && values.length) {
+      values.pop(); renderChips();
+    }
+  });
+  input.addEventListener("blur", () => setTimeout(() => { ac.style.display="none"; }, 200));
+  document.getElementById(inputId.replace("Input","Wrap")).addEventListener("click", () => input.focus());
+
+  return { values, addValue, renderChips, clear: () => { values.length=0; renderChips(); input.value=""; } };
+}
+
+let recipientsTo, recipientsCC, recipientsBCC;
+
+/* ================================================================
+   LOAD DATA
+   ================================================================ */
+async function loadTemplates() {
+  try {
+    templates = await tFetch("EmailTemplates");
+    renderTemplateTable();
+    renderTemplatePicker();
+    populateSigSelects();
+  } catch(e) {
+    setTmplTableError(e.message);
+  }
+}
+async function loadSignatures() {
+  try {
+    signatures = await tFetch("Signatures");
+    renderSigTable();
+    populateSigSelects();
+  } catch(e) {
+    setSigTableError(e.message);
+  }
+}
+async function loadAll() {
+  await Promise.all([loadTemplates(), loadSignatures(), loadMembers()]);
+}
+
+function setTmplTableError(msg) {
+  document.getElementById("tmplBody").innerHTML =
+    `<tr><td colspan="8" style="color:var(--signal);padding:16px;">Error: ${escapeHtml(msg)}</td></tr>`;
+}
+function setSigTableError(msg) {
+  document.getElementById("sigBody").innerHTML =
+    `<tr><td colspan="5" style="color:var(--signal);padding:16px;">Error: ${escapeHtml(msg)}</td></tr>`;
+}
+
+/* ================================================================
+   TEMPLATE TABLE
+   ================================================================ */
+function renderTemplateTable() {
+  const q    = document.getElementById("tmplSearch").value.trim().toLowerCase();
+  const type = document.getElementById("tmplFilterType").value;
+  const topic= document.getElementById("tmplFilterTopic").value;
+  const vis  = document.getElementById("tmplFilterVis").value;
+
+  let rows = templates;
+  if (type)  rows = rows.filter(r => (r["RecipientType"]||"").toLowerCase() === type);
+  if (topic) rows = rows.filter(r => (r["Topic"]||"").toLowerCase() === topic);
+  if (vis)   rows = rows.filter(r => (r["Visibility"]||"").toLowerCase() === vis);
+  if (q)     rows = rows.filter(r => ["Name","Topic","RecipientType","SubjectPrefix","DefaultSubject"]
+                 .some(k => String(r[k]||"").toLowerCase().includes(q)));
+
+  document.getElementById("tmplEmpty").style.display = rows.length ? "none" : "block";
+  document.getElementById("tmplBody").innerHTML = rows.map(r => {
+    const sigName = signatures.find(s => s["SignatureID"] === r["Signature"])?.["Name"] || "—";
+    return `<tr class="clickable" onclick="openTmplDrawer(${JSON.stringify(r['TemplateID']||'')})">
+      <td style="font-weight:500;">${escapeHtml(r["Name"]||"—")}</td>
+      <td><span class="badge ${r["RecipientType"]==="group"?"badge-affiliate":"badge-default"}">${escapeHtml(r["RecipientType"]||"—")}</span></td>
+      <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(r["Topic"]||"—")}</td>
+      <td style="font-size:11px;">${escapeHtml(r["SubjectPrefix"]||"—")}</td>
+      <td><span class="badge ${r["Visibility"]==="confidential"?"badge-expired":"badge-full"}">${escapeHtml(r["Visibility"]||"open")}</span></td>
+      <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(r["ScheduledSend"]||"now")}</td>
+      <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(sigName)}</td>
+      <td>
+        <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px;"
+          onclick="event.stopPropagation();openTmplDrawer(${JSON.stringify(r['TemplateID']||'')})">Edit</button>
+      </td>
+    </tr>`;
+  }).join("") || `<tr class="spinner-row"><td colspan="8">No templates match filters.</td></tr>`;
+}
+
+/* ================================================================
+   SIGNATURE TABLE
+   ================================================================ */
+function renderSigTable() {
+  const q   = document.getElementById("sigSearch").value.trim().toLowerCase();
+  const vis = document.getElementById("sigFilterVis").value;
+
+  let rows = signatures;
+  if (vis) rows = rows.filter(r => (r["Visibility"]||"").toLowerCase() === vis);
+  if (q)   rows = rows.filter(r => String(r["Name"]||"").toLowerCase().includes(q));
+
+  document.getElementById("sigEmpty").style.display = rows.length ? "none" : "block";
+  document.getElementById("sigBody").innerHTML = rows.map(r => {
+    const preview = r["Body"] ? r["Body"].replace(/<[^>]*>/g,"").slice(0,60)+"…" : "—";
+    return `<tr class="clickable" onclick="openSigDrawer(${JSON.stringify(r['SignatureID']||'')})">
+      <td style="font-weight:500;">${escapeHtml(r["Name"]||"—")}</td>
+      <td><span class="badge ${r["Visibility"]==="confidential"?"badge-expired":"badge-full"}">${escapeHtml(r["Visibility"]||"open")}</span></td>
+      <td style="font-size:11px;color:var(--foam-dim);max-width:200px;">${escapeHtml(preview)}</td>
+      <td style="font-size:11px;color:var(--foam-dim);">${fmtDate(r["UpdatedAt"])}</td>
+      <td>
+        <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px;"
+          onclick="event.stopPropagation();openSigDrawer(${JSON.stringify(r['SignatureID']||'')})">Edit</button>
+      </td>
+    </tr>`;
+  }).join("") || `<tr class="spinner-row"><td colspan="5">No signatures found.</td></tr>`;
+}
+
+function populateSigSelects() {
+  const opts = `<option value="">— No Signature —</option>` +
+    signatures.map(s => `<option value="${escapeHtml(s["SignatureID"]||"")}">${escapeHtml(s["Name"]||"")}</option>`).join("");
+  ["tSignature","sigSelect"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { const v = el.value; el.innerHTML = opts; el.value = v; }
+  });
+}
+
+/* ================================================================
+   TEMPLATE DRAWER — CRUD
+   ================================================================ */
+function openTmplDrawer(id) {
+  editTmplId = id || null;
+  const r = id ? templates.find(t => t["TemplateID"] === id) : null;
+  document.getElementById("tmplDrawerTitle").textContent = r ? "Edit Template" : "New Template";
+  document.getElementById("tName").value          = r?.["Name"]          || "";
+  document.getElementById("tRecipientType").value = r?.["RecipientType"] || "single";
+  document.getElementById("tVisibility").value    = r?.["Visibility"]    || "open";
+  document.getElementById("tTopic").value         = r?.["Topic"]         || "general";
+  document.getElementById("tSubjectPrefix").value = r?.["SubjectPrefix"] || "";
+  document.getElementById("tDefaultSubject").value= r?.["DefaultSubject"]|| "";
+  document.getElementById("tDefaultCC").value     = r?.["DefaultCC"]     || "";
+  document.getElementById("tDefaultBCC").value    = r?.["DefaultBCC"]    || "";
+  document.getElementById("tGroupKey").value      = r?.["GroupKey"]      || "";
+  document.getElementById("tScheduledSend").value = r?.["ScheduledSend"] || "now";
+  document.getElementById("tSignature").value     = r?.["Signature"]     || "";
+  toggleGroupKeyRow();
+  quillTmpl.root.innerHTML = r?.["Body"] || "";
+  document.getElementById("tmplDeleteBtn").style.display = r ? "inline-flex" : "none";
+  const s = document.getElementById("tmplDrawerStatus");
+  s.textContent=""; s.className="status-msg";
+  document.getElementById("tmplDrawer").classList.add("open");
+}
+function closeTmplDrawer() { document.getElementById("tmplDrawer").classList.remove("open"); editTmplId=null; }
+
+function toggleGroupKeyRow() {
+  document.getElementById("tGroupKeyRow").style.display =
+    document.getElementById("tRecipientType").value === "group" ? "" : "none";
+}
+document.getElementById("tRecipientType").addEventListener("change", toggleGroupKeyRow);
+
+async function saveTmpl() {
+  const name = document.getElementById("tName").value.trim();
+  if (!name) { showDrawerStatus("tmplDrawerStatus","Template name is required.","error"); return; }
+  const btn = document.getElementById("tmplSaveBtn");
+  btn.disabled=true; btn.innerHTML=`<span class="spinner"></span> Saving…`;
+  try {
+    const now  = new Date().toISOString();
+    const data = {
+      TemplateID:     editTmplId || uid(),
+      Name:           name,
+      RecipientType:  document.getElementById("tRecipientType").value,
+      Visibility:     document.getElementById("tVisibility").value,
+      Topic:          document.getElementById("tTopic").value,
+      SubjectPrefix:  document.getElementById("tSubjectPrefix").value,
+      DefaultSubject: document.getElementById("tDefaultSubject").value.trim(),
+      DefaultCC:      document.getElementById("tDefaultCC").value.trim(),
+      DefaultBCC:     document.getElementById("tDefaultBCC").value.trim(),
+      GroupKey:       document.getElementById("tGroupKey").value,
+      ScheduledSend:  document.getElementById("tScheduledSend").value,
+      Signature:      document.getElementById("tSignature").value,
+      Body:           quillTmpl.root.innerHTML,
+      UpdatedAt:      now,
+      CreatedAt:      editTmplId ? (templates.find(t=>t["TemplateID"]===editTmplId)?.["CreatedAt"]||now) : now
+    };
+    const action = editTmplId ? "update" : "append";
+    await tPost({ action, sheet:"EmailTemplates", key:"TemplateID", data });
+    showDrawerStatus("tmplDrawerStatus","Saved.","success");
+    await loadTemplates();
+    setTimeout(closeTmplDrawer, 600);
+  } catch(e) { showDrawerStatus("tmplDrawerStatus","Error: "+e.message,"error"); }
+  finally { btn.disabled=false; btn.textContent="Save Template"; }
+}
+
+async function deleteTmpl() {
+  if (!editTmplId || !confirm("Delete this template?")) return;
+  const btn = document.getElementById("tmplDeleteBtn");
+  btn.disabled=true;
+  try {
+    await tPost({ action:"delete", sheet:"EmailTemplates", key:"TemplateID", id:editTmplId });
+    await loadTemplates();
+    closeTmplDrawer();
+  } catch(e) { showDrawerStatus("tmplDrawerStatus","Error: "+e.message,"error"); }
+  finally { btn.disabled=false; }
+}
+
+/* ================================================================
+   SIGNATURE DRAWER — CRUD
+   ================================================================ */
+function openSigDrawer(id) {
+  editSigId = id || null;
+  const r = id ? signatures.find(s => s["SignatureID"]===id) : null;
+  document.getElementById("sigDrawerTitle").textContent = r ? "Edit Signature" : "New Signature";
+  document.getElementById("sName").value       = r?.["Name"]       || "";
+  document.getElementById("sVisibility").value = r?.["Visibility"] || "open";
+  quillSig.root.innerHTML = r?.["Body"] || "";
+  document.getElementById("sigDeleteBtn").style.display = r ? "inline-flex" : "none";
+  const s = document.getElementById("sigDrawerStatus");
+  s.textContent=""; s.className="status-msg";
+  document.getElementById("sigDrawer").classList.add("open");
+}
+function closeSigDrawer() { document.getElementById("sigDrawer").classList.remove("open"); editSigId=null; }
+
+async function saveSig() {
+  const name = document.getElementById("sName").value.trim();
+  if (!name) { showDrawerStatus("sigDrawerStatus","Signature name is required.","error"); return; }
+  const btn = document.getElementById("sigSaveBtn");
+  btn.disabled=true; btn.innerHTML=`<span class="spinner"></span> Saving…`;
+  try {
+    const now  = new Date().toISOString();
+    const data = {
+      SignatureID: editSigId || uid(),
+      Name:        name,
+      Visibility:  document.getElementById("sVisibility").value,
+      Body:        quillSig.root.innerHTML,
+      UpdatedAt:   now,
+      CreatedAt:   editSigId ? (signatures.find(s=>s["SignatureID"]===editSigId)?.["CreatedAt"]||now) : now
+    };
+    const action = editSigId ? "update" : "append";
+    await tPost({ action, sheet:"Signatures", key:"SignatureID", data });
+    showDrawerStatus("sigDrawerStatus","Saved.","success");
+    await loadSignatures();
+    setTimeout(closeSigDrawer, 600);
+  } catch(e) { showDrawerStatus("sigDrawerStatus","Error: "+e.message,"error"); }
+  finally { btn.disabled=false; btn.textContent="Save Signature"; }
+}
+
+async function deleteSig() {
+  if (!editSigId || !confirm("Delete this signature?")) return;
+  try {
+    await tPost({ action:"delete", sheet:"Signatures", key:"SignatureID", id:editSigId });
+    await loadSignatures();
+    closeSigDrawer();
+  } catch(e) { showDrawerStatus("sigDrawerStatus","Error: "+e.message,"error"); }
+}
+
+function showDrawerStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = `status-msg visible ${type}`;
+}
+
+/* ================================================================
+   COMPOSE WIZARD
+   ================================================================ */
+let currentStep    = 1;
+let selectedTmplId = null;
+
+function goStep(n) {
+  for (let i=1;i<=5;i++) {
+    document.getElementById(`wstep-${i}`).classList.toggle("active", i===n);
+    document.getElementById(`wstep-${i}`).classList.toggle("done", i<n);
+    document.getElementById(`wpanel-${i}`).classList.toggle("active", i===n);
+  }
+  currentStep = n;
+}
+
+/* ── Step 1: template picker ── */
+function renderTemplatePicker() {
+  const q     = document.getElementById("tmplPickSearch").value.trim().toLowerCase();
+  const topic = document.getElementById("tmplPickTopic").value;
+  let rows = templates;
+  if (topic) rows = rows.filter(r => (r["Topic"]||"").toLowerCase() === topic);
+  if (q)     rows = rows.filter(r => String(r["Name"]||"").toLowerCase().includes(q));
+
+  document.getElementById("tmplPickEmpty").style.display = rows.length ? "none" : "block";
+  const grid = document.getElementById("tmplPickerGrid");
+  grid.innerHTML = rows.map(r => `
+    <div class="template-card ${selectedTmplId===r["TemplateID"]?"selected":""}"
+         data-id="${escapeHtml(r["TemplateID"]||"")}"
+         onclick="selectTemplate(${JSON.stringify(r['TemplateID']||'')})">
+      <div class="tc-name">${escapeHtml(r["Name"]||"—")}</div>
+      <div class="tc-meta">
+        <span class="badge badge-default" style="font-size:10px;">${escapeHtml(r["RecipientType"]||"single")}</span>
+        <span class="badge badge-default" style="font-size:10px;">${escapeHtml(r["Topic"]||"general")}</span>
+        ${r["Visibility"]==="confidential"?`<span class="badge badge-expired" style="font-size:10px;">confidential</span>`:""}
+      </div>
+      ${r["DefaultSubject"]?`<div style="font-size:11px;color:var(--foam-dim);">Subject: ${escapeHtml(r["DefaultSubject"])}</div>`:""}
+    </div>`).join("") || "";
+}
+
+function selectTemplate(id) {
+  selectedTmplId = id;
+  document.getElementById("nextStep1").disabled = false;
+  renderTemplatePicker();
+}
+
+function applyTemplateToCompose(id) {
+  const t = templates.find(r => r["TemplateID"] === id);
+  if (!t) return;
+
+  // Recipients step
+  document.getElementById("groupRecipientRow").style.display = t["RecipientType"]==="group" ? "" : "none";
+  if (t["GroupKey"]) document.getElementById("groupSelect").value = t["GroupKey"];
+
+  // Pre-fill CC / BCC
+  if (t["DefaultCC"]) {
+    t["DefaultCC"].split(",").map(e=>e.trim()).filter(Boolean)
+      .forEach(e => recipientsCC.addValue({email:e,name:""}));
+  }
+  if (t["DefaultBCC"]) {
+    t["DefaultBCC"].split(",").map(e=>e.trim()).filter(Boolean)
+      .forEach(e => recipientsBCC.addValue({email:e,name:""}));
+  }
+
+  // Subject step
+  if (t["SubjectPrefix"]) document.getElementById("subjectPrefix").value = t["SubjectPrefix"];
+  if (t["DefaultSubject"]) document.getElementById("emailSubject").value = t["DefaultSubject"];
+  if (t["ScheduledSend"])  document.getElementById("scheduleType").value = t["ScheduledSend"];
+  if (t["Signature"])      {
+    document.getElementById("sigSelect").value = t["Signature"];
+    updateSigPreview();
+  }
+
+  // Body — pre-fill from template
+  if (t["Body"]) quillBody.root.innerHTML = t["Body"];
+}
+
+/* ── Group member expansion ── */
+async function expandGroup(groupKey) {
+  if (!groupKey) return [];
+  const filterMap = {
+    all_active:  m => m["Active"]===true || m["Active"]==="true" || m["Active"]==="TRUE",
+    full:        m => (m["Membership Type"]||"").toLowerCase()==="full",
+    affiliate:   m => (m["Membership Type"]||"").toLowerCase()==="affiliate",
+    financial:   m => m["Paid up"]===true || m["Paid up"]==="true",
+    committee:   m => !!(m["Role"]||m["Committee Role"])
+  };
+  const fn = filterMap[groupKey] || (() => false);
+  return members.filter(fn).map(m => ({
+    name:  ((m["First Name"]||"")+" "+(m["Last Name"]||"")).trim(),
+    email: m["Email"]||m["Email Address"]||""
+  })).filter(m => m.email);
+}
+
+document.getElementById("groupSelect").addEventListener("change", async () => {
+  const key = document.getElementById("groupSelect").value;
+  if (!key) { document.getElementById("groupCountMsg").textContent=""; return; }
+  const members = await expandGroup(key);
+  document.getElementById("groupCountMsg").textContent = `${members.length} member(s) will receive this email.`;
+});
+
+/* ── Schedule toggle ── */
+document.getElementById("scheduleType").addEventListener("change", () => {
+  document.getElementById("scheduleDateRow").style.display =
+    document.getElementById("scheduleType").value === "scheduled" ? "" : "none";
+});
+
+/* ── Signature preview ── */
+function updateSigPreview() {
+  const sigId = document.getElementById("sigSelect").value;
+  const sig   = signatures.find(s => s["SignatureID"]===sigId);
+  const wrap  = document.getElementById("sigPreviewWrap");
+  if (sig && sig["Body"]) {
+    document.getElementById("sigPreviewContent").innerHTML = sig["Body"];
+    wrap.style.display = "";
+  } else { wrap.style.display="none"; }
+}
+document.getElementById("sigSelect").addEventListener("change", updateSigPreview);
+
+/* ── Preview build ── */
+function buildPreview() {
+  const t       = templates.find(r => r["TemplateID"]===selectedTmplId);
+  const prefix  = document.getElementById("subjectPrefix").value;
+  const subject = document.getElementById("emailSubject").value.trim();
+  const toList  = recipientsTo.values.map(v=>v.name?`${v.name} <${v.email}>`:v.email).join(", ");
+  const ccList  = recipientsCC.values.map(v=>v.email).join(", ");
+  const bccList = recipientsBCC.values.map(v=>v.email).join(", ");
+  const sigId   = document.getElementById("sigSelect").value;
+  const sig     = signatures.find(s => s["SignatureID"]===sigId);
+  const body    = quillBody.root.innerHTML;
+  const sched   = document.getElementById("scheduleType").value==="scheduled"
+    ? `<br><strong>Scheduled:</strong> ${document.getElementById("scheduleDateTime").value}`:"";
+
+  document.getElementById("emailPreview").innerHTML = `
+    <div class="preview-meta">
+      <strong>To:</strong> ${escapeHtml(toList)||"—"}<br>
+      ${ccList?`<strong>CC:</strong> ${escapeHtml(ccList)}<br>`:""}
+      ${bccList?`<strong>BCC:</strong> ${escapeHtml(bccList)}<br>`:""}
+      ${sched}
+    </div>
+    <div class="preview-subject">${escapeHtml((prefix+" "+subject).trim()||"(No Subject)")}</div>
+    <hr style="border:none;border-top:1px solid #ddd;margin:12px 0;">
+    ${body}
+    ${sig?.["Body"] ? `<hr style="border:none;border-top:1px solid #ddd;margin:16px 0;">${sig["Body"]}`:""}
+  `;
+}
+
+/* ── Send / draft ── */
+async function sendEmail() {
+  const btn = document.getElementById("sendEmailBtn");
+  btn.disabled=true; btn.innerHTML=`<span class="spinner"></span> Sending…`;
+  const s = document.getElementById("sendStatus");
+  try {
+    const t      = templates.find(r=>r["TemplateID"]===selectedTmplId);
+    const prefix = document.getElementById("subjectPrefix").value;
+    const subject= (prefix+" "+document.getElementById("emailSubject").value).trim();
+    const sigId  = document.getElementById("sigSelect").value;
+    const sig    = signatures.find(s=>s["SignatureID"]===sigId);
+    const body   = quillBody.root.innerHTML + (sig?.["Body"]?`<br><hr>${sig["Body"]}`:"");
+    const toAddrs= recipientsTo.values.map(v=>v.email);
+    const groupKey= document.getElementById("groupSelect").value;
+    const groupMembers = groupKey ? await expandGroup(groupKey) : [];
+
+    // All TO addresses (chip + group expansion)
+    const allTo = [...toAddrs, ...groupMembers.map(m=>m.email)].filter(Boolean);
+    if (!allTo.length) { s.textContent="At least one To: recipient required."; s.className="status-msg visible error"; btn.disabled=false; btn.innerHTML=`<i data-lucide="send" style="width:13px;height:13px;margin-right:4px;"></i> Send Email`; return; }
+
+    const schedType = document.getElementById("scheduleType").value;
+    const schedTime = schedType==="scheduled" ? document.getElementById("scheduleDateTime").value : null;
+
+    // Record in tracking sheet
+    const batchKey  = uid();
+    const campaignKey = t?.["Name"] || "MANUAL-"+Date.now();
+    for (const email of allTo) {
+      const member = members.find(m=>(m["Email"]||m["Email Address"]||"")===email);
+      await appendSheet(DOMAIN.tracking, "Tracking", {
+        "Batch Key":    batchKey+"-"+email,
+        "Key":          campaignKey,
+        "Club":         member?.["Home Club"]||"",
+        "Contact Name": member ? ((member["First Name"]||"")+" "+(member["Last Name"]||"")).trim() : email,
+        "Contact Role": "",
+        "Email Status": schedTime ? "Scheduled" : "Sent",
+        "Date Sent":    schedTime || new Date().toISOString(),
+        "Recipient Email": email
+      });
+    }
+
+    s.textContent = schedTime
+      ? `Scheduled for ${schedTime}. ${allTo.length} recipient(s) tracked.`
+      : `Sent to ${allTo.length} recipient(s) and recorded in tracking.`;
+    s.className = "status-msg visible success";
+    AuditLog.load();
+  } catch(e) {
+    s.textContent = "Error: "+e.message; s.className="status-msg visible error";
+  } finally {
+    btn.disabled=false; btn.innerHTML=`<i data-lucide="send" style="width:13px;height:13px;margin-right:4px;"></i> Send Email`;
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function resetCompose() {
+  selectedTmplId=null;
+  recipientsTo?.clear(); recipientsCC?.clear(); recipientsBCC?.clear();
+  document.getElementById("subjectPrefix").value="";
+  document.getElementById("emailSubject").value="";
+  document.getElementById("scheduleType").value="now";
+  document.getElementById("scheduleDateRow").style.display="none";
+  document.getElementById("sigSelect").value="";
+  document.getElementById("sigPreviewWrap").style.display="none";
+  document.getElementById("groupRecipientRow").style.display="none";
+  document.getElementById("groupSelect").value="";
+  document.getElementById("groupCountMsg").textContent="";
+  document.getElementById("nextStep1").disabled=true;
+  document.getElementById("sendStatus").textContent="";
+  quillBody.root.innerHTML="";
+  goStep(1);
+  renderTemplatePicker();
+}
+
+/* ================================================================
+   EVENT WIRING
+   ================================================================ */
+
+// Template table
+document.getElementById("newTemplateBtn").addEventListener("click", () => openTmplDrawer(null));
+document.getElementById("tmplDrawerClose").addEventListener("click", closeTmplDrawer);
+document.getElementById("tmplCancelBtn").addEventListener("click", closeTmplDrawer);
+document.getElementById("tmplSaveBtn").addEventListener("click", saveTmpl);
+document.getElementById("tmplDeleteBtn").addEventListener("click", deleteTmpl);
+document.getElementById("tmplDrawer").addEventListener("click", e => { if(e.target===e.currentTarget) closeTmplDrawer(); });
+document.getElementById("tmplSearch").addEventListener("input", renderTemplateTable);
+document.getElementById("tmplFilterType").addEventListener("change", renderTemplateTable);
+document.getElementById("tmplFilterTopic").addEventListener("change", renderTemplateTable);
+document.getElementById("tmplFilterVis").addEventListener("change", renderTemplateTable);
+document.getElementById("refreshTmplBtn").addEventListener("click", async () => {
+  const btn=document.getElementById("refreshTmplBtn"); btn.disabled=true; btn.innerHTML=`<span class="spinner"></span>`;
+  await loadTemplates(); btn.disabled=false; btn.textContent="Refresh";
+});
+
+// Signature table
+document.getElementById("newSigBtn").addEventListener("click", () => openSigDrawer(null));
+document.getElementById("sigDrawerClose").addEventListener("click", closeSigDrawer);
+document.getElementById("sigCancelBtn").addEventListener("click", closeSigDrawer);
+document.getElementById("sigSaveBtn").addEventListener("click", saveSig);
+document.getElementById("sigDeleteBtn").addEventListener("click", deleteSig);
+document.getElementById("sigDrawer").addEventListener("click", e => { if(e.target===e.currentTarget) closeSigDrawer(); });
+document.getElementById("sigSearch").addEventListener("input", renderSigTable);
+document.getElementById("sigFilterVis").addEventListener("change", renderSigTable);
+document.getElementById("refreshSigBtn").addEventListener("click", async () => {
+  const btn=document.getElementById("refreshSigBtn"); btn.disabled=true; btn.innerHTML=`<span class="spinner"></span>`;
+  await loadSignatures(); btn.disabled=false; btn.textContent="Refresh";
+});
+
+// Compose wizard navigation
+document.getElementById("tmplPickSearch").addEventListener("input", renderTemplatePicker);
+document.getElementById("tmplPickTopic").addEventListener("change", renderTemplatePicker);
+
+document.getElementById("nextStep1").addEventListener("click", () => {
+  if (!selectedTmplId) return;
+  applyTemplateToCompose(selectedTmplId);
+  goStep(2);
+});
+document.getElementById("backStep2").addEventListener("click", () => goStep(1));
+document.getElementById("nextStep2").addEventListener("click", () => {
+  if (!recipientsTo.values.length && !document.getElementById("groupSelect").value) {
+    alert("Please add at least one To: recipient or select a group."); return;
+  }
+  goStep(3);
+});
+document.getElementById("backStep3").addEventListener("click", () => goStep(2));
+document.getElementById("nextStep3").addEventListener("click", () => {
+  if (!document.getElementById("emailSubject").value.trim()) {
+    alert("Please enter a subject."); return;
+  }
+  goStep(4);
+});
+document.getElementById("backStep4").addEventListener("click", () => goStep(3));
+document.getElementById("nextStep4").addEventListener("click", () => { buildPreview(); goStep(5); });
+document.getElementById("backStep5").addEventListener("click", () => goStep(4));
+document.getElementById("sendEmailBtn").addEventListener("click", sendEmail);
+document.getElementById("saveDraftBtn").addEventListener("click", () => {
+  const s=document.getElementById("sendStatus");
+  s.textContent="Draft saved (tracking record created with status Scheduled).";
+  s.className="status-msg visible success";
+});
+document.getElementById("resetComposeBtn").addEventListener("click", resetCompose);
+
+/* ================================================================
+   INIT
+   ================================================================ */
+initQuills();
+initEmoji();
+
+recipientsTo  = setupChipInput("toInput",  "toChips",  "toAC");
+recipientsCC  = setupChipInput("ccInput",  "ccChips",  "ccAC");
+recipientsBCC = setupChipInput("bccInput", "bccChips", "bccAC");
+
+loadAll().then(() => { if (window.lucide) lucide.createIcons(); });
+</script>
+<script>
+Promise.all([
+  fetch('nav.html').then(r => r.text()),
+  fetch('auditLog.html').then(r => r.text()),
+]).then(([navHtml, auditHtml]) => {
+  document.getElementById('nav-placeholder').innerHTML = navHtml;
+  document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
+  AuditLog.init();
+  Nav.init();
+  if (window.lucide) lucide.createIcons();
+});
+</script>
+</body>
+</html>

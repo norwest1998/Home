@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="smmc-domain" content="tracking">
+<title>Email Management — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="theme.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
+<style>
+/* ================================================================
+   EMAIL MANAGEMENT — unified page styles
+   ================================================================ */
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:32px;}
+.stat-card{padding:20px 18px;text-align:center;display:flex;flex-direction:column;gap:5px;}
+.stat-card .stat-val{font-family:var(--font-display);font-size:32px;color:var(--foam);line-height:1;}
+.stat-card .stat-val.warn{color:#ffb347;} .stat-card .stat-val.good{color:var(--glow);} .stat-card .stat-val.bad{color:var(--signal);}
+.stat-card .stat-label{font-family:var(--font-data);font-size:10px;letter-spacing:.06em;color:var(--foam-dim);text-transform:uppercase;}
+.stat-card .stat-sub{font-size:11px;color:var(--foam-dim);}
+
+/* Glass select */
+.glass-select{
+  appearance:none;-webkit-appearance:none;
+  background:rgba(255,255,255,0.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0b8c8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+  border:1px solid var(--glass-border);border-radius:8px;color:var(--foam);
+  font-family:var(--font-body);font-size:12px;padding:5px 30px 5px 12px;
+  cursor:pointer;min-width:120px;transition:border-color .2s,background .2s;
+}
+.glass-select:hover{background-color:rgba(255,255,255,0.12);border-color:var(--foam-dim);}
+.glass-select:focus{outline:none;border-color:var(--foam);}
+.glass-select option{background:#0f2535;color:var(--foam);}
+
+/* Toolbar */
+.em-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+.em-toolbar .search-wrap{flex:1;min-width:200px;margin-bottom:0;}
+
+/* Tables */
+.em-table-wrap{max-height:420px;overflow:auto;border-radius:10px;border:1px solid var(--glass-border);}
+.dash-table-wrap{max-height:280px;overflow:auto;border-radius:10px;border:1px solid var(--glass-border);margin-bottom:20px;}
+table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.em-table th,.dash-table th{
+  position:sticky;top:0;background:var(--ocean-mid);text-align:left;padding:8px 10px;
+  font-family:var(--font-data);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--foam-dim);border-bottom:1px solid var(--glass-border);white-space:nowrap;
+}
+.em-table td,.dash-table td{padding:8px 10px;border-bottom:1px solid var(--glass-border);color:var(--foam);vertical-align:middle;}
+.em-table tr:last-child td,.dash-table tr:last-child td{border-bottom:none;}
+.em-table tr.clickable,.dash-table tr.clickable{cursor:pointer;}
+.em-table tr.clickable:hover td,.dash-table tr.clickable:hover td{background:rgba(255,255,255,0.04);}
+
+/* Progress bar */
+.progress-bar-wrap{background:rgba(255,255,255,0.08);border-radius:4px;height:6px;overflow:hidden;}
+.progress-bar{height:100%;border-radius:4px;background:var(--glow);transition:width .4s;}
+.progress-bar.warn{background:#ffb347;} .progress-bar.bad{background:var(--signal);}
+
+/* Spinner */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.15);border-top-color:var(--foam);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner-row td{text-align:center;color:var(--foam-dim);font-size:12px;padding:24px;}
+
+/* Status messages */
+.status-msg{font-size:12px;display:none;}
+.status-msg.visible{display:block;}
+.status-msg.success{color:var(--glow);}
+.status-msg.error{color:#ff6b6b;}
+
+/* Form primitives */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-row.triple{grid-template-columns:1fr 1fr 1fr;}
+.form-row.full{grid-template-columns:1fr;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group label{font-family:var(--font-data);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--foam-dim);}
+.form-group input,.form-group select,.form-group textarea{
+  background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);border-radius:8px;
+  color:var(--foam);font-family:var(--font-body);font-size:13px;padding:8px 12px;
+  width:100%;box-sizing:border-box;transition:border-color .2s;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--foam);}
+.form-group select option{background:var(--ocean-mid);}
+.form-group textarea{resize:vertical;min-height:80px;}
+
+/* Record modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--ocean-mid);border:1px solid var(--glass-border);border-radius:16px;width:100%;max-width:860px;max-height:90vh;overflow-y:auto;padding:28px;display:flex;flex-direction:column;gap:20px;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.modal-header h3{font-size:18px;color:var(--foam);}
+.modal-close{background:none;border:none;color:var(--foam-dim);cursor:pointer;padding:4px;font-size:20px;transition:color .15s;}
+.modal-close:hover{color:var(--foam);}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding-top:4px;align-items:center;}
+.modal-status{font-size:12px;display:none;}
+.modal-status.visible{display:block;}
+.modal-status.success{color:var(--glow);}
+.modal-status.error{color:#ff6b6b;}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.detail-grid.triple{grid-template-columns:1fr 1fr 1fr;}
+.detail-item{display:flex;flex-direction:column;gap:4px;}
+.detail-item.full{grid-column:1/-1;}
+.detail-label{font-family:var(--font-data);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--foam-dim);}
+.detail-value{font-size:13px;color:var(--foam);background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);border-radius:8px;padding:8px 12px;min-height:36px;}
+.detail-value.editable{background:rgba(255,255,255,0.06);transition:border-color .2s;}
+.detail-value.editable:focus{outline:none;border-color:var(--foam);}
+
+/* ── Wizard ── */
+.wizard-steps{display:flex;align-items:center;gap:4px;margin-bottom:24px;flex-wrap:wrap;}
+.wizard-step{display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:20px;font-size:12px;color:var(--foam-dim);border:1px solid transparent;transition:all .2s;white-space:nowrap;cursor:default;}
+.wizard-step.active{background:rgba(94,234,212,0.12);border-color:rgba(94,234,212,0.35);color:var(--glow);}
+.wizard-step.done{background:rgba(255,255,255,0.05);border-color:var(--glass-border);color:var(--foam);}
+.wizard-step .step-num{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:var(--glass-border);flex-shrink:0;}
+.wizard-step.active .step-num{background:var(--glow);color:#071b2c;}
+.wizard-step.done .step-num{background:rgba(94,234,212,0.3);color:var(--glow);}
+.wizard-connector{width:20px;height:1px;background:var(--glass-border);flex-shrink:0;}
+.wizard-panel{display:none;}
+.wizard-panel.active{display:block;}
+
+/* ── Template picker cards (step 1) ── */
+.template-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:14px;}
+.template-card{padding:12px 14px;border-radius:10px;cursor:pointer;border:1px solid var(--glass-border);background:var(--glass-fill);transition:all .2s;display:flex;flex-direction:column;gap:5px;}
+.template-card:hover{border-color:rgba(94,234,212,0.4);background:rgba(255,255,255,0.07);}
+.template-card.selected{border-color:var(--glow);background:rgba(94,234,212,0.08);}
+.template-card .tc-name{font-size:13px;font-weight:600;color:var(--foam);}
+.template-card .tc-meta{font-size:11px;color:var(--foam-dim);display:flex;flex-wrap:wrap;gap:4px;}
+
+/* ── Recipient chips ── */
+.chip-input-wrap{display:flex;flex-wrap:wrap;gap:5px;align-items:center;background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);border-radius:8px;padding:5px 10px;min-height:38px;cursor:text;transition:border-color .2s;position:relative;}
+.chip-input-wrap:focus-within{border-color:var(--foam);}
+.chip{display:inline-flex;align-items:center;gap:4px;background:rgba(94,234,212,0.12);border:1px solid rgba(94,234,212,0.3);border-radius:5px;padding:2px 7px;font-size:12px;color:var(--glow);}
+.chip .chip-remove{background:none;border:none;color:var(--glow);cursor:pointer;padding:0;font-size:12px;line-height:1;opacity:.7;}
+.chip .chip-remove:hover{opacity:1;}
+.chip-input{background:none;border:none;outline:none;color:var(--foam);font-size:13px;min-width:120px;flex:1;}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;z-index:300;background:var(--ocean-mid);border:1px solid var(--glass-border);border-radius:8px;max-height:160px;overflow-y:auto;margin-top:3px;}
+.autocomplete-item{padding:7px 12px;font-size:12.5px;color:var(--foam);cursor:pointer;display:flex;flex-direction:column;gap:2px;}
+.autocomplete-item:hover{background:rgba(255,255,255,0.06);}
+.autocomplete-item .ac-name{font-weight:500;}
+.autocomplete-item .ac-email{font-size:11px;color:var(--foam-dim);}
+
+/* ── Quill ── */
+.ql-toolbar.ql-snow{background:rgba(255,255,255,0.06)!important;border:1px solid var(--glass-border)!important;border-bottom:none!important;border-radius:8px 8px 0 0;}
+.ql-container.ql-snow{background:rgba(255,255,255,0.04)!important;border:1px solid var(--glass-border)!important;border-radius:0 0 8px 8px;min-height:220px;}
+.ql-editor{color:var(--foam)!important;font-family:var(--font-body);font-size:13px;min-height:200px;}
+.ql-editor.ql-blank::before{color:var(--foam-dim)!important;}
+.ql-snow .ql-stroke{stroke:var(--foam-dim)!important;}
+.ql-snow .ql-fill{fill:var(--foam-dim)!important;}
+.ql-snow .ql-picker{color:var(--foam-dim)!important;}
+.ql-snow .ql-picker-options{background:var(--ocean-mid)!important;border-color:var(--glass-border)!important;}
+.ql-snow .ql-picker-item{color:var(--foam)!important;}
+.ql-snow.ql-toolbar button:hover .ql-stroke,.ql-snow.ql-toolbar button.ql-active .ql-stroke{stroke:var(--glow)!important;}
+.ql-snow.ql-toolbar button:hover .ql-fill,.ql-snow.ql-toolbar button.ql-active .ql-fill{fill:var(--glow)!important;}
+.ql-snow.ql-toolbar button:hover,.ql-snow.ql-toolbar button.ql-active{background:rgba(94,234,212,0.08)!important;border-radius:4px;}
+.sig-editor .ql-container.ql-snow{min-height:100px;}
+.sig-editor .ql-editor{min-height:80px;}
+
+/* ── Emoji ── */
+.emoji-panel-wrap{position:relative;display:inline-block;}
+.emoji-panel{display:none;position:absolute;bottom:110%;left:0;z-index:400;background:var(--ocean-mid);border:1px solid var(--glass-border);border-radius:10px;padding:10px;width:290px;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.emoji-panel.open{display:block;}
+.emoji-cat-tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;}
+.emoji-cat-tab{background:none;border:1px solid transparent;border-radius:6px;color:var(--foam-dim);font-size:15px;cursor:pointer;padding:2px 5px;transition:all .15s;}
+.emoji-cat-tab:hover,.emoji-cat-tab.active{background:rgba(94,234,212,0.1);border-color:rgba(94,234,212,0.3);}
+.emoji-grid{display:flex;flex-wrap:wrap;gap:2px;max-height:140px;overflow-y:auto;}
+.emoji-btn{background:none;border:none;cursor:pointer;font-size:17px;padding:3px 4px;border-radius:4px;transition:background .1s;}
+.emoji-btn:hover{background:rgba(255,255,255,0.1);}
+
+/* ── Email preview ── */
+.email-preview{background:rgba(255,255,255,0.96);color:#111;border-radius:10px;padding:20px 24px;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-height:400px;overflow-y:auto;}
+.email-preview .preview-meta{font-size:12px;color:#555;margin-bottom:14px;border-bottom:1px solid #ddd;padding-bottom:10px;}
+.email-preview .preview-subject{font-size:17px;font-weight:700;color:#111;margin-bottom:8px;}
+
+/* ── Template & Signature management grid ── */
+.tmpl-mgmt-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:700px){.tmpl-mgmt-grid{grid-template-columns:1fr;}}
+
+/* List panel inside the grid */
+.list-panel{background:var(--glass-fill);border:1px solid var(--glass-border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;}
+.list-panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--glass-border);}
+.list-panel-header h4{font-size:14px;font-weight:600;color:var(--foam);margin:0;}
+.list-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--glass-border);cursor:pointer;transition:background .15s;}
+.list-item:last-child{border-bottom:none;}
+.list-item:hover{background:rgba(255,255,255,0.04);}
+.list-item-name{font-size:13px;color:var(--foam);font-weight:500;flex:1;}
+.list-item-meta{font-size:11px;color:var(--foam-dim);}
+.list-empty{padding:20px;text-align:center;font-size:12px;color:var(--foam-dim);}
+.list-scroll{max-height:320px;overflow-y:auto;}
+
+/* ── Large modal for template/signature editing ── */
+.large-modal{max-width:700px!important;}
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<main class="container">
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 1 — DASHBOARD
+     ══════════════════════════════════════════════════════ -->
+<div class="section-head" id="email-dashboard">
+  <h2>Email Dashboard</h2>
+  <p>Summary across all email campaigns from the Email Tracking spreadsheet.</p>
+</div>
+
+<div class="stats-grid">
+  <div class="glass stat-card"><div class="stat-val" id="stat-sent"><span class="spinner"></span></div><div class="stat-label">Emails Sent</div></div>
+  <div class="glass stat-card"><div class="stat-val" id="stat-responded"><span class="spinner"></span></div><div class="stat-label">Responded</div><div class="stat-sub" id="stat-responded-pct"></div></div>
+  <div class="glass stat-card"><div class="stat-val" id="stat-opened"><span class="spinner"></span></div><div class="stat-label">Opened</div><div class="stat-sub" id="stat-opened-pct"></div></div>
+  <div class="glass stat-card"><div class="stat-val" id="stat-pending"><span class="spinner"></span></div><div class="stat-label">Awaiting Response</div></div>
+  <div class="glass stat-card"><div class="stat-val" id="stat-reminders"><span class="spinner"></span></div><div class="stat-label">Reminders Sent</div></div>
+  <div class="glass stat-card"><div class="stat-val" id="stat-avg-days"><span class="spinner"></span></div><div class="stat-label">Avg Response Days</div></div>
+</div>
+
+<!-- Batches -->
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title-left"><span class="dot"></span><h3>Communication Batches</h3></div>
+    <button class="btn btn-ghost" id="refreshDashBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+  </div>
+  <div class="tab-content active">
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead><tr><th>Key</th><th>Title</th><th>Date Sent</th><th>Sent</th><th>Responded</th><th>% Response</th><th>Opened</th><th>% Opened</th><th>Avg Days</th></tr></thead>
+        <tbody id="dashBody"><tr class="spinner-row"><td colspan="9"><span class="spinner"></span> Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="dashEmpty" style="display:none;">No batch data found.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 2 — TRACKING RECORDS
+     ══════════════════════════════════════════════════════ -->
+<div class="section-head" id="email-tracking">
+  <h2>Tracking Records</h2>
+  <p>Individual email records. Click a row to view or update status.</p>
+</div>
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title-left"><span class="dot"></span><h3>Records</h3></div>
+  </div>
+  <div class="tab-content active">
+    <div class="em-toolbar">
+      <div class="search-wrap">
+        <i class="nav-icon search-icon" data-lucide="search"></i>
+        <input class="search-input" id="trackSearch" placeholder="Search club, contact, email, status…">
+      </div>
+      <select class="glass-select" id="filterStatus">
+        <option value="">All Statuses</option>
+        <option value="Sent">Sent</option>
+        <option value="Responded">Responded</option>
+        <option value="Updated">Updated</option>
+        <option value="No Response">No Response</option>
+      </select>
+      <select class="glass-select" id="filterBatch"><option value="">All Batches</option></select>
+      <select class="glass-select" id="filterReminder">
+        <option value="">All Reminders</option>
+        <option value="Yes">Reminder Sent</option>
+      </select>
+      <button class="btn btn-ghost" id="refreshTrackBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+    </div>
+    <div class="em-table-wrap">
+      <table class="em-table">
+        <thead><tr><th>Club</th><th>Contact</th><th>Role</th><th>Email</th><th>Status</th><th>Date Sent</th><th>Date Updated</th><th>Response</th><th>Days</th><th>Opens</th><th>Reminder</th><th>Comments</th></tr></thead>
+        <tbody id="trackBody"><tr class="spinner-row"><td colspan="12"><span class="spinner"></span> Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="trackEmpty" style="display:none;">No tracking records found.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 3 — COMPOSE EMAIL
+     ══════════════════════════════════════════════════════ -->
+<div class="section-head" id="compose-email">
+  <h2>Compose Email</h2>
+  <p>Select a template, set recipients and subject, write your message, then preview and send.</p>
+</div>
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title-left"><span class="dot"></span><h3>New Email</h3></div>
+    <button class="btn btn-ghost" id="resetComposeBtn" style="padding:5px 12px;font-size:11px;">Reset</button>
+  </div>
+  <div class="tab-content active">
+
+    <!-- Wizard steps -->
+    <div class="wizard-steps">
+      <div class="wizard-step active" id="wstep-1"><span class="step-num">1</span> Template</div>
+      <div class="wizard-connector"></div>
+      <div class="wizard-step" id="wstep-2"><span class="step-num">2</span> Recipients</div>
+      <div class="wizard-connector"></div>
+      <div class="wizard-step" id="wstep-3"><span class="step-num">3</span> Subject</div>
+      <div class="wizard-connector"></div>
+      <div class="wizard-step" id="wstep-4"><span class="step-num">4</span> Body</div>
+      <div class="wizard-connector"></div>
+      <div class="wizard-step" id="wstep-5"><span class="step-num">5</span> Preview & Send</div>
+    </div>
+
+    <!-- Step 1: Template picker -->
+    <div class="wizard-panel active" id="wpanel-1">
+      <div class="em-toolbar" style="margin-bottom:12px;">
+        <div class="search-wrap" style="margin-bottom:0;">
+          <i class="nav-icon search-icon" data-lucide="search"></i>
+          <input class="search-input" id="tmplPickSearch" placeholder="Filter templates…">
+        </div>
+        <select class="glass-select" id="tmplPickTopic">
+          <option value="">All Topics</option>
+          <option value="general">General</option>
+          <option value="membership renewal">Membership Renewal</option>
+          <option value="update request">Update Request</option>
+        </select>
+      </div>
+      <div class="template-picker-grid" id="tmplPickerGrid">
+        <div style="color:var(--foam-dim);font-size:12px;padding:12px;"><span class="spinner"></span> Loading templates…</div>
+      </div>
+      <div class="empty-state" id="tmplPickEmpty" style="display:none;">
+        No templates yet.
+        <button class="btn btn-ghost" onclick="document.getElementById('template-management').scrollIntoView({behavior:'smooth'})" style="margin-left:8px;padding:4px 12px;font-size:11px;">+ Add Template</button>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+        <button class="btn btn-primary" id="nextStep1" disabled>Next — Recipients →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Recipients -->
+    <div class="wizard-panel" id="wpanel-2">
+      <div id="groupRecipientRow" style="display:none;margin-bottom:16px;">
+        <div class="form-group">
+          <label>Member Group</label>
+          <select id="groupSelect" class="glass-select" style="min-width:200px;width:auto;">
+            <option value="">— Select Group —</option>
+            <option value="all_active">All Active Members</option>
+            <option value="full">Full Members</option>
+            <option value="affiliate">Affiliate Members</option>
+            <option value="financial">Financial Members</option>
+            <option value="committee">Committee Members</option>
+          </select>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:var(--foam-dim);" id="groupCountMsg"></div>
+      </div>
+      <div class="form-row full" style="gap:12px;">
+        <div class="form-group">
+          <label>To *</label>
+          <div class="chip-input-wrap" id="toWrap">
+            <div id="toChips"></div>
+            <input class="chip-input" id="toInput" placeholder="name or email…" autocomplete="off">
+            <div class="autocomplete-list" id="toAC" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>CC</label>
+          <div class="chip-input-wrap" id="ccWrap">
+            <div id="ccChips"></div>
+            <input class="chip-input" id="ccInput" placeholder="name or email…" autocomplete="off">
+            <div class="autocomplete-list" id="ccAC" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>BCC</label>
+          <div class="chip-input-wrap" id="bccWrap">
+            <div id="bccChips"></div>
+            <input class="chip-input" id="bccInput" placeholder="name or email…" autocomplete="off">
+            <div class="autocomplete-list" id="bccAC" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:16px;">
+        <button class="btn btn-ghost" id="backStep2">← Back</button>
+        <button class="btn btn-primary" id="nextStep2">Next — Subject →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Subject & schedule -->
+    <div class="wizard-panel" id="wpanel-3">
+      <div class="form-row triple">
+        <div class="form-group">
+          <label>Subject Prefix</label>
+          <select id="subjectPrefix">
+            <option value="">None</option>
+            <option value="Important:">Important:</option>
+            <option value="Urgent:">Urgent:</option>
+            <option value="For Your Attention:">For Your Attention:</option>
+            <option value="Action Required:">Action Required:</option>
+            <option value="FYI:">FYI:</option>
+            <option value="Reminder:">Reminder:</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:span 2;">
+          <label>Subject *</label>
+          <input type="text" id="emailSubject" placeholder="Email subject…">
+        </div>
+      </div>
+      <div class="form-row triple" style="margin-top:12px;">
+        <div class="form-group">
+          <label>Scheduled Send</label>
+          <select id="scheduleType">
+            <option value="now">Send Now</option>
+            <option value="scheduled">Schedule for…</option>
+          </select>
+        </div>
+        <div class="form-group" id="scheduleDateRow" style="display:none;grid-column:span 2;">
+          <label>Send Date / Time</label>
+          <input type="datetime-local" id="scheduleDateTime" style="color-scheme:dark;">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>Signature
+          <button class="btn btn-ghost" onclick="document.getElementById('template-management').scrollIntoView({behavior:'smooth'})" style="margin-left:8px;padding:2px 10px;font-size:11px;">+ Add Signature</button>
+        </label>
+        <select id="sigSelect"><option value="">— No Signature —</option></select>
+      </div>
+      <div id="sigPreviewWrap" style="margin-top:10px;display:none;">
+        <div style="font-size:10px;color:var(--foam-dim);letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px;">Signature Preview</div>
+        <div id="sigPreviewContent" style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:8px;padding:10px;font-size:12px;color:var(--foam);"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:16px;">
+        <button class="btn btn-ghost" id="backStep3">← Back</button>
+        <button class="btn btn-primary" id="nextStep3">Next — Body →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Body -->
+    <div class="wizard-panel" id="wpanel-4">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:12px;color:var(--foam-dim);">Write your message. The selected signature will be appended on send.</span>
+        <div class="emoji-panel-wrap">
+          <button class="btn btn-ghost" id="emojiToggleBtn" style="padding:5px 10px;font-size:13px;" title="Insert emoji">😊</button>
+          <div class="emoji-panel" id="emojiPanel">
+            <div class="emoji-cat-tabs" id="emojiCatTabs"></div>
+            <div class="emoji-grid" id="emojiGrid"></div>
+          </div>
+        </div>
+      </div>
+      <div id="bodyEditor"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:16px;">
+        <button class="btn btn-ghost" id="backStep4">← Back</button>
+        <button class="btn btn-primary" id="nextStep4">Preview & Send →</button>
+      </div>
+    </div>
+
+    <!-- Step 5: Preview & send -->
+    <div class="wizard-panel" id="wpanel-5">
+      <div class="email-preview" id="emailPreview"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px;">
+        <button class="btn btn-ghost" id="backStep5">← Edit</button>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <span class="status-msg" id="sendStatus"></span>
+          <button class="btn btn-ghost" id="saveDraftBtn">Save Draft</button>
+          <button class="btn btn-primary" id="sendEmailBtn" style="background:linear-gradient(135deg,rgba(94,234,212,.25),rgba(94,234,212,.12));border-color:rgba(94,234,212,.4);">
+            <i data-lucide="send" style="width:13px;height:13px;margin-right:4px;display:inline-block;vertical-align:middle;"></i> Send Email
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-content compose -->
+</div><!-- /panel compose -->
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 4 — TEMPLATE MANAGEMENT (two-column grid)
+     ══════════════════════════════════════════════════════ -->
+<div class="section-head" id="template-management">
+  <h2>Template Management</h2>
+  <p>Manage email templates and signatures used in composition above.</p>
+</div>
+<div class="tmpl-mgmt-grid">
+
+  <!-- Templates list -->
+  <div class="list-panel">
+    <div class="list-panel-header">
+      <h4>Email Templates</h4>
+      <button class="btn btn-primary" id="newTemplateBtn" style="padding:4px 12px;font-size:11px;">+ Add Template</button>
+    </div>
+    <div class="list-scroll" id="tmplList">
+      <div class="list-empty"><span class="spinner"></span></div>
+    </div>
+  </div>
+
+  <!-- Signatures list -->
+  <div class="list-panel">
+    <div class="list-panel-header">
+      <h4>Signatures</h4>
+      <button class="btn btn-primary" id="newSigBtn" style="padding:4px 12px;font-size:11px;">+ Add Signature</button>
+    </div>
+    <div class="list-scroll" id="sigList">
+      <div class="list-empty"><span class="spinner"></span></div>
+    </div>
+  </div>
+
+</div><!-- /tmpl-mgmt-grid -->
+
+<!-- AUDIT LOG -->
+<div id="auditLog-placeholder"></div>
+
+<footer>
+  <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+</footer>
+</main>
+
+<!-- ══════════════════════════════════════════════════════
+     RECORD DETAIL MODAL (tracking records)
+     ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="recordModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="recordModalTitle">Email Record</h3>
+      <button class="modal-close" id="recordModalClose">✕</button>
+    </div>
+    <div class="detail-grid triple">
+      <div class="detail-item"><span class="detail-label">Club</span><span class="detail-value" id="rClub"></span></div>
+      <div class="detail-item"><span class="detail-label">Contact Name</span><span class="detail-value" id="rContact"></span></div>
+      <div class="detail-item"><span class="detail-label">Role</span><span class="detail-value" id="rRole"></span></div>
+    </div>
+    <div class="detail-grid triple">
+      <div class="detail-item"><span class="detail-label">Recipient Email</span><span class="detail-value" id="rEmail"></span></div>
+      <div class="detail-item"><span class="detail-label">Date Sent</span><span class="detail-value" id="rSent"></span></div>
+      <div class="detail-item"><span class="detail-label">Batch Key</span><span class="detail-value" id="rBatch" style="font-size:10px;word-break:break-all;"></span></div>
+    </div>
+    <div class="detail-grid triple">
+      <div class="detail-item"><span class="detail-label">Date Opened</span><span class="detail-value" id="rOpened"></span></div>
+      <div class="detail-item"><span class="detail-label">Open Count</span><span class="detail-value" id="rOpenCount"></span></div>
+      <div class="detail-item"><span class="detail-label">Response Days</span><span class="detail-value" id="rDays"></span></div>
+    </div>
+    <hr style="border-color:var(--glass-border);">
+    <div class="detail-grid triple">
+      <div class="detail-item">
+        <label class="detail-label" for="rStatus">Email Status *</label>
+        <select id="rStatus" class="detail-value editable" style="cursor:pointer;">
+          <option value="Sent">Sent</option><option value="Responded">Responded</option>
+          <option value="Updated">Updated</option><option value="No Response">No Response</option>
+          <option value="Bounced">Bounced</option>
+        </select>
+      </div>
+      <div class="detail-item">
+        <label class="detail-label" for="rReminder">Reminder Sent</label>
+        <select id="rReminder" class="detail-value editable" style="cursor:pointer;">
+          <option value="">No</option><option value="Yes">Yes</option>
+        </select>
+      </div>
+      <div class="detail-item">
+        <label class="detail-label" for="rResponse">Email Response</label>
+        <select id="rResponse" class="detail-value editable" style="cursor:pointer;">
+          <option value="">—</option><option value="Yes">Yes</option>
+          <option value="No">No</option><option value="Partial">Partial</option>
+        </select>
+      </div>
+    </div>
+    <div class="detail-item full">
+      <label class="detail-label" for="rComments">Comments</label>
+      <textarea id="rComments" class="detail-value editable" rows="3" style="resize:vertical;font-family:var(--font-body);font-size:13px;"></textarea>
+    </div>
+    <div class="modal-footer">
+      <span class="modal-status" id="recordModalStatus"></span>
+      <button class="btn btn-ghost" id="recordModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="recordModalSave">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TEMPLATE MODAL (add / edit / view)
+     ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="tmplModal">
+  <div class="modal large-modal">
+    <div class="modal-header">
+      <h3 id="tmplModalTitle">New Template</h3>
+      <button class="modal-close" id="tmplModalClose">✕</button>
+    </div>
+    <div class="form-row full">
+      <div class="form-group"><label>Template Name *</label><input type="text" id="tName" placeholder="e.g. Membership Renewal Notice"></div>
+    </div>
+    <div class="form-row triple">
+      <div class="form-group">
+        <label>Recipient Type</label>
+        <select id="tRecipientType">
+          <option value="single">Single</option><option value="group">Group</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Visibility</label>
+        <select id="tVisibility">
+          <option value="open">Open</option><option value="confidential">Confidential</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Topic</label>
+        <select id="tTopic">
+          <option value="general">General</option>
+          <option value="membership renewal">Membership Renewal</option>
+          <option value="update request">Update Request</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Subject Prefix</label>
+        <select id="tSubjectPrefix">
+          <option value="">None</option><option value="Important:">Important:</option>
+          <option value="Urgent:">Urgent:</option><option value="For Your Attention:">For Your Attention:</option>
+          <option value="Action Required:">Action Required:</option>
+          <option value="FYI:">FYI:</option><option value="Reminder:">Reminder:</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Default Subject</label>
+        <input type="text" id="tDefaultSubject" placeholder="Default email subject…">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Default CC</label><input type="text" id="tDefaultCC" placeholder="cc@example.com"></div>
+      <div class="form-group"><label>Default BCC</label><input type="text" id="tDefaultBCC" placeholder="bcc@example.com"></div>
+    </div>
+    <div class="form-group" id="tGroupKeyRow" style="display:none;">
+      <label>Default Group</label>
+      <select id="tGroupKey">
+        <option value="">— None —</option>
+        <option value="all_active">All Active Members</option>
+        <option value="full">Full Members</option>
+        <option value="affiliate">Affiliate Members</option>
+        <option value="financial">Financial Members</option>
+        <option value="committee">Committee Members</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Scheduled Send Default</label>
+        <select id="tScheduledSend">
+          <option value="now">Send Now (default)</option><option value="scheduled">Scheduled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Signature</label>
+        <select id="tSignature"><option value="">— No Signature —</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Template Body</label>
+      <div id="tmplBodyEditor"></div>
+    </div>
+    <div class="modal-footer">
+      <span class="modal-status" id="tmplModalStatus"></span>
+      <button class="btn btn-ghost" id="tmplDeleteBtn" style="color:#ff6b6b;display:none;">Delete</button>
+      <button class="btn btn-ghost" id="tmplModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="tmplSaveBtn">Save Template</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SIGNATURE MODAL (add / edit / view)
+     ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="sigModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 id="sigModalTitle">New Signature</h3>
+      <button class="modal-close" id="sigModalClose">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Signature Name *</label><input type="text" id="sName" placeholder="e.g. Secretary Formal"></div>
+      <div class="form-group">
+        <label>Visibility</label>
+        <select id="sVisibility"><option value="open">Open</option><option value="confidential">Confidential</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Signature Content</label>
+      <div class="sig-editor" id="sigBodyEditor"></div>
+    </div>
+    <div class="modal-footer">
+      <span class="modal-status" id="sigModalStatus"></span>
+      <button class="btn btn-ghost" id="sigDeleteBtn" style="color:#ff6b6b;display:none;">Delete</button>
+      <button class="btn btn-ghost" id="sigModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="sigSaveBtn">Save Signature</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="shared.js"></script>
+<script src="nav.js"></script>
+<script src="auditLog.js"></script>
+<script>
+/* ================================================================
+   CONFIG
+   ================================================================ */
+const TRACKING_DOMAIN = DOMAIN.tracking;
+const TEMPLATE_SS_ID  = "1M0_jDbN35e6eX96SNylY-J887Ks48Y9dNudOYMgKkjE";
+const TEMPLATE_GW_URL = ""; // TODO: paste deployed TemplateGateway.gs web app URL
+
+async function tFetch(sheet) {
+  if (!TEMPLATE_GW_URL) return [];   // graceful — lists will be empty until configured
+  const r = await fetch(`${TEMPLATE_GW_URL}?action=fetch&sheet=${encodeURIComponent(sheet)}`);
+  const d = await r.json(); if (d.error) throw new Error(d.error); return d.values || [];
+}
+async function tPost(payload) {
+  if (!TEMPLATE_GW_URL) throw new Error("TEMPLATE_GW_URL not configured — see TemplateGateway.gs.");
+  const r = await fetch(TEMPLATE_GW_URL, {method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
+  const d = await r.json(); if (d.error) throw new Error(d.error); return d;
+}
+
+/* ── Misc helpers ── */
+function uid() { return "T"+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,6).toUpperCase(); }
+function fmtDate(v) { if(!v) return "—"; const d=new Date(v); return isNaN(d)?v:d.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"}); }
+function pct(n,d) { return d?Math.round((n/d)*100)+"%":"—"; }
+function colorClass(p) { return p>=75?"good":p>=40?"warn":"bad"; }
+function statusBadge(s) {
+  const m={Responded:"badge-full",Updated:"badge-affiliate",Sent:"badge-default","No Response":"badge-expired",Bounced:"badge-renewal"};
+  return `<span class="badge ${m[s]||"badge-default"}">${escapeHtml(s||"—")}</span>`;
+}
+
+/* ================================================================
+   DATA CACHE
+   ================================================================ */
+let dashRows   = [], trackRows  = [], templates = [], signatures = [], members = [];
+let editingKey = null, editTmplId = null, editSigId = null, selectedTmplId = null;
+
+/* ================================================================
+   QUILL INSTANCES
+   ================================================================ */
+const QUILL_TOOLBAR = [
+  [{font:[]},{size:["small",false,"large","huge"]}],
+  ["bold","italic","underline","strike"],
+  [{color:[]},{background:[]}],
+  [{list:"ordered"},{list:"bullet"}],[{indent:"-1"},{indent:"+1"}],
+  ["link","image","blockquote"],[{align:[]}],["clean"]
+];
+let quillBody, quillTmpl, quillSig;
+function initQuills() {
+  quillBody = new Quill("#bodyEditor",{theme:"snow",placeholder:"Write your email message here…",modules:{toolbar:QUILL_TOOLBAR}});
+  quillTmpl = new Quill("#tmplBodyEditor",{theme:"snow",placeholder:"Template default body (optional)…",modules:{toolbar:QUILL_TOOLBAR}});
+  quillSig  = new Quill("#sigBodyEditor",{theme:"snow",placeholder:"Signature content…",modules:{toolbar:[["bold","italic","underline"],[{color:[]}],["link","image"],["clean"]]}});
+}
+
+/* ================================================================
+   EMOJI PANEL
+   ================================================================ */
+const EMOJI_CATS=[
+  {label:"😀",name:"Faces",emojis:["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","😊","😇","🥰","😍","😘","🤔","🤗","😎","🥳","😴","😷","🤒","😢","😭","😱","😡","🤬","🙄","😬","😤"]},
+  {label:"👍",name:"Hands",emojis:["👍","👎","👌","✌️","🤞","👋","✋","👊","✊","🫶","❤️","🧡","💛","💚","💙","💜","🖤","💔","💕","💯","⭐","✅","❎","🔴","🟢","🔵"]},
+  {label:"✉️",name:"Office",emojis:["✉️","📧","📨","📩","📤","📥","📦","📫","📮","📝","📋","📊","📈","📉","📌","📍","📎","🗂️","📁","📂","🔒","🔓","🔑","💻","📱","⌨️","🖥️","🖨️"]},
+  {label:"⭐",name:"Symbols",emojis:["⭐","🌟","✨","💫","⚡","🔥","🌈","☀️","❄️","🎉","🎊","🏆","🥇","🎯","💡","🔔","📣","📢","⚠️","🚨","✔️","❌","❓","❗","💬","💭","🗨️"]}
+];
+function initEmoji() {
+  const tabs=document.getElementById("emojiCatTabs"),grid=document.getElementById("emojiGrid");
+  let activeCat=0;
+  function renderCat(i){
+    activeCat=i;
+    tabs.querySelectorAll(".emoji-cat-tab").forEach((t,j)=>t.classList.toggle("active",j===i));
+    grid.innerHTML=EMOJI_CATS[i].emojis.map(e=>`<button class="emoji-btn" data-e="${e}">${e}</button>`).join("");
+    grid.querySelectorAll(".emoji-btn").forEach(btn=>btn.addEventListener("click",()=>{
+      const range=quillBody.getSelection(true);
+      quillBody.insertText(range?range.index:quillBody.getLength()-1,btn.dataset.e);
+      document.getElementById("emojiPanel").classList.remove("open");
+    }));
+  }
+  EMOJI_CATS.forEach((c,i)=>{
+    const b=document.createElement("button");
+    b.className="emoji-cat-tab"+(i===0?" active":"");b.textContent=c.label;b.title=c.name;
+    b.addEventListener("click",()=>renderCat(i));tabs.appendChild(b);
+  });
+  renderCat(0);
+  document.getElementById("emojiToggleBtn").addEventListener("click",e=>{e.stopPropagation();document.getElementById("emojiPanel").classList.toggle("open");});
+  document.addEventListener("click",()=>document.getElementById("emojiPanel").classList.remove("open"));
+}
+
+/* ================================================================
+   MEMBER AUTOCOMPLETE
+   ================================================================ */
+async function loadMembers(){try{members=await fetchSheet(DOMAIN.members,"Members");}catch(e){members=[];}}
+function memberSuggestions(q){
+  if(!q||q.length<2)return[];
+  const lq=q.toLowerCase();
+  return members.filter(m=>{
+    const name=((m["First Name"]||"")+" "+(m["Last Name"]||"")).toLowerCase();
+    const email=(m["Email"]||m["Email Address"]||"").toLowerCase();
+    return name.includes(lq)||email.includes(lq);
+  }).slice(0,8).map(m=>({name:((m["First Name"]||"")+" "+(m["Last Name"]||"")).trim(),email:m["Email"]||m["Email Address"]||""}));
+}
+function setupChipInput(inputId,chipsId,acId){
+  const input=document.getElementById(inputId),chips=document.getElementById(chipsId),ac=document.getElementById(acId);
+  const values=[];
+  function renderChips(){
+    chips.innerHTML=values.map((v,i)=>`<span class="chip">${escapeHtml(v.name||v.email)}<button class="chip-remove" data-i="${i}">×</button></span>`).join("");
+    chips.querySelectorAll(".chip-remove").forEach(b=>b.addEventListener("click",()=>{values.splice(+b.dataset.i,1);renderChips();}));
+  }
+  function addValue(v){if(!v.email)return;if(!values.find(x=>x.email===v.email))values.push(v);renderChips();input.value="";ac.style.display="none";}
+  function showAC(items){
+    if(!items.length){ac.style.display="none";return;}
+    ac.style.display="block";
+    ac.innerHTML=items.map(m=>`<div class="autocomplete-item" data-email="${escapeHtml(m.email)}" data-name="${escapeHtml(m.name)}"><span class="ac-name">${escapeHtml(m.name)}</span><span class="ac-email">${escapeHtml(m.email)}</span></div>`).join("");
+    ac.querySelectorAll(".autocomplete-item").forEach(el=>el.addEventListener("mousedown",e=>{e.preventDefault();addValue({name:el.dataset.name,email:el.dataset.email});}));
+  }
+  input.addEventListener("input",()=>showAC(memberSuggestions(input.value.trim())));
+  input.addEventListener("keydown",e=>{
+    if((e.key==="Enter"||e.key===",")&&input.value.trim()){e.preventDefault();addValue({email:input.value.trim().replace(/,$/,""),name:""});}
+    if(e.key==="Backspace"&&!input.value&&values.length){values.pop();renderChips();}
+  });
+  input.addEventListener("blur",()=>setTimeout(()=>{ac.style.display="none";},200));
+  document.getElementById(inputId.replace("Input","Wrap")).addEventListener("click",()=>input.focus());
+  return{values,addValue,renderChips,clear(){values.length=0;renderChips();input.value="";}};
+}
+let recipientsTo,recipientsCC,recipientsBCC;
+
+/* ================================================================
+   TRACKING DATA
+   ================================================================ */
+async function loadDashboard(){
+  try{dashRows=await fetchSheet(TRACKING_DOMAIN,"Dashboard");renderDashboard();}
+  catch(e){document.getElementById("dashBody").innerHTML=`<tr><td colspan="9" style="color:var(--signal);padding:16px;">Error: ${escapeHtml(e.message)}</td></tr>`;}
+}
+async function loadTracking(){
+  try{trackRows=await fetchSheet(TRACKING_DOMAIN,"Tracking");populateBatchFilter();renderStats();renderTracking();}
+  catch(e){document.getElementById("trackBody").innerHTML=`<tr><td colspan="12" style="color:var(--signal);padding:16px;">Error: ${escapeHtml(e.message)}</td></tr>`;}
+}
+
+function renderStats(){
+  const t=trackRows,total=t.length;
+  const responded=t.filter(r=>["Responded","Updated"].includes(r["Email Status"])).length;
+  const opened=t.filter(r=>Number(r["Open Count"])>0).length;
+  const pending=t.filter(r=>r["Email Status"]==="Sent").length;
+  const reminders=t.filter(r=>r["Reminder Sent"]==="Yes").length;
+  const days=t.map(r=>Number(r["Response Days"])).filter(d=>!isNaN(d)&&d>0);
+  const avg=days.length?(days.reduce((a,b)=>a+b,0)/days.length).toFixed(1):"—";
+  const rp=total?Math.round((responded/total)*100):0,op=total?Math.round((opened/total)*100):0;
+  document.getElementById("stat-sent").textContent=total;
+  document.getElementById("stat-responded").textContent=responded;
+  document.getElementById("stat-responded").className="stat-val "+colorClass(rp);
+  document.getElementById("stat-responded-pct").textContent=pct(responded,total);
+  document.getElementById("stat-opened").textContent=opened;
+  document.getElementById("stat-opened").className="stat-val "+colorClass(op);
+  document.getElementById("stat-opened-pct").textContent=pct(opened,total);
+  document.getElementById("stat-pending").textContent=pending;
+  document.getElementById("stat-pending").className="stat-val "+(pending>0?"warn":"good");
+  document.getElementById("stat-reminders").textContent=reminders;
+  document.getElementById("stat-avg-days").textContent=avg;
+}
+
+function renderDashboard(){
+  const rows=dashRows;
+  document.getElementById("dashEmpty").style.display=rows.length?"none":"block";
+  document.getElementById("dashBody").innerHTML=rows.map(r=>{
+    const rp=r["% Response"]?Math.round(Number(r["% Response"])):0;
+    const op=r["% Opened"]?Math.round(Number(r["% Opened"])):0;
+    return`<tr class="clickable" onclick="openRecordModal(${JSON.stringify(escapeHtml(r['Key']||''))}, true)">
+      <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(r["Key"]||"—")}</td>
+      <td style="font-weight:500;">${escapeHtml(r["Communication Title"]||"—")}</td>
+      <td>${fmtDate(r["Date sent"])}</td>
+      <td style="text-align:center;">${escapeHtml(String(r["Requests sent"]||0))}</td>
+      <td style="text-align:center;">${escapeHtml(String(r["Responded"]||0))}</td>
+      <td><div style="display:flex;align-items:center;gap:8px;"><div class="progress-bar-wrap" style="flex:1;min-width:50px;"><div class="progress-bar ${rp<40?"bad":rp<70?"warn":""}" style="width:${rp}%"></div></div><span style="font-size:11px;">${rp}%</span></div></td>
+      <td style="text-align:center;">${escapeHtml(String(r["Emails Opened"]||0))}</td>
+      <td><div style="display:flex;align-items:center;gap:8px;"><div class="progress-bar-wrap" style="flex:1;min-width:50px;"><div class="progress-bar ${op<40?"bad":op<70?"warn":""}" style="width:${op}%"></div></div><span style="font-size:11px;">${op}%</span></div></td>
+      <td style="text-align:center;">${escapeHtml(String(r["Avg Response Days"]||"—"))}</td>
+    </tr>`;
+  }).join("")||`<tr class="spinner-row"><td colspan="9">No batches found.</td></tr>`;
+}
+
+function populateBatchFilter(){
+  const keys=[...new Set(trackRows.map(r=>r["Key"]).filter(Boolean))];
+  const sel=document.getElementById("filterBatch"),cur=sel.value;
+  sel.innerHTML=`<option value="">All Batches</option>`+keys.map(k=>`<option value="${escapeHtml(k)}"${k===cur?" selected":""}>${escapeHtml(k)}</option>`).join("");
+}
+
+function renderTracking(){
+  const q=document.getElementById("trackSearch").value.trim().toLowerCase();
+  const status=document.getElementById("filterStatus").value;
+  const batch=document.getElementById("filterBatch").value;
+  const reminder=document.getElementById("filterReminder").value;
+  let rows=trackRows;
+  if(status) rows=rows.filter(r=>(r["Email Status"]||"")===status);
+  if(batch)  rows=rows.filter(r=>(r["Key"]||"")===batch);
+  if(reminder)rows=rows.filter(r=>(r["Reminder Sent"]||"")===reminder);
+  if(q) rows=rows.filter(r=>["Club","Contact Name","Contact Role","Recipient Email","Email Status","Comments","Email Response"].some(k=>String(r[k]||"").toLowerCase().includes(q)));
+  document.getElementById("trackEmpty").style.display=rows.length?"none":"block";
+  document.getElementById("trackBody").innerHTML=rows.map(r=>`
+    <tr class="clickable" onclick="openRecordModal(${JSON.stringify(escapeHtml(r['Batch Key']||''))}, false)">
+      <td>${escapeHtml(r["Club"]||"—")}</td>
+      <td>${escapeHtml(r["Contact Name"]||"—")}</td>
+      <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(r["Contact Role"]||"—")}</td>
+      <td style="font-size:11px;">${escapeHtml(r["Recipient Email"]||"—")}</td>
+      <td>${statusBadge(r["Email Status"])}</td>
+      <td style="white-space:nowrap;">${fmtDate(r["Date Sent"])}</td>
+      <td style="white-space:nowrap;">${fmtDate(r["Date Updated"])}</td>
+      <td>${escapeHtml(r["Email Response"]||"—")}</td>
+      <td style="text-align:center;">${escapeHtml(String(r["Response Days"]||"—"))}</td>
+      <td style="text-align:center;">${escapeHtml(String(r["Open Count"]||0))}</td>
+      <td style="text-align:center;">${r["Reminder Sent"]==="Yes"?`<span class="badge badge-renewal">Yes</span>`:`<span style="color:var(--foam-dim);font-size:11px;">—</span>`}</td>
+      <td style="max-width:140px;font-size:11px;color:var(--foam-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(r['Comments']||'')}">${escapeHtml(r["Comments"]||"—")}</td>
+    </tr>`).join("")||`<tr class="spinner-row"><td colspan="12">No records match filters.</td></tr>`;
+}
+
+/* ── Record modal ── */
+function openRecordModal(key, isBatch) {
+  if (isBatch) {
+    // Batch summary — read-only
+    const dashRow=dashRows.find(r=>(r["Key"]||"")===key||(r["Key"]||"")===decodeURIComponent(key));
+    if(!dashRow) return;
+    editingKey=null;
+    document.getElementById("recordModalTitle").textContent=`Batch: ${dashRow["Communication Title"]||key}`;
+    document.getElementById("rClub").textContent=key;
+    document.getElementById("rContact").textContent=(dashRow["Requests sent"]||"0")+" contacts";
+    document.getElementById("rRole").textContent=fmtDate(dashRow["Date sent"]);
+    document.getElementById("rEmail").textContent=(dashRow["% Response"]||"0")+"%";
+    document.getElementById("rSent").textContent=dashRow["Requests sent"]||"—";
+    document.getElementById("rBatch").textContent=key;
+    document.getElementById("rOpened").textContent=dashRow["Emails Opened"]||"—";
+    document.getElementById("rOpenCount").textContent=dashRow["% Opened"]||"—";
+    document.getElementById("rDays").textContent=dashRow["Avg Response Days"]||"—";
+    document.getElementById("rStatus").value="";document.getElementById("rReminder").value="";
+    document.getElementById("rResponse").value="";document.getElementById("rComments").value="";
+  } else {
+    const decoded=decodeURIComponent(key);
+    const r=trackRows.find(row=>(row["Batch Key"]||")===decoded||(row["Batch Key"]||"")===key);
+    if(!r) return;
+    editingKey=r["Batch Key"];
+    document.getElementById("recordModalTitle").textContent=`${r["Contact Name"]||"Record"} — ${r["Club"]||""}`;
+    document.getElementById("rClub").textContent=r["Club"]||"—";
+    document.getElementById("rContact").textContent=r["Contact Name"]||"—";
+    document.getElementById("rRole").textContent=r["Contact Role"]||"—";
+    document.getElementById("rEmail").textContent=r["Recipient Email"]||"—";
+    document.getElementById("rSent").textContent=fmtDate(r["Date Sent"]);
+    document.getElementById("rBatch").textContent=r["Batch Key"]||"—";
+    document.getElementById("rOpened").textContent=fmtDate(r["Date Opened"]);
+    document.getElementById("rOpenCount").textContent=r["Open Count"]||"0";
+    document.getElementById("rDays").textContent=r["Response Days"]||"—";
+    document.getElementById("rStatus").value=r["Email Status"]||"Sent";
+    document.getElementById("rReminder").value=r["Reminder Sent"]||"";
+    document.getElementById("rResponse").value=r["Email Response"]||"";
+    document.getElementById("rComments").value=r["Comments"]||"";
+  }
+  const msg=document.getElementById("recordModalStatus");msg.textContent="";msg.className="modal-status";
+  document.getElementById("recordModal").classList.add("open");
+}
+function closeRecordModal(){document.getElementById("recordModal").classList.remove("open");editingKey=null;}
+async function saveRecord(){
+  if(!editingKey){closeRecordModal();return;}
+  const btn=document.getElementById("recordModalSave");
+  btn.disabled=true;btn.innerHTML=`<span class="spinner"></span> Saving…`;
+  try{
+    const updates={"Email Status":document.getElementById("rStatus").value,"Reminder Sent":document.getElementById("rReminder").value,"Email Response":document.getElementById("rResponse").value,"Comments":document.getElementById("rComments").value.trim(),"Date Updated":new Date().toISOString()};
+    await updateSheet(TRACKING_DOMAIN,"Tracking",editingKey,updates);
+    const idx=trackRows.findIndex(r=>r["Batch Key"]===editingKey);
+    if(idx>-1)Object.assign(trackRows[idx],updates);
+    renderTracking();renderStats();AuditLog.load();
+    const msg=document.getElementById("recordModalStatus");msg.textContent="Saved.";msg.className="modal-status visible success";
+    setTimeout(closeRecordModal,700);
+  }catch(e){const msg=document.getElementById("recordModalStatus");msg.textContent="Error: "+e.message;msg.className="modal-status visible error";}
+  finally{btn.disabled=false;btn.textContent="Save Changes";}
+}
+
+/* ================================================================
+   TEMPLATE MANAGEMENT
+   ================================================================ */
+async function loadTemplates(){
+  try{
+    templates=await tFetch("EmailTemplates");
+    renderTmplList();renderTemplatePicker();populateSigSelects();
+  }catch(e){document.getElementById("tmplList").innerHTML=`<div class="list-empty" style="color:var(--signal);">Error: ${escapeHtml(e.message)}</div>`;}
+}
+
+function renderTmplList(){
+  const el=document.getElementById("tmplList");
+  if(!templates.length){el.innerHTML=`<div class="list-empty">No templates yet. Click + Add Template to create one.</div>`;return;}
+  el.innerHTML=templates.map(t=>{
+    const sigName=signatures.find(s=>s["SignatureID"]===t["Signature"])?.["Name"]||"";
+    return`<div class="list-item" onclick="openTmplModal(${JSON.stringify(t['TemplateID']||'')})">
+      <div style="flex:1;min-width:0;">
+        <div class="list-item-name">${escapeHtml(t["Name"]||"—")}</div>
+        <div class="list-item-meta">${escapeHtml(t["Topic"]||"")} · ${escapeHtml(t["RecipientType"]||"")}${sigName?" · "+escapeHtml(sigName):""}</div>
+      </div>
+      <span class="badge ${t["Visibility"]==="confidential"?"badge-expired":"badge-full"}" style="font-size:10px;flex-shrink:0;">${escapeHtml(t["Visibility"]||"open")}</span>
+    </div>`;
+  }).join("");
+}
+
+function openTmplModal(id){
+  editTmplId=id||null;
+  const r=id?templates.find(t=>t["TemplateID"]===id):null;
+  document.getElementById("tmplModalTitle").textContent=r?"Edit Template":"New Template";
+  document.getElementById("tName").value=r?.["Name"]||"";
+  document.getElementById("tRecipientType").value=r?.["RecipientType"]||"single";
+  document.getElementById("tVisibility").value=r?.["Visibility"]||"open";
+  document.getElementById("tTopic").value=r?.["Topic"]||"general";
+  document.getElementById("tSubjectPrefix").value=r?.["SubjectPrefix"]||"";
+  document.getElementById("tDefaultSubject").value=r?.["DefaultSubject"]||"";
+  document.getElementById("tDefaultCC").value=r?.["DefaultCC"]||"";
+  document.getElementById("tDefaultBCC").value=r?.["DefaultBCC"]||"";
+  document.getElementById("tGroupKey").value=r?.["GroupKey"]||"";
+  document.getElementById("tScheduledSend").value=r?.["ScheduledSend"]||"now";
+  document.getElementById("tSignature").value=r?.["Signature"]||"";
+  toggleGroupKeyRow();
+  quillTmpl.root.innerHTML=r?.["Body"]||"";
+  document.getElementById("tmplDeleteBtn").style.display=r?"inline-flex":"none";
+  const s=document.getElementById("tmplModalStatus");s.textContent="";s.className="modal-status";
+  document.getElementById("tmplModal").classList.add("open");
+}
+function closeTmplModal(){document.getElementById("tmplModal").classList.remove("open");editTmplId=null;}
+function toggleGroupKeyRow(){document.getElementById("tGroupKeyRow").style.display=document.getElementById("tRecipientType").value==="group"?"":"";}
+document.getElementById("tRecipientType").addEventListener("change",toggleGroupKeyRow);
+
+async function saveTmpl(){
+  const name=document.getElementById("tName").value.trim();
+  if(!name){showModalStatus("tmplModalStatus","Template name is required.","error");return;}
+  const btn=document.getElementById("tmplSaveBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span> Saving…`;
+  try{
+    const now=new Date().toISOString();
+    const existing=editTmplId?templates.find(t=>t["TemplateID"]===editTmplId):null;
+    const data={TemplateID:editTmplId||uid(),Name:name,RecipientType:document.getElementById("tRecipientType").value,Visibility:document.getElementById("tVisibility").value,Topic:document.getElementById("tTopic").value,SubjectPrefix:document.getElementById("tSubjectPrefix").value,DefaultSubject:document.getElementById("tDefaultSubject").value.trim(),DefaultCC:document.getElementById("tDefaultCC").value.trim(),DefaultBCC:document.getElementById("tDefaultBCC").value.trim(),GroupKey:document.getElementById("tGroupKey").value,ScheduledSend:document.getElementById("tScheduledSend").value,Signature:document.getElementById("tSignature").value,Body:quillTmpl.root.innerHTML,UpdatedAt:now,CreatedAt:existing?.["CreatedAt"]||now};
+    await tPost({action:editTmplId?"update":"append",sheet:"EmailTemplates",key:"TemplateID",data});
+    showModalStatus("tmplModalStatus","Saved.","success");
+    await loadTemplates();
+    setTimeout(closeTmplModal,600);
+  }catch(e){showModalStatus("tmplModalStatus","Error: "+e.message,"error");}
+  finally{btn.disabled=false;btn.textContent="Save Template";}
+}
+async function deleteTmpl(){
+  if(!editTmplId||!confirm("Delete this template?"))return;
+  try{await tPost({action:"delete",sheet:"EmailTemplates",key:"TemplateID",id:editTmplId});await loadTemplates();closeTmplModal();}
+  catch(e){showModalStatus("tmplModalStatus","Error: "+e.message,"error");}
+}
+
+/* ================================================================
+   SIGNATURE MANAGEMENT
+   ================================================================ */
+async function loadSignatures(){
+  try{
+    signatures=await tFetch("Signatures");
+    renderSigList();populateSigSelects();
+  }catch(e){document.getElementById("sigList").innerHTML=`<div class="list-empty" style="color:var(--signal);">Error: ${escapeHtml(e.message)}</div>`;}
+}
+
+function renderSigList(){
+  const el=document.getElementById("sigList");
+  if(!signatures.length){el.innerHTML=`<div class="list-empty">No signatures yet. Click + Add Signature to create one.</div>`;return;}
+  el.innerHTML=signatures.map(s=>{
+    const preview=s["Body"]?s["Body"].replace(/<[^>]*>/g,"").slice(0,50)+"…":"";
+    return`<div class="list-item" onclick="openSigModal(${JSON.stringify(s['SignatureID']||'')})">
+      <div style="flex:1;min-width:0;">
+        <div class="list-item-name">${escapeHtml(s["Name"]||"—")}</div>
+        <div class="list-item-meta">${escapeHtml(preview)}</div>
+      </div>
+      <span class="badge ${s["Visibility"]==="confidential"?"badge-expired":"badge-full"}" style="font-size:10px;flex-shrink:0;">${escapeHtml(s["Visibility"]||"open")}</span>
+    </div>`;
+  }).join("");
+}
+
+function openSigModal(id){
+  editSigId=id||null;
+  const r=id?signatures.find(s=>s["SignatureID"]===id):null;
+  document.getElementById("sigModalTitle").textContent=r?"Edit Signature":"New Signature";
+  document.getElementById("sName").value=r?.["Name"]||"";
+  document.getElementById("sVisibility").value=r?.["Visibility"]||"open";
+  quillSig.root.innerHTML=r?.["Body"]||"";
+  document.getElementById("sigDeleteBtn").style.display=r?"inline-flex":"none";
+  const s=document.getElementById("sigModalStatus");s.textContent="";s.className="modal-status";
+  document.getElementById("sigModal").classList.add("open");
+}
+function closeSigModal(){document.getElementById("sigModal").classList.remove("open");editSigId=null;}
+async function saveSig(){
+  const name=document.getElementById("sName").value.trim();
+  if(!name){showModalStatus("sigModalStatus","Signature name is required.","error");return;}
+  const btn=document.getElementById("sigSaveBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span> Saving…`;
+  try{
+    const now=new Date().toISOString();
+    const existing=editSigId?signatures.find(s=>s["SignatureID"]===editSigId):null;
+    const data={SignatureID:editSigId||uid(),Name:name,Visibility:document.getElementById("sVisibility").value,Body:quillSig.root.innerHTML,UpdatedAt:now,CreatedAt:existing?.["CreatedAt"]||now};
+    await tPost({action:editSigId?"update":"append",sheet:"Signatures",key:"SignatureID",data});
+    showModalStatus("sigModalStatus","Saved.","success");
+    await loadSignatures();setTimeout(closeSigModal,600);
+  }catch(e){showModalStatus("sigModalStatus","Error: "+e.message,"error");}
+  finally{btn.disabled=false;btn.textContent="Save Signature";}
+}
+async function deleteSig(){
+  if(!editSigId||!confirm("Delete this signature?"))return;
+  try{await tPost({action:"delete",sheet:"Signatures",key:"SignatureID",id:editSigId});await loadSignatures();closeSigModal();}
+  catch(e){showModalStatus("sigModalStatus","Error: "+e.message,"error");}
+}
+
+function populateSigSelects(){
+  const opts=`<option value="">— No Signature —</option>`+signatures.map(s=>`<option value="${escapeHtml(s["SignatureID"]||"")}">${escapeHtml(s["Name"]||"")}</option>`).join("");
+  ["tSignature","sigSelect"].forEach(id=>{const el=document.getElementById(id);if(el){const v=el.value;el.innerHTML=opts;el.value=v;}});
+}
+
+function showModalStatus(id,msg,type){const el=document.getElementById(id);el.textContent=msg;el.className=`modal-status visible ${type}`;}
+
+/* ================================================================
+   COMPOSE WIZARD
+   ================================================================ */
+function goStep(n){
+  for(let i=1;i<=5;i++){
+    document.getElementById(`wstep-${i}`).classList.toggle("active",i===n);
+    document.getElementById(`wstep-${i}`).classList.toggle("done",i<n);
+    document.getElementById(`wpanel-${i}`).classList.toggle("active",i===n);
+  }
+}
+
+function renderTemplatePicker(){
+  const q=document.getElementById("tmplPickSearch").value.trim().toLowerCase();
+  const topic=document.getElementById("tmplPickTopic").value;
+  let rows=templates;
+  if(topic)rows=rows.filter(r=>(r["Topic"]||"").toLowerCase()===topic);
+  if(q)rows=rows.filter(r=>String(r["Name"]||"").toLowerCase().includes(q));
+  document.getElementById("tmplPickEmpty").style.display=rows.length?"none":"block";
+  document.getElementById("tmplPickerGrid").innerHTML=rows.map(r=>`
+    <div class="template-card ${selectedTmplId===r["TemplateID"]?"selected":""}" data-id="${escapeHtml(r["TemplateID"]||"")}" onclick="selectTemplate(${JSON.stringify(r['TemplateID']||'')})">
+      <div class="tc-name">${escapeHtml(r["Name"]||"—")}</div>
+      <div class="tc-meta">
+        <span class="badge badge-default" style="font-size:10px;">${escapeHtml(r["RecipientType"]||"single")}</span>
+        <span class="badge badge-default" style="font-size:10px;">${escapeHtml(r["Topic"]||"general")}</span>
+        ${r["Visibility"]==="confidential"?`<span class="badge badge-expired" style="font-size:10px;">confidential</span>`:""}
+      </div>
+      ${r["DefaultSubject"]?`<div style="font-size:11px;color:var(--foam-dim);">Subject: ${escapeHtml(r["DefaultSubject"])}</div>`:""}
+    </div>`).join("")||"";
+}
+
+function selectTemplate(id){
+  selectedTmplId=id;
+  document.getElementById("nextStep1").disabled=false;
+  renderTemplatePicker();
+}
+
+function applyTemplateToCompose(id){
+  const t=templates.find(r=>r["TemplateID"]===id);if(!t)return;
+  document.getElementById("groupRecipientRow").style.display=t["RecipientType"]==="group"?"":"none";
+  if(t["GroupKey"])document.getElementById("groupSelect").value=t["GroupKey"];
+  if(t["DefaultCC"])t["DefaultCC"].split(",").map(e=>e.trim()).filter(Boolean).forEach(e=>recipientsCC.addValue({email:e,name:""}));
+  if(t["DefaultBCC"])t["DefaultBCC"].split(",").map(e=>e.trim()).filter(Boolean).forEach(e=>recipientsBCC.addValue({email:e,name:""}));
+  if(t["SubjectPrefix"])document.getElementById("subjectPrefix").value=t["SubjectPrefix"];
+  if(t["DefaultSubject"])document.getElementById("emailSubject").value=t["DefaultSubject"];
+  if(t["ScheduledSend"])document.getElementById("scheduleType").value=t["ScheduledSend"];
+  if(t["Signature"]){document.getElementById("sigSelect").value=t["Signature"];updateSigPreview();}
+  if(t["Body"])quillBody.root.innerHTML=t["Body"];
+}
+
+async function expandGroup(groupKey){
+  if(!groupKey)return[];
+  const fm={all_active:m=>m["Active"]===true||m["Active"]==="true"||m["Active"]==="TRUE",full:m=>(m["Membership Type"]||"").toLowerCase()==="full",affiliate:m=>(m["Membership Type"]||"").toLowerCase()==="affiliate",financial:m=>m["Paid up"]===true||m["Paid up"]==="true",committee:m=>!!(m["Role"]||m["Committee Role"])};
+  return(members.filter(fm[groupKey]||(() =>false))).map(m=>({name:((m["First Name"]||"")+" "+(m["Last Name"]||"")).trim(),email:m["Email"]||m["Email Address"]||""})).filter(m=>m.email);
+}
+
+function updateSigPreview(){
+  const sig=signatures.find(s=>s["SignatureID"]===document.getElementById("sigSelect").value);
+  const wrap=document.getElementById("sigPreviewWrap");
+  if(sig?.["Body"]){document.getElementById("sigPreviewContent").innerHTML=sig["Body"];wrap.style.display="";}
+  else{wrap.style.display="none";}
+}
+
+function buildPreview(){
+  const prefix=document.getElementById("subjectPrefix").value;
+  const subject=document.getElementById("emailSubject").value.trim();
+  const toList=recipientsTo.values.map(v=>v.name?`${v.name} <${v.email}>`:v.email).join(", ");
+  const ccList=recipientsCC.values.map(v=>v.email).join(", ");
+  const bccList=recipientsBCC.values.map(v=>v.email).join(", ");
+  const sig=signatures.find(s=>s["SignatureID"]===document.getElementById("sigSelect").value);
+  const body=quillBody.root.innerHTML;
+  const sched=document.getElementById("scheduleType").value==="scheduled"?`<br><strong>Scheduled:</strong> ${document.getElementById("scheduleDateTime").value}`:"";
+  document.getElementById("emailPreview").innerHTML=`
+    <div class="preview-meta">
+      <strong>To:</strong> ${escapeHtml(toList)||"—"}<br>
+      ${ccList?`<strong>CC:</strong> ${escapeHtml(ccList)}<br>`:""}
+      ${bccList?`<strong>BCC:</strong> ${escapeHtml(bccList)}<br>`:""}${sched}
+    </div>
+    <div class="preview-subject">${escapeHtml((prefix+" "+subject).trim()||"(No Subject)")}</div>
+    <hr style="border:none;border-top:1px solid #ddd;margin:12px 0;">${body}
+    ${sig?.["Body"]?`<hr style="border:none;border-top:1px solid #ddd;margin:16px 0;">${sig["Body"]}`:""}`;
+}
+
+async function sendEmail(){
+  const btn=document.getElementById("sendEmailBtn");
+  btn.disabled=true;btn.innerHTML=`<span class="spinner"></span> Sending…`;
+  const s=document.getElementById("sendStatus");
+  try{
+    const t=templates.find(r=>r["TemplateID"]===selectedTmplId);
+    const prefix=document.getElementById("subjectPrefix").value;
+    const subject=(prefix+" "+document.getElementById("emailSubject").value).trim();
+    const sig=signatures.find(s=>s["SignatureID"]===document.getElementById("sigSelect").value);
+    const toAddrs=recipientsTo.values.map(v=>v.email);
+    const groupMembers=await expandGroup(document.getElementById("groupSelect").value);
+    const allTo=[...toAddrs,...groupMembers.map(m=>m.email)].filter(Boolean);
+    if(!allTo.length){s.textContent="At least one To: recipient required.";s.className="status-msg visible error";return;}
+    const schedTime=document.getElementById("scheduleType").value==="scheduled"?document.getElementById("scheduleDateTime").value:null;
+    const batchKey=uid(),campaignKey=t?.["Name"]||"MANUAL-"+Date.now();
+    for(const email of allTo){
+      const member=members.find(m=>(m["Email"]||m["Email Address"]||"")===email);
+      await appendSheet(TRACKING_DOMAIN,"Tracking",{"Batch Key":batchKey+"-"+email,"Key":campaignKey,"Club":member?.["Home Club"]||"","Contact Name":member?((member["First Name"]||"")+" "+(member["Last Name"]||"")).trim():email,"Contact Role":"","Email Status":schedTime?"Scheduled":"Sent","Date Sent":schedTime||new Date().toISOString(),"Recipient Email":email});
+    }
+    s.textContent=schedTime?`Scheduled for ${schedTime}. ${allTo.length} recipient(s) tracked.`:`Sent to ${allTo.length} recipient(s) and recorded.`;
+    s.className="status-msg visible success";
+    await loadTracking();AuditLog.load();
+  }catch(e){s.textContent="Error: "+e.message;s.className="status-msg visible error";}
+  finally{btn.disabled=false;btn.innerHTML=`<i data-lucide="send" style="width:13px;height:13px;margin-right:4px;display:inline-block;vertical-align:middle;"></i> Send Email`;if(window.lucide)lucide.createIcons();}
+}
+
+function resetCompose(){
+  selectedTmplId=null;
+  recipientsTo?.clear();recipientsCC?.clear();recipientsBCC?.clear();
+  ["subjectPrefix","emailSubject","scheduleType","sigSelect","groupSelect"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=el.tagName==="SELECT"?"":""});
+  document.getElementById("scheduleType").value="now";
+  document.getElementById("scheduleDateRow").style.display="none";
+  document.getElementById("sigPreviewWrap").style.display="none";
+  document.getElementById("groupRecipientRow").style.display="none";
+  document.getElementById("groupCountMsg").textContent="";
+  document.getElementById("nextStep1").disabled=true;
+  document.getElementById("sendStatus").textContent="";
+  quillBody.root.innerHTML="";
+  goStep(1);renderTemplatePicker();
+}
+
+/* ================================================================
+   EVENT WIRING
+   ================================================================ */
+// Tracking
+document.getElementById("refreshDashBtn").addEventListener("click",async()=>{const btn=document.getElementById("refreshDashBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span>`;await Promise.all([loadDashboard(),loadTracking()]);btn.disabled=false;btn.textContent="Refresh";});
+document.getElementById("refreshTrackBtn").addEventListener("click",async()=>{const btn=document.getElementById("refreshTrackBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span>`;await loadTracking();btn.disabled=false;btn.textContent="Refresh";});
+document.getElementById("trackSearch").addEventListener("input",renderTracking);
+document.getElementById("filterStatus").addEventListener("change",renderTracking);
+document.getElementById("filterBatch").addEventListener("change",renderTracking);
+document.getElementById("filterReminder").addEventListener("change",renderTracking);
+
+// Record modal
+document.getElementById("recordModalClose").addEventListener("click",closeRecordModal);
+document.getElementById("recordModalCancel").addEventListener("click",closeRecordModal);
+document.getElementById("recordModalSave").addEventListener("click",saveRecord);
+document.getElementById("recordModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeRecordModal();});
+
+// Template modal
+document.getElementById("newTemplateBtn").addEventListener("click",()=>openTmplModal(null));
+document.getElementById("tmplModalClose").addEventListener("click",closeTmplModal);
+document.getElementById("tmplModalCancel").addEventListener("click",closeTmplModal);
+document.getElementById("tmplSaveBtn").addEventListener("click",saveTmpl);
+document.getElementById("tmplDeleteBtn").addEventListener("click",deleteTmpl);
+document.getElementById("tmplModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeTmplModal();});
+
+// Signature modal
+document.getElementById("newSigBtn").addEventListener("click",()=>openSigModal(null));
+document.getElementById("sigModalClose").addEventListener("click",closeSigModal);
+document.getElementById("sigModalCancel").addEventListener("click",closeSigModal);
+document.getElementById("sigSaveBtn").addEventListener("click",saveSig);
+document.getElementById("sigDeleteBtn").addEventListener("click",deleteSig);
+document.getElementById("sigModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeSigModal();});
+
+// Compose wizard
+document.getElementById("tmplPickSearch").addEventListener("input",renderTemplatePicker);
+document.getElementById("tmplPickTopic").addEventListener("change",renderTemplatePicker);
+document.getElementById("nextStep1").addEventListener("click",()=>{if(!selectedTmplId)return;applyTemplateToCompose(selectedTmplId);goStep(2);});
+document.getElementById("backStep2").addEventListener("click",()=>goStep(1));
+document.getElementById("nextStep2").addEventListener("click",()=>{if(!recipientsTo.values.length&&!document.getElementById("groupSelect").value){alert("Please add at least one To: recipient or select a group.");return;}goStep(3);});
+document.getElementById("backStep3").addEventListener("click",()=>goStep(2));
+document.getElementById("nextStep3").addEventListener("click",()=>{if(!document.getElementById("emailSubject").value.trim()){alert("Please enter a subject.");return;}goStep(4);});
+document.getElementById("backStep4").addEventListener("click",()=>goStep(3));
+document.getElementById("nextStep4").addEventListener("click",()=>{buildPreview();goStep(5);});
+document.getElementById("backStep5").addEventListener("click",()=>goStep(4));
+document.getElementById("sendEmailBtn").addEventListener("click",sendEmail);
+document.getElementById("saveDraftBtn").addEventListener("click",()=>{document.getElementById("sendStatus").textContent="Draft saved.";document.getElementById("sendStatus").className="status-msg visible success";});
+document.getElementById("resetComposeBtn").addEventListener("click",resetCompose);
+document.getElementById("scheduleType").addEventListener("change",()=>{document.getElementById("scheduleDateRow").style.display=document.getElementById("scheduleType").value==="scheduled"?"":"none";});
+document.getElementById("sigSelect").addEventListener("change",updateSigPreview);
+document.getElementById("groupSelect").addEventListener("change",async()=>{
+  const key=document.getElementById("groupSelect").value;
+  if(!key){document.getElementById("groupCountMsg").textContent="";return;}
+  const m=await expandGroup(key);document.getElementById("groupCountMsg").textContent=`${m.length} member(s) will receive this email.`;
+});
+
+/* ── INIT ── */
+initQuills();
+initEmoji();
+recipientsTo  = setupChipInput("toInput","toChips","toAC");
+recipientsCC  = setupChipInput("ccInput","ccChips","ccAC");
+recipientsBCC = setupChipInput("bccInput","bccChips","bccAC");
+
+Promise.all([loadDashboard(),loadTracking(),loadTemplates(),loadSignatures(),loadMembers()])
+  .then(()=>{if(window.lucide)lucide.createIcons();});
+</script>
+<script>
+Promise.all([
+  fetch('nav.html').then(r=>r.text()),
+  fetch('auditLog.html').then(r=>r.text()),
+]).then(([navHtml,auditHtml])=>{
+  document.getElementById('nav-placeholder').innerHTML=navHtml;
+  document.getElementById('auditLog-placeholder').innerHTML=auditHtml;
+  AuditLog.init();Nav.init();
+  if(window.lucide)lucide.createIcons();
+});
+</script>
+</body>
+</html>
