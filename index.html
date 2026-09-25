@@ -2364,7 +2364,9 @@
       Annual Calendar Section
       ========================================================================= */
     let activeCalendarClass  = 'all'; // 'all' or a className, e.g. 'IOM'
-      
+    let annualCalendarMonths = [];
+    let allEvents = [];
+
     async function loadAnnualCalendar() {
       const grid = document.querySelector('#annual-calendar .calendar-grid');
       if (!grid) return;
@@ -2372,7 +2374,7 @@
       grid.innerHTML = '<p class="cal-loading">Loading calendar…</p>';
 
       try {
-        const response = await fetch(`${CALENDAR_URL}?type=calendar`);
+        const response = await fetch(`${CALENDAR_URL}?type=getCalendar`);
         if (!response.ok) throw new Error('Network response was not ok');
 
         const data = await response.json();
@@ -2383,6 +2385,7 @@
           return;
         }
 
+        allEvents = data.allEvents;
         annualCalendarMonths = data.months;
         renderCalendarFilters();
         renderCalendarGrid();
@@ -3345,11 +3348,7 @@
           </div>`;
 
         try {
-          if (typeof apiGet === 'function') {
-            rawRequestsData = await apiGet({ action: 'reqList' });
-          } else {
-            rawRequestsData = [];
-          }
+          rawRequestsData = await apiGet({ action: 'reqList' });
           applyFiltersAndRender();
         } catch (err) {
           console.error("Error fetching AvgScrReq:", err);
@@ -3501,26 +3500,213 @@
         if (overlay) overlay.classList.remove("active");
       }
 
+      /* Find ranked events for date of missed event */
+      function getConflictingEvents(className, date) {      
+        fromDate.setDate(fromDate.getDate() - 3);
+        toDate.setDate(toDate.getDate() + 3);
+        var result = `No conflicting event found for ${className} in the period: ${fromDate} to ${toDate}`;
+        const conflicts = allEvents.filter(e => e && e.conflictingRegatta);
+        const conflict = conflicts.filter(e => e.eventClass === className && e.eventDate >= fromDate && e.eventDate <= toDate);
+        if (conflict.length >= 1) {
+          return result = conflict.event;   
+        } else {
+          return result;
+        }
+      }
+
+      /**
+       * Checks if a member's name appears in the results of a specific ARYA ranked event.
+       *
+       * @param {string} memberName - The full name of the member (e.g., "Neil Martin")
+       * @param {string} eventState - The state (e.g., "SA")
+       * @param {string} eventDate - The date in YYYY/MM/DD format (e.g., "2026/08/30")
+       * @param {string} eventClass - The class (e.g., "A")
+       * @returns {boolean} True if the member is found in the event results, False otherwise.
+       */
+      function isMemberInRankedEvent(memberName, eventState, eventDate, eventClass) {
+        var baseUrl = "https://radiosailing.org.au/";
+        var listUrl = baseUrl + "index.php?arcade=results-list";
+        var rankedKeywords = ["championship", "gp", "tt", "regional", "state"];
+
+        // 1. Generate date permutations to check against the HTML
+        var dateParts = eventDate.split('/');
+        if (dateParts.length !== 3) {
+          Logger.log("Invalid date format. Please use YYYY/MM/DD");
+          return false;
+        }
+        
+        var year = dateParts[0];
+        var month = dateParts[1];
+        var day = dateParts[2];
+        
+        var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        var monthName = monthNames[parseInt(month, 10) - 1];
+        
+        // Potential date formats ARYA might use
+        var dateFormatsToCheck = [
+          day + "/" + month + "/" + year,          // 30/08/2026
+          day + "-" + month + "-" + year,          // 30-08-2026
+          day + " " + monthName + " " + year,      // 30 Aug 2026
+          day + "-" + monthName + "-" + year,      // 30-Aug-2026
+          year + "-" + month + "-" + day           // 2026-08-30
+        ].map(function(d) { return d.toLowerCase(); });
+
+        try {
+          // 2. Fetch the Results List
+          var response = UrlFetchApp.fetch(listUrl);
+          var html = response.getContentText();
+
+          // 3. Parse HTML to find rows (<tr>)
+          var trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+          var trMatch;
+          
+          while ((trMatch = trRegex.exec(html)) !== null) {
+            var rowHtml = trMatch[1];
+            
+            // Extract all cells (<td>) in this row
+            var tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+            var cellsText = [];
+            var tdMatch;
+            
+            while ((tdMatch = tdRegex.exec(rowHtml)) !== null) {
+              // Strip HTML tags, replace non-breaking spaces, and trim whitespace
+              var cleanCell = tdMatch[1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim();
+              cellsText.push(cleanCell.toLowerCase());
+            }
+
+            if (cellsText.length === 0) continue;
+
+            // Extract the result link (<a> tag with arcade=results&eventid)
+            var linkRegex = /<a[^>]+href=["']([^"']*arcade=results&eventid=[^"']*)["'][^>]*>([\s\S]*?)<\/a>/i;
+            var linkMatch = linkRegex.exec(rowHtml);
+            
+            if (!linkMatch) continue;
+
+            var href = linkMatch[1].replace(/&amp;/g, '&'); // Clean URL entities
+            var eventName = linkMatch[2].replace(/<[^>]+>/g, '').trim().toLowerCase();
+
+            // Check 1: Is it a Ranked Event?
+            var isRanked = rankedKeywords.some(function(kw) { return eventName.indexOf(kw) !== -1; });
+            if (!isRanked) continue;
+
+            // Check 2: Does the Date Match? (Is any date format found inside any cell text?)
+            var hasDate = cellsText.some(function(cell) {
+              return dateFormatsToCheck.some(function(df) {
+                return cell.indexOf(df) !== -1;
+              });
+            });
+            if (!hasDate) continue;
+
+            // Check 3: Does the State Match? (Exact case-insensitive match)
+            var hasState = cellsText.some(function(cell) { return cell === eventState.toLowerCase(); });
+            if (!hasState) continue;
+
+            // Check 4: Does the Class Match? (Exact case-insensitive match)
+            var hasClass = cellsText.some(function(cell) { return cell === eventClass.toLowerCase(); });
+            if (!hasClass) continue;
+
+            // --- EVENT MATCH FOUND ---
+            
+            // Construct the absolute URL (handle relative links)
+            var eventUrl = href.indexOf('http') === 0 ? href : baseUrl + (href.indexOf('/') === 0 ? href.substring(1) : href);
+            
+            // 4. Fetch the specific event results page
+            var eventResponse = UrlFetchApp.fetch(eventUrl);
+            var eventHtml = eventResponse.getContentText();
+            
+            // Strip all HTML tags to create a clean text block (replaces tags with spaces to avoid joining words)
+            var cleanPageText = eventHtml.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ');
+            
+            // 5. Search for the Member's Name safely
+            // Escape regex special characters in the name, and replace spaces with \s+ to handle HTML formatting gaps
+            var escapedName = memberName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            var namePatternStr = '\\b' + escapedName.replace(/\s+/g, '\\s+') + '\\b';
+            var searchPattern = new RegExp(namePatternStr, 'i');
+            
+            if (searchPattern.test(cleanPageText)) {
+              return true;
+            } else {
+              return false;
+            }
+          }
+          
+          // Looped through everything and didn't find the event
+          return false;
+
+        } catch (e) {
+          Logger.log("Error fetching or parsing data: " + e.toString());
+          return false;
+        }
+      }
+
+      // ==========================================
+      // Test Function 
+      // ==========================================
+      function testIsMemberInRankedEvent() {
+        var payload = {
+          memberName: "Neil Martin",
+          eventState: "SA",
+          eventDate: "2026/08/30",
+          eventClass: "A"
+        };
+
+        var result = isMemberInRankedEvent(
+          payload.memberName, 
+          payload.eventState, 
+          payload.eventDate, 
+          payload.eventClass
+        );
+        
+        Logger.log("Was the member found? " + result);
+      }
+
+      async function submitAverageScoreRequest(payload) {
+        if (typeof GATEWAY_URL === 'undefined' || !GATEWAY_URL) {
+          throw new Error("GATEWAY_URL is not defined.");
+        }
+        
+        const response = await fetch(GATEWAY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "appendAvgScrReq", domain: "requests", sheet: "AvgScrRq", rowData: rowData})
+          
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const result = await response.json();
+        if (result.error) throw new Error(result.error.message);
+
+        return result;
+      }
+
       document.getElementById("avgScoreForm").addEventListener("submit", async function(e) {
         e.preventDefault();
         const statusDiv = document.getElementById("avgReqFormStatus");
         const submitBtn = document.getElementById("btnSubmitAvgReq");
+        const requestor = document.getElementById("reqMemberName").value;
 
         statusDiv.style.color = "var(--glow, #257fb6)";
         statusDiv.innerHTML = "Submitting request…";
         submitBtn.disabled = true;
 
         const payload = {
-          requestId: "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
-          timestamp: new Date().toISOString(),
-          memberName: document.getElementById("reqMemberName").value,
-          memberEmail: document.getElementById("reqMemberEmail").value,
-          eventDate: document.getElementById("reqEventDate").value,
-          boatClass: document.getElementById("reqBoatClass").value,
-          regattaType: document.getElementById("reqRegattaType").value,
-          eventName: document.getElementById("reqBoatClass").value + " " + document.getElementById("reqRegattaType").value,
-          conflictingRegatta: document.getElementById("reqConflictingRegatta").value,
-          status: "Received"
+          action: "appendAvgScrReq", 
+          domain: DOMAIN.requests,
+          sheetName: "AvgScrReq",
+          detail: `"New Request by ${requestor}"`,
+          rowData: {
+            requestId: "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
+            timestamp: new Date().toISOString(),
+            memberName: requestor,
+            memberEmail: document.getElementById("reqMemberEmail").value,
+            eventDate: document.getElementById("reqEventDate").value,
+            boatClass: document.getElementById("reqBoatClass").value,
+            regattaType: document.getElementById("reqRegattaType").value,
+            eventName: document.getElementById("reqBoatClass").value + " " + document.getElementById("reqRegattaType").value,
+            conflictingRegatta: document.getElementById("reqConflictingRegatta").value,
+            status: "Received"
+          }
         };
 
         try {
