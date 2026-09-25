@@ -244,34 +244,36 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
         <button class="app-filter-btn" id="browseDriveBtn">Browse Root Folder</button>
         <button class="app-filter-btn" id="syncDriveBtn">Sync All Drive Files</button>
     </div>
+    
+    <div id="repository" class="tile glass"></div>
+        <div class="doc-toolbar">
+            <div class="search-wrap">
+                <input class="search-input" id="docSearch" placeholder="Search by title, keyword, category or owner…">
+            </div>
+            <select id="statusFilter">
+                <option value="all">All statuses</option>
+                <option value="Draft">Draft</option>
+                <option value="In Review">In Review</option>
+                <option value="Signed Off">Signed Off</option>
+                <option value="Archived">Archived</option>
+            </select>
+            <button class="app-filter-btn active" id="uploadBtn">+ Upload Document</button>
+        </div>
 
-    <div class="doc-toolbar">
-        <div class="search-wrap">
-            <input class="search-input" id="docSearch" placeholder="Search by title, keyword, category or owner…">
-        </div>
-        <select id="statusFilter">
-            <option value="all">All statuses</option>
-            <option value="Draft">Draft</option>
-            <option value="In Review">In Review</option>
-            <option value="Signed Off">Signed Off</option>
-            <option value="Archived">Archived</option>
-        </select>
-        <button class="app-filter-btn active" id="uploadBtn">+ Upload Document</button>
-    </div>
-
-    <div class="doc-layout">
-        <div class="glass lib-tree" id="libTree">
-            <h3>Library</h3>
-            <div id="libTreeBody"></div>
-        </div>
-        
-        <!-- Wrapper for right side content -->
-        <div class="doc-main-column">
-            <div id="driveBreadcrumbs" style="margin-bottom:14px; font-size:13px; display:none; color:var(--foam-dim);"></div>
-            <section class="fn-grid" id="docGrid"></section>
+        <div class="doc-layout">
+            <div class="glass lib-tree" id="libTree">
+                <h3>Library</h3>
+                <div id="libTreeBody"></div>
+            </div>
+            
+            <!-- Wrapper for right side content -->
+            <div class="doc-main-column">
+                <div id="driveBreadcrumbs" style="margin-bottom:14px; font-size:13px; display:none; color:var(--foam-dim);"></div>
+                <section class="fn-grid" id="docGrid"></section>
+            </div>
         </div>
     </div>
-  
+    
     <!-- AUDIT LOG -->
     <div id="auditLog-placeholder"></div>
 
