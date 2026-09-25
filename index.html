@@ -1677,22 +1677,12 @@
                       <option value="General Handicap">General Handicap</option>
                     </select>
                   </div>
-
-                  <div class="form-group">
-                    <label for="reqRegattaType" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Regatta Type</label>
-                    <select id="reqRegattaType" name="regattaType" required>
-                      <option value="Championship">Championship</option>
-                      <option value="Scratch">Scratch</option>
-                      <option value="Handicap">Handicap</option>
-                      <option value="Sprint Series">Sprint Series</option>
-                    </select>
-                  </div>
                 </div>
 
                 <!-- Conflicting Regatta -->
                 <div class="form-group">
                   <label for="reqConflictingRegatta" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Conflicting ARYA Event Name</label>
-                  <input type="text" id="reqConflictingRegatta" name="conflictingRegatta" placeholder="e.g. 2026 NSW IOM State Championship" required style="width:100%; padding:10px; border-radius:8px;">
+                  <label type="text" id="reqConflictingRegatta" name="conflictingRegatta" style="width:100%; padding:10px; border-radius:8px;">Will load after Date and Class are entered</label>
                 </div>
 
                 <button type="submit" id="btnSubmitAvgReq" class="add-app-pill" style="margin-top:10px; height:40px; justify-content:center; width:100%; font-size:14px; font-weight:600; cursor:pointer;">
@@ -3664,11 +3654,11 @@
         if (typeof GATEWAY_URL === 'undefined' || !GATEWAY_URL) {
           throw new Error("GATEWAY_URL is not defined.");
         }
-        
+
         const response = await fetch(GATEWAY_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "appendAvgScrReq", domain: "requests", sheet: "AvgScrRq", rowData: rowData})
+          body: JSON.stringify({ action: "appendAvgScrReq", domain: "requests", sheet: "AvgScrRq", rowData: payload.rowData})
           
         });
 
@@ -3691,10 +3681,6 @@
         submitBtn.disabled = true;
 
         const payload = {
-          action: "appendAvgScrReq", 
-          domain: DOMAIN.requests,
-          sheetName: "AvgScrReq",
-          detail: `"New Request by ${requestor}"`,
           rowData: {
             requestId: "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
             timestamp: new Date().toISOString(),
@@ -3710,10 +3696,8 @@
         };
 
         try {
-          if (typeof submitAverageScoreRequest === 'function') {
-            await submitAverageScoreRequest(payload);
-          }
-
+          
+          await submitAverageScoreRequest(payload);
           statusDiv.style.color = "#4ade80";
           statusDiv.innerHTML = "Submitted successfully! Returning to list…";
 
