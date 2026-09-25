@@ -95,18 +95,38 @@
 .fn-message.success { background: rgba(94,234,212,0.1); border: 1px solid rgba(94,234,212,0.3); color: var(--glow); }
 .fn-message.error   { background: rgba(255,106,61,0.1);  border: 1px solid rgba(255,106,61,0.3);  color: var(--signal); }
 
-/* ── Overall sheets list ── */
-.sheets-list { display: flex; flex-direction: column; gap: 6px; }
-.sheet-row {
-    display: grid; grid-template-columns: 1fr auto auto;
-    align-items: center; gap: 12px;
-    padding: 11px 14px;
-    background: var(--glass-fill);
-    border: 1px solid var(--glass-border);
-    border-radius: 10px;
+/* ── Standings viewer (ported from index.html) ── */
+.round-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.round-tab {
+    padding: 5px 14px; font-size: 12px; border-radius: 8px; cursor: pointer;
+    background: transparent; border: 1px solid var(--glass-border); color: var(--foam-dim);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.sheet-row .sh-name { font-weight: 600; font-size: 13.5px; color: var(--foam); }
-.sheet-row .sh-meta { font-size: 11.5px; color: var(--foam-dim); margin-top: 2px; }
+.round-tab.active { background: var(--glass-fill-hi); color: var(--glow); border-color: var(--glow); }
+
+.standings-status { font-family: var(--font-data); font-size: 11.5px; color: var(--foam-dim); margin-bottom: 6px; min-height: 16px; }
+.sheet-meta {
+    font-family: var(--font-data); font-size: 11px; color: var(--foam-dim);
+    background: var(--glass-fill); border: 1px solid var(--glass-border);
+    border-radius: 8px; padding: 6px 12px;
+}
+.table-scroll { overflow-x: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+
+table.standings { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.standings th {
+    padding: 9px 8px; text-align: left;
+    position: sticky; top: 0; background: rgba(15,53,80,0.92);
+    font-family: var(--font-data); font-size: 10px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--glow);
+    border-bottom: 1px solid var(--glass-border);
+}
+table.standings th.col-center, table.standings td.col-center { text-align: center; }
+table.standings td { padding: 9px 8px; border-bottom: 1px solid rgba(255,255,255,0.06); color: var(--foam); }
+table.standings th:first-child, table.standings td:first-child { width: 36px; text-align: center; }
+table.standings tbody tr:hover { background: var(--glass-fill); }
+table.standings tbody tr:nth-child(1) td:first-child { color: #ffd166; font-weight: 700; }
+table.standings tbody tr:nth-child(2) td:first-child { color: #dbe6ea; font-weight: 700; }
+table.standings tbody tr:nth-child(3) td:first-child { color: var(--signal); font-weight: 700; }
 
 /* ── Avg Score Requests ── */
 .avg-req-row {
@@ -299,18 +319,38 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
     <div class="section-head" id="overall-sheets">
         <div>
             <h2>Overall Results Sheets</h2>
-            <p>Scoresheets by class and regatta type for the current season.</p>
+            <p>Championship standings by class and regatta type. Select a sheet, then a round tab to view results.</p>
         </div>
     </div>
 
     <div class="panel">
         <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-            <div class="panel-title-left"><span class="dot"></span><h3>Scoresheets</h3></div>
+            <div class="panel-title-left"><span class="dot"></span><h3>Standings</h3></div>
         </div>
         <div class="tab-content active">
-            <div id="overallSheetRows" class="sheets-list">
-                <div class="empty-state"><span class="spinner"></span></div>
+            <!-- Sheet selector row -->
+            <div class="panel-toolbar" style="margin-bottom:12px;">
+                <select id="overallSheetSelect" class="mm-select" onchange="onOverallSheetChange()">
+                    <option value="">— Select a sheet —</option>
+                </select>
+                <button type="button" class="btn btn-ghost" id="openSheetDriveBtn" style="display:none;"
+                    onclick="openSelectedSheetDrive()">
+                    <i class="inline-icon" data-lucide="external-link"></i> Open in Drive
+                </button>
             </div>
+            <!-- Round tabs -->
+            <div class="round-tabs" id="overallRoundTabs" style="display:none;"></div>
+            <!-- Status / meta -->
+            <div class="standings-status" id="overallStatusLine"></div>
+            <div class="sheet-meta" id="overallSheetMeta" style="margin-bottom:12px;"></div>
+            <!-- Table -->
+            <div class="table-scroll" id="overallTableWrap" style="display:none;">
+                <table class="standings">
+                    <thead id="overallTableHead"></thead>
+                    <tbody id="overallTableBody"></tbody>
+                </table>
+            </div>
+            <div id="overallSheetRows" style="display:none;"></div><!-- kept for legacy loadOverallSheets ref -->
             <div class="fn-message" id="sheetsMsg"></div>
         </div>
     </div>
@@ -451,13 +491,6 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 // ----------------------------------------------------------------
 // CONFIG — add results domain to shared.js DOMAIN object at runtime
 // ----------------------------------------------------------------
-const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
-
-// Google Drive folder IDs
-const FOLDER_UPLOAD    = "1kLfQOZYgzjLS5drf4bDX5q-vR3nhcTSI";
-const FOLDER_PROCESSED = "1Ulparqx_-h8v6bUqgMGDyNBo-5tU5duR";
-const FOLDER_OVERALL   = "1c8YEM-I5wxkHMNXL658WEu2n5ylDYfuO";
-
 // Extend the shared DOMAIN registry
 if (typeof DOMAIN !== 'undefined') {
     DOMAIN.results = "results";
@@ -555,6 +588,7 @@ async function loadProcessedFiles() {
             const parsed = parseFileName(f.name || '');
             return { ...f, ...parsed };
         }).sort((a, b) => (b.date || 0) - (a.date || 0));
+
         populateFilters();
         filterResults();
         renderStats();
@@ -565,35 +599,24 @@ async function loadProcessedFiles() {
 }
 
 async function loadOverallSheets() {
-    document.getElementById('overallSheetRows').innerHTML = '<div class="empty-state"><span class="spinner"></span></div>';
+    document.getElementById('overallStatusLine').textContent = '';
+    document.getElementById('overallSheetMeta').textContent = '';
+    document.getElementById('overallRoundTabs').style.display = 'none';
+    document.getElementById('overallTableWrap').style.display = 'none';
+    document.getElementById('openSheetDriveBtn').style.display = 'none';
     try {
         const files = await fetchDriveFolder("overall");
         allOverallSheets = files.map(f => ({ ...f, ...parseSheetName(f.name || '') }));
         renderOverallSheets();
     } catch (err) {
-        document.getElementById('overallSheetRows').innerHTML =
-            `<div class="empty-state">Error loading sheets: ${escHtml(err.message)}</div>`;
+        showMsg('sheetsMsg', 'Error loading sheets: ' + err.message, true);
     }
 }
 
 async function loadAvgRequests() {
-    try {
-        const rows = await fetchSheet(DOMAIN.results, "AvgScrReq");
-        allAvgRequests = rows.map(r => ({
-            hexKey:     r["HexCode"]       || "",
-            memberName: r["Member"]        || "",
-            raceClass:  r["Class"]         || "",
-            raceType:   r["Regatta Type"]  || "",
-            raceDate:   r["Race Date"]     || "",
-            reason:     r["Reason"]        || "",
-            submitted:  r["Submitted"]     || "",
-            status:     (r["Status"] || "pending").toLowerCase(),
-            decidedBy:  r["Decided By"]    || ""
-        }));
-    } catch (err) {
-        // Sheet doesn't exist yet — silently default to empty
-        allAvgRequests = [];
-    }
+    // Placeholder — replace with real fetch when the sheet exists
+    // e.g. fetchSheet(DOMAIN.results, "AvgScoreRequests")
+    allAvgRequests = [];
     renderAvgRequests();
     renderStats();
 }
@@ -642,8 +665,11 @@ const filterResults = debounce(function() {
     document.getElementById('resultRows').innerHTML = list.map(f => `
         <div class="result-row" onclick="openScoresheet('${escHtml(f.id)}', '${escHtml(f.name)}')">
             <div class="row-actions">
-                <button class="icon-btn" title="View Scoresheet" onclick="event.stopPropagation();openScoresheet('${escHtml(f.id)}','${escHtml(f.name)}')">
+                <button class="icon-btn" title="View Results" onclick="event.stopPropagation();openScoresheet('${escHtml(f.id)}','${escHtml(f.name)}')">
                     <i class="inline-icon" data-lucide="book-open-text"></i>
+                </button>
+                <button class="icon-btn" title="Open File in Drive" onclick="event.stopPropagation();openFileDrive('${escHtml(f.id)}')">
+                    <i class="inline-icon" data-lucide="external-link"></i>
                 </button>
             </div>
             <div>
@@ -658,27 +684,123 @@ const filterResults = debounce(function() {
 });
 
 // ----------------------------------------------------------------
-// RENDER — Overall Sheets
+// RENDER — Overall Sheets (populates selector dropdown)
 // ----------------------------------------------------------------
 function renderOverallSheets() {
+    const sel = document.getElementById('overallSheetSelect');
     if (!allOverallSheets.length) {
-        document.getElementById('overallSheetRows').innerHTML =
-            '<div class="empty-state">No Overall Results sheets found.</div>';
+        sel.innerHTML = '<option value="">No sheets found</option>';
         return;
     }
-    document.getElementById('overallSheetRows').innerHTML = allOverallSheets.map(s => `
-        <div class="sheet-row">
-            <div>
-                <div class="sh-name">${escHtml(s.raceClass)} ${escHtml(s.raceType)}</div>
-                <div class="sh-meta">Season ${escHtml(s.season)}</div>
-            </div>
-            <span class="badge badge-full">${escHtml(s.raceType)}</span>
-            <button class="btn btn-ghost" style="padding:6px 14px;font-size:12px;"
-                onclick="openSheetDrive('${escHtml(s.id || '')}')">
-                <i class="inline-icon" data-lucide="external-link"></i> Open
-            </button>
-        </div>`).join('');
-    if (window.lucide) lucide.createIcons();
+    sel.innerHTML = '<option value="">— Select a sheet —</option>' +
+        allOverallSheets.map((s, i) =>
+            `<option value="${i}">${escHtml(s.raceClass)} ${escHtml(s.raceType)} — Season ${escHtml(s.season)}</option>`
+        ).join('');
+}
+
+// ----------------------------------------------------------------
+// OVERALL STANDINGS ENGINE (ported from index.html)
+// ----------------------------------------------------------------
+const DISCOVERY_URL = "https://script.google.com/macros/s/AKfycbxaLDa75WGJ8yqzEnAoLQbvfIyxT9ZDG-YJLP2qSQFtDTEvnbgbjZpsX_7aFcOu0sdl/exec";
+
+const overallSheetListCache = {}; // spreadsheetId -> [{name, gid}]
+let activeOverallIdx  = 0;  // round tab index
+let activeOverallSheet = null; // current sheet object from allOverallSheets
+
+async function getOverallRounds(spreadsheetId) {
+    if (overallSheetListCache[spreadsheetId]) return overallSheetListCache[spreadsheetId];
+    const res  = await fetch(`${DISCOVERY_URL}?ss=${spreadsheetId}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    overallSheetListCache[spreadsheetId] = data.sheets;
+    return data.sheets;
+}
+
+async function fetchOverallSheet(spreadsheetId, sheetName) {
+    const res  = await fetch(`${DISCOVERY_URL}?ss=${spreadsheetId}&sheet=${encodeURIComponent(sheetName)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return { meta: data.meta, headers: data.headers, rows: data.rows };
+}
+
+function renderOverallTable(meta, headers, rows) {
+    document.getElementById('overallSheetMeta').textContent = (meta || []).join(' • ');
+    const CENTER_HEADERS = /^(R\d+|Round\s*\d+|Pos|Result|Sail\s*#|Total|Drop|W|T3|T5|Rank|Discard)$/i;
+    const centerCols = headers.map(h => CENTER_HEADERS.test(String(h).trim()));
+    const attIdx     = headers.findIndex(h => String(h).trim().toUpperCase() === 'ATT');
+    const filteredRows = attIdx >= 0 ? rows.filter(r => Number(r[attIdx]) > 0) : rows;
+
+    document.getElementById('overallTableHead').innerHTML =
+        '<tr>' + headers.map((h, i) =>
+            `<th class="${centerCols[i] ? 'col-center' : ''}">${escHtml(h)}</th>`
+        ).join('') + '</tr>';
+
+    document.getElementById('overallTableBody').innerHTML = filteredRows.map(r =>
+        '<tr>' + r.map((c, i) =>
+            `<td class="${centerCols[i] ? 'col-center' : ''}">${escHtml(c)}</td>`
+        ).join('') + '</tr>'
+    ).join('');
+}
+
+async function loadOverallRound() {
+    if (!activeOverallSheet) return;
+    const ssId = activeOverallSheet.id;
+    document.getElementById('overallTableHead').innerHTML = '';
+    document.getElementById('overallTableBody').innerHTML =
+        '<tr><td colspan="100%"><div class="empty-state"><span class="spinner"></span></div></td></tr>';
+    document.getElementById('overallTableWrap').style.display = 'block';
+    document.getElementById('overallStatusLine').textContent = '';
+
+    try {
+        const rounds = await getOverallRounds(ssId);
+        if (!rounds || !rounds.length) throw new Error('No sheets found in this spreadsheet.');
+        renderOverallRoundTabs(rounds);
+        const round = rounds[activeOverallIdx];
+        const { meta, headers, rows } = await fetchOverallSheet(ssId, round.name);
+        renderOverallTable(meta, headers, rows);
+        document.getElementById('overallStatusLine').textContent =
+            `${activeOverallSheet.raceClass} ${activeOverallSheet.raceType} • ${round.name}`;
+    } catch (err) {
+        document.getElementById('overallTableBody').innerHTML = '';
+        document.getElementById('overallStatusLine').textContent = 'Error: ' + err.message;
+    }
+}
+
+function renderOverallRoundTabs(rounds) {
+    const tabsEl = document.getElementById('overallRoundTabs');
+    tabsEl.style.display = 'flex';
+    tabsEl.innerHTML = rounds.map((s, i) =>
+        `<button class="round-tab ${i === activeOverallIdx ? 'active' : ''}" data-index="${i}">${escHtml(s.name)}</button>`
+    ).join('');
+    tabsEl.querySelectorAll('.round-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            activeOverallIdx = parseInt(btn.dataset.index);
+            renderOverallRoundTabs(rounds);
+            loadOverallRound();
+        });
+    });
+}
+
+function onOverallSheetChange() {
+    const idx = document.getElementById('overallSheetSelect').value;
+    if (idx === '') {
+        document.getElementById('overallRoundTabs').style.display = 'none';
+        document.getElementById('overallTableWrap').style.display = 'none';
+        document.getElementById('openSheetDriveBtn').style.display = 'none';
+        document.getElementById('overallSheetMeta').textContent = '';
+        document.getElementById('overallStatusLine').textContent = '';
+        activeOverallSheet = null;
+        return;
+    }
+    activeOverallSheet = allOverallSheets[parseInt(idx)];
+    activeOverallIdx   = 0;
+    document.getElementById('openSheetDriveBtn').style.display = '';
+    loadOverallRound();
+}
+
+function openSelectedSheetDrive() {
+    if (!activeOverallSheet?.id) return;
+    window.open(`https://docs.google.com/spreadsheets/d/${activeOverallSheet.id}`, '_blank');
 }
 
 // ----------------------------------------------------------------
@@ -727,8 +849,8 @@ async function openScoresheet(fileId, fileName) {
     document.getElementById('scoresheetModal').classList.add('open');
 
     try {
-        const content = await fetchDriveFile(fileId);
-        renderScoresheetModal(content, parsed);
+        const json = await fetchDriveFile(fileId);
+        renderScoresheetModal(json, parsed);
     } catch (err) {
         document.getElementById('scoresheetBody').innerHTML =
             `<tr><td colspan="99" style="color:var(--signal);padding:16px;">${escHtml(err.message)}</td></tr>`;
@@ -811,9 +933,8 @@ function closeAvgReqModal() {
 
 async function decideAvgReq(decision) {
     if (!activeAvgReq) return;
-    // TODO: call updateSheet(DOMAIN.results, "AvgScrReq", activeAvgReq.hexKey, { status: decision, decidedBy: currentUser })
-    //       then send email notification via CLB_WEBAPP_URL if approved
-    // 
+    // TODO: updateSheet(DOMAIN.results, "AvgScoreRequests", activeAvgReq.hexKey, { Status: decision, ... })
+    // TODO: sendAvgScoreApproval via email handler when approved
     showMsg('avgReqMsg', `Request ${decision}. Email notification will be sent on approval.`, false);
     activeAvgReq.status = decision;
     closeAvgReqModal();
@@ -828,7 +949,7 @@ async function initiateProcessing() {
     showMsg('processingMsg', 'Initiating processing… checking upload folder.', false);
     try {
         const msg = await triggerResultsProcessing();
-        showMsg('processingMsg', msg, false);
+        showMsg('processingMsg', msg || 'Processing triggered. Check back shortly.', false);
         setTimeout(loadAll, 5000);
     } catch (err) {
         showMsg('processingMsg', 'Error: ' + err.message, true);
@@ -839,21 +960,20 @@ async function checkUploadFolder() {
     showMsg('processingMsg', 'Checking upload folder…', false);
     try {
         const files = await fetchDriveFolder("upload");
-        document.getElementById('statOutstanding').textContent = files.length;
-        showMsg('processingMsg', files.length
-            ? `${files.length} file(s) ready to process.`
-            : 'Upload folder is empty.', !files.length);
         const count = files.length;
-        // Update outstanding stat
+        showMsg('processingMsg', count
+            ? `${count} file(s) found in upload folder. Ready to process.`
+            : 'Upload folder is empty — no file to process.', !count);
         document.getElementById('statOutstanding').textContent = count;
     } catch (err) {
         showMsg('processingMsg', 'Error: ' + err.message, true);
     }
 }
 
-function openSheetDrive(fileId) {
+// Opens a processed JSON file directly in Drive
+function openFileDrive(fileId) {
     if (!fileId) return;
-    window.open(`https://docs.google.com/spreadsheets/d/${fileId}`, '_blank');
+    window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
 }
 
 // ----------------------------------------------------------------

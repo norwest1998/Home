@@ -3175,7 +3175,6 @@
       loadMembers();    
       loadApplications();
       loadBoats();
-      loadAvgScrReq()
     });
 
   </script>
@@ -3193,8 +3192,20 @@
       initFilterAndSearch();
       initDrawerEvents();
       loadRequestList();
+
+      // Fallback: If allMembers was empty on load, check again every 1s until loaded
+      const memberInterval = setInterval(() => {
+        const select = document.getElementById("reqMemberName");
+        if (select && select.options.length <= 1 && typeof allMembers !== 'undefined' && Array.isArray(allMembers) && allMembers.length > 0) {
+          initActiveMembersDropdown();
+          clearInterval(memberInterval);
+        }
+      }, 1000);
+      // Stop checking after 10 seconds to prevent infinite polling
+      setTimeout(() => clearInterval(memberInterval), 10000);
     });
-// --- Strictly Scoped Tab Navigation ---
+
+    // --- Strictly Scoped Tab Navigation ---
     function initTabNavigation() {
       const root = document.getElementById("avg-score-requests");
       if (!root) return;
@@ -3221,7 +3232,6 @@
       const root = document.getElementById("avg-score-requests");
       if (!root) return;
 
-      // Toggle ONLY tabs in this panel's header
       const tabButtons = root.querySelectorAll("#avgReqTabRow .tab");
       tabButtons.forEach(btn => {
         if (btn.getAttribute("data-avg-tab") === tabKey) {
@@ -3231,7 +3241,6 @@
         }
       });
 
-      // Toggle ONLY contents in this panel
       const listTab = root.querySelector("#avg-tab-req-list");
       const appTab = root.querySelector("#avg-tab-req-app");
 
@@ -3241,39 +3250,58 @@
       } else {
         if (appTab) appTab.classList.add("active");
         if (listTab) listTab.classList.remove("active");
+        
+        // Re-run population when switching to Application tab
+        initActiveMembersDropdown();
       }
     }
 
-    // --- Active Members Dropdown ---
+    // --- Active Members Dropdown with Robust Property Matching ---
     function initActiveMembersDropdown() {
       const select = document.getElementById("reqMemberName");
       if (!select) return;
 
+      // Keep user choice if already selected
+      const currentValue = select.value;
       select.innerHTML = '<option value="">Select active member…</option>';
 
-      if (typeof allMembers !== 'undefined' && Array.isArray(allMembers)) {
-        const activeMembers = allMembers.filter(m => m.Active === true || m.Active === "true" || m.Active === "TRUE");
+      if (typeof allMembers !== 'undefined' && Array.isArray(allMembers) && allMembers.length > 0) {
+        
+        const activeMembers = allMembers.filter(m => {
+          // Check for all common property variations for 'Active'
+          const isActiveVal = m.Active ?? m.active ?? m.IsActive ?? m.isActive;
+          const statusVal = m.Status ?? m.status ?? m.MembershipStatus ?? "";
+          
+          return (
+            isActiveVal === true || 
+            String(isActiveVal).toLowerCase() === "true" ||
+            String(statusVal).toLowerCase() === "active"
+          );
+        });
 
         activeMembers.forEach(m => {
-          const name = m.Name || m.memberName || m.memberNameFull || "";
-          const email = m.Email || m.email || "";
+          // Check for all common property variations for 'Name' and 'Email'
+          const name = m.Name || m.name || m.memberName || m.memberNameFull || m["Member Name"] || "";
+          const email = m.Email || m.email || m.memberEmail || m["Member Email"] || "";
+          
           if (name) {
             const opt = document.createElement("option");
             opt.value = name;
             opt.textContent = name;
             opt.dataset.email = email;
+            if (name === currentValue) opt.selected = true;
             select.appendChild(opt);
           }
         });
       }
-
-      select.addEventListener("change", function(e) {
-        const selectedOpt = e.target.options[e.target.selectedIndex];
-        document.getElementById("reqMemberEmail").value = selectedOpt ? (selectedOpt.dataset.email || "") : "";
-      });
     }
 
-    // --- Fetch Data ---
+    document.getElementById("reqMemberName").addEventListener("change", function(e) {
+      const selectedOpt = e.target.options[e.target.selectedIndex];
+      document.getElementById("reqMemberEmail").value = selectedOpt ? (selectedOpt.dataset.email || "") : "";
+    });
+
+    // --- Fetch Request List ---
     async function loadRequestList() {
       const container = document.getElementById("avgReqList");
       if (!container) return;
