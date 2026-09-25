@@ -3321,7 +3321,28 @@
           });
         }
       }
+      
+      document.getElementById("reqEventDate").addEventListener("change", function(e) {
+        const misDate = document.getElementById("reqEventDate").value;
+        const selectedOpt = document.getElementById("reqBoatClass").value;
+        if (!misDate)  {
+          if (!selectedOpt) {
+            document.getElementById("reqConflictingRegatta").value  = "Will load after Date and Class are selected";
+          } else {
+            document.getElementById("reqConflictingRegatta").value  = "Will load after Date is selected";
+          }
+        } else {
+          if (!selectedOpt) {
+            document.getElementById("reqConflictingRegatta").value  = "Will load after Class is selected";
+          } else {
+            document.getElementById("reqConflictingRegatta").value  = `"Searching for conflicting ${selectedOpt} event around the ${misDate}"`;
+            document.getElementById("reqConflictingRegatta").value  = getConflictingEvents(selectedOpt, formatDate(misDate));
+          }
+        }
 
+        document.getElementById("reqEventDate") = formatDate(misDate);
+      });
+      
       document.getElementById("reqBoatClass").addEventListener("change", function(e) {
         const selectedOpt = e.target.options[e.target.selectedIndex];
         const misDate = document.getElementById("reqEventDate").value;
@@ -3337,10 +3358,8 @@
           } else {
               document.getElementById("reqConflictingRegatta").value  = `"Searching for conflicting ${selectedOpt} event around the ${misDate}"`;
               document.getElementById("reqConflictingRegatta").value  = getConflictingEvents(selectedOpt, formatDate(misDate));
-          } 
-          
+          }           
         }
-        document.getElementById("reqMemberEmail").value = selectedOpt ? (selectedOpt.dataset.email || "") : "";
       });
 
       document.getElementById("reqMemberName").addEventListener("change", function(e) {
