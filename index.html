@@ -1158,6 +1158,50 @@
       opacity:.9;
       transform:translateX(2px);
   }
+
+  /* Liquid Glass Select Controls */
+    #avg-score-requests select {
+      color-scheme: dark; /* Forces native OS dropdown popups into dark mode */
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: rgba(10, 20, 32, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+      color: var(--foam, #ffffff);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+
+    #avg-score-requests select:focus {
+      border-color: var(--glow, #257fb6);
+      box-shadow: 0 0 12px rgba(37, 127, 182, 0.35);
+    }
+
+    /* Option Items (Dropdown List) Liquid Glass Dark Theme Fix */
+    #avg-score-requests select option {
+      background-color: #0d1622; /* Liquid glass dark background */
+      color: #ffffff;
+      padding: 10px;
+    }
+
+    #avg-score-requests select option:disabled {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Inputs alignment */
+    #avg-score-requests input[type="text"],
+    #avg-score-requests input[type="date"] {
+      color-scheme: dark;
+      background: rgba(10, 20, 32, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+      color: var(--foam, #ffffff);
+    }
 </style>
 </head>
 <body>
@@ -1542,15 +1586,14 @@
         </div>
 
         <!-- Average Score Requests Module -->
-        <div id="avg-score-requests" class="tile glass">
-          <div class="tile-title">
+        <div class="tile-title">
             <i class="tile-icon" data-lucide="calculator" color="#257fb6"></i>
             <h3>Average Score Requests</h3>
           </div>
           <p class="subh">Request average scoring for a missed club regatta due to an ARYA Ranking event clash.</p>
 
           <div class="panel">
-            <!-- Panel Header with Scoped Tabs and Pill Button -->
+            <!-- Panel Header -->
             <div class="panel-header">
               <div class="panel-title">
                 <span class="dot"></span>
@@ -1567,9 +1610,8 @@
               </div>
             </div>
 
-            <!-- TAB 1: Request List (Active) -->
+            <!-- TAB 1: Request List -->
             <div id="avg-tab-req-list" class="tab-content active">
-              <!-- Search Wrap -->
               <div class="search-wrap">
                 <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1579,7 +1621,6 @@
                       placeholder="Search requests by member name or event…" autocomplete="off">
               </div>
 
-              <!-- Filters -->
               <div class="app-filters" id="avgReqFilters">
                 <button class="app-filter-btn active" data-status="all" type="button">All</button>
                 <button class="app-filter-btn" data-status="Received" type="button">Received</button>
@@ -1590,7 +1631,6 @@
 
               <div class="count-chip" id="avgReqCount">0 Requests</div>
 
-              <!-- Request List Container -->
               <div class="app-list" id="avgReqList">
                 <div class="empty-state">
                   <div class="spinner"></div>
@@ -1599,14 +1639,14 @@
               </div>
             </div>
 
-            <!-- TAB 2: Applications / Form -->
+            <!-- TAB 2: Applications Form -->
             <div id="avg-tab-req-app" class="tab-content">
               <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
-                <!-- Member Select populated from allMembers -->
+                <!-- Member Select -->
                 <div class="form-group">
                   <label for="reqMemberName" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Member Name</label>
-                  <select id="reqMemberName" name="memberName" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); color:var(--foam, #fff);">
-                    <option value="">Select active member…</option>
+                  <select id="reqMemberName" name="memberName" required>
+                    <option value="" disabled selected>Select active member…</option>
                   </select>
                   <input type="hidden" id="reqMemberEmail" name="memberEmail">
                 </div>
@@ -1614,14 +1654,14 @@
                 <!-- Missed Event Date -->
                 <div class="form-group">
                   <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Missed Event Date</label>
-                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); color:var(--foam, #fff);">
+                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px;">
                 </div>
 
                 <!-- Event Class & Type -->
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                   <div class="form-group">
                     <label for="reqBoatClass" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Class</label>
-                    <select id="reqBoatClass" name="boatClass" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); color:var(--foam, #fff);">
+                    <select id="reqBoatClass" name="boatClass" required>
                       <option value="IOM">IOM</option>
                       <option value="DF95">DF95</option>
                       <option value="DF65">DF65</option>
@@ -1632,7 +1672,7 @@
 
                   <div class="form-group">
                     <label for="reqRegattaType" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Regatta Type</label>
-                    <select id="reqRegattaType" name="regattaType" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); color:var(--foam, #fff);">
+                    <select id="reqRegattaType" name="regattaType" required>
                       <option value="Championship">Championship</option>
                       <option value="Scratch">Scratch</option>
                       <option value="Handicap">Handicap</option>
@@ -1644,7 +1684,7 @@
                 <!-- Conflicting Regatta -->
                 <div class="form-group">
                   <label for="reqConflictingRegatta" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Conflicting ARYA Event Name</label>
-                  <input type="text" id="reqConflictingRegatta" name="conflictingRegatta" placeholder="e.g. 2026 NSW IOM State Championship" required style="width:100%; padding:10px; border-radius:8px; background:var(--glass-fill, rgba(0,0,0,0.2)); border:1px solid var(--glass-border, rgba(255,255,255,0.1)); color:var(--foam, #fff);">
+                  <input type="text" id="reqConflictingRegatta" name="conflictingRegatta" placeholder="e.g. 2026 NSW IOM State Championship" required style="width:100%; padding:10px; border-radius:8px;">
                 </div>
 
                 <button type="submit" id="btnSubmitAvgReq" class="add-app-pill" style="margin-top:10px; height:40px; justify-content:center; width:100%; font-size:14px; font-weight:600; cursor:pointer;">
@@ -1655,7 +1695,7 @@
             </div>
           </div>
 
-          <!-- Request Detail Drawer -->
+          <!-- Detail Drawer -->
           <div class="drawer-overlay" id="avgReqDrawer">
             <div class="drawer drawer-wide">
               <div class="drawer-header">
@@ -1672,7 +1712,7 @@
                 </div>
               </div>
             </div>
-          </div>       
+          </div>     
           <span class="tag">Average Points Request Module</span>
         </div>
 
@@ -3181,7 +3221,325 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="memberStatsModal.js"></script>
 <script>
-  (function() {
+ (function() {
+    let rawRequestsData = [];
+    let currentFilterStatus = 'all';
+    let currentSearchTerm = '';
+
+    document.addEventListener("DOMContentLoaded", function() {
+      initTabNavigation();
+      initActiveMembersDropdown();
+      initFilterAndSearch();
+      initDrawerEvents();
+      loadRequestList();
+
+      // Retry mechanism if members load asynchronously
+      const memberInterval = setInterval(() => {
+        const select = document.getElementById("reqMemberName");
+        if (select && select.options.length <= 1 && typeof allMembers !== 'undefined' && Array.isArray(allMembers) && allMembers.length > 0) {
+          initActiveMembersDropdown();
+          clearInterval(memberInterval);
+        }
+      }, 800);
+      setTimeout(() => clearInterval(memberInterval), 10000);
+    });
+
+    function initTabNavigation() {
+      const root = document.getElementById("avg-score-requests");
+      if (!root) return;
+
+      const tabButtons = root.querySelectorAll("#avgReqTabRow .tab");
+      tabButtons.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          switchTab(btn.getAttribute("data-avg-tab"));
+        });
+      });
+
+      const pillBtn = root.querySelector("#addAvgReqPill");
+      if (pillBtn) {
+        pillBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          switchTab("req-app");
+        });
+      }
+    }
+
+    function switchTab(tabKey) {
+      const root = document.getElementById("avg-score-requests");
+      if (!root) return;
+
+      const tabButtons = root.querySelectorAll("#avgReqTabRow .tab");
+      tabButtons.forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-avg-tab") === tabKey);
+      });
+
+      const listTab = root.querySelector("#avg-tab-req-list");
+      const appTab = root.querySelector("#avg-tab-req-app");
+
+      if (tabKey === "req-list") {
+        if (listTab) listTab.classList.add("active");
+        if (appTab) appTab.classList.remove("active");
+      } else {
+        if (appTab) appTab.classList.add("active");
+        if (listTab) listTab.classList.remove("active");
+        initActiveMembersDropdown();
+      }
+    }
+
+    function initActiveMembersDropdown() {
+      const select = document.getElementById("reqMemberName");
+      if (!select) return;
+
+      const currentValue = select.value;
+      select.innerHTML = '<option value="" disabled selected>Select active member…</option>';
+
+      if (typeof allMembers !== 'undefined' && Array.isArray(allMembers) && allMembers.length > 0) {
+        const activeMembers = allMembers.filter(m => {
+          const isActiveVal = m.Active ?? m.active ?? m.IsActive ?? m.isActive;
+          const statusVal = m.Status ?? m.status ?? m.MembershipStatus ?? "";
+          return (
+            isActiveVal === true || 
+            String(isActiveVal).toLowerCase() === "true" ||
+            String(statusVal).toLowerCase() === "active"
+          );
+        });
+
+        activeMembers.forEach(m => {
+          const name = m.Name || m.name || m.memberName || m.memberNameFull || m["Member Name"] || "";
+          const email = m.Email || m.email || m.memberEmail || m["Member Email"] || "";
+          
+          if (name) {
+            const opt = document.createElement("option");
+            opt.value = name;
+            opt.textContent = name;
+            opt.dataset.email = email;
+            if (name === currentValue) opt.selected = true;
+            select.appendChild(opt);
+          }
+        });
+      }
+    }
+
+    document.getElementById("reqMemberName").addEventListener("change", function(e) {
+      const selectedOpt = e.target.options[e.target.selectedIndex];
+      document.getElementById("reqMemberEmail").value = selectedOpt ? (selectedOpt.dataset.email || "") : "";
+    });
+
+    async function loadRequestList() {
+      const container = document.getElementById("avgReqList");
+      if (!container) return;
+
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="spinner"></div>
+          <div>Loading requests…</div>
+        </div>`;
+
+      try {
+        if (typeof fetchSheet === 'function') {
+          rawRequestsData = await fetchSheet("calendar", "AvgScrReq");
+        } else {
+          rawRequestsData = [];
+        }
+        applyFiltersAndRender();
+      } catch (err) {
+        console.error("Error fetching AvgScrReq:", err);
+        container.innerHTML = `<div class="empty-state"><div style="color:var(--signal,#ef4444);">Failed to load: ${err.message}</div></div>`;
+      }
+    }
+
+    function initFilterAndSearch() {
+      const root = document.getElementById("avg-score-requests");
+      if (!root) return;
+
+      const filterBtns = root.querySelectorAll("#avgReqFilters .app-filter-btn");
+      filterBtns.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          filterBtns.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentFilterStatus = btn.getAttribute("data-status");
+          applyFiltersAndRender();
+        });
+      });
+
+      const searchInput = root.querySelector("#avgReqSearch");
+      if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+          currentSearchTerm = e.target.value.toLowerCase().trim();
+          applyFiltersAndRender();
+        });
+      }
+    }
+
+    function applyFiltersAndRender() {
+      let filtered = Array.isArray(rawRequestsData) ? [...rawRequestsData] : [];
+
+      if (currentFilterStatus !== 'all') {
+        filtered = filtered.filter(r => {
+          const st = (r.Status || r.status || 'Received').toString().toLowerCase();
+          return st === currentFilterStatus.toLowerCase();
+        });
+      }
+
+      if (currentSearchTerm) {
+        filtered = filtered.filter(r => {
+          const name = (r["Member Name"] || r.memberName || "").toLowerCase();
+          const event = (r["Event Name"] || r.eventName || "").toLowerCase();
+          const reqId = (r["Request ID"] || r.requestId || "").toLowerCase();
+          return name.includes(currentSearchTerm) || event.includes(currentSearchTerm) || reqId.includes(currentSearchTerm);
+        });
+      }
+
+      const countChip = document.getElementById("avgReqCount");
+      if (countChip) {
+        countChip.textContent = `${filtered.length} Request${filtered.length === 1 ? '' : 's'}`;
+      }
+
+      renderList(filtered);
+    }
+
+    function renderList(items) {
+      const container = document.getElementById("avgReqList");
+      if (!container) return;
+
+      container.innerHTML = "";
+
+      if (!items || items.length === 0) {
+        container.innerHTML = `<div class="empty-state"><div>No matching requests found.</div></div>`;
+        return;
+      }
+
+      items.forEach((item, index) => {
+        const reqId = item["Request ID"] || item.requestId || `REQ-${index + 1}`;
+        const name = item["Member Name"] || item.memberName || "Unknown Member";
+        const eventName = item["Event Name"] || item.eventName || "Average Score Request";
+        const date = item["Event Date"] || item.eventDate || "-";
+        const status = item.Status || item.status || "Received";
+
+        const card = document.createElement("div");
+        card.className = "app-card";
+        card.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:12px; margin-bottom:8px; border-radius:8px; background:var(--glass-fill, rgba(255,255,255,0.03)); border:1px solid var(--glass-border, rgba(255,255,255,0.08)); cursor:pointer; transition:background 0.2s;";
+        
+        card.addEventListener("mouseover", () => card.style.background = "rgba(255,255,255,0.07)");
+        card.addEventListener("mouseout", () => card.style.background = "var(--glass-fill, rgba(255,255,255,0.03))");
+        card.addEventListener("click", () => openDrawer(item));
+
+        let statusStyle = "background:rgba(234, 179, 8, 0.15); color:#eab308;";
+        if (status.toLowerCase() === "approved") statusStyle = "background:rgba(74, 222, 128, 0.15); color:#4ade80;";
+        if (status.toLowerCase() === "rejected") statusStyle = "background:rgba(239, 68, 68, 0.15); color:#ef4444;";
+
+        card.innerHTML = `
+          <div>
+            <div style="font-weight:600; font-size:14px; color:var(--foam, #fff);">${name}</div>
+            <div style="font-size:12px; color:var(--glow, #257fb6); margin-top:2px;">${eventName} &bull; <span style="color:var(--foam-sub, #aaa);">${date}</span></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="padding:4px 10px; border-radius:12px; font-size:11px; font-weight:600; ${statusStyle}">
+              ${status}
+            </span>
+            <span style="font-size:12px; color:var(--foam-sub, #888);">${reqId}</span>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function initDrawerEvents() {
+      const closeBtn = document.getElementById("closeAvgReqDrawer");
+      const overlay = document.getElementById("avgReqDrawer");
+
+      if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+      if (overlay) {
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) closeDrawer();
+        });
+      }
+    }
+
+    function openDrawer(item) {
+      const overlay = document.getElementById("avgReqDrawer");
+      const title = document.getElementById("avgReqDrawerTitle");
+      const sub = document.getElementById("avgReqDrawerSub");
+      const body = document.getElementById("avgReqDrawerBody");
+
+      const reqId = item["Request ID"] || item.requestId || "Request Details";
+      title.textContent = reqId;
+      sub.textContent = item["Member Name"] || item.memberName || "";
+
+      body.innerHTML = `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:13px; line-height:1.5;">
+          <div><strong style="color:var(--glow, #257fb6);">Member Name</strong><br>${item["Member Name"] || item.memberName || "-"}</div>
+          <div><strong style="color:var(--glow, #257fb6);">Member Email</strong><br>${item["Member Email"] || item.memberEmail || "-"}</div>
+          <div><strong style="color:var(--glow, #257fb6);">Missed Event Date</strong><br>${item["Event Date"] || item.eventDate || "-"}</div>
+          <div><strong style="color:var(--glow, #257fb6);">Missed Regatta</strong><br>${item["Event Name"] || item.eventName || "-"}</div>
+          <div style="grid-column: span 2;"><strong style="color:var(--glow, #257fb6);">Conflicting ARYA Regatta</strong><br>${item["Conflicting Regatta"] || item.conflictingRegatta || "-"}</div>
+          <div><strong style="color:var(--glow, #257fb6);">Status</strong><br>${item["Status"] || item.status || "Received"}</div>
+          <div><strong style="color:var(--glow, #257fb6);">Decision Date</strong><br>${item["Decision Date"] || item.decisionDate || "-"}</div>
+          <div><strong style="color:var(--glow, #257fb6);">Decision By</strong><br>${item["Decision By"] || item.decisionBy || "-"}</div>
+          <div style="grid-column: span 2;"><strong style="color:var(--glow, #257fb6);">Rejection Reason</strong><br>${item["Rejected Reason"] || item.rejectedReason || "N/A"}</div>
+        </div>
+      `;
+
+      overlay.classList.add("active");
+    }
+
+    function closeDrawer() {
+      const overlay = document.getElementById("avgReqDrawer");
+      if (overlay) overlay.classList.remove("active");
+    }
+
+    document.getElementById("avgScoreForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const statusDiv = document.getElementById("avgReqFormStatus");
+      const submitBtn = document.getElementById("btnSubmitAvgReq");
+
+      statusDiv.style.color = "var(--glow, #257fb6)";
+      statusDiv.innerHTML = "Submitting request…";
+      submitBtn.disabled = true;
+
+      const payload = {
+        requestId: "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
+        timestamp: new Date().toISOString(),
+        memberName: document.getElementById("reqMemberName").value,
+        memberEmail: document.getElementById("reqMemberEmail").value,
+        eventDate: document.getElementById("reqEventDate").value,
+        boatClass: document.getElementById("reqBoatClass").value,
+        regattaType: document.getElementById("reqRegattaType").value,
+        eventName: document.getElementById("reqBoatClass").value + " " + document.getElementById("reqRegattaType").value,
+        conflictingRegatta: document.getElementById("reqConflictingRegatta").value,
+        status: "Received"
+      };
+
+      try {
+        if (typeof submitAverageScoreRequest === 'function') {
+          await submitAverageScoreRequest(payload);
+        }
+
+        statusDiv.style.color = "#4ade80";
+        statusDiv.innerHTML = "Submitted successfully! Returning to list…";
+
+        setTimeout(() => {
+          document.getElementById("avgScoreForm").reset();
+          statusDiv.innerHTML = "";
+          submitBtn.disabled = false;
+
+          switchTab("req-list");
+          loadRequestList();
+        }, 1000);
+
+      } catch (err) {
+        console.error("Submission error:", err);
+        statusDiv.style.color = "var(--signal, #ef4444)";
+        statusDiv.innerHTML = "Error submitting: " + err.message;
+        submitBtn.disabled = false;
+      }
+    });
+  })();
     let rawRequestsData = [];
     let currentFilterStatus = 'all';
     let currentSearchTerm = '';
