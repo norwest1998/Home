@@ -3344,7 +3344,7 @@
           </div>`;
 
         try {
-          if (typeof fetchSheet === 'function') {
+          if (typeof apiGet === 'function') {
             rawRequestsData = await apiGet("AvgScrReq");
           } else {
             rawRequestsData = [];
