@@ -216,14 +216,12 @@ table.batch-contacts { width: 100%; border-collapse: collapse; font-size: 12px; 
 
 <main class="container">
 
-    <div class="admin-header">
-        <div class="admin-title-group">
-            <h1>Email Management Console</h1>
-        </div>
-        <a href="admin.html" class="btn btn-ghost" style="flex-shrink:0;">Back to Dashboard</a>
+    <!-- ===================== DASHBOARD STATS ===================== -->
+    <div class="section-head" id="email-dashboard">
+        <h2>Email Dashboard</h2>
+        <p>Summary of all email communications across all batches.</p>
     </div>
 
-    <!-- ===================== DASHBOARD STATS ===================== -->
     <div class="stats-grid" id="statsGrid">
         <div class="glass stat-card"><div class="stat-val" id="stat-sent"><span class="spinner"></span></div><div class="stat-label">Emails Sent</div></div>
         <div class="glass stat-card"><div class="stat-val" id="stat-responded"><span class="spinner"></span></div><div class="stat-label">Responded</div><div class="stat-sub" id="stat-responded-pct"></div></div>
@@ -241,10 +239,7 @@ table.batch-contacts { width: 100%; border-collapse: collapse; font-size: 12px; 
 
     <div class="panel">
         <div class="panel-header">
-            <div class="panel-title-left">
-                <span class="dot"></span>
-                <h3>Batches</h3>
-            </div>
+            <div class="panel-title-left"><span class="dot"></span><h3>Batches</h3></div>
             <button class="btn btn-ghost" id="refreshDashBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
         </div>
         <div class="tab-content active">
@@ -752,4 +747,4 @@ Promise.all([
 });
 </script>
 </body>
-</html>
+</html> 

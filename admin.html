@@ -405,13 +405,34 @@ const FUNCTIONS = [
         href: "resultsManagement.html"
         },
     // Email management
-    {   id: "emailManagement",         
-        icon: '<i data-lucide="mails" color="#257fb6"></i>',
+    {
+        id: "email-management",
+        icon: '<i data-lucide="mail" color="#257fb6"></i>',
         title: "Email Management",
-        description: "Manage Email Communications.",
-        href: "emailManagement.html"
-        },
+        description: "Track sent emails, responses, open rates and reminders across all communication campaigns.",
+        href: "emailManagement.html",
+        status: async () => {
+            const rows = await fetchSheet(DOMAIN.tracking, "Tracking");
+        
+            const total     = rows.length;
+            const responded = rows.filter(r => ["Responded","Updated"].includes(r["Email Status"])).length;
+            const pending   = rows.filter(r => r["Email Status"] === "Sent").length;
+            const opened    = rows.filter(r => Number(r["Open Count"] || 0) > 0).length;
+            const reminders = rows.filter(r => r["Reminder Sent"] === "Yes").length;
+        
+            return {
+                pills: [
+                { label: "Sent",      value: total,     className: "badge-default"  },
+                { label: "Responded", value: responded,  className: "badge-full"     },
+                { label: "Pending",   value: pending,    className: "badge-renewal"  },
+                { label: "Opened",    value: opened,     className: "badge-affiliate"},
+                { label: "Reminders", value: reminders,  className: "badge-expired"  },
+                ]
+            };
+        }
+    },
     // Next placeholder
+    
     { id: "add-new-function", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
 ];
 
