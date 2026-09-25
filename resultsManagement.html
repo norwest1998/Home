@@ -918,33 +918,59 @@ function renderScoresheetModal(json, parsed) {
         return;
     }
 
-    // Build columns: Race# | RO | then one col per finishing position
-    const maxPos = Math.max(...races.map(r => (r.positions || []).length));
-    const posCols = Array.from({ length: maxPos }, (_, i) => `P${i + 1}`);
+    const maxPos = Math.max(...races.map(r =>
+        (r.positions || []).filter(p => p !== '' && p !== null).length
+    ));
 
+    // Header row: blank label col + one col per race
     document.getElementById('scoresheetHead').innerHTML = `<tr>
-        <th>Race</th>
-        <th>RO</th>
-        ${posCols.map(p => `<th class="col-center">${escHtml(p)}</th>`).join('')}
-        <th class="col-center">DNF</th>
-        <th class="col-center">DNS</th>
+        <th></th>
+        ${races.map(r => `<th class="col-center">R${escHtml(r.raceNumber)}</th>`).join('')}
     </tr>`;
 
-    document.getElementById('scoresheetBody').innerHTML = races.map(r => {
-        const positions = (r.positions || []).filter(p => p !== '' && p !== null);
-        const dnf = (r.dnf || []).filter(p => p !== '' && p !== null);
-        const dns = (r.dns || []).filter(p => p !== '' && p !== null);
-        const posCells = posCols.map((_, i) =>
-            `<td class="col-center">${escHtml(positions[i] ?? '—')}</td>`
-        ).join('');
+    // Build body rows: P1…Pn, then DNF, DNS, RO
+    const posRows = Array.from({ length: maxPos }, (_, i) => {
+        const cells = races.map(r => {
+            const pos = (r.positions || []).filter(p => p !== '' && p !== null);
+            return `<td class="col-center">${escHtml(pos[i] ?? '—')}</td>`;
+        }).join('');
         return `<tr>
-            <td>${escHtml(r.raceNumber)}</td>
-            <td style="color:var(--foam-dim);font-size:11px;">${escHtml(r.raceRO || '—')}</td>
-            ${posCells}
-            <td class="col-center" style="color:var(--signal);">${dnf.length ? escHtml(dnf.join(', ')) : '—'}</td>
-            <td class="col-center" style="color:var(--foam-dim);">${dns.length ? escHtml(dns.join(', ')) : '—'}</td>
+            <td style="font-family:var(--font-data);font-size:10px;letter-spacing:0.06em;
+                text-transform:uppercase;color:var(--glow);white-space:nowrap;">P${i + 1}</td>
+            ${cells}
         </tr>`;
     }).join('');
+
+    const dnfRow = `<tr>
+        <td style="font-family:var(--font-data);font-size:10px;letter-spacing:0.06em;
+            text-transform:uppercase;color:var(--signal);white-space:nowrap;">DNF</td>
+        ${races.map(r => {
+            const dnf = (r.dnf || []).filter(p => p !== '' && p !== null);
+            return `<td class="col-center" style="color:var(--signal);font-size:12px;">
+                ${dnf.length ? escHtml(dnf.join(', ')) : '—'}</td>`;
+        }).join('')}
+    </tr>`;
+
+    const dnsRow = `<tr>
+        <td style="font-family:var(--font-data);font-size:10px;letter-spacing:0.06em;
+            text-transform:uppercase;color:var(--foam-dim);white-space:nowrap;">DNS</td>
+        ${races.map(r => {
+            const dns = (r.dns || []).filter(p => p !== '' && p !== null);
+            return `<td class="col-center" style="color:var(--foam-dim);font-size:12px;">
+                ${dns.length ? escHtml(dns.join(', ')) : '—'}</td>`;
+        }).join('')}
+    </tr>`;
+
+    const roRow = `<tr>
+        <td style="font-family:var(--font-data);font-size:10px;letter-spacing:0.06em;
+            text-transform:uppercase;color:var(--foam-dim);white-space:nowrap;">RO</td>
+        ${races.map(r =>
+            `<td class="col-center" style="color:var(--foam-dim);font-size:12px;">
+                ${escHtml(r.raceRO || '—')}</td>`
+        ).join('')}
+    </tr>`;
+
+    document.getElementById('scoresheetBody').innerHTML = posRows + dnfRow + dnsRow + roRow;
 
     // Race report if present
     if (json.raceReport) {
