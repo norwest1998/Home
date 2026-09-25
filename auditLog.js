@@ -39,7 +39,7 @@ const AuditLog = {
         wrapper.innerHTML = `
             <button id="auditFilterAllBtn">All ▾</button>
             <div id="auditDomainMenu" style="display:none;position:absolute;top:100%;left:0;z-index:100;
-                background:var(--surface);border:1px solid var(--border);border-radius:6px;min-width:120px;padding:4px 0;margin-top:2px;">
+                background:var(--ocean-mid);border:1px solid var(--glass-border);border-radius:6px;min-width:120px;padding:4px 0;margin-top:2px;">
                 <div class="audit-domain-item" style="padding:6px 12px;cursor:pointer;font-size:12px;">All</div>
                 ${allDomains.map(k => `
                 <div class="audit-domain-item" data-domain="${k}"

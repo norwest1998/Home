@@ -786,13 +786,23 @@
   .log-table .val-error { color: #ff6b6b; font-size: 11.5px; }
 
   /* Audit domain toggle */
-  .audit-toggle { display: flex; gap: 0; border: 1px solid var(--glass-border); border-radius: 8px; overflow: hidden; }
+  .audit-toggle { 
+      display: flex; gap: 0; 
+      border: 1px solid var(--glass-border); 
+      border-radius: 8px; 
+  }
+
   .audit-toggle button {
       padding: 5px 14px; font-size: 11.5px; font-family: inherit; cursor: pointer;
       background: transparent; border: none; color: var(--foam-dim); transition: background .15s, color .15s;
   }
   .audit-toggle button.active { background: rgba(255,255,255,0.1); color: var(--foam); }
-
+  .audit-toggle > button:first-child { 
+      border-top-left-radius: 7px; border-bottom-left-radius: 7px; 
+  }
+  .audit-toggle .audit-dropdown-wrap > button { 
+      border-top-right-radius: 7px; border-bottom-right-radius: 7px; 
+  }
   /* Before / After value tabs */
   .val-tabs { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
   .val-tab-btns { display: flex; gap: 0; border: 1px solid var(--glass-border); border-radius: 6px; overflow: hidden; width: fit-content; }
