@@ -3345,7 +3345,7 @@
 
         try {
           if (typeof fetchSheet === 'function') {
-            rawRequestsData = await fetchSheet("calendar", "AvgScrReq");
+            rawRequestsData = await apiGet("AvgScrReq");
           } else {
             rawRequestsData = [];
           }
