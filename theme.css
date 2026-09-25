@@ -242,7 +242,7 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    margin-Bottom: 6px
+    margin-Bottom: 6px;
   }
   .panel-title-left {
     display: flex;
