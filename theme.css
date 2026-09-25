@@ -827,7 +827,40 @@
   .log-table-wrap::-webkit-scrollbar {
       display: none;                /* Chrome/Safari */
   }
-  
+
+  /* Utility class — add to any element that scrolls */
+.no-scrollbar,
+/* Blanket — all standard SMMC scrollable wrappers */
+.log-table-wrap,
+.em-table-wrap,
+.dash-table-wrap,
+.batch-contacts-wrap,
+.list-scroll,
+.drawer-body,
+.drawer-overlay .drawer,
+.modal,
+.app-list,
+.tab-content {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE / Edge */
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.log-table-wrap::-webkit-scrollbar,
+.em-table-wrap::-webkit-scrollbar,
+.dash-table-wrap::-webkit-scrollbar,
+.batch-contacts-wrap::-webkit-scrollbar,
+.list-scroll::-webkit-scrollbar,
+.drawer-body::-webkit-scrollbar,
+.drawer-overlay .drawer::-webkit-scrollbar,
+.modal::-webkit-scrollbar,
+.app-list::-webkit-scrollbar,
+.tab-content::-webkit-scrollbar {
+  display: none;               /* Chrome / Safari / Edge (Chromium) */
+}
+
+.ql-editor { scrollbar-width: none; -ms-overflow-style: none; }
+.ql-editor::-webkit-scrollbar { display: none; }
   /* =========================================================
     FOOTER
     ========================================================= */
