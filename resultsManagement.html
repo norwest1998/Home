@@ -53,7 +53,7 @@
 
 .result-row {
     display: grid;
-    grid-template-columns: 44px 1fr auto auto auto;
+    grid-template-columns: 44px 1fr auto auto 108px;
     align-items: center; gap: 12px;
     padding: 11px 14px;
     background: var(--glass-fill);
@@ -465,8 +465,36 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 </div>
 
 <!-- ================================================================
-     AVERAGE SCORE REQUEST MODAL
+     ROUND RESULTS MODAL
      ================================================================ -->
+<div class="modal-overlay" id="roundResultsModal" onclick="if(event.target===this)closeRoundResults()">
+    <div class="modal-box" style="max-width:900px;">
+        <div class="modal-header">
+            <div>
+                <h3 id="rrModalTitle">Round Results</h3>
+                <div class="modal-header-meta" id="rrModalMeta"></div>
+            </div>
+            <button class="icon-btn" onclick="closeRoundResults()" title="Close">
+                <i class="inline-icon" data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-meta-grid" id="rrModalMetaGrid" style="margin-bottom:12px;"></div>
+            <div class="standings-status" id="rrStatusLine"></div>
+            <div class="sheet-meta" id="rrSheetMeta" style="margin-bottom:12px;"></div>
+            <div class="round-tabs" id="rrRoundTabs"></div>
+            <div class="table-scroll">
+                <table class="standings">
+                    <thead id="rrTableHead"></thead>
+                    <tbody id="rrTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="closeRoundResults()">Close</button>
+        </div>
+    </div>
+</div>
 <div class="modal-overlay" id="avgReqModal" onclick="if(event.target===this)closeAvgReqModal()">
     <div class="modal-box" style="max-width:520px;">
         <div class="modal-header">
@@ -711,6 +739,9 @@ const filterResults = debounce(function() {
             <div class="row-actions">
                 <button class="icon-btn" title="View Results" onclick="event.stopPropagation();openScoresheet('${escHtml(f.id)}','${escHtml(f.name)}')">
                     <i class="inline-icon" data-lucide="book-open-text"></i>
+                </button>
+                <button class="icon-btn" title="Open Round Results" onclick="event.stopPropagation();openRoundResults('${escHtml(f.id)}','${escHtml(f.name)}')">
+                    <i class="inline-icon" data-lucide="trophy"></i>
                 </button>
                 <button class="icon-btn" title="Open File in Drive" onclick="event.stopPropagation();openFileDrive('${escHtml(f.id)}')">
                     <i class="inline-icon" data-lucide="external-link"></i>
@@ -989,6 +1020,139 @@ function renderScoresheetModal(json, parsed) {
 
 function closeScoresheet() {
     document.getElementById('scoresheetModal').classList.remove('open');
+}
+
+// ----------------------------------------------------------------
+// ROUND RESULTS MODAL — renders finished scorecard from Overall Sheet
+// ----------------------------------------------------------------
+let rrActiveRoundIdx = 0;
+let rrSheets         = [];   // [{name, gid}] for active spreadsheet
+let rrSpreadsheetId  = null;
+let rrFileJson       = null; // cached JSON from the processed file
+
+async function openRoundResults(fileId, fileName) {
+    // Reset modal
+    document.getElementById('rrModalTitle').textContent   = 'Round Results';
+    document.getElementById('rrModalMeta').textContent    = '';
+    document.getElementById('rrModalMetaGrid').innerHTML  = '';
+    document.getElementById('rrRoundTabs').innerHTML      = '';
+    document.getElementById('rrSheetMeta').textContent    = '';
+    document.getElementById('rrStatusLine').textContent   = 'Loading…';
+    document.getElementById('rrTableHead').innerHTML      = '';
+    document.getElementById('rrTableBody').innerHTML      =
+        '<tr><td colspan="99" style="text-align:center;padding:20px;"><span class="spinner"></span></td></tr>';
+    document.getElementById('roundResultsModal').classList.add('open');
+
+    try {
+        // 1. Fetch the processed file JSON to get class/type/date
+        const json   = await fetchDriveFile(fileId);
+        rrFileJson   = json;
+        const parsed = parseFileName(fileName);
+
+        document.getElementById('rrModalTitle').textContent = `${escHtml(json.regattaName || parsed.raceClass + ' ' + parsed.raceType)} — Round Results`;
+        document.getElementById('rrModalMeta').textContent  = json.regattaDate || parsed.dateStr || '';
+
+        // Meta strip
+        document.getElementById('rrModalMetaGrid').innerHTML = [
+            { label: 'Class',   value: json.className   || parsed.raceClass },
+            { label: 'Type',    value: json.regattaName || parsed.raceType  },
+            { label: 'Date',    value: json.regattaDate || parsed.dateStr   },
+            { label: 'Starters', value: json.competitorCount ?? '—' },
+        ].map(m => `
+            <div class="modal-meta-item">
+                <span class="modal-meta-label">${escHtml(m.label)}</span>
+                <span class="modal-meta-value">${escHtml(m.value)}</span>
+            </div>`).join('');
+
+        // 2. Match to an Overall Sheet by class + type
+        const regattaName = String(json.regattaName || '').toLowerCase();
+        const sheet = allOverallSheets.find(s => {
+            const nameMatch  = regattaName.includes(s.raceClass.toLowerCase());
+            const typeMatch  = regattaName.includes(s.raceType.toLowerCase());
+            return nameMatch && typeMatch;
+        });
+
+        if (!sheet || !sheet.id) throw new Error(
+            `No Overall Results sheet found matching "${json.regattaName}". Load the Overall Sheets first.`
+        );
+
+        rrSpreadsheetId = sheet.id;
+
+        // 3. Discover round tabs
+        rrSheets = await getOverallRounds(rrSpreadsheetId);
+        if (!rrSheets.length) throw new Error('No round sheets found in this spreadsheet.');
+
+        // 4. Try to find the tab matching the regatta date
+        const dateStr = json.regattaDate || parsed.dateStr || '';
+        const [d, mo, y] = dateStr.split('/');
+        const matchIdx = rrSheets.findIndex(s => {
+            const n = s.name.toLowerCase();
+            return n.includes(dateStr) || (d && n.includes(`${d}/${mo}`) ) || n.includes(`round`);
+        });
+        rrActiveRoundIdx = matchIdx >= 0 ? matchIdx : rrSheets.length - 1; // default to latest
+
+        renderRRTabs();
+        await loadRRSheet();
+
+    } catch (err) {
+        document.getElementById('rrStatusLine').textContent = '';
+        document.getElementById('rrTableBody').innerHTML =
+            `<tr><td colspan="99" style="color:var(--signal);padding:16px;">${escHtml(err.message)}</td></tr>`;
+    }
+}
+
+function renderRRTabs() {
+    document.getElementById('rrRoundTabs').innerHTML = rrSheets.map((s, i) =>
+        `<button class="round-tab ${i === rrActiveRoundIdx ? 'active' : ''}" data-index="${i}">${escHtml(s.name)}</button>`
+    ).join('');
+    document.getElementById('rrRoundTabs').querySelectorAll('.round-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            rrActiveRoundIdx = parseInt(btn.dataset.index);
+            renderRRTabs();
+            loadRRSheet();
+        });
+    });
+}
+
+async function loadRRSheet() {
+    document.getElementById('rrTableHead').innerHTML = '';
+    document.getElementById('rrTableBody').innerHTML =
+        '<tr><td colspan="99" style="text-align:center;padding:20px;"><span class="spinner"></span></td></tr>';
+    document.getElementById('rrStatusLine').textContent = 'Loading…';
+
+    try {
+        const round = rrSheets[rrActiveRoundIdx];
+        const { meta, headers, rows } = await fetchOverallSheet(rrSpreadsheetId, round.name);
+
+        document.getElementById('rrSheetMeta').textContent = (meta || []).join(' • ');
+        document.getElementById('rrStatusLine').textContent = round.name;
+
+        const CENTER_HEADERS = /^(R\d+|Round\s*\d+|Pos|Result|Sail\s*#|Total|Drop|W|T3|T5|Rank|Discard)$/i;
+        const centerCols = headers.map(h => CENTER_HEADERS.test(String(h).trim()));
+        const attIdx     = headers.findIndex(h => String(h).trim().toUpperCase() === 'ATT');
+        const filteredRows = attIdx >= 0 ? rows.filter(r => Number(r[attIdx]) > 0) : rows;
+
+        document.getElementById('rrTableHead').innerHTML =
+            '<tr>' + headers.map((h, i) =>
+                `<th class="${centerCols[i] ? 'col-center' : ''}">${escHtml(h)}</th>`
+            ).join('') + '</tr>';
+
+        document.getElementById('rrTableBody').innerHTML = filteredRows.map(r =>
+            '<tr>' + r.map((c, i) =>
+                `<td class="${centerCols[i] ? 'col-center' : ''}">${escHtml(c)}</td>`
+            ).join('') + '</tr>'
+        ).join('');
+
+        if (window.lucide) lucide.createIcons();
+    } catch (err) {
+        document.getElementById('rrStatusLine').textContent = 'Error: ' + err.message;
+        document.getElementById('rrTableBody').innerHTML = '';
+    }
+}
+
+function closeRoundResults() {
+    document.getElementById('roundResultsModal').classList.remove('open');
+    rrFileJson = null;
 }
 
 // ----------------------------------------------------------------
