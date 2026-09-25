@@ -890,8 +890,15 @@ async function openScoresheet(fileId, fileName) {
         const json = await fetchDriveFile(fileId);
         renderScoresheetModal(json, parsed);
     } catch (err) {
-        document.getElementById('scoresheetBody').innerHTML =
-            `<tr><td colspan="99" style="color:var(--signal);padding:16px;">${escHtml(err.message)}</td></tr>`;
+        // If it's not JSON, offer Drive link instead
+        document.getElementById('scoresheetBody').innerHTML = `
+            <tr><td colspan="99" style="padding:20px;text-align:center;">
+                <p style="color:var(--foam-dim);margin-bottom:12px;">${escHtml(err.message)}</p>
+                <button class="btn btn-ghost" onclick="openFileDrive('${escHtml(fileId)}')">
+                    <i class="inline-icon" data-lucide="external-link"></i> Open in Drive
+                </button>
+            </td></tr>`;
+        if (window.lucide) lucide.createIcons();
     }
 }
 
