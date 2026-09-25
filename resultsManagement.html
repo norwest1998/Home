@@ -206,9 +206,9 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 
 /* Modal meta section */
 .modal-meta-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
 }
-@media (max-width: 600px) { .modal-meta-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .modal-meta-grid { grid-template-columns: repeat(3, 1fr); } }
 .modal-meta-item {
     background: var(--glass-fill); border: 1px solid var(--glass-border);
     border-radius: 10px; padding: 10px 12px;
@@ -890,25 +890,20 @@ async function openScoresheet(fileId, fileName) {
         const json = await fetchDriveFile(fileId);
         renderScoresheetModal(json, parsed);
     } catch (err) {
-        // If it's not JSON, offer Drive link instead
-        document.getElementById('scoresheetBody').innerHTML = `
-            <tr><td colspan="99" style="padding:20px;text-align:center;">
-                <p style="color:var(--foam-dim);margin-bottom:12px;">${escHtml(err.message)}</p>
-                <button class="btn btn-ghost" onclick="openFileDrive('${escHtml(fileId)}')">
-                    <i class="inline-icon" data-lucide="external-link"></i> Open in Drive
-                </button>
-            </td></tr>`;
-        if (window.lucide) lucide.createIcons();
+        document.getElementById('scoresheetBody').innerHTML =
+            `<tr><td colspan="99" style="color:var(--signal);padding:16px;">${escHtml(err.message)}</td></tr>`;
     }
 }
 
 function renderScoresheetModal(json, parsed) {
-    // Build top meta grid
+    // Meta grid
     const metaItems = [
-        { label: 'Class',   value: parsed.raceClass || json.class || '—' },
-        { label: 'Type',    value: parsed.raceType  || json.type  || '—' },
-        { label: 'Date',    value: parsed.dateStr   || json.date  || '—' },
-        { label: 'Starters',value: (json.results || []).length    || '—' },
+        { label: 'Class',       value: json.className    || parsed.raceClass || '—' },
+        { label: 'Type',        value: json.regattaName  || parsed.raceType  || '—' },
+        { label: 'Date',        value: json.regattaDate  || parsed.dateStr   || '—' },
+        { label: 'Start',       value: json.startTime    || '—' },
+        { label: 'End',         value: json.endTime      || '—' },
+        { label: 'Competitors', value: json.competitorCount ?? '—' },
     ];
     document.getElementById('modalMetaGrid').innerHTML = metaItems.map(m => `
         <div class="modal-meta-item">
@@ -916,19 +911,53 @@ function renderScoresheetModal(json, parsed) {
             <span class="modal-meta-value">${escHtml(m.value)}</span>
         </div>`).join('');
 
-    const results = json.results || [];
-    if (!results.length) {
+    const races = json.races || [];
+    if (!races.length) {
         document.getElementById('scoresheetBody').innerHTML =
-            '<tr><td colspan="99" style="text-align:center;padding:20px;color:var(--foam-dim);">No result rows in this file.</td></tr>';
+            '<tr><td colspan="99" style="text-align:center;padding:20px;color:var(--foam-dim);">No race data in this file.</td></tr>';
         return;
     }
 
-    // Derive columns from first row
-    const cols = Object.keys(results[0]);
-    document.getElementById('scoresheetHead').innerHTML =
-        `<tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr>`;
-    document.getElementById('scoresheetBody').innerHTML = results.map(row => `
-        <tr>${cols.map(c => `<td>${escHtml(row[c] ?? '—')}</td>`).join('')}</tr>`).join('');
+    // Build columns: Race# | RO | then one col per finishing position
+    const maxPos = Math.max(...races.map(r => (r.positions || []).length));
+    const posCols = Array.from({ length: maxPos }, (_, i) => `P${i + 1}`);
+
+    document.getElementById('scoresheetHead').innerHTML = `<tr>
+        <th>Race</th>
+        <th>RO</th>
+        ${posCols.map(p => `<th class="col-center">${escHtml(p)}</th>`).join('')}
+        <th class="col-center">DNF</th>
+        <th class="col-center">DNS</th>
+    </tr>`;
+
+    document.getElementById('scoresheetBody').innerHTML = races.map(r => {
+        const positions = (r.positions || []).filter(p => p !== '' && p !== null);
+        const dnf = (r.dnf || []).filter(p => p !== '' && p !== null);
+        const dns = (r.dns || []).filter(p => p !== '' && p !== null);
+        const posCells = posCols.map((_, i) =>
+            `<td class="col-center">${escHtml(positions[i] ?? '—')}</td>`
+        ).join('');
+        return `<tr>
+            <td>${escHtml(r.raceNumber)}</td>
+            <td style="color:var(--foam-dim);font-size:11px;">${escHtml(r.raceRO || '—')}</td>
+            ${posCells}
+            <td class="col-center" style="color:var(--signal);">${dnf.length ? escHtml(dnf.join(', ')) : '—'}</td>
+            <td class="col-center" style="color:var(--foam-dim);">${dns.length ? escHtml(dns.join(', ')) : '—'}</td>
+        </tr>`;
+    }).join('');
+
+    // Race report if present
+    if (json.raceReport) {
+        document.getElementById('scoresheetBody').innerHTML += `
+            <tr><td colspan="99" style="padding:14px 8px;">
+                <div style="font-size:12px;color:var(--foam-dim);line-height:1.6;
+                    background:var(--glass-fill);border-radius:8px;padding:12px 14px;
+                    border:1px solid var(--glass-border);">
+                    ${escHtml(json.raceReport)}
+                </div>
+            </td></tr>`;
+    }
+
     if (window.lucide) lucide.createIcons();
 }
 
