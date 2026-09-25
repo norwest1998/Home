@@ -3321,7 +3321,7 @@
           });
         }
       }
-      
+
       document.getElementById("reqEventDate").addEventListener("change", function(e) {
         const misDate = document.getElementById("reqEventDate").value;
         const selectedOpt = document.getElementById("reqBoatClass").value;
@@ -3339,7 +3339,6 @@
             document.getElementById("reqConflictingRegatta").value  = getConflictingEvents(selectedOpt, formatDate(misDate));
           }
         }
-
         document.getElementById("reqEventDate") = formatDate(misDate);
       });
       
@@ -3411,15 +3410,23 @@
         }
       }
 
-      function formatDate(date) {
+      function formatDate(dateInput) {
+        if (!dateInput) return '';
 
+        // If passed a string (e.g. "2026-09-26"), parse it into a Date object
+        let date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+
+        // Check if it's a valid date
+        if (isNaN(date.getTime())) {
+          return dateInput; // Fallback if invalid
+        }
+
+        // Now .getFullYear() works properly
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
 
-        const formattedDate = `${year}/${month}/${day}`;
-
-        return formattedDate;
+        return `${day}/${month}/${year}`; // Adjust format as needed (e.g. DD/MM/YYYY)
       }
 
       function applyFiltersAndRender() {
