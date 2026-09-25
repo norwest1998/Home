@@ -53,7 +53,7 @@
 
 .result-row {
     display: grid;
-    grid-template-columns: 32px 1fr auto auto auto;
+    grid-template-columns: 44px 1fr auto auto auto;
     align-items: center; gap: 12px;
     padding: 11px 14px;
     background: var(--glass-fill);
@@ -73,7 +73,19 @@
 .result-row .r-meta { font-size: 11.5px; color: var(--foam-dim); }
 .result-row .r-type { font-family: var(--font-data); font-size: 10.5px; color: var(--foam-dim); white-space: nowrap; }
 
-/* ── Icon buttons ── */
+/* ── Inline class insignia in rows ── */
+.row-insignia {
+    width: 36px; height: 36px; flex-shrink: 0;
+    object-fit: contain;
+    background: rgba(255,255,255,0.85);
+    border-radius: 6px; padding: 3px;
+    filter: drop-shadow(0 1px 4px rgba(0,0,0,0.35));
+}
+.row-insignia-placeholder {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border-radius: 6px; background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+}
 .icon-btn {
     display: inline-flex; align-items: center; justify-content: center;
     width: 30px; height: 30px;
@@ -84,7 +96,7 @@
 }
 .icon-btn:hover { background: var(--glass-fill-hi); color: var(--foam); }
 
-.row-actions { display: flex; gap: 6px; align-items: center; }
+.row-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; flex-wrap: nowrap; }
 
 /* ── Feedback message ── */
 .fn-message {
@@ -555,7 +567,27 @@ function parseSheetName(name) {
 }
 
 // ----------------------------------------------------------------
-// STATS
+// CLASS INSIGNIA
+// ----------------------------------------------------------------
+const CLASS_IMAGE_MAP = {
+    'DF95':    '/Home/images/classes/DF95.png',
+    'IOM':     '/Home/images/classes/IOM.png',
+    'Soling':  '/Home/images/classes/Soling.png',
+    'General': '/Home/images/classes/smmc-logo.png',
+    'DF65':    '/Home/images/classes/DF65.png',
+    'Social':  '/Home/images/classes/SmileyFace.png',
+};
+
+function getClassImage(raceClass) {
+    if (!raceClass) return '';
+    // Match on first word or full class name
+    const key = Object.keys(CLASS_IMAGE_MAP).find(k =>
+        String(raceClass).toLowerCase().includes(k.toLowerCase())
+    );
+    return key ? CLASS_IMAGE_MAP[key] : '';
+}
+
+// ----------------------------------------------------------------
 // ----------------------------------------------------------------
 function renderStats() {
     const now   = new Date();
@@ -662,8 +694,20 @@ const filterResults = debounce(function() {
         return;
     }
 
-    document.getElementById('resultRows').innerHTML = list.map(f => `
+    document.getElementById('resultRows').innerHTML = list.map(f => {
+        const imgSrc = getClassImage(f.raceClass);
+        const imgEl  = imgSrc
+            ? `<img class="row-insignia" src="${escHtml(imgSrc)}" alt="${escHtml(f.raceClass)}">`
+            : `<div class="row-insignia-placeholder"></div>`;
+        return `
         <div class="result-row" onclick="openScoresheet('${escHtml(f.id)}', '${escHtml(f.name)}')">
+            ${imgEl}
+            <div>
+                <div class="r-name">${escHtml(f.raceClass)} ${escHtml(f.raceType)}</div>
+                <div class="r-meta">${escHtml(f.raw)}</div>
+            </div>
+            <div class="r-date">${escHtml(f.dateStr || '—')}</div>
+            <span class="badge badge-approved">Processed</span>
             <div class="row-actions">
                 <button class="icon-btn" title="View Results" onclick="event.stopPropagation();openScoresheet('${escHtml(f.id)}','${escHtml(f.name)}')">
                     <i class="inline-icon" data-lucide="book-open-text"></i>
@@ -672,14 +716,8 @@ const filterResults = debounce(function() {
                     <i class="inline-icon" data-lucide="external-link"></i>
                 </button>
             </div>
-            <div>
-                <div class="r-name">${escHtml(f.raceClass)} ${escHtml(f.raceType)}</div>
-                <div class="r-meta">${escHtml(f.raw)}</div>
-            </div>
-            <div class="r-date">${escHtml(f.dateStr || '—')}</div>
-            <span class="badge badge-approved">Processed</span>
-            <i class="inline-icon" data-lucide="chevron-right" style="color:var(--foam-dim)"></i>
-        </div>`).join('');
+        </div>`;
+    }).join('');
     if (window.lucide) lucide.createIcons();
 });
 
