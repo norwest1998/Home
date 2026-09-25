@@ -912,7 +912,7 @@ function openRecordModal(key, isBatch) {
     document.getElementById("rResponse").value="";document.getElementById("rComments").value="";
   } else {
     const decoded=decodeURIComponent(key);
-    const r=trackRows.find(row=>(row["Batch Key"]||")===decoded||(row["Batch Key"]||"")===key);
+    const r=trackRows.find(row=>(row["Batch Key"]||"")===decoded||(row["Batch Key"]||"")===key);
     if(!r) return;
     editingKey=r["Batch Key"];
     document.getElementById("recordModalTitle").textContent=`${r["Contact Name"]||"Record"} — ${r["Club"]||""}`;
