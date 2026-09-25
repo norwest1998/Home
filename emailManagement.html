@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="smmc-domain" content="tracking">
+<title>Email Management — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* =========================================================
+   EMAIL MANAGEMENT PAGE — SMMC conventions
+   ========================================================= */
+
+/* Stats board */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+.stat-card {
+    padding: 20px 18px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.stat-card .stat-val {
+    font-family: var(--font-display);
+    font-size: 32px;
+    color: var(--foam);
+    line-height: 1;
+}
+.stat-card .stat-val.warn  { color: #ffb347; }
+.stat-card .stat-val.good  { color: var(--glow); }
+.stat-card .stat-val.bad   { color: var(--signal); }
+.stat-card .stat-label {
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--foam-dim);
+    text-transform: uppercase;
+}
+.stat-card .stat-sub { font-size: 11px; color: var(--foam-dim); }
+
+/* Toolbar */
+.em-toolbar {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    align-items: center; margin-bottom: 16px;
+}
+.em-toolbar .search-wrap { flex: 1; min-width: 220px; margin-bottom: 0; }
+
+/* Glass select — copied from notes.html */
+.glass-select {
+    appearance: none; -webkit-appearance: none;
+    background: rgba(255,255,255,0.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0b8c8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--foam);
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 12px;
+    padding: 5px 30px 5px 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    min-width: 120px;
+}
+.glass-select:hover  { background-color: rgba(255,255,255,0.12); border-color: var(--foam-dim); }
+.glass-select:focus  { outline: none; border-color: var(--foam); }
+.glass-select option { background: #0f2535; color: var(--foam); }
+
+/* Table */
+.em-table-wrap { max-height: 520px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+table.em-table  { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.em-table th {
+    position: sticky; top: 0; background: var(--ocean-mid);
+    text-align: left; padding: 8px 10px;
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim); border-bottom: 1px solid var(--glass-border);
+    white-space: nowrap;
+}
+.em-table td {
+    padding: 8px 10px; border-bottom: 1px solid var(--glass-border);
+    color: var(--foam); vertical-align: middle;
+}
+.em-table tr:last-child td { border-bottom: none; }
+.em-table tr.clickable { cursor: pointer; }
+.em-table tr.clickable:hover td { background: rgba(255,255,255,0.04); }
+
+/* Dashboard batch table */
+.dash-table-wrap { max-height: 300px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); margin-bottom: 20px; }
+table.dash-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.dash-table th {
+    position: sticky; top: 0; background: var(--ocean-mid);
+    text-align: left; padding: 7px 10px;
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim); border-bottom: 1px solid var(--glass-border);
+    white-space: nowrap;
+}
+.dash-table td {
+    padding: 7px 10px; border-bottom: 1px solid var(--glass-border);
+    color: var(--foam); vertical-align: middle;
+}
+.dash-table tr:last-child td { border-bottom: none; }
+.dash-table tr.clickable { cursor: pointer; }
+.dash-table tr.clickable:hover td { background: rgba(255,255,255,0.04); }
+
+/* Modal overlay */
+.modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); z-index: 1000;
+    align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+    background: var(--ocean-mid);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    width: 100%; max-width: 860px;
+    max-height: 90vh; overflow-y: auto;
+    padding: 28px;
+    display: flex; flex-direction: column; gap: 20px;
+}
+.modal-header {
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 12px;
+}
+.modal-header h3 { font-size: 18px; color: var(--foam); }
+.modal-close {
+    background: none; border: none; color: var(--foam-dim);
+    cursor: pointer; padding: 4px; font-size: 20px; transition: color 0.15s;
+}
+.modal-close:hover { color: var(--foam); }
+.modal-footer {
+    display: flex; justify-content: flex-end;
+    gap: 10px; flex-wrap: wrap; padding-top: 4px;
+    align-items: center;
+}
+.modal-status { font-size: 12px; display: none; }
+.modal-status.visible { display: block; }
+.modal-status.success { color: var(--glow); }
+.modal-status.error   { color: #ff6b6b; }
+
+/* Detail grid inside modal */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+.detail-grid.triple { grid-template-columns: 1fr 1fr 1fr; }
+.detail-item { display: flex; flex-direction: column; gap: 4px; }
+.detail-item.full { grid-column: 1 / -1; }
+.detail-label {
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim);
+}
+.detail-value {
+    font-size: 13px; color: var(--foam);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px; padding: 8px 12px;
+    min-height: 36px;
+}
+.detail-value.editable {
+    background: rgba(255,255,255,0.06);
+    transition: border-color 0.2s;
+}
+.detail-value.editable:focus { outline: none; border-color: var(--foam); }
+
+/* Batch detail sub-table inside modal */
+.batch-contacts-wrap {
+    max-height: 260px; overflow: auto;
+    border-radius: 8px; border: 1px solid var(--glass-border);
+}
+table.batch-contacts { width: 100%; border-collapse: collapse; font-size: 12px; }
+.batch-contacts th {
+    position: sticky; top: 0; background: var(--ocean-mid);
+    text-align: left; padding: 6px 10px;
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim); border-bottom: 1px solid var(--glass-border);
+}
+.batch-contacts td {
+    padding: 6px 10px; border-bottom: 1px solid var(--glass-border); color: var(--foam);
+}
+.batch-contacts tr:last-child td { border-bottom: none; }
+
+/* Spinner */
+.spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-top-color: var(--foam);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite; vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-row td { text-align: center; color: var(--foam-dim); font-size: 12px; padding: 24px; }
+
+/* Progress bar */
+.progress-bar-wrap {
+    background: rgba(255,255,255,0.08); border-radius: 4px; height: 6px; overflow: hidden;
+}
+.progress-bar { height: 100%; border-radius: 4px; background: var(--glow); transition: width 0.4s; }
+.progress-bar.warn  { background: #ffb347; }
+.progress-bar.bad   { background: var(--signal); }
+</style>
+</head>
+<body>
+
+<div id="nav-placeholder"></div>
+
+<main class="container">
+
+    <!-- ===================== DASHBOARD STATS ===================== -->
+    <div class="section-head" id="email-dashboard">
+        <h2>Email Dashboard</h2>
+        <p>Summary of all email communications across all batches.</p>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+        <div class="glass stat-card"><div class="stat-val" id="stat-sent"><span class="spinner"></span></div><div class="stat-label">Emails Sent</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-responded"><span class="spinner"></span></div><div class="stat-label">Responded</div><div class="stat-sub" id="stat-responded-pct"></div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-opened"><span class="spinner"></span></div><div class="stat-label">Opened</div><div class="stat-sub" id="stat-opened-pct"></div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-pending"><span class="spinner"></span></div><div class="stat-label">Awaiting Response</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-reminders"><span class="spinner"></span></div><div class="stat-label">Reminders Sent</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-avg-days"><span class="spinner"></span></div><div class="stat-label">Avg Response Days</div></div>
+    </div>
+
+    <!-- ===================== BATCH DASHBOARD ===================== -->
+    <div class="section-head" id="email-batches">
+        <h2>Communication Batches</h2>
+        <p>Each batch represents one email campaign or communication round (from the Dashboard sheet).</p>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title-left"><span class="dot"></span><h3>Batches</h3></div>
+            <button class="btn btn-ghost" id="refreshDashBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+        </div>
+        <div class="tab-content active">
+            <div class="dash-table-wrap">
+                <table class="dash-table">
+                    <thead><tr>
+                        <th>Key</th><th>Title</th><th>Date Sent</th>
+                        <th>Sent</th><th>Responded</th><th>% Response</th>
+                        <th>Opened</th><th>% Opened</th><th>Avg Days</th>
+                    </tr></thead>
+                    <tbody id="dashBody">
+                        <tr class="spinner-row"><td colspan="9"><span class="spinner"></span> Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="dashEmpty" style="display:none;">No batch data found.</div>
+        </div>
+    </div>
+
+    <!-- ===================== TRACKING RECORDS ===================== -->
+    <div class="section-head" id="email-tracking">
+        <h2>Tracking Records</h2>
+        <p>Individual email records from the Tracking sheet. Click a row to view or update.</p>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title-left"><span class="dot"></span><h3>Records</h3></div>
+        </div>
+        <div class="tab-content active">
+            <div class="em-toolbar">
+                <div class="search-wrap">
+                    <i class="nav-icon search-icon" data-lucide="search"></i>
+                    <input class="search-input" id="trackSearch" placeholder="Search club, contact, email, status…">
+                </div>
+                <select class="glass-select" id="filterStatus">
+                    <option value="">All Statuses</option>
+                    <option value="Sent">Sent</option>
+                    <option value="Responded">Responded</option>
+                    <option value="Updated">Updated</option>
+                    <option value="No Response">No Response</option>
+                </select>
+                <select class="glass-select" id="filterBatch">
+                    <option value="">All Batches</option>
+                </select>
+                <select class="glass-select" id="filterReminder">
+                    <option value="">All Reminders</option>
+                    <option value="Yes">Reminder Sent</option>
+                    <option value="">No Reminder</option>
+                </select>
+                <button class="btn btn-ghost" id="refreshTrackBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+            </div>
+            <div class="em-table-wrap">
+                <table class="em-table">
+                    <thead><tr>
+                        <th>Club</th><th>Contact</th><th>Role</th><th>Email</th>
+                        <th>Status</th><th>Date Sent</th><th>Date Updated</th>
+                        <th>Response</th><th>Days</th><th>Opens</th><th>Reminder</th><th>Comments</th>
+                    </tr></thead>
+                    <tbody id="trackBody">
+                        <tr class="spinner-row"><td colspan="12"><span class="spinner"></span> Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="trackEmpty" style="display:none;">No tracking records found.</div>
+        </div>
+    </div>
+
+    <!-- AUDIT LOG -->
+    <div id="auditLog-placeholder"></div>
+
+    <footer>
+        <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+    </footer>
+</main>
+
+<!-- ===================== RECORD DETAIL MODAL ===================== -->
+<div class="modal-overlay" id="recordModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="recordModalTitle">Email Record</h3>
+            <button class="modal-close" id="recordModalClose">✕</button>
+        </div>
+
+        <!-- Read-only context -->
+        <div class="detail-grid triple">
+            <div class="detail-item">
+                <span class="detail-label">Club</span>
+                <span class="detail-value" id="rClub"></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Contact Name</span>
+                <span class="detail-value" id="rContact"></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Role</span>
+                <span class="detail-value" id="rRole"></span>
+            </div>
+        </div>
+        <div class="detail-grid triple">
+            <div class="detail-item">
+                <span class="detail-label">Recipient Email</span>
+                <span class="detail-value" id="rEmail"></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Date Sent</span>
+                <span class="detail-value" id="rSent"></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Batch Key</span>
+                <span class="detail-value" id="rBatch" style="font-size:10px;word-break:break-all;"></span>
+            </div>
+        </div>
+        <div class="detail-grid triple">
+            <div class="detail-item">
+                <span class="detail-label">Date Opened</span>
+                <span class="detail-value" id="rOpened"></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Open Count</span>
+                <span class="detail-value" id="rOpenCount"></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Response Days</span>
+                <span class="detail-value" id="rDays"></span>
+            </div>
+        </div>
+
+        <hr style="border-color: var(--glass-border);">
+
+        <!-- Editable fields -->
+        <div class="detail-grid triple">
+            <div class="detail-item">
+                <label class="detail-label" for="rStatus">Email Status *</label>
+                <select id="rStatus" class="detail-value editable" style="cursor:pointer;">
+                    <option value="Sent">Sent</option>
+                    <option value="Responded">Responded</option>
+                    <option value="Updated">Updated</option>
+                    <option value="No Response">No Response</option>
+                    <option value="Bounced">Bounced</option>
+                </select>
+            </div>
+            <div class="detail-item">
+                <label class="detail-label" for="rReminder">Reminder Sent</label>
+                <select id="rReminder" class="detail-value editable" style="cursor:pointer;">
+                    <option value="">No</option>
+                    <option value="Yes">Yes</option>
+                </select>
+            </div>
+            <div class="detail-item">
+                <label class="detail-label" for="rResponse">Email Response</label>
+                <select id="rResponse" class="detail-value editable" style="cursor:pointer;">
+                    <option value="">—</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Partial">Partial</option>
+                </select>
+            </div>
+        </div>
+        <div class="detail-item full" style="grid-column: 1/-1;">
+            <label class="detail-label" for="rComments">Comments</label>
+            <textarea id="rComments" class="detail-value editable" rows="3"
+                style="resize:vertical;font-family:var(--font-body);font-size:13px;"></textarea>
+        </div>
+
+        <div class="modal-footer">
+            <span class="modal-status" id="recordModalStatus"></span>
+            <button class="btn btn-ghost" id="recordModalCancel">Cancel</button>
+            <button class="btn btn-primary" id="recordModalSave">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="shared.js"></script>
+<script src="nav.js"></script>
+<script src="auditLog.js"></script>
+<script>
+/* =========================================================
+   EMAIL MANAGEMENT — DATA LAYER
+   Uses DOMAIN.tracking → spreadsheetId 1T9Hojn4zW7C-2UXg8O8OYKcq_BRYqCHsgU2n3S1IW8o
+   ========================================================= */
+
+const TRACKING_DOMAIN = DOMAIN.tracking;  // "tracking"
+
+let dashRows    = [];   // Dashboard sheet rows
+let trackRows   = [];   // Tracking sheet rows
+let editingKey  = null; // Batch Key of row being edited
+
+/* --- helpers ------------------------------------------------ */
+function fmtDate(val) {
+    if (!val) return "—";
+    const d = new Date(val);
+    return isNaN(d) ? val : d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+}
+function pct(n, d) {
+    if (!d) return "—";
+    return Math.round((n / d) * 100) + "%";
+}
+function statusBadge(status) {
+    const map = {
+        "Responded":   "badge-full",
+        "Updated":     "badge-affiliate",
+        "Sent":        "badge-default",
+        "No Response": "badge-expired",
+        "Bounced":     "badge-renewal",
+    };
+    const cls = map[status] || "badge-default";
+    return `<span class="badge ${cls}">${escapeHtml(status || "—")}</span>`;
+}
+
+/* --- load functions ----------------------------------------- */
+async function loadDashboard() {
+    try {
+        dashRows = await fetchSheet(TRACKING_DOMAIN, "Dashboard");
+        renderDashboard();
+    } catch (err) {
+        document.getElementById("dashBody").innerHTML =
+            `<tr><td colspan="9" style="color:var(--signal);padding:16px;">Error: ${escapeHtml(err.message)}</td></tr>`;
+    }
+}
+
+async function loadTracking() {
+    try {
+        trackRows = await fetchSheet(TRACKING_DOMAIN, "Tracking");
+        populateBatchFilter();
+        renderStats();
+        renderTracking();
+    } catch (err) {
+        document.getElementById("trackBody").innerHTML =
+            `<tr><td colspan="12" style="color:var(--signal);padding:16px;">Error: ${escapeHtml(err.message)}</td></tr>`;
+    }
+}
+
+async function loadAll() {
+    await Promise.all([loadDashboard(), loadTracking()]);
+}
+
+/* --- stats -------------------------------------------------- */
+function renderStats() {
+    const rows = trackRows;
+    const total     = rows.length;
+    const responded = rows.filter(r => ["Responded","Updated"].includes(r["Email Status"])).length;
+    const opened    = rows.filter(r => r["Open Count"] && Number(r["Open Count"]) > 0).length;
+    const pending   = rows.filter(r => r["Email Status"] === "Sent").length;
+    const reminders = rows.filter(r => r["Reminder Sent"] === "Yes").length;
+
+    const days = rows
+        .map(r => Number(r["Response Days"]))
+        .filter(d => !isNaN(d) && d > 0);
+    const avgDays = days.length ? (days.reduce((a, b) => a + b, 0) / days.length).toFixed(1) : "—";
+
+    const rPct = pct(responded, total);
+    const oPct = pct(opened, total);
+
+    const rPctNum = total ? Math.round((responded / total) * 100) : 0;
+    const oPctNum = total ? Math.round((opened / total) * 100) : 0;
+
+    document.getElementById("stat-sent").textContent      = total;
+    document.getElementById("stat-responded").textContent = responded;
+    document.getElementById("stat-responded").className   = "stat-val " + colorClass(rPctNum);
+    document.getElementById("stat-responded-pct").textContent = rPct;
+    document.getElementById("stat-opened").textContent    = opened;
+    document.getElementById("stat-opened").className      = "stat-val " + colorClass(oPctNum);
+    document.getElementById("stat-opened-pct").textContent = oPct;
+    document.getElementById("stat-pending").textContent   = pending;
+    document.getElementById("stat-pending").className     = "stat-val " + (pending > 0 ? "warn" : "good");
+    document.getElementById("stat-reminders").textContent = reminders;
+    document.getElementById("stat-avg-days").textContent  = avgDays;
+}
+
+function colorClass(pctNum) {
+    if (pctNum >= 75) return "good";
+    if (pctNum >= 40) return "warn";
+    return "bad";
+}
+
+/* --- dashboard render --------------------------------------- */
+function renderDashboard() {
+    const rows = dashRows;
+    document.getElementById("dashEmpty").style.display = rows.length ? "none" : "block";
+
+    document.getElementById("dashBody").innerHTML = rows.map(r => {
+        const rPct  = r["% Response"] ? Math.round(Number(r["% Response"])) : 0;
+        const oPct  = r["% Opened"]   ? Math.round(Number(r["% Opened"]))   : 0;
+        return `
+        <tr class="clickable" onclick="openBatchModal(${JSON.stringify(escapeHtml(r['Key'] || ''))})">
+            <td style="font-size:11px;color:var(--foam-dim);max-width:80px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(r["Key"] || "—")}</td>
+            <td style="font-weight:500;">${escapeHtml(r["Communication Title"] || "—")}</td>
+            <td>${fmtDate(r["Date sent"])}</td>
+            <td style="text-align:center;">${escapeHtml(String(r["Requests sent"] || 0))}</td>
+            <td style="text-align:center;">${escapeHtml(String(r["Responded"] || 0))}</td>
+            <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="progress-bar-wrap" style="flex:1;min-width:60px;">
+                        <div class="progress-bar ${rPct < 40 ? 'bad' : rPct < 70 ? 'warn' : ''}" style="width:${rPct}%"></div>
+                    </div>
+                    <span style="font-size:11px;min-width:32px;">${rPct}%</span>
+                </div>
+            </td>
+            <td style="text-align:center;">${escapeHtml(String(r["Emails Opened"] || 0))}</td>
+            <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="progress-bar-wrap" style="flex:1;min-width:60px;">
+                        <div class="progress-bar ${oPct < 40 ? 'bad' : oPct < 70 ? 'warn' : ''}" style="width:${oPct}%"></div>
+                    </div>
+                    <span style="font-size:11px;min-width:32px;">${oPct}%</span>
+                </div>
+            </td>
+            <td style="text-align:center;">${escapeHtml(String(r["Avg Response Days"] || "—"))}</td>
+        </tr>`;
+    }).join("") || `<tr class="spinner-row"><td colspan="9">No batches found.</td></tr>`;
+}
+
+/* --- tracking render --------------------------------------- */
+function populateBatchFilter() {
+    const keys = [...new Set(trackRows.map(r => r["Key"]).filter(Boolean))];
+    const sel  = document.getElementById("filterBatch");
+    const current = sel.value;
+    sel.innerHTML = `<option value="">All Batches</option>` +
+        keys.map(k => `<option value="${escapeHtml(k)}" ${k === current ? "selected" : ""}>${escapeHtml(k)}</option>`).join("");
+}
+
+function renderTracking() {
+    const q       = document.getElementById("trackSearch").value.trim().toLowerCase();
+    const status  = document.getElementById("filterStatus").value;
+    const batch   = document.getElementById("filterBatch").value;
+    const reminder= document.getElementById("filterReminder").value;
+
+    let rows = trackRows;
+    if (status)   rows = rows.filter(r => (r["Email Status"] || "") === status);
+    if (batch)    rows = rows.filter(r => (r["Key"] || "") === batch);
+    if (reminder) rows = rows.filter(r => (r["Reminder Sent"] || "") === reminder);
+    if (q) {
+        rows = rows.filter(r =>
+            ["Club","Contact Name","Contact Role","Recipient Email","Email Status","Comments","Email Response"]
+            .some(k => String(r[k] || "").toLowerCase().includes(q))
+        );
+    }
+
+    document.getElementById("trackEmpty").style.display = rows.length ? "none" : "block";
+    document.getElementById("trackBody").innerHTML = rows.map(r => `
+        <tr class="clickable" onclick="openRecordModal(${JSON.stringify(escapeHtml(r['Batch Key'] || ''))})">
+            <td>${escapeHtml(r["Club"] || "—")}</td>
+            <td>${escapeHtml(r["Contact Name"] || "—")}</td>
+            <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(r["Contact Role"] || "—")}</td>
+            <td style="font-size:11px;">${escapeHtml(r["Recipient Email"] || "—")}</td>
+            <td>${statusBadge(r["Email Status"])}</td>
+            <td style="white-space:nowrap;">${fmtDate(r["Date Sent"])}</td>
+            <td style="white-space:nowrap;">${fmtDate(r["Date Updated"])}</td>
+            <td>${escapeHtml(r["Email Response"] || "—")}</td>
+            <td style="text-align:center;">${escapeHtml(String(r["Response Days"] || "—"))}</td>
+            <td style="text-align:center;">${escapeHtml(String(r["Open Count"] || 0))}</td>
+            <td style="text-align:center;">
+                ${r["Reminder Sent"] === "Yes" 
+                    ? `<span class="badge badge-renewal">Yes</span>` 
+                    : `<span style="color:var(--foam-dim);font-size:11px;">—</span>`}
+            </td>
+            <td style="max-width:160px;font-size:11px;color:var(--foam-dim);
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(r['Comments'] || '')}">
+                ${escapeHtml(r["Comments"] || "—")}
+            </td>
+        </tr>`).join("") || `<tr class="spinner-row"><td colspan="12">No records match filters.</td></tr>`;
+}
+
+/* --- record modal ------------------------------------------ */
+function openRecordModal(batchKey) {
+    // Find by Batch Key — note: batchKey passed may be escaped, find it
+    const decoded = decodeURIComponent(batchKey);
+    const r = trackRows.find(row => (row["Batch Key"] || "") === decoded 
+                                 || (row["Batch Key"] || "") === batchKey);
+    if (!r) return;
+    editingKey = r["Batch Key"];
+
+    document.getElementById("recordModalTitle").textContent = `${r["Contact Name"] || "Record"} — ${r["Club"] || ""}`;
+    document.getElementById("rClub").textContent        = r["Club"]           || "—";
+    document.getElementById("rContact").textContent     = r["Contact Name"]   || "—";
+    document.getElementById("rRole").textContent        = r["Contact Role"]   || "—";
+    document.getElementById("rEmail").textContent       = r["Recipient Email"]|| "—";
+    document.getElementById("rSent").textContent        = fmtDate(r["Date Sent"]);
+    document.getElementById("rBatch").textContent       = r["Batch Key"]      || "—";
+    document.getElementById("rOpened").textContent      = fmtDate(r["Date Opened"]);
+    document.getElementById("rOpenCount").textContent   = r["Open Count"]     || "0";
+    document.getElementById("rDays").textContent        = r["Response Days"]  || "—";
+
+    document.getElementById("rStatus").value   = r["Email Status"]  || "Sent";
+    document.getElementById("rReminder").value = r["Reminder Sent"] || "";
+    document.getElementById("rResponse").value = r["Email Response"]|| "";
+    document.getElementById("rComments").value = r["Comments"]      || "";
+
+    const msg = document.getElementById("recordModalStatus");
+    msg.textContent = ""; msg.className = "modal-status";
+
+    document.getElementById("recordModal").classList.add("open");
+}
+
+function openBatchModal(key) {
+    // Filter tracking records by Key (communication key, not batch key)
+    const batchRecords = trackRows.filter(r => (r["Key"] || "") === key);
+    const dashRow = dashRows.find(r => (r["Key"] || "") === key);
+    if (!dashRow && !batchRecords.length) return;
+
+    const title = dashRow ? dashRow["Communication Title"] : key;
+    // Build a read-only summary modal using the record modal (repurpose)
+    editingKey = null;
+    document.getElementById("recordModalTitle").textContent = `Batch: ${title}`;
+    // Hide editable section — show batch contacts
+    document.getElementById("rClub").textContent     = key;
+    document.getElementById("rContact").textContent  = batchRecords.length + " contacts";
+    document.getElementById("rRole").textContent     = fmtDate(dashRow?.["Date sent"]);
+    document.getElementById("rEmail").textContent    = dashRow?.["% Response"] ? dashRow["% Response"] + "%" : "—";
+    document.getElementById("rSent").textContent     = dashRow?.["Requests sent"] || "—";
+    document.getElementById("rBatch").textContent    = key;
+    document.getElementById("rOpened").textContent   = dashRow?.["Emails Opened"] || "—";
+    document.getElementById("rOpenCount").textContent= dashRow?.["% Opened"] || "—";
+    document.getElementById("rDays").textContent     = dashRow?.["Avg Response Days"] || "—";
+
+    document.getElementById("rStatus").value   = "";
+    document.getElementById("rReminder").value = "";
+    document.getElementById("rResponse").value = "";
+    document.getElementById("rComments").value = "";
+
+    document.getElementById("recordModal").classList.add("open");
+}
+
+function closeRecordModal() {
+    document.getElementById("recordModal").classList.remove("open");
+    editingKey = null;
+}
+
+async function saveRecord() {
+    if (!editingKey) { closeRecordModal(); return; }
+
+    const status   = document.getElementById("rStatus").value;
+    const reminder = document.getElementById("rReminder").value;
+    const response = document.getElementById("rResponse").value;
+    const comments = document.getElementById("rComments").value.trim();
+
+    const btn = document.getElementById("recordModalSave");
+    btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> Saving…`;
+
+    try {
+        const updates = {
+            "Email Status":  status,
+            "Reminder Sent": reminder,
+            "Email Response":response,
+            "Comments":      comments,
+            "Date Updated":  new Date().toISOString()
+        };
+        await updateSheet(TRACKING_DOMAIN, "Tracking", editingKey, updates);
+
+        // Optimistic update local cache
+        const idx = trackRows.findIndex(r => r["Batch Key"] === editingKey);
+        if (idx > -1) Object.assign(trackRows[idx], updates);
+        renderTracking();
+        renderStats();
+        AuditLog.load();
+
+        const msg = document.getElementById("recordModalStatus");
+        msg.textContent = "Saved."; msg.className = "modal-status visible success";
+        setTimeout(closeRecordModal, 700);
+    } catch (err) {
+        const msg = document.getElementById("recordModalStatus");
+        msg.textContent = "Error: " + err.message; msg.className = "modal-status visible error";
+    } finally {
+        btn.disabled = false; btn.textContent = "Save Changes";
+    }
+}
+
+/* --- wiring ------------------------------------------------- */
+document.getElementById("refreshDashBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("refreshDashBtn");
+    btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
+    await loadAll();
+    btn.disabled = false; btn.textContent = "Refresh";
+});
+document.getElementById("refreshTrackBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("refreshTrackBtn");
+    btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
+    await loadTracking();
+    btn.disabled = false; btn.textContent = "Refresh";
+});
+document.getElementById("trackSearch").addEventListener("input", renderTracking);
+document.getElementById("filterStatus").addEventListener("change", renderTracking);
+document.getElementById("filterBatch").addEventListener("change", renderTracking);
+document.getElementById("filterReminder").addEventListener("change", renderTracking);
+document.getElementById("recordModalClose").addEventListener("click", closeRecordModal);
+document.getElementById("recordModalCancel").addEventListener("click", closeRecordModal);
+document.getElementById("recordModalSave").addEventListener("click", saveRecord);
+document.getElementById("recordModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeRecordModal(); });
+
+/* --- init --------------------------------------------------- */
+loadAll().then(() => { if (window.lucide) lucide.createIcons(); });
+</script>
+<script>
+Promise.all([
+    fetch('nav.html').then(r => r.text()),
+    fetch('auditLog.html').then(r => r.text()),
+]).then(([navHtml, auditHtml]) => {
+    document.getElementById('nav-placeholder').innerHTML = navHtml;
+    document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
+    AuditLog.init();
+    Nav.init();
+    if (window.lucide) lucide.createIcons();
+});
+</script>
+</body>
+</html>
