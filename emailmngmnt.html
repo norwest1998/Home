@@ -687,6 +687,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
    ================================================================ */
 const TRACKING_DOMAIN = DOMAIN.tracking;
 const TEMPLATE_SS_ID  = "1M0_jDbN35e6eX96SNylY-J887Ks48Y9dNudOYMgKkjE";
+const TEMPLATE_GW_URL = ""; // TODO: paste deployed TemplateGateway.gs web app URL
 
 async function tFetch(sheet) {
   if (!TEMPLATE_GW_URL) return [];   // graceful — lists will be empty until configured
@@ -996,7 +997,7 @@ function openTmplModal(id){
   document.getElementById("tmplModal").classList.add("open");
 }
 function closeTmplModal(){document.getElementById("tmplModal").classList.remove("open");editTmplId=null;}
-function toggleGroupKeyRow(){document.getElementById("tGroupKeyRow").style.display=document.getElementById("tRecipientType").value==="group"?"":"";}
+function toggleGroupKeyRow(){document.getElementById("tGroupKeyRow").style.display=document.getElementById("tRecipientType").value==="group"?"":"none";}
 document.getElementById("tRecipientType").addEventListener("change",toggleGroupKeyRow);
 
 async function saveTmpl(){
@@ -1195,7 +1196,11 @@ async function sendEmail(){
 function resetCompose(){
   selectedTmplId=null;
   recipientsTo?.clear();recipientsCC?.clear();recipientsBCC?.clear();
-  ["subjectPrefix","emailSubject","scheduleType","sigSelect","groupSelect"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=el.tagName==="SELECT"?"":""});
+  document.getElementById("subjectPrefix").value="";
+  document.getElementById("emailSubject").value="";
+  document.getElementById("scheduleType").value="now";
+  document.getElementById("sigSelect").value="";
+  document.getElementById("groupSelect").value="";
   document.getElementById("scheduleType").value="now";
   document.getElementById("scheduleDateRow").style.display="none";
   document.getElementById("sigPreviewWrap").style.display="none";
