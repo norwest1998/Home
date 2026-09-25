@@ -195,27 +195,23 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 <body>
 <div id="nav-placeholder"></div>
 <main class="container">
-    <!-- Admin Workspace Header (Matching memberManagement style) -->
-    <div class="admin-header">
-        <div class="admin-title-group">
-            <h1>Email Management</h1>
-            <p style="color:var(--foam-dim);font-size:13px;">Summary across all email campaigns from the Email Tracking spreadsheet.</p>
-        </div>
-        <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
-    </div>
-    <!-- ══════════════════════════════════════════════════════
+
+<!-- ══════════════════════════════════════════════════════
      SECTION 1 — DASHBOARD
      ══════════════════════════════════════════════════════ -->
-    <div class="section-head" id="email-dashboard">
-      <div class="stats-grid">
-        <div class="glass stat-card"><div class="stat-val" id="stat-sent"><span class="spinner"></span></div><div class="stat-label">Emails Sent</div></div>
-        <div class="glass stat-card"><div class="stat-val" id="stat-responded"><span class="spinner"></span></div><div class="stat-label">Responded</div><div class="stat-sub" id="stat-responded-pct"></div></div>
-        <div class="glass stat-card"><div class="stat-val" id="stat-opened"><span class="spinner"></span></div><div class="stat-label">Opened</div><div class="stat-sub" id="stat-opened-pct"></div></div>
-        <div class="glass stat-card"><div class="stat-val" id="stat-pending"><span class="spinner"></span></div><div class="stat-label">Awaiting Response</div></div>
-        <div class="glass stat-card"><div class="stat-val" id="stat-reminders"><span class="spinner"></span></div><div class="stat-label">Reminders Sent</div></div>
-        <div class="glass stat-card"><div class="stat-val" id="stat-avg-days"><span class="spinner"></span></div><div class="stat-label">Avg Response Days</div></div>
-      </div>
-    </div>
+<div class="section-head" id="email-dashboard">
+  <h2>Email Dashboard</h2>
+  <p>Summary across all email campaigns from the Email Tracking spreadsheet.</p>
+</div>
+
+<div class="stats-grid">
+  <div class="glass stat-card"><div class="stat-val" id="stat-sent"><span class="spinner"></span></div><div class="stat-label">Emails Sent</div></div>
+  <div class="glass stat-card"><div class="stat-val" id="stat-responded"><span class="spinner"></span></div><div class="stat-label">Responded</div><div class="stat-sub" id="stat-responded-pct"></div></div>
+  <div class="glass stat-card"><div class="stat-val" id="stat-opened"><span class="spinner"></span></div><div class="stat-label">Opened</div><div class="stat-sub" id="stat-opened-pct"></div></div>
+  <div class="glass stat-card"><div class="stat-val" id="stat-pending"><span class="spinner"></span></div><div class="stat-label">Awaiting Response</div></div>
+  <div class="glass stat-card"><div class="stat-val" id="stat-reminders"><span class="spinner"></span></div><div class="stat-label">Reminders Sent</div></div>
+  <div class="glass stat-card"><div class="stat-val" id="stat-avg-days"><span class="spinner"></span></div><div class="stat-label">Avg Response Days</div></div>
+</div>
 
 <!-- Batches -->
 <div class="panel">
@@ -691,6 +687,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
    ================================================================ */
 const TRACKING_DOMAIN = DOMAIN.tracking;
 const TEMPLATE_SS_ID  = "1M0_jDbN35e6eX96SNylY-J887Ks48Y9dNudOYMgKkjE";
+const TEMPLATE_GW_URL = ""; // TODO: paste deployed TemplateGateway.gs web app URL
 
 async function tFetch(sheet) {
   if (!TEMPLATE_GW_URL) return [];   // graceful — lists will be empty until configured
@@ -846,7 +843,7 @@ function renderDashboard(){
   document.getElementById("dashBody").innerHTML=rows.map(r=>{
     const rp=r["% Response"]?Math.round(Number(r["% Response"])):0;
     const op=r["% Opened"]?Math.round(Number(r["% Opened"])):0;
-    return`<tr class="clickable" onclick="openRecordModal(${JSON.stringify(escapeHtml(r['Key']||''))}, true)">
+    return`<tr class="clickable" data-record-key="${escapeHtml(r['Key']||'')}" data-record-type="batch">
       <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(r["Key"]||"—")}</td>
       <td style="font-weight:500;">${escapeHtml(r["Communication Title"]||"—")}</td>
       <td>${fmtDate(r["Date sent"])}</td>
@@ -858,6 +855,9 @@ function renderDashboard(){
       <td style="text-align:center;">${escapeHtml(String(r["Avg Response Days"]||"—"))}</td>
     </tr>`;
   }).join("")||`<tr class="spinner-row"><td colspan="9">No batches found.</td></tr>`;
+  document.getElementById("dashBody").querySelectorAll("tr[data-record-key]").forEach(tr=>{
+    tr.addEventListener("click",()=>openRecordModal(tr.dataset.recordKey, tr.dataset.recordType==="batch"));
+  });
 }
 
 function populateBatchFilter(){
@@ -878,7 +878,7 @@ function renderTracking(){
   if(q) rows=rows.filter(r=>["Club","Contact Name","Contact Role","Recipient Email","Email Status","Comments","Email Response"].some(k=>String(r[k]||"").toLowerCase().includes(q)));
   document.getElementById("trackEmpty").style.display=rows.length?"none":"block";
   document.getElementById("trackBody").innerHTML=rows.map(r=>`
-    <tr class="clickable" onclick="openRecordModal(${JSON.stringify(escapeHtml(r['Batch Key']||''))}, false)">
+    <tr class="clickable" data-record-key="${escapeHtml(r['Batch Key']||'')}" data-record-type="tracking">
       <td>${escapeHtml(r["Club"]||"—")}</td>
       <td>${escapeHtml(r["Contact Name"]||"—")}</td>
       <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(r["Contact Role"]||"—")}</td>
@@ -968,7 +968,7 @@ function renderTmplList(){
   if(!templates.length){el.innerHTML=`<div class="list-empty">No templates yet. Click + Add Template to create one.</div>`;return;}
   el.innerHTML=templates.map(t=>{
     const sigName=signatures.find(s=>s["SignatureID"]===t["Signature"])?.["Name"]||"";
-    return`<div class="list-item" onclick="openTmplModal(${JSON.stringify(t['TemplateID']||'')})">
+    return`<div class="list-item" data-tmpl-id="${escapeHtml(t['TemplateID']||'')}">
       <div style="flex:1;min-width:0;">
         <div class="list-item-name">${escapeHtml(t["Name"]||"—")}</div>
         <div class="list-item-meta">${escapeHtml(t["Topic"]||"")} · ${escapeHtml(t["RecipientType"]||"")}${sigName?" · "+escapeHtml(sigName):""}</div>
@@ -976,6 +976,9 @@ function renderTmplList(){
       <span class="badge ${t["Visibility"]==="confidential"?"badge-expired":"badge-full"}" style="font-size:10px;flex-shrink:0;">${escapeHtml(t["Visibility"]||"open")}</span>
     </div>`;
   }).join("");
+  el.querySelectorAll(".list-item[data-tmpl-id]").forEach(item=>{
+    item.addEventListener("click",()=>openTmplModal(item.dataset.tmplId));
+  });
 }
 
 function openTmplModal(id){
@@ -1039,7 +1042,7 @@ function renderSigList(){
   if(!signatures.length){el.innerHTML=`<div class="list-empty">No signatures yet. Click + Add Signature to create one.</div>`;return;}
   el.innerHTML=signatures.map(s=>{
     const preview=s["Body"]?s["Body"].replace(/<[^>]*>/g,"").slice(0,50)+"…":"";
-    return`<div class="list-item" onclick="openSigModal(${JSON.stringify(s['SignatureID']||'')})">
+    return`<div class="list-item" data-sig-id="${escapeHtml(s['SignatureID']||'')}">
       <div style="flex:1;min-width:0;">
         <div class="list-item-name">${escapeHtml(s["Name"]||"—")}</div>
         <div class="list-item-meta">${escapeHtml(preview)}</div>
@@ -1047,6 +1050,9 @@ function renderSigList(){
       <span class="badge ${s["Visibility"]==="confidential"?"badge-expired":"badge-full"}" style="font-size:10px;flex-shrink:0;">${escapeHtml(s["Visibility"]||"open")}</span>
     </div>`;
   }).join("");
+  el.querySelectorAll(".list-item[data-sig-id]").forEach(item=>{
+    item.addEventListener("click",()=>openSigModal(item.dataset.sigId));
+  });
 }
 
 function openSigModal(id){
@@ -1106,8 +1112,9 @@ function renderTemplatePicker(){
   if(topic)rows=rows.filter(r=>(r["Topic"]||"").toLowerCase()===topic);
   if(q)rows=rows.filter(r=>String(r["Name"]||"").toLowerCase().includes(q));
   document.getElementById("tmplPickEmpty").style.display=rows.length?"none":"block";
-  document.getElementById("tmplPickerGrid").innerHTML=rows.map(r=>`
-    <div class="template-card ${selectedTmplId===r["TemplateID"]?"selected":""}" data-id="${escapeHtml(r["TemplateID"]||"")}" onclick="selectTemplate(${JSON.stringify(r['TemplateID']||'')})">
+  const grid=document.getElementById("tmplPickerGrid");
+  grid.innerHTML=rows.map(r=>`
+    <div class="template-card ${selectedTmplId===r["TemplateID"]?"selected":""}" data-tmpl-id="${escapeHtml(r["TemplateID"]||"")}">
       <div class="tc-name">${escapeHtml(r["Name"]||"—")}</div>
       <div class="tc-meta">
         <span class="badge badge-default" style="font-size:10px;">${escapeHtml(r["RecipientType"]||"single")}</span>
@@ -1116,6 +1123,9 @@ function renderTemplatePicker(){
       </div>
       ${r["DefaultSubject"]?`<div style="font-size:11px;color:var(--foam-dim);">Subject: ${escapeHtml(r["DefaultSubject"])}</div>`:""}
     </div>`).join("")||"";
+  grid.querySelectorAll(".template-card").forEach(card=>{
+    card.addEventListener("click",()=>selectTemplate(card.dataset.tmplId));
+  });
 }
 
 function selectTemplate(id){
