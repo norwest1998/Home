@@ -694,6 +694,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 <script src="shared.js"></script>
 <script src="nav.js"></script>
 <script src="auditLog.js"></script>
+<script src="initRegistry.js"></script>
 <script>
 /* ================================================================
    CONFIG
@@ -739,7 +740,9 @@ const QUILL_TOOLBAR = [
   [{list:"ordered"},{list:"bullet"}],[{indent:"-1"},{indent:"+1"}],
   ["link","image","blockquote"],[{align:[]}],["clean"]
 ];
+
 let quillBody, quillTmpl, quillSig;
+
 function initQuills() {
   quillBody = new Quill("#bodyEditor",{theme:"snow",placeholder:"Write your email message here…",modules:{toolbar:QUILL_TOOLBAR}});
   quillTmpl = new Quill("#tmplBodyEditor",{theme:"snow",placeholder:"Template default body (optional)…",modules:{toolbar:QUILL_TOOLBAR}});
@@ -1544,16 +1547,22 @@ document.getElementById("groupSelect").addEventListener("change",async()=>{
   const m=await expandGroup(key);document.getElementById("groupCountMsg").textContent=`${m.length} member(s) will receive this email.`;
 });
 
-/* ── INIT ── */
-initQuills();
-initEmoji();
-initWizardStepClicks();
-recipientsTo  = setupChipInput("toInput","toChips","toAC");
-recipientsCC  = setupChipInput("ccInput","ccChips","ccAC");
-recipientsBCC = setupChipInput("bccInput","bccChips","bccAC");
+document.addEventListener("DOMContentLoaded", async () => {
+    const registry = await window.registryReady;
 
-Promise.all([loadDashboard(),loadTracking(),loadTemplates(),loadSignatures(),loadMembers()])
-  .then(()=>{loadVarFields();if(window.lucide)lucide.createIcons();});
+    initQuills();
+    initEmoji();
+    initWizardStepClicks();
+    recipientsTo  = setupChipInput("toInput","toChips","toAC");
+    recipientsCC  = setupChipInput("ccInput","ccChips","ccAC");
+    recipientsBCC = setupChipInput("bccInput","bccChips","bccAC");
+
+    Promise.all([loadDashboard(),loadTracking(),loadTemplates(),loadSignatures(),loadMembers()])
+    .then(()=>{loadVarFields();if(window.lucide)lucide.createIcons();});
+  
+});
+
+
 </script>
 <script>
 Promise.all([

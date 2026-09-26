@@ -527,6 +527,7 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 <script src="shared.js"></script>
 <script src="nav.js"></script>
 <script src="auditLog.js"></script>
+<script src="initRegistry.js"></script>
 <script>
 // ----------------------------------------------------------------
 // CONFIG — add results domain to shared.js DOMAIN object at runtime
@@ -1247,11 +1248,15 @@ function openCaptureModal() {
     window.location.href = 'captureResults.html';
 }
 
-// ----------------------------------------------------------------
-// INIT
-// ----------------------------------------------------------------
-loadAll();
-if (window.lucide) lucide.createIcons();
+document.addEventListener("DOMContentLoaded", async () => {
+    const registry = await window.registryReady;
+
+    loadAll();
+    if (window.lucide) lucide.createIcons();
+
+});
+
+
 </script>
 
 <script>

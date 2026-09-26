@@ -364,7 +364,7 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 <script src="shared.js"></script>
 <script src="nav.js"></script>   
 <script src="auditLog.js"></script>
-
+<script src="initRegistry.js"></script>
 <script>
 const DOC_CONFIG = {
     docWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec",
@@ -1203,8 +1203,14 @@ async function syncDriveToSheet() {
     }
 }
 
-loadDocs();
-lucide.createIcons();
+document.addEventListener("DOMContentLoaded", async () => {
+    const registry = await window.registryReady;
+
+    loadDocs();
+    if(window.lucide)lucide.createIcons();
+  
+});
+
 </script>
 <script>
     Promise.all([

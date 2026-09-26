@@ -283,7 +283,7 @@
   <script src="shared.js"></script>
   <script src="nav.js"></script>  
   <script src="auditLog.js"></script>
-
+  <script src="initRegistry.js"></script>
   <script>
 /* =========================================================
     APPLICATIONS DATA MODULE
@@ -694,10 +694,15 @@ async function openReview(rowId) {
 
     document.getElementById('appsSearch').addEventListener('input', renderTable);
 
-    if (window.lucide) lucide.createIcons();
-    loadApplications();
+    document.addEventListener("DOMContentLoaded", async () => {
+        const registry = await window.registryReady;
 
-    
+        loadApplications();
+        if(window.lucide)lucide.createIcons();
+  
+    });
+
+  
   </script>
 <script>
     Promise.all([
