@@ -11,11 +11,14 @@
 // so anchor links work immediately.
 
 const DOMAINS = [
+    { label: "Admin",        href: "admin.html" },
     { label: "Applications", href: "applications.html" },
     { label: "Calendar",     href: "calendarManagement.html" },
     { label: "Documents",    href: "documentManagement.html" },
+    { label: "Email",        href: "emailManagement.html" },
     { label: "Members",      href: "memberManagement.html" },
     { label: "Notes",        href: "notes.html" },
+    { label: "Results",      href: "resultsManagement.html" },
 ];
 
 const Nav = {
