@@ -243,6 +243,8 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .trigger-info-text { display: flex; flex-direction: column; gap: 4px; }
 .trigger-info-text strong { font-size: 13.5px; color: var(--foam); }
 .trigger-info-text p { font-size: 12px; color: var(--foam-dim); line-height: 1.5; }
+
+#resultRowsScroll::-webkit-scrollbar { display: none; }
 </style>
 </head>
 <body>
@@ -319,9 +321,17 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
                     <i class="inline-icon" data-lucide="refresh-cw" color="#257fb6"></i> Refresh
                 </button>
             </div>
-
-            <div id="resultRows" class="result-rows">
-                <div class="empty-state"><span class="spinner"></span></div>
+            <div id="resultRowsScroll" style="overflow-y:auto;max-height:620px;scrollbar-width:none;">
+                <div id="resultRows" class="result-rows"></div>
+            </div>
+            </div> <!-- end resultRowsScroll -->
+            <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
+                <button id="resultChevronUp"   class="icon-btn" style="display:none;width:100%;border-radius:8px;justify-content:center;" onclick="shiftResultPage(-1)" title="Scroll up">
+                    <i class="inline-icon" data-lucide="chevron-up"></i>
+                </button>
+                <button id="resultChevronDown" class="icon-btn" style="display:none;width:100%;border-radius:8px;justify-content:center;" onclick="shiftResultPage(1)" title="Scroll down">
+                    <i class="inline-icon" data-lucide="chevron-down"></i>
+                </button>
             </div>
             <div class="fn-message" id="resultMsg"></div>
         </div>
@@ -727,30 +737,16 @@ const filterResults = debounce(function() {
 function renderResultPage() {
     const list = filteredResultsList;
     const container = document.getElementById('resultRows');
+    const scroller  = document.getElementById('resultRowsScroll');
 
     if (!list.length) {
         container.innerHTML =
             `<div class="empty-state">${allProcessedFiles.length ? 'No results match your filters.' : 'No processed results found.'}</div>`;
+        updateResultChevrons();
         return;
     }
 
-    const start = resultRowOffset;
-    const end   = Math.min(start + RESULT_PAGE_SIZE, list.length);
-    const page  = list.slice(start, end);
-    const hasAbove = start > 0;
-    const hasBelow = end < list.length;
-
-    const chevronBtn = (dir, icon, fn) =>
-        `<button class="icon-btn" style="width:100%;border-radius:8px;justify-content:center;gap:6px;font-size:11px;color:var(--foam-dim);"
-            onclick="${fn}">
-            <i class="inline-icon" data-lucide="${icon}"></i>
-            <span>${dir === 'up' ? start : list.length - end} more above</span>
-        </button>`.replace('above', dir === 'up' ? 'above' : 'below');
-
-    const upBtn   = hasAbove ? `<button class="icon-btn" style="width:100%;border-radius:8px;justify-content:center;gap:6px;font-size:11px;color:var(--foam-dim);" onclick="shiftResultPage(-1)"><i class="inline-icon" data-lucide="chevron-up"></i><span>${start} row${start !== 1 ? 's' : ''} above</span></button>` : '';
-    const downBtn = hasBelow ? `<button class="icon-btn" style="width:100%;border-radius:8px;justify-content:center;gap:6px;font-size:11px;color:var(--foam-dim);" onclick="shiftResultPage(1)"><i class="inline-icon" data-lucide="chevron-down"></i><span>${list.length - end} row${list.length - end !== 1 ? 's' : ''} below</span></button>` : '';
-
-    const rows = page.map(f => {
+    container.innerHTML = list.map(f => {
         const imgSrc = getClassImage(f.raceClass);
         const imgEl  = imgSrc
             ? `<img class="row-insignia" src="${escHtml(imgSrc)}" alt="${escHtml(f.raceClass)}">`
@@ -778,16 +774,31 @@ function renderResultPage() {
         </div>`;
     }).join('');
 
-    container.innerHTML = upBtn + rows + downBtn;
     if (window.lucide) lucide.createIcons();
+    scroller.scrollTop = 0;
+    updateResultChevrons();
+
+    scroller.onscroll = () => updateResultChevrons();
+}
+
+function updateResultChevrons() {
+    const scroller = document.getElementById('resultRowsScroll');
+    if (!scroller) return;
+    const upBtn   = document.getElementById('resultChevronUp');
+    const downBtn = document.getElementById('resultChevronDown');
+    if (!upBtn || !downBtn) return;
+
+    const atTop    = scroller.scrollTop <= 2;
+    const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2;
+
+    upBtn.style.display   = atTop    ? 'none' : 'flex';
+    downBtn.style.display = atBottom ? 'none' : 'flex';
 }
 
 function shiftResultPage(dir) {
-    resultRowOffset = Math.max(0, Math.min(
-        resultRowOffset + dir * RESULT_PAGE_SIZE,
-        Math.floor((filteredResultsList.length - 1) / RESULT_PAGE_SIZE) * RESULT_PAGE_SIZE
-    ));
-    renderResultPage();
+    const scroller = document.getElementById('resultRowsScroll');
+    // Approx row height ~54px, scroll 10 rows
+    scroller.scrollBy({ top: dir * 10 * 54, behavior: 'smooth' });
 }
 
 // ----------------------------------------------------------------
