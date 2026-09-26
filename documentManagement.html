@@ -620,22 +620,33 @@ function renderGrid() {
     );
 
     grid.innerHTML = list.map(d => `
-        <div class="doc-card-top">
-            <div>
-                <div class="doc-title">${d.Title || "Untitled"}</div>
-                <div class="doc-meta">${d.Category || "Uncategorised"} · v${d.Version || "1"} · ${d.Owner || ""}</div>
+        <div class="glass doc-card">
+            <div class="doc-card-top">
+                <div>
+                    <div class="doc-title">${d.Title || "Untitled"}</div>
+                    <div class="doc-meta">${d.Category || "Uncategorised"} · v${d.Version || "1"} · ${d.Owner || ""}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                    <select class="status-pill-select ${getStatusPillClass(d.Status)}" 
+                            data-rowid="${d.RowID}" 
+                            onchange="handleStatusPillChange(this)">
+                        <option value="Draft"      ${d.Status==="Draft"      ? "selected":""}>Draft</option>
+                        <option value="In Review"  ${d.Status==="In Review"  ? "selected":""}>In Review</option>
+                        <option value="Signed Off" ${d.Status==="Signed Off"||d.Status==="Final" ? "selected":""}>Signed Off</option>
+                        <option value="Published"  ${d.Status==="Published"  ? "selected":""}>Published</option>
+                        <option value="Archived"   ${d.Status==="Archived"   ? "selected":""}>Archived</option>
+                    </select>
+                    <span class="vis-badge vis-${(d.Visibility||'internal').toLowerCase()}">${d.Visibility || "Internal"}</span>
+                </div>
             </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-                <select class="status-pill-select ${getStatusPillClass(d.Status)}" 
-                        data-rowid="${d.RowID}" 
-                        onchange="handleStatusPillChange(this)">
-                    <option value="Draft"      ${d.Status==="Draft"      ? "selected":""}>Draft</option>
-                    <option value="In Review"  ${d.Status==="In Review"  ? "selected":""}>In Review</option>
-                    <option value="Signed Off" ${d.Status==="Signed Off"||d.Status==="Final" ? "selected":""}>Signed Off</option>
-                    <option value="Published"  ${d.Status==="Published"  ? "selected":""}>Published</option>
-                    <option value="Archived"   ${d.Status==="Archived"   ? "selected":""}>Archived</option>
-                </select>
-                <span class="vis-badge vis-${(d.Visibility||'internal').toLowerCase()}">${d.Visibility || "Internal"}</span>
+            <div class="doc-keywords">${String(d.Keywords || "").split(",").filter(Boolean).map(k => `<span class="kw-chip">${k.trim()}</span>`).join("")}</div>
+            <div class="doc-card-top">
+                <div class="doc-meta">Last modified by ${d.LastModifiedBy || "—"} on ${d.LastModifiedDate || "—"}</div>
+                <div class="doc-actions">
+                    ${d.DriveLink ? `<a class="app-filter-btn" href="${d.DriveLink}" target="_blank" title="Open Document"><i class="inline-icon" data-lucide="book-open-text"></i></a>` : ""}
+                    <button class="app-filter-btn" data-action="version" data-id="${d.RowID}" title="Upload New Version"><i class="inline-icon" data-lucide="file-up"></i></button>
+                    <button class="app-filter-btn" data-action="detail" data-id="${d.RowID}" title="Review / Sign Off"><i class="inline-icon" data-lucide="file-pen-line"></i></button>
+                </div>
             </div>
         </div>
     `).join("") || `<div class="empty-state">No documents match.</div>`;
