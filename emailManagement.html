@@ -1548,8 +1548,7 @@ document.getElementById("groupSelect").addEventListener("change",async()=>{
   const m=await expandGroup(key);document.getElementById("groupCountMsg").textContent=`${m.length} member(s) will receive this email.`;
 });
 
-document.addEventListener("DOMContentLoaded", async () => {
-    const registry = await window.registryReady;
+
 
     initQuills();
     initEmoji();
@@ -1560,8 +1559,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     Promise.all([loadDashboard(),loadTracking(),loadTemplates(),loadSignatures(),loadMembers()])
     .then(()=>{loadVarFields();if(window.lucide)lucide.createIcons();});
-  
-});
+
 
 
 </script>

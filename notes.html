@@ -1505,13 +1505,10 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
     document.getElementById("actionModalSave").addEventListener("click", saveActionEdit);
     document.getElementById("actionEditModal").addEventListener("click", e => { if (e.target===e.currentTarget) closeActionEditModal(); });
 
-    document.addEventListener("DOMContentLoaded", async () => {
-        const registry = await window.registryReady;
 
         loadAll();
         if(window.lucide)lucide.createIcons();
-        
-    });
+
     
 </script>
 <script>        

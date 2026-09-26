@@ -695,13 +695,11 @@ async function openReview(rowId) {
 
     document.getElementById('appsSearch').addEventListener('input', renderTable);
 
-    document.addEventListener("DOMContentLoaded", async () => {
-        const registry = await window.registryReady;
 
         loadApplications();
         if(window.lucide)lucide.createIcons();
   
-    });
+
 
   
   </script>
