@@ -162,8 +162,9 @@
 </main>
 
 <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
-<script src="initRegistry.js"></script>
+
 <script src="shared.js"></script>  
+<script src="initRegistry.js"></script>
 <script src="nav.js"></script> 
 <script src="auditLog.js"></script>
 
@@ -596,8 +597,15 @@ const SystemHealth = {
     entries: [],
 
     init() {
-        document.getElementById('refreshHealthBtn').addEventListener('click', () => this.load());
+        const refreshBtn = document.getElementById('refreshHealthBtn');
+        if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => this.load());
+        }
+
+        // Only load data if the panel container exists in the HTML
+        if (document.getElementById('sysHealthBody')) {
         this.load();
+        }
     },
 
     async load() {
