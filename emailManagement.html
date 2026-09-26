@@ -167,6 +167,15 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 .emoji-btn{background:none;border:none;cursor:pointer;font-size:17px;padding:3px 4px;border-radius:4px;transition:background .1s;}
 .emoji-btn:hover{background:rgba(255,255,255,0.1);}
 
+/* ── Variable chips ── */
+.var-chip{
+  background:rgba(255,255,255,0.07);border:1px solid var(--glass-border);
+  border-radius:5px;color:var(--foam);font-family:var(--font-data);
+  font-size:10px;letter-spacing:.03em;padding:2px 8px;cursor:pointer;
+  transition:background .15s,border-color .15s;white-space:nowrap;
+}
+.var-chip:hover{background:rgba(94,234,212,0.12);border-color:rgba(94,234,212,0.4);color:var(--glow);}
+
 /* ── Email preview ── */
 .email-preview{background:rgba(255,255,255,0.96);color:#111;border-radius:10px;padding:20px 24px;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-height:400px;overflow-y:auto;}
 .email-preview .preview-meta{font-size:12px;color:#555;margin-bottom:14px;border-bottom:1px solid #ddd;padding-bottom:10px;}
@@ -195,16 +204,15 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 <body>
 <div id="nav-placeholder"></div>
 <main class="container">
-      <!-- Admin Workspace Header -->
-      <div class="admin-header">
-      <div class="admin-title-group">
-          <h1>Email Management</h1>
-      </div>
-      <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
-      </div>
+
 <!-- ══════════════════════════════════════════════════════
      SECTION 1 — DASHBOARD
      ══════════════════════════════════════════════════════ -->
+<div class="section-head" id="email-dashboard">
+  <h2>Email Dashboard</h2>
+  <p>Summary across all email campaigns from the Email Tracking spreadsheet.</p>
+</div>
+
 <div class="stats-grid">
   <div class="glass stat-card"><div class="stat-val" id="stat-sent"><span class="spinner"></span></div><div class="stat-label">Emails Sent</div></div>
   <div class="glass stat-card"><div class="stat-val" id="stat-responded"><span class="spinner"></span></div><div class="stat-label">Responded</div><div class="stat-sub" id="stat-responded-pct"></div></div>
@@ -288,15 +296,15 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 
     <!-- Wizard steps -->
     <div class="wizard-steps">
-      <div class="wizard-step active" id="wstep-1"><span class="step-num">1</span> Template</div>
+      <div class="wizard-step active" id="wstep-1" data-step="1" style="cursor:pointer;"><span class="step-num">1</span> Template</div>
       <div class="wizard-connector"></div>
-      <div class="wizard-step" id="wstep-2"><span class="step-num">2</span> Recipients</div>
+      <div class="wizard-step" id="wstep-2" data-step="2" style="cursor:pointer;"><span class="step-num">2</span> Recipients</div>
       <div class="wizard-connector"></div>
-      <div class="wizard-step" id="wstep-3"><span class="step-num">3</span> Subject</div>
+      <div class="wizard-step" id="wstep-3" data-step="3" style="cursor:pointer;"><span class="step-num">3</span> Subject</div>
       <div class="wizard-connector"></div>
-      <div class="wizard-step" id="wstep-4"><span class="step-num">4</span> Body</div>
+      <div class="wizard-step" id="wstep-4" data-step="4" style="cursor:pointer;"><span class="step-num">4</span> Body</div>
       <div class="wizard-connector"></div>
-      <div class="wizard-step" id="wstep-5"><span class="step-num">5</span> Preview & Send</div>
+      <div class="wizard-step" id="wstep-5" data-step="5" style="cursor:pointer;"><span class="step-num">5</span> Preview & Send</div>
     </div>
 
     <!-- Step 1: Template picker -->
@@ -425,7 +433,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
     <!-- Step 4: Body -->
     <div class="wizard-panel" id="wpanel-4">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-        <span style="font-size:12px;color:var(--foam-dim);">Write your message. The selected signature will be appended on send.</span>
+        <span style="font-size:12px;color:var(--foam-dim);">Write your message. Click a variable to insert it at the cursor. The selected signature will be appended on send.</span>
         <div class="emoji-panel-wrap">
           <button class="btn btn-ghost" id="emojiToggleBtn" style="padding:5px 10px;font-size:13px;" title="Insert emoji">😊</button>
           <div class="emoji-panel" id="emojiPanel">
@@ -433,6 +441,12 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
             <div class="emoji-grid" id="emojiGrid"></div>
           </div>
         </div>
+      </div>
+      <!-- Variable substitution palette -->
+      <div id="varPalette" style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+        <span style="font-size:10px;color:var(--foam-dim);letter-spacing:.06em;text-transform:uppercase;margin-right:4px;">Variables:</span>
+        <span id="varPaletteChips" style="display:flex;flex-wrap:wrap;gap:5px;"></span>
+        <button id="refreshVarsBtn" class="btn btn-ghost" style="padding:2px 8px;font-size:10px;" title="Reload available fields">↻</button>
       </div>
       <div id="bodyEditor"></div>
       <div style="display:flex;justify-content:space-between;margin-top:16px;">
@@ -448,7 +462,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
         <button class="btn btn-ghost" id="backStep5">← Edit</button>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <span class="status-msg" id="sendStatus"></span>
-          <button class="btn btn-ghost" id="saveDraftBtn">Save Draft</button>
+          <button class="btn btn-ghost" id="saveDraftBtn"><i data-lucide="file-text" style="width:12px;height:12px;margin-right:4px;vertical-align:middle;display:inline-block;"></i>Save Draft</button>
           <button class="btn btn-primary" id="sendEmailBtn" style="background:linear-gradient(135deg,rgba(94,234,212,.25),rgba(94,234,212,.12));border-color:rgba(94,234,212,.4);">
             <i data-lucide="send" style="width:13px;height:13px;margin-right:4px;display:inline-block;vertical-align:middle;"></i> Send Email
           </button>
@@ -686,6 +700,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
    ================================================================ */
 const TRACKING_DOMAIN = DOMAIN.tracking;
 const TEMPLATE_SS_ID  = "1M0_jDbN35e6eX96SNylY-J887Ks48Y9dNudOYMgKkjE";
+const TEMPLATE_GW_URL = ""; // TODO: paste deployed TemplateGateway.gs web app URL
 
 async function tFetch(sheet) {
   if (!TEMPLATE_GW_URL) return [];   // graceful — lists will be empty until configured
@@ -713,6 +728,7 @@ function statusBadge(s) {
    ================================================================ */
 let dashRows   = [], trackRows  = [], templates = [], signatures = [], members = [];
 let editingKey = null, editTmplId = null, editSigId = null, selectedTmplId = null;
+let currentStep = 1;
 
 /* ================================================================
    QUILL INSTANCES
@@ -1095,6 +1111,66 @@ function goStep(n){
     document.getElementById(`wstep-${i}`).classList.toggle("done",i<n);
     document.getElementById(`wpanel-${i}`).classList.toggle("active",i===n);
   }
+  if(n===5) buildPreview();
+}
+
+
+/* ── Variable substitution palette ────────────────────── */
+let availableVarFields = [];
+
+async function loadVarFields(){
+  // Pull schema from SchemaRegistry for the members sheet, fall back to common defaults
+  const defaults = [
+    {key:"member-name",      label:"Member Name"},
+    {key:"first-name",       label:"First Name"},
+    {key:"last-name",        label:"Last Name"},
+    {key:"email",            label:"Email"},
+    {key:"membership-type",  label:"Membership Type"},
+    {key:"subscription-fees",label:"Subscription Fees"},
+    {key:"class-name",       label:"Class Name"},
+    {key:"expiry-date",      label:"Expiry Date"},
+  ];
+  try{
+    // Try to derive from actual member data columns if members are loaded
+    if(members.length){
+      const cols=Object.keys(members[0]);
+      availableVarFields=cols.map(c=>({
+        key: c.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,""),
+        label: c
+      }));
+    } else {
+      availableVarFields=defaults;
+    }
+  }catch(_){ availableVarFields=defaults; }
+  renderVarPalette();
+}
+
+function renderVarPalette(){
+  const el=document.getElementById("varPaletteChips");
+  if(!el)return;
+  el.innerHTML=availableVarFields.map(f=>`
+    <button class="var-chip" data-var="\${${f.key}}" title="Insert \${${f.key}}">${escapeHtml(f.label)}</button>
+  `).join("");
+  el.querySelectorAll(".var-chip").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const range=quillBody.getSelection(true);
+      const pos=range?range.index:quillBody.getLength()-1;
+      quillBody.insertText(pos, btn.dataset.var);
+      quillBody.setSelection(pos+btn.dataset.var.length);
+    });
+  });
+}
+
+function initWizardStepClicks(){
+  document.querySelectorAll(".wizard-step[data-step]").forEach(el=>{
+    el.addEventListener("click",()=>{
+      const n=parseInt(el.dataset.step);
+      // Apply template if jumping forward past step 1 and a template is selected
+      if(n>1 && selectedTmplId && currentStep===1) applyTemplateToCompose(selectedTmplId);
+      currentStep=n;
+      goStep(n);
+    });
+  });
 }
 
 function renderTemplatePicker(){
@@ -1172,6 +1248,113 @@ function buildPreview(){
     ${sig?.["Body"]?`<hr style="border:none;border-top:1px solid #ddd;margin:16px 0;">${sig["Body"]}`:""}`;
 }
 
+/* ── Variable substitution ─────────────────────────────── */
+function resolveVariables(html, member){
+  if(!member) return html;
+  // Replace ${field-name} with member field value (kebab → Title Case lookup)
+  return html.replace(/\${([^}]+)}/g, (match, key)=>{
+    // Normalise key: "member-name" → try "Member Name", "First Name", etc.
+    const cleaned = key.trim();
+    // Direct match first
+    if(member[cleaned] !== undefined) return member[cleaned]||"";
+    // Try title-case conversion (kebab-case → space separated)
+    const spaced = cleaned.replace(/-/g," ").replace(/\w/g,c=>c.toUpperCase());
+    if(member[spaced] !== undefined) return member[spaced]||"";
+    // Common aliases
+    const aliases = {
+      "member-name":   ((member["First Name"]||"")+" "+(member["Last Name"]||"")).trim(),
+      "first-name":    member["First Name"]||"",
+      "last-name":     member["Last Name"]||"",
+      "email":         member["Email"]||member["Email Address"]||"",
+      "membership-type": member["Membership Type"]||"",
+      "subscription-fees": member["Subscription Fees"]||member["Fees"]||"",
+      "class-name":    member["Class"]||member["Class Name"]||"",
+      "expiry-date":   member["Expiry Date"]||member["Renewal Date"]||"",
+    };
+    return aliases[cleaned.toLowerCase()]||match; // leave unreplaced if no match
+  });
+}
+
+/* ── Sent sheet record ─────────────────────────────────── */
+async function recordSentEmail(batchKey, campaignKey, subject, bodyHtml, toList, ccList, schedTime){
+  const sentRecord = {
+    "Sent ID":      batchKey,
+    "Key":          campaignKey,
+    "Subject":      subject,
+    "To":           toList,
+    "CC":           ccList,
+    "Scheduled":    schedTime||"",
+    "Sent At":      schedTime||new Date().toISOString(),
+    "Body":         bodyHtml,
+    "Template ID":  selectedTmplId||"",
+    "Recipient Count": toList.split(",").filter(Boolean).length
+  };
+  await appendSheet(TRACKING_DOMAIN,"Sent",sentRecord);
+  return batchKey;
+}
+
+/* ── Draft management ──────────────────────────────────── */
+let currentDraftId = null;  // set when saving a draft, cleared on send
+
+async function saveDraft(){
+  const btn=document.getElementById("saveDraftBtn");
+  btn.disabled=true;
+  try{
+    const t=templates.find(r=>r["TemplateID"]===selectedTmplId);
+    const prefix=document.getElementById("subjectPrefix").value;
+    const subject=(prefix+" "+document.getElementById("emailSubject").value).trim();
+    const toList=recipientsTo.values.map(v=>v.email).join(",");
+    const ccList=recipientsCC.values.map(v=>v.email).join(",");
+    const bccList=recipientsBCC.values.map(v=>v.email).join(",");
+    const draftId=currentDraftId||uid();
+    const draftRecord={
+      "Draft ID":     draftId,
+      "Key":          t?.["Name"]||"",
+      "Subject":      subject,
+      "To":           toList,
+      "CC":           ccList,
+      "BCC":          bccList,
+      "Body":         quillBody.root.innerHTML,
+      "Template ID":  selectedTmplId||"",
+      "Signature ID": document.getElementById("sigSelect").value,
+      "Scheduled":    document.getElementById("scheduleType").value==="scheduled"?document.getElementById("scheduleDateTime").value:"",
+      "Saved At":     new Date().toISOString(),
+      "Status":       "Draft"
+    };
+    if(currentDraftId){
+      // Update existing draft row
+      await updateSheet(TRACKING_DOMAIN,"Drafts",currentDraftId,draftRecord);
+    } else {
+      await appendSheet(TRACKING_DOMAIN,"Drafts",draftRecord);
+      currentDraftId=draftId;
+    }
+    showToast("Draft saved","success");
+  }catch(e){
+    showToast("Error saving draft: "+e.message,"error");
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+/* ── Toast notification ────────────────────────────────── */
+function showToast(msg, type="success"){
+  let toast=document.getElementById("smmc-toast");
+  if(!toast){
+    toast=document.createElement("div");
+    toast.id="smmc-toast";
+    toast.style.cssText="position:fixed;bottom:28px;right:28px;z-index:9999;padding:12px 20px;border-radius:10px;font-size:13px;font-family:var(--font-body);font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.4);transition:opacity .3s,transform .3s;pointer-events:none;";
+    document.body.appendChild(toast);
+  }
+  toast.textContent=msg;
+  toast.style.background=type==="success"?"rgba(94,234,212,0.18)":"rgba(255,106,61,0.2)";
+  toast.style.border=`1px solid ${type==="success"?"rgba(94,234,212,0.4)":"rgba(255,106,61,0.4)"}`;
+  toast.style.color=type==="success"?"var(--glow)":"var(--signal)";
+  toast.style.opacity="1";toast.style.transform="translateY(0)";
+  clearTimeout(toast._t);
+  toast._t=setTimeout(()=>{toast.style.opacity="0";toast.style.transform="translateY(8px)";},3000);
+}
+
+/* ── Send email ────────────────────────────────────────── */
 async function sendEmail(){
   const btn=document.getElementById("sendEmailBtn");
   btn.disabled=true;btn.innerHTML=`<span class="spinner"></span> Sending…`;
@@ -1180,26 +1363,61 @@ async function sendEmail(){
     const t=templates.find(r=>r["TemplateID"]===selectedTmplId);
     const prefix=document.getElementById("subjectPrefix").value;
     const subject=(prefix+" "+document.getElementById("emailSubject").value).trim();
-    const sig=signatures.find(s=>s["SignatureID"]===document.getElementById("sigSelect").value);
+    const sig=signatures.find(sig=>sig["SignatureID"]===document.getElementById("sigSelect").value);
     const toAddrs=recipientsTo.values.map(v=>v.email);
     const groupMembers=await expandGroup(document.getElementById("groupSelect").value);
     const allTo=[...toAddrs,...groupMembers.map(m=>m.email)].filter(Boolean);
     if(!allTo.length){s.textContent="At least one To: recipient required.";s.className="status-msg visible error";return;}
     const schedTime=document.getElementById("scheduleType").value==="scheduled"?document.getElementById("scheduleDateTime").value:null;
-    const batchKey=uid(),campaignKey=t?.["Name"]||"MANUAL-"+Date.now();
+    const batchKey=uid(), campaignKey=t?.["Name"]||"MANUAL-"+Date.now();
+    const ccList=recipientsCC.values.map(v=>v.email).join(", ");
+    const rawBody=quillBody.root.innerHTML;
+    const sigHtml=sig?.["Body"]?`<br><hr style="border:none;border-top:1px solid #ddd;margin:16px 0;">${sig["Body"]}`:"";
+
+    // Record batch in Sent sheet (one row for the whole send)
+    const sentId=await recordSentEmail(
+      batchKey, campaignKey, subject, rawBody+sigHtml,
+      allTo.join(", "), ccList, schedTime
+    );
+
+    // Record per-recipient rows in Tracking sheet
     for(const email of allTo){
       const member=members.find(m=>(m["Email"]||m["Email Address"]||"")===email);
-      await appendSheet(TRACKING_DOMAIN,"Tracking",{"Batch Key":batchKey+"-"+email,"Key":campaignKey,"Contact Name":member?((member["First Name"]||"")+" "+(member["Last Name"]||"")).trim():email,"Email Status":schedTime?"Scheduled":"Sent","Date Sent":schedTime||new Date().toISOString(),"Recipient Email":email});
+      // Resolve variables for this member
+      const personalBody=resolveVariables(rawBody, member)+sigHtml;
+      await appendSheet(TRACKING_DOMAIN,"Tracking",{
+        "Batch Key":    batchKey+"-"+email,
+        "Key":          campaignKey,
+        "Contact Name": member?((member["First Name"]||"")+" "+(member["Last Name"]||"")).trim():email,
+        "Email Status": schedTime?"Scheduled":"Sent",
+        "Date Sent":    schedTime||new Date().toISOString(),
+        "Recipient Email": email,
+        "Thread ID":    sentId  // link back to Sent record
+      });
     }
-    s.textContent=schedTime?`Scheduled for ${schedTime}. ${allTo.length} recipient(s) tracked.`:`Sent to ${allTo.length} recipient(s) and recorded.`;
-    s.className="status-msg visible success";
-    await loadTracking();AuditLog.load();
-  }catch(e){s.textContent="Error: "+e.message;s.className="status-msg visible error";}
-  finally{btn.disabled=false;btn.innerHTML=`<i data-lucide="send" style="width:13px;height:13px;margin-right:4px;display:inline-block;vertical-align:middle;"></i> Send Email`;if(window.lucide)lucide.createIcons();}
+
+    // If this was a draft, delete the draft row
+    if(currentDraftId){
+      try{ await deleteRow(TRACKING_DOMAIN,"Drafts",currentDraftId); }catch(_){}
+      currentDraftId=null;
+    }
+
+    showToast(`Sent to ${allTo.length} recipient${allTo.length>1?"s":""}!`,"success");
+    s.className="status-msg"; s.textContent="";
+    await loadTracking(); AuditLog.load();
+    // Reset compose and return to step 1
+    setTimeout(()=>{ resetCompose(); },900);
+  }catch(e){
+    s.textContent="Error: "+e.message;s.className="status-msg visible error";
+  }finally{
+    btn.disabled=false;btn.innerHTML=`<i data-lucide="send" style="width:13px;height:13px;margin-right:4px;display:inline-block;vertical-align:middle;"></i> Send Email`;
+    if(window.lucide)lucide.createIcons();
+  }
 }
 
 function resetCompose(){
   selectedTmplId=null;
+  currentDraftId=null;
   recipientsTo?.clear();recipientsCC?.clear();recipientsBCC?.clear();
   document.getElementById("subjectPrefix").value="";
   document.getElementById("emailSubject").value="";
@@ -1262,8 +1480,9 @@ document.getElementById("backStep4").addEventListener("click",()=>goStep(3));
 document.getElementById("nextStep4").addEventListener("click",()=>{buildPreview();goStep(5);});
 document.getElementById("backStep5").addEventListener("click",()=>goStep(4));
 document.getElementById("sendEmailBtn").addEventListener("click",sendEmail);
-document.getElementById("saveDraftBtn").addEventListener("click",()=>{document.getElementById("sendStatus").textContent="Draft saved.";document.getElementById("sendStatus").className="status-msg visible success";});
+document.getElementById("saveDraftBtn").addEventListener("click",saveDraft);
 document.getElementById("resetComposeBtn").addEventListener("click",resetCompose);
+document.getElementById("refreshVarsBtn").addEventListener("click",loadVarFields);
 document.getElementById("scheduleType").addEventListener("change",()=>{document.getElementById("scheduleDateRow").style.display=document.getElementById("scheduleType").value==="scheduled"?"":"none";});
 document.getElementById("sigSelect").addEventListener("change",updateSigPreview);
 document.getElementById("groupSelect").addEventListener("change",async()=>{
@@ -1275,12 +1494,13 @@ document.getElementById("groupSelect").addEventListener("change",async()=>{
 /* ── INIT ── */
 initQuills();
 initEmoji();
+initWizardStepClicks();
 recipientsTo  = setupChipInput("toInput","toChips","toAC");
 recipientsCC  = setupChipInput("ccInput","ccChips","ccAC");
 recipientsBCC = setupChipInput("bccInput","bccChips","bccAC");
 
 Promise.all([loadDashboard(),loadTracking(),loadTemplates(),loadSignatures(),loadMembers()])
-  .then(()=>{if(window.lucide)lucide.createIcons();});
+  .then(()=>{loadVarFields();if(window.lucide)lucide.createIcons();});
 </script>
 <script>
 Promise.all([
