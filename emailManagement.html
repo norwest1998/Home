@@ -1388,7 +1388,7 @@ async function sendEmail(){
     if(isScheduled){
       // ── SCHEDULED PATH ──────────────────────────────────────
       // POST to Apps Script to create a time-based trigger + store draft
-      const res=await fetch(GATEWAY_URL,{
+      const res=await fetch(EMAIL_GATEWAY,{
         method:"POST",
         headers:{"Content-Type":"text/plain;charset=utf-8"},
         body:JSON.stringify({
