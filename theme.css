@@ -230,11 +230,20 @@
     -webkit-backdrop-filter: blur(18px) saturate(140%);
     box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 18px 40px rgba(2,10,18,0.35);
     overflow: hidden;
-  }
+    
   .panel-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--glass-border);
-    padding-bottom: 0;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--glass-border);
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+  }
+
+  .panel-header--tabbed {
+      padding-bottom: 0;
+      align-items: flex-end;
+      min-height: unset;
   }
   
   .panel-title {
@@ -248,7 +257,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 16px;
+
   }
   
   .panel-title .dot, .panel-title-left .dot {
