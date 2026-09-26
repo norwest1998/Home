@@ -189,27 +189,19 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
     transition: all 0.2s ease;
 }
 
-/* Color Mappings */
-.status-pill-select.status-draft { 
-    background-color: rgba(156, 163, 175, 0.18); 
-    color: #9ca3af; 
-    border-color: rgba(156, 163, 175, 0.4); 
-}
-.status-pill-select.status-review { 
-    background-color: rgba(249, 115, 22, 0.18); 
-    color: #fb923c; 
-    border-color: rgba(249, 115, 22, 0.4); 
-}
-.status-pill-select.status-final { 
-    background-color: rgba(34, 197, 94, 0.18); 
-    color: #4ade80; 
-    border-color: rgba(34, 197, 94, 0.4); 
-}
-.status-pill-select.status-urgent { 
-    background-color: rgba(239, 68, 68, 0.18); 
-    color: #f87171; 
-    border-color: rgba(239, 68, 68, 0.4); 
-}
+/* Replace the 4 existing .status-pill-select colour blocks with: */
+.status-pill-select.status-draft     { background-color:rgba(156,163,175,0.18); color:#9ca3af;  border-color:rgba(156,163,175,0.4); }
+.status-pill-select.status-review    { background-color:rgba(249,115,22,0.18);  color:#fb923c;  border-color:rgba(249,115,22,0.4); }
+.status-pill-select.status-signedoff { background-color:rgba(34,197,94,0.18);   color:#4ade80;  border-color:rgba(34,197,94,0.4); }
+.status-pill-select.status-published { background-color:rgba(94,234,212,0.18);  color:#5eead4;  border-color:rgba(94,234,212,0.4); }
+.status-pill-select.status-archived  { background-color:rgba(100,116,139,0.18); color:#94a3b8;  border-color:rgba(100,116,139,0.4); }
+
+/* Visibility badge */
+.vis-badge { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; white-space:nowrap; }
+.vis-internal { background:rgba(156,163,175,0.12); color:#9ca3af;  border:1px solid rgba(156,163,175,0.3); }
+.vis-members  { background:rgba(96,165,250,0.12);  color:#93c5fd;  border:1px solid rgba(96,165,250,0.3); }
+.vis-public   { background:rgba(94,234,212,0.12);  color:#5eead4;  border:1px solid rgba(94,234,212,0.3); }
+
 
 /* Dropdown menu item styling */
 .status-pill-select option {
@@ -234,11 +226,12 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
         <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
     </div>
 
-    <div id="docStats" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+    <div id="docStats" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
         <span class="badge badge-default"><span id="statTotal">—</span> Total</span>
-        <span class="badge" style="background:rgba(156,163,175,0.15);border:1px solid rgba(156,163,175,0.35);color:#9ca3af;"><span id="statDraft">—</span> Draft</span>
+        <span class="badge badge-default" style="color:#9ca3af;border-color:rgba(156,163,175,0.3);"><span id="statDraft">—</span> Draft</span>
         <span class="badge" style="background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.35);color:#fb923c;"><span id="statReview">—</span> In Review</span>
         <span class="badge badge-full"><span id="statSigned">—</span> Signed Off</span>
+        <span class="badge badge-affiliate"><span id="statPublished">—</span> Published</span>
         <span class="badge badge-expired"><span id="statArchived">—</span> Archived</span>
     </div>
 
@@ -266,7 +259,14 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
                 <option value="Draft">Draft</option>
                 <option value="In Review">In Review</option>
                 <option value="Signed Off">Signed Off</option>
+                <option value="Published">Published</option>
                 <option value="Archived">Archived</option>
+            </select>
+            <select id="visibilityFilter" class="member-filter-select">
+                <option value="all">All visibility</option>
+                <option value="Internal">Internal</option>
+                <option value="Members">Members</option>
+                <option value="Public">Public</option>
             </select>
             <button class="app-filter-btn active" id="uploadBtn">+ Upload Document</button>
         </div>
@@ -303,6 +303,13 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
         <datalist id="categoryList"></datalist>
         <label>Keywords (comma separated)</label>
         <input type="text" id="keywordsInput">
+        <!-- Add after the Keywords label/input in the upload modal -->
+        <label>Visibility</label>
+        <select id="visibilityInput">
+            <option value="Internal">Internal — committee only</option>
+            <option value="Members">Members — all financial members</option>
+            <option value="Public" disabled>Public — requires Signed Off status first</option>
+        </select>
         <label>Change notes</label>
         <textarea id="notesInput" rows="2"></textarea>
 
@@ -396,12 +403,13 @@ function genRowId() {
 
 function getStatusPillClass(status) {
     switch (status) {
-        case "Final": return "status-final";
-        case "Open for Review":
-        case "In Review": return "status-review";
-        case "Urgent": return "status-urgent";
+        case "In Review":      return "status-review";
+        case "Signed Off":     return "status-signedoff";
+        case "Final":          return "status-signedoff"; // legacy alias
+        case "Published":      return "status-published";
+        case "Archived":       return "status-archived";
         case "Draft":
-        default: return "status-draft";
+        default:               return "status-draft";
     }
 }
 
@@ -467,11 +475,12 @@ async function loadDocs() {
     const review  = DOCS.filter(d => d.Status === "In Review").length;
     const signed  = DOCS.filter(d => d.Status === "Signed Off").length;
     const archived= DOCS.filter(d => d.Status === "Archived").length;
-    document.getElementById("statTotal").textContent   = total;
-    document.getElementById("statDraft").textContent   = draft;
-    document.getElementById("statReview").textContent  = review;
-    document.getElementById("statSigned").textContent  = signed;
-    document.getElementById("statArchived").textContent= archived;
+    document.getElementById("statTotal").textContent    = DOCS.length;
+    document.getElementById("statDraft").textContent    = DOCS.filter(d=>d.Status==="Draft").length;
+    document.getElementById("statReview").textContent   = DOCS.filter(d=>d.Status==="In Review").length;
+    document.getElementById("statSigned").textContent   = DOCS.filter(d=>["Signed Off","Final"].includes(d.Status)).length;
+    document.getElementById("statPublished").textContent= DOCS.filter(d=>d.Status==="Published").length;
+    document.getElementById("statArchived").textContent = DOCS.filter(d=>d.Status==="Archived").length;
     if (window.lucide) lucide.createIcons();
 }
 
@@ -582,7 +591,14 @@ function renderLibraryTree() {
 }
 
 function statusBadgeClass(status) {
-    return { "Draft": "badge-default", "In Review": "badge-renewal", "Signed Off": "badge-full", "Archived": "badge-expired" }[status] || "badge-default";
+    return {
+        "Draft":      "badge-default",
+        "In Review":  "badge-renewal",
+        "Signed Off": "badge-full",
+        "Final":      "badge-full",
+        "Published":  "badge-affiliate",
+        "Archived":   "badge-expired"
+    }[status] || "badge-default";
 }
 
 function renderGrid() {
@@ -593,6 +609,9 @@ function renderGrid() {
     let list = DOCS.slice();
     if (activeCategory) list = list.filter(d => d.Category === activeCategory || String(d.Category || "").startsWith(activeCategory + "/"));
     if (statusF !== "all") list = list.filter(d => d.Status === statusF);
+    // Add to renderGrid(), after the statusF filter line:
+    const visF = document.getElementById("visibilityFilter").value;
+    if (visF !== "all") list = list.filter(d => (d.Visibility || "Internal") === visF);
     if (q) list = list.filter(d =>
         String(d.Title || "").toLowerCase().includes(q) ||
         String(d.Keywords || "").toLowerCase().includes(q) ||
@@ -601,33 +620,25 @@ function renderGrid() {
     );
 
     grid.innerHTML = list.map(d => `
-        <div class="glass doc-card">
-            <div class="doc-card-top">
-                <div>
-                    <div class="doc-title">${d.Title || "Untitled"}</div>
-                    <div class="doc-meta">${d.Category || "Uncategorised"} · v${d.Version || "1"} · ${d.Owner || ""}</div>
-                </div>
-                <select class="status-pill-select ${getStatusPillClass(d.Status)}" 
-                        data-rowid="${d.RowID}" 
-                        onchange="handleStatusPillChange(this)">
-                    <option value="Draft" ${d.Status === 'Draft' ? 'selected' : ''}>Draft</option>
-                    <option value="Open for Review" ${d.Status === 'Open for Review' || d.Status === 'In Review' ? 'selected' : ''}>Open for Review</option>
-                    <option value="Final" ${d.Status === 'Final' ? 'selected' : ''}>Final</option>
-                    <option value="Urgent" ${d.Status === 'Urgent' ? 'selected' : ''}>Urgent</option>
-                </select>
-            </div>
-            <div>
-            <div class="doc-keywords">${String(d.Keywords || "").split(",").filter(Boolean).map(k => `<span class="kw-chip">${k.trim()}</span>`).join("")}</div>
-            <div class="doc-card-top">
-                <div class="doc-meta">Last modified by ${d.LastModifiedBy || "—"} on ${d.LastModifiedDate || "—"}</div>
-                <div class="doc-actions">
-                    ${d.DriveLink ? `<a class="app-filter-btn" href="${d.DriveLink}" target="_blank" title="Open Document"><i class="inline-icon" data-lucide="book-open-text"></i></a>` : ""}
-                    <button class="app-filter-btn" data-action="version" data-id="${d.RowID}" title="Upload Document"><i class="inline-icon" data-lucide="file-up"></i></button>
-                    <button class="app-filter-btn" data-action="detail" data-id="${d.RowID} title="Signoff Document""><i class="inline-icon" data-lucide="file-pen-line"></i></button>
-                </div>
-            </div>
-            </div>
-        </div>
+// Replace the status-pill-select block and surrounding card-top div:
+<div class="doc-card-top">
+    <div>
+        <div class="doc-title">${d.Title || "Untitled"}</div>
+        <div class="doc-meta">${d.Category || "Uncategorised"} · v${d.Version || "1"} · ${d.Owner || ""}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <select class="status-pill-select ${getStatusPillClass(d.Status)}" 
+                data-rowid="${d.RowID}" 
+                onchange="handleStatusPillChange(this)">
+            <option value="Draft"      ${d.Status==="Draft"      ? "selected":""}>Draft</option>
+            <option value="In Review"  ${d.Status==="In Review"  ? "selected":""}>In Review</option>
+            <option value="Signed Off" ${d.Status==="Signed Off"||d.Status==="Final" ? "selected":""}>Signed Off</option>
+            <option value="Published"  ${d.Status==="Published"  ? "selected":""}>Published</option>
+            <option value="Archived"   ${d.Status==="Archived"   ? "selected":""}>Archived</option>
+        </select>
+        <span class="vis-badge vis-${(d.Visibility||'internal').toLowerCase()}">${d.Visibility || "Internal"}</span>
+    </div>
+</div>
     `).join("") || `<div class="empty-state">No documents match.</div>`;
 
     grid.querySelectorAll('[data-action="version"]').forEach(b => b.addEventListener("click", () => openUploadModal(b.dataset.id)));
@@ -636,6 +647,7 @@ function renderGrid() {
 }
 document.getElementById("docSearch").addEventListener("input", renderGrid);
 document.getElementById("statusFilter").addEventListener("change", renderGrid);
+document.getElementById("visibilityFilter").addEventListener("change", renderGrid);
 
 async function fetchDriveFolderContents(folderId) {
     if (!driveToken) { alert("Connect Google Drive first."); return []; }
@@ -666,22 +678,28 @@ async function handleStatusPillChange(selectEl) {
     selectEl.disabled = true;
 
     try {
-        // 1. Update Database Record
-        await updateSheet(DOMAIN.documents, "Documents", rowId, {
-            Status: newStatus,
-            LastModifiedBy: actor,
-            LastModifiedDate: now
-        });
+        const updates = { Status: newStatus, LastModifiedBy: actor, LastModifiedDate: now };
 
-        // 2. Trigger Email Notification if status changed to 'Open for Review'
-        if (newStatus === "Open for Review") {
-            await triggerReviewEmailNotification(doc, actor);
-            alert(`Document status updated to 'Open for Review'. An email notification has been dispatched to committee members.`);
+        // Published requires Public visibility
+        if (newStatus === "Published") {
+            updates.Visibility = "Public";
+        }
+        // Rolling back from Published locks out Public visibility
+        if (oldStatus === "Published" && newStatus !== "Published") {
+            updates.Visibility = "Members";
         }
 
-        // 3. Log Action & Refresh State
-        await loadDocs();
+        await updateSheet(DOMAIN.documents, "Documents", rowId, updates);
 
+        if (newStatus === "In Review") {
+            await triggerReviewEmailNotification(doc, actor);
+            alert(`Status set to 'In Review'. Email notification dispatched to committee.`);
+        }
+        if (newStatus === "Published") {
+            alert(`Document published. Visibility automatically set to Public.`);
+        }
+
+        await loadDocs();
     } catch (err) {
         alert("Status update failed: " + err.message);
         selectEl.value = oldStatus;
@@ -958,6 +976,11 @@ function resetProgress() {
 /* ---------- Upload / new version modal ---------- */
 let uploadTargetDocId = null;
 function openUploadModal(docId) {
+    const visEl = document.getElementById("visibilityInput");
+    visEl.value = doc ? (doc.Visibility || "Internal") : "Internal";
+    // Unlock Public if doc is Signed Off or Published
+    const canBePublic = doc && ["Signed Off","Published"].includes(doc.Status);
+    visEl.querySelector('option[value="Public"]').disabled = !canBePublic;
     uploadTargetDocId = docId || null;
     const doc = docId ? DOCS.find(d => d.RowID === docId) : null;
     document.getElementById("uploadModalTitle").textContent = doc ? `New version — ${doc.Title}` : "Upload Document";
@@ -1022,7 +1045,8 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
             await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, {
                 RowID: rowId, Title: title || file.name, Category: category, Keywords: keywords,
                 DriveFileId: fileId, DriveLink: link, Version: 1, Status: "Draft", Owner: who,
-                LastModifiedBy: who, LastModifiedDate: now, ReviewedBy: "", ReviewDate: "", SignedOffBy: "", SignOffDate: ""
+                LastModifiedBy: who, LastModifiedDate: now, ReviewedBy: "", ReviewDate: "", SignedOffBy: "", SignOffDate: "",
+                Visibility: document.getElementById("visibilityInput").value
             });
             setStep(1, "done");
 
