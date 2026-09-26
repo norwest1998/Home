@@ -716,86 +716,85 @@ const SystemHealth = {
         dot.style.background   = colours[state] || colours.idle;
         dot.style.boxShadow    = `0 0 8px ${colours[state] || colours.idle}`;
     },
-        function validateAndSyncRegistry(schemaRows) {
-          const report = {
-                ok: [],
-                drift: [],
-                missingInSchema: [],
-                updatedHeaders: 0
-            };
 
-            if (!Array.isArray(schemaRows) || schemaRows.length === 0) return report;
+    validateAndSyncRegistry(schemaRows) {
+        const report = {
+            ok: [],
+            drift: [],
+            missingInSchema: [],
+            updatedHeaders: 0
+        };
 
-            // Build lookup dictionary from SchemaRegistry rows: "domain:sheet" -> row
-            const schemaMap = new Map();
-            schemaRows.forEach(row => {
-                const domain = String(row['Domain'] || '').toLowerCase().trim();
-                const sheet = String(row['Sheet'] || '').trim();
-                if (domain && sheet) {
-                schemaMap.set(`${domain}:${sheet}`, row);
-                }
-            });
+        if (!Array.isArray(schemaRows) || schemaRows.length === 0) return report;
 
-            // Iterate through static REGISTRY array
-            REGISTRY.forEach(domainObj => {
-                const domainKey = Object.keys(domainObj)[0];
-                const domainData = domainObj[domainKey];
-                if (!domainData || !domainData.sheets) return;
-
-                Object.keys(domainData.sheets).forEach(sheetName => {
-                const configSheet = domainData.sheets[sheetName];
-                const lookupKey = `${domainKey.toLowerCase()}:${sheetName}`;
-                const liveSchema = schemaMap.get(lookupKey);
-
-                if (!liveSchema) {
-                    report.missingInSchema.push({ domain: domainKey, sheet: sheetName });
-                    return;
-                }
-
-                // Parse live columns from SchemaRegistry
-                let liveCols = [];
-                try {
-                    liveCols = JSON.parse(liveSchema['Columns']);
-                } catch (e) {
-                    liveCols = String(liveSchema['Columns'] || '').split(',').map(c => c.trim());
-                }
-
-                const staticHeaders = configSheet.headers || [];
-
-                // Compare static headers vs live columns
-                const added = liveCols.filter(c => !staticHeaders.includes(c));
-                const removed = staticHeaders.filter(c => !liveCols.includes(c));
-
-                if (added.length > 0 || removed.length > 0) {
-                    report.drift.push({
-                    domain: domainKey,
-                    sheet: sheetName,
-                    added: added,
-                    removed: removed,
-                    previousHeaders: staticHeaders,
-                    currentHeaders: liveCols
-                    });
-
-                    // Sync in-memory REGISTRY with live columns
-                    configSheet.headers = liveCols;
-                    report.updatedHeaders++;
-                } else {
-                    report.ok.push({ domain: domainKey, sheet: sheetName });
-                }
-                });
-            });
-
-            return report;
+        // Build lookup dictionary from SchemaRegistry rows: "domain:sheet" -> row
+        const schemaMap = new Map();
+        schemaRows.forEach(row => {
+            const domain = String(row['Domain'] || '').toLowerCase().trim();
+            const sheet = String(row['Sheet'] || '').trim();
+            if (domain && sheet) {
+            schemaMap.set(`${domain}:${sheet}`, row);
             }
+        });
+
+        // Iterate through static REGISTRY array
+        REGISTRY.forEach(domainObj => {
+            const domainKey = Object.keys(domainObj)[0];
+            const domainData = domainObj[domainKey];
+            if (!domainData || !domainData.sheets) return;
+
+            Object.keys(domainData.sheets).forEach(sheetName => {
+            const configSheet = domainData.sheets[sheetName];
+            const lookupKey = `${domainKey.toLowerCase()}:${sheetName}`;
+            const liveSchema = schemaMap.get(lookupKey);
+
+            if (!liveSchema) {
+                report.missingInSchema.push({ domain: domainKey, sheet: sheetName });
+                return;
+            }
+
+            // Parse live columns from SchemaRegistry
+            let liveCols = [];
+            try {
+                liveCols = JSON.parse(liveSchema['Columns']);
+            } catch (e) {
+                liveCols = String(liveSchema['Columns'] || '').split(',').map(c => c.trim());
+            }
+
+            const staticHeaders = configSheet.headers || [];
+
+            // Compare static headers vs live columns
+            const added = liveCols.filter(c => !staticHeaders.includes(c));
+            const removed = staticHeaders.filter(c => !liveCols.includes(c));
+
+            if (added.length > 0 || removed.length > 0) {
+                report.drift.push({
+                domain: domainKey,
+                sheet: sheetName,
+                added: added,
+                removed: removed,
+                previousHeaders: staticHeaders,
+                currentHeaders: liveCols
+                });
+
+                // Sync in-memory REGISTRY with live columns
+                configSheet.headers = liveCols;
+                report.updatedHeaders++;
+            } else {
+                report.ok.push({ domain: domainKey, sheet: sheetName });
+            }
+            });
+        });
+
+    return report;
+    }
 };
 
-
-
-
 window.SystemHealth = SystemHealth;
+
 document.addEventListener("DOMContentLoaded", async () => {
     const registry = await window.registryReady;
-
+    SystemHealth.init();
     renderGrid();
     loadMemberHealth();
     if (window.lucide) lucide.createIcons();
