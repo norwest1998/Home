@@ -1,8 +1,9 @@
 /**
  * initRegistry.js — Auto-initializer for window.REGISTRY
- * Instantly populates window.REGISTRY from sessionStorage if available,
- * and background-syncs or fetches from the Gateway endpoint.
+ * Creates a global REGISTRY alias so legacy code in shared.js/admin.html continues working.
  */
+var REGISTRY = null; // Defines global REGISTRY variable to prevent 'REGISTRY is not defined' errors
+
 (function () {
   const CACHE_KEY = "APP_REGISTRY";
   
@@ -11,7 +12,7 @@
     resolveReady = resolve;
   });
 
-  // 1. Synchronous attempt: Populate window.REGISTRY immediately on script load
+  // 1. Synchronous attempt from sessionStorage
   let cachedData = null;
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
@@ -22,7 +23,8 @@
 
   if (cachedData) {
     window.REGISTRY = cachedData;
-    resolveReady(window.REGISTRY); // Unblocks any await window.registryReady calls instantly
+    REGISTRY = cachedData;
+    resolveReady(window.REGISTRY);
   }
 
   // 2. Fetch fresh registry from Apps Script Gateway
@@ -39,18 +41,17 @@
 
       if (data && data.registry) {
         window.REGISTRY = data.registry;
+        REGISTRY = data.registry; // Keep global alias in sync
         sessionStorage.setItem(CACHE_KEY, JSON.stringify(data.registry));
         resolveReady(window.REGISTRY);
       } else {
-        throw new Error(data.error || "Invalid registry response");
+        throw new Error(data.error || "Invalid registry response from Gateway");
       }
     } catch (err) {
       console.error("initRegistry: Failed to sync registry from Gateway:", err);
-      // Resolve promise with whatever cache we had (or null) so waiting scripts don't hang indefinitely
       resolveReady(window.REGISTRY || null);
     }
   }
 
-  // Execute network sync (background update if cached, primary fetch if cold start)
   syncRegistry();
 })();

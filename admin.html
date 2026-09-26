@@ -189,9 +189,7 @@ GOOGLE SHEETS MODULE — SMMC ADMIN PANEL
 
 window.SMMC_Sheets = { fetchSheet, updateSheet, appendSheet, DOMAIN };
 
-/* =========================================================
-FUNCTION REGISTRY
-========================================================= */
+
 const FUNCTIONS = [
     // Membership Applications
     {
@@ -803,10 +801,12 @@ window.SystemHealth = SystemHealth;
 
 document.addEventListener("DOMContentLoaded", async () => {
     const registry = await window.registryReady;
-    SystemHealth.init();
+   
     renderGrid();
     loadMemberHealth();
     if (window.lucide) lucide.createIcons();
+
+     SystemHealth.init();
 
 });
 
