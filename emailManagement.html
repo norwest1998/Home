@@ -1368,49 +1368,103 @@ async function sendEmail(){
     const groupMembers=await expandGroup(document.getElementById("groupSelect").value);
     const allTo=[...toAddrs,...groupMembers.map(m=>m.email)].filter(Boolean);
     if(!allTo.length){s.textContent="At least one To: recipient required.";s.className="status-msg visible error";return;}
-    const schedTime=document.getElementById("scheduleType").value==="scheduled"?document.getElementById("scheduleDateTime").value:null;
-    const batchKey=uid(), campaignKey=t?.["Name"]||"MANUAL-"+Date.now();
+
+    const isScheduled=document.getElementById("scheduleType").value==="scheduled";
+    const schedTime=isScheduled?document.getElementById("scheduleDateTime").value:null;
+    const batchKey=uid();
+    const campaignKey=t?.["Name"]||"MANUAL-"+Date.now();
     const ccList=recipientsCC.values.map(v=>v.email).join(", ");
+    const bccList=recipientsBCC.values.map(v=>v.email).join(", ");
     const rawBody=quillBody.root.innerHTML;
     const sigHtml=sig?.["Body"]?`<br><hr style="border:none;border-top:1px solid #ddd;margin:16px 0;">${sig["Body"]}`:"";
 
-    // Record batch in Sent sheet (one row for the whole send)
-    const sentId=await recordSentEmail(
-      batchKey, campaignKey, subject, rawBody+sigHtml,
-      allTo.join(", "), ccList, schedTime
-    );
-
-    // Record per-recipient rows in Tracking sheet
-    for(const email of allTo){
+    // Build per-recipient resolved bodies (used by both paths)
+    const recipientPayloads=allTo.map(email=>{
       const member=members.find(m=>(m["Email"]||m["Email Address"]||"")===email);
-      // Resolve variables for this member
-      const personalBody=resolveVariables(rawBody, member)+sigHtml;
-      await appendSheet(TRACKING_DOMAIN,"Tracking",{
-        "Batch Key":    batchKey+"-"+email,
-        "Key":          campaignKey,
-        "Contact Name": member?((member["First Name"]||"")+" "+(member["Last Name"]||"")).trim():email,
-        "Email Status": schedTime?"Scheduled":"Sent",
-        "Date Sent":    schedTime||new Date().toISOString(),
-        "Recipient Email": email,
-        "Thread ID":    sentId  // link back to Sent record
+      const name=member?((member["First Name"]||"")+" "+(member["Last Name"]||"")).trim():email;
+      const resolvedBody=resolveVariables(rawBody,member)+sigHtml;
+      return{email,name,resolvedBody};
+    });
+
+    if(isScheduled){
+      // ── SCHEDULED PATH ──────────────────────────────────────
+      // POST to Apps Script to create a time-based trigger + store draft
+      const res=await fetch(GATEWAY_URL,{
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify({
+          action:       "createScheduledTrigger",
+          draftId:      batchKey,
+          scheduledAt:  schedTime,
+          subject:      subject,
+          to:           allTo.join(", "),
+          cc:           ccList,
+          bcc:          bccList,
+          body:         rawBody+sigHtml,
+          key:          campaignKey,
+          templateId:   selectedTmplId||"",
+          recipients:   recipientPayloads
+        })
       });
+      const result=await res.json();
+      if(!result.success) throw new Error(result.error||"Failed to create trigger.");
+
+      // Record in Tracking sheet as Scheduled (for visibility)
+      for(const r of recipientPayloads){
+        await appendSheet(TRACKING_DOMAIN,"Tracking",{
+          "Batch Key":     batchKey+"-"+r.email,
+          "Key":           campaignKey,
+          "Contact Name":  r.name,
+          "Email Status":  "Scheduled",
+          "Date Sent":     schedTime,
+          "Recipient Email":r.email,
+          "Thread ID":     batchKey
+        });
+      }
+
+      // Store draftId so user can cancel if needed
+      currentDraftId=batchKey;
+      showToast(`Scheduled for ${new Date(schedTime).toLocaleString()}. Trigger created.`,"success");
+
+    } else {
+      // ── IMMEDIATE PATH ───────────────────────────────────────
+      // Record to Sent sheet (one batch row)
+      const sentId=await recordSentEmail(
+        batchKey,campaignKey,subject,rawBody+sigHtml,
+        allTo.join(", "),ccList,null
+      );
+
+      // Record per-recipient in Tracking
+      for(const r of recipientPayloads){
+        await appendSheet(TRACKING_DOMAIN,"Tracking",{
+          "Batch Key":     batchKey+"-"+r.email,
+          "Key":           campaignKey,
+          "Contact Name":  r.name,
+          "Email Status":  "Sent",
+          "Date Sent":     new Date().toISOString(),
+          "Recipient Email":r.email,
+          "Thread ID":     sentId
+        });
+      }
+
+      // If this was a saved draft, remove it
+      if(currentDraftId){
+        try{ await deleteRow(TRACKING_DOMAIN,"Drafts",currentDraftId); }catch(_){}
+        currentDraftId=null;
+      }
+
+      showToast(`Sent to ${allTo.length} recipient${allTo.length>1?"s":""}!`,"success");
+      await loadTracking(); AuditLog.load();
+      setTimeout(()=>{ resetCompose(); },900);
     }
 
-    // If this was a draft, delete the draft row
-    if(currentDraftId){
-      try{ await deleteRow(TRACKING_DOMAIN,"Drafts",currentDraftId); }catch(_){}
-      currentDraftId=null;
-    }
-
-    showToast(`Sent to ${allTo.length} recipient${allTo.length>1?"s":""}!`,"success");
     s.className="status-msg"; s.textContent="";
-    await loadTracking(); AuditLog.load();
-    // Reset compose and return to step 1
-    setTimeout(()=>{ resetCompose(); },900);
+
   }catch(e){
     s.textContent="Error: "+e.message;s.className="status-msg visible error";
   }finally{
-    btn.disabled=false;btn.innerHTML=`<i data-lucide="send" style="width:13px;height:13px;margin-right:4px;display:inline-block;vertical-align:middle;"></i> Send Email`;
+    btn.disabled=false;
+    btn.innerHTML=`<i data-lucide="send" style="width:13px;height:13px;margin-right:4px;display:inline-block;vertical-align:middle;"></i> Send Email`;
     if(window.lucide)lucide.createIcons();
   }
 }
