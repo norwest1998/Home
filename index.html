@@ -3338,7 +3338,7 @@
           if (!selectedOpt) {
             document.getElementById("reqConflictingRegatta").value  = "Will load after Class is selected";
           } else {
-            document.getElementById("reqConflictingRegatta").value  = `"Searching for conflicting ${selectedOpt} event around the ${misDate}"`;
+            document.getElementById("reqConflictingRegatta").value  = `"Searching for conflicting ${selectedOpt.value} event around the ${misDate}"`;
             document.getElementById("reqConflictingRegatta").value  = getConflictingEvents(selectedOpt, misDate);
           }
         }
@@ -3357,7 +3357,7 @@
           if (!misDate)  {
               document.getElementById("reqConflictingRegatta").value  = "Will load after Date is selected";
           } else {
-              document.getElementById("reqConflictingRegatta").value  = `"Searching for conflicting ${selectedOpt} event around the ${misDate}"`;
+              document.getElementById("reqConflictingRegatta").value  = `"Searching for conflicting ${selectedOpt.value} event around the ${misDate}"`;
               document.getElementById("reqConflictingRegatta").value  = getConflictingEvents(selectedOpt, misDate);
           }           
         }
