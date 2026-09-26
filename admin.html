@@ -589,24 +589,6 @@ const SystemHealth = {
             const rows = await fetchSheet(DOMAIN.audit, "SchemaRegistry");
             if (!Array.isArray(rows)) throw new Error("SchemaRegistry data invalid.");
             this.entries = rows;
-            // Validate and update static REGISTRY in memory
-            const auditReport = this._validateAndSyncRegistry(rows);
-            if (auditReport.drift.length > 0) {
-                console.warn("Schema drift detected and synchronized in REGISTRY:", auditReport.drift);
-                const rowData = {
-                    HexCode: "",
-                    Timestamp: new Date(),
-                    User: "Autobot",
-                    Action: "Schema Monitor",
-                    Domain: DOMAIN.audit,
-                    Sheet: "VariableRegistry" ,
-                    Detail: auditReport.drift,
-                    'Old Value': "Schema drift detected and synchronized in REGISTRY",
-                    'New Value': "",
-                    Success: true
-                };
-                appendSheet(DOMAIN.audit, "AuditLog", rowData)
-            }
             this.render();
         } catch (err) {
             document.getElementById('sysHealthBody').innerHTML =
@@ -697,77 +679,7 @@ const SystemHealth = {
         dot.style.boxShadow    = `0 0 8px ${colours[state] || colours.idle}`;
     },
 
-    _validateAndSyncRegistry(schemaRows) {
-        const report = {
-            ok: [],
-            drift: [],
-            missingInSchema: [],
-            updatedHeaders: 0
-        };
 
-        if (!Array.isArray(schemaRows) || schemaRows.length === 0) return report;
-
-        // Build lookup dictionary from SchemaRegistry rows: "domain:sheet" -> row
-        const schemaMap = new Map();
-        schemaRows.forEach(row => {
-            const domain = String(row['Domain'] || '').toLowerCase().trim();
-            const sheet = String(row['Sheet'] || '').trim();
-            if (domain && sheet) {
-            schemaMap.set(`${domain}:${sheet}`, row);
-            }
-        });
-
-        // Iterate through static REGISTRY array
-        REGISTRY.forEach(domainObj => {
-            const domainKey = Object.keys(domainObj)[0];
-            const domainData = domainObj[domainKey];
-            if (!domainData || !domainData.sheets) return;
-
-            Object.keys(domainData.sheets).forEach(sheetName => {
-            const configSheet = domainData.sheets[sheetName];
-            const lookupKey = `${domainKey.toLowerCase()}:${sheetName}`;
-            const liveSchema = schemaMap.get(lookupKey);
-
-            if (!liveSchema) {
-                report.missingInSchema.push({ domain: domainKey, sheet: sheetName });
-                return;
-            }
-
-            // Parse live columns from SchemaRegistry
-            let liveCols = [];
-            try {
-                liveCols = JSON.parse(liveSchema['Columns']);
-            } catch (e) {
-                liveCols = String(liveSchema['Columns'] || '').split(',').map(c => c.trim());
-            }
-
-            const staticHeaders = configSheet.headers || [];
-
-            // Compare static headers vs live columns
-            const added = liveCols.filter(c => !staticHeaders.includes(c));
-            const removed = staticHeaders.filter(c => !liveCols.includes(c));
-
-            if (added.length > 0 || removed.length > 0) {
-                report.drift.push({
-                domain: domainKey,
-                sheet: sheetName,
-                added: added,
-                removed: removed,
-                previousHeaders: staticHeaders,
-                currentHeaders: liveCols
-                });
-
-                // Sync in-memory REGISTRY with live columns
-                configSheet.headers = liveCols;
-                report.updatedHeaders++;
-            } else {
-                report.ok.push({ domain: domainKey, sheet: sheetName });
-            }
-            });
-        });
-
-    return report;
-    }
 };
 
 window.SystemHealth = SystemHealth;
