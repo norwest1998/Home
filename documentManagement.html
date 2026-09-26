@@ -620,25 +620,24 @@ function renderGrid() {
     );
 
     grid.innerHTML = list.map(d => `
-// Replace the status-pill-select block and surrounding card-top div:
-<div class="doc-card-top">
-    <div>
-        <div class="doc-title">${d.Title || "Untitled"}</div>
-        <div class="doc-meta">${d.Category || "Uncategorised"} · v${d.Version || "1"} · ${d.Owner || ""}</div>
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-        <select class="status-pill-select ${getStatusPillClass(d.Status)}" 
-                data-rowid="${d.RowID}" 
-                onchange="handleStatusPillChange(this)">
-            <option value="Draft"      ${d.Status==="Draft"      ? "selected":""}>Draft</option>
-            <option value="In Review"  ${d.Status==="In Review"  ? "selected":""}>In Review</option>
-            <option value="Signed Off" ${d.Status==="Signed Off"||d.Status==="Final" ? "selected":""}>Signed Off</option>
-            <option value="Published"  ${d.Status==="Published"  ? "selected":""}>Published</option>
-            <option value="Archived"   ${d.Status==="Archived"   ? "selected":""}>Archived</option>
-        </select>
-        <span class="vis-badge vis-${(d.Visibility||'internal').toLowerCase()}">${d.Visibility || "Internal"}</span>
-    </div>
-</div>
+        <div class="doc-card-top">
+            <div>
+                <div class="doc-title">${d.Title || "Untitled"}</div>
+                <div class="doc-meta">${d.Category || "Uncategorised"} · v${d.Version || "1"} · ${d.Owner || ""}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                <select class="status-pill-select ${getStatusPillClass(d.Status)}" 
+                        data-rowid="${d.RowID}" 
+                        onchange="handleStatusPillChange(this)">
+                    <option value="Draft"      ${d.Status==="Draft"      ? "selected":""}>Draft</option>
+                    <option value="In Review"  ${d.Status==="In Review"  ? "selected":""}>In Review</option>
+                    <option value="Signed Off" ${d.Status==="Signed Off"||d.Status==="Final" ? "selected":""}>Signed Off</option>
+                    <option value="Published"  ${d.Status==="Published"  ? "selected":""}>Published</option>
+                    <option value="Archived"   ${d.Status==="Archived"   ? "selected":""}>Archived</option>
+                </select>
+                <span class="vis-badge vis-${(d.Visibility||'internal').toLowerCase()}">${d.Visibility || "Internal"}</span>
+            </div>
+        </div>
     `).join("") || `<div class="empty-state">No documents match.</div>`;
 
     grid.querySelectorAll('[data-action="version"]').forEach(b => b.addEventListener("click", () => openUploadModal(b.dataset.id)));
