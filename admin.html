@@ -164,7 +164,6 @@
 <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
 
 <script src="shared.js"></script>  
-<script src="initRegistry.js"></script>
 <script src="nav.js"></script> 
 <script src="auditLog.js"></script>
 
@@ -800,7 +799,6 @@ const SystemHealth = {
 window.SystemHealth = SystemHealth;
 
 document.addEventListener("DOMContentLoaded", async () => {
-    const registry = await window.registryReady;
    
     renderGrid();
     loadMemberHealth();
