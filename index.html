@@ -3559,9 +3559,9 @@
         toDate.setDate(toDate.getDate() + 3);
 
         const conflict = allEvents.filter(e => {
-          if (!e || !e.eventDate) return false;
-          const evDate = new Date(e.eventDate);
-          return e.eventClass === className && evDate >= fromDate && evDate <= toDate;
+          if (!e || !e.date) return false;
+          const evDate = new Date(e.Date);
+          return e.class === className && evDate >= fromDate && evDate <= toDate;
         });
 
         if (conflict.length >= 1) {
