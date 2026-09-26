@@ -167,6 +167,7 @@
 <script src="nav.js"></script> 
 <script src="auditLog.js"></script>
 
+
 <script>
 // Case-insensitive cell value retriever across header variations
 function getRowVal(row, possibleKeys) {
@@ -545,18 +546,18 @@ function pctClass(pct){
 async function loadMemberHealth(){
     try {
         const members = await fetchSheet(DOMAIN.members, "Members");
-        const activeMembers = members.filter(m => m.Active === true);
+        const activeMembers = members.filter(m => String(m.Active).toLowerCase() === 'true');
         const total = activeMembers.length;
         const hasVal = (r, keys) => getRowVal(r, keys) !== "";
 
         const withPhone = activeMembers.filter(m => hasVal(m, ["Telephone", "Phone", "Mobile", "Telephone Number", "Phone Number"])).length;
         const withEmail = activeMembers.filter(m => hasVal(m, ["Email", "Email Address"])).length;
-        const withWhatsapp = activeMembers.filter(m => m.WhatsApp === true).length;
-        const withPaidUp = activeMembers.filter(m => m["Paid up"] === true).length;
-        const withActive = activeMembers.filter(m => m.Active === true).length;
+        const withWhatsapp = activeMembers.filter(m => String(m.WhatsApp).toLowerCase() === 'true').length;
+        const withPaidUp   = activeMembers.filter(m => String(m["Paid up"]).toLowerCase() === 'true').length;
+        const withActive = total;
         const withAddr = activeMembers.filter(m => hasVal(m, ["Address Line", "Post Code"])).length;
         const withCont = activeMembers.filter(m => hasVal(m, ["Emergency Contact Name", "Emergency Contact"])).length;
-        const withMulti = activeMembers.filter(m => !m["Home Club"]).length;
+        const withMulti    = activeMembers.filter(m => !m["Home Club"] || m["Home Club"].trim() === '').length;
 
         const stats = [
             { id: "health-phone", count: withPhone },
@@ -616,7 +617,7 @@ const SystemHealth = {
             if (!Array.isArray(rows)) throw new Error("SchemaRegistry data invalid.");
             this.entries = rows;
             // Validate and update static REGISTRY in memory
-            const auditReport = validateAndSyncRegistry(rows);
+            const auditReport = this._validateAndSyncRegistry(rows);
             if (auditReport.drift.length > 0) {
                 console.warn("Schema drift detected and synchronized in REGISTRY:", auditReport.drift);
                 const rowData = {
