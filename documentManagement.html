@@ -234,6 +234,14 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
         <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
     </div>
 
+    <div id="docStats" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+        <span class="badge badge-default"><span id="statTotal">—</span> Total</span>
+        <span class="badge" style="background:rgba(156,163,175,0.15);border:1px solid rgba(156,163,175,0.35);color:#9ca3af;"><span id="statDraft">—</span> Draft</span>
+        <span class="badge" style="background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.35);color:#fb923c;"><span id="statReview">—</span> In Review</span>
+        <span class="badge badge-full"><span id="statSigned">—</span> Signed Off</span>
+        <span class="badge badge-expired"><span id="statArchived">—</span> Archived</span>
+    </div>
+
     <!-- Google Drive Banner -->
     <div class="glass gdrive-banner" id="driveBanner">
         <div>
@@ -248,9 +256,12 @@ table.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
     <div id="repository" class="tile glass">
         <div class="doc-toolbar">
             <div class="search-wrap">
-                <input class="search-input" id="docSearch" placeholder="Search by title, keyword, category or owner…">
+                <div class="search-wrap">
+                    <i data-lucide="search" class="nav-icon"></i>
+                    <input class="search-input" id="docSearch" placeholder="Search by title, keyword, category or owner…">
+                </div>
             </div>
-            <select id="statusFilter">
+            <select id="statusFilter" class="member-filter-select">
                 <option value="all">All statuses</option>
                 <option value="Draft">Draft</option>
                 <option value="In Review">In Review</option>
@@ -450,6 +461,17 @@ async function loadDocs() {
     DOCS = await fetchSheet(DOMAIN.documents, "Documents");
     renderLibraryTree();
     renderGrid();
+    // Update stats pills
+    const total   = DOCS.length;
+    const draft   = DOCS.filter(d => d.Status === "Draft").length;
+    const review  = DOCS.filter(d => d.Status === "In Review").length;
+    const signed  = DOCS.filter(d => d.Status === "Signed Off").length;
+    const archived= DOCS.filter(d => d.Status === "Archived").length;
+    document.getElementById("statTotal").textContent   = total;
+    document.getElementById("statDraft").textContent   = draft;
+    document.getElementById("statReview").textContent  = review;
+    document.getElementById("statSigned").textContent  = signed;
+    document.getElementById("statArchived").textContent= archived;
     if (window.lucide) lucide.createIcons();
 }
 
