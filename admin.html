@@ -723,7 +723,7 @@ const SystemHealth = {
         dot.style.boxShadow    = `0 0 8px ${colours[state] || colours.idle}`;
     },
 
-    validateAndSyncRegistry(schemaRows) {
+    _validateAndSyncRegistry(schemaRows) {
         const report = {
             ok: [],
             drift: [],
