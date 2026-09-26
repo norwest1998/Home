@@ -523,7 +523,7 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 <footer>
     <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
 </footer>
-<script src="initRegistry.js"></script>
+
 <script src="shared.js"></script>
 <script src="nav.js"></script>
 <script src="auditLog.js"></script>
@@ -1260,16 +1260,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 </script>
 
 <script>
-Promise.all([
-    fetch('nav.html').then(r => r.text()),
-    fetch('auditLog.html').then(r => r.text()),
-]).then(([navHtml, auditHtml]) => {
-    document.getElementById('nav-placeholder').innerHTML = navHtml;
-    document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
-    AuditLog.init();
-    Nav.init();
-    if (window.lucide) lucide.createIcons();
-});
+    Promise.all([
+        fetch('nav.html').then(r => r.text()),
+        fetch('auditLog.html').then(r => r.text()),
+    ]).then(([navHtml, auditHtml]) => {
+        document.getElementById('nav-placeholder').innerHTML = navHtml;
+        document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
+        AuditLog.init();
+        Nav.init();
+        if (window.lucide) lucide.createIcons();
+    });
 </script>
 </body>
 </html>
