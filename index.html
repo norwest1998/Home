@@ -3345,7 +3345,7 @@
       });
       
       document.getElementById("reqBoatClass").addEventListener("change", function(e) {
-        const selectedOpt = e.target.options[e.target.selectedIndex];
+        const selectedOpt = e.target.value;
         const misDate = document.getElementById("reqEventDate").value;
         if (!selectedOpt) {
           if (!misDate)  {
