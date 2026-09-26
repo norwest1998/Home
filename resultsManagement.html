@@ -10,29 +10,6 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <link rel="stylesheet" href="theme.css">
 <style>
-/* ── Stats grid ── */
-.stat-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 14px;
-    margin-bottom: 32px;
-}
-@media (max-width: 960px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 600px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
-
-.stat-glass {
-    padding: 18px 16px;
-    display: flex; flex-direction: column; gap: 6px;
-    align-items: flex-start;
-}
-.stat-total {
-    font-family: var(--font-display); font-size: 30px; font-weight: 700;
-    color: var(--foam); line-height: 1;
-}
-.stat-text {
-    font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.07em;
-    text-transform: uppercase; color: var(--foam-dim);
-}
 
 /* ── Inline selects ── */
 .mm-select {
@@ -268,27 +245,12 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
     </div>
 
     <!-- Stats -->
-    <div class="stat-grid" id="resultsStats">
-        <div class="glass stat-glass">
-            <div class="stat-total" id="statProcessed"><span class="spinner"></span></div>
-            <div class="stat-text">Processed This Season</div>
-        </div>
-        <div class="glass stat-glass">
-            <div class="stat-total" id="statOutstanding"><span class="spinner"></span></div>
-            <div class="stat-text">Awaiting Processing</div>
-        </div>
-        <div class="glass stat-glass">
-            <div class="stat-total" id="statAvgReqTotal"><span class="spinner"></span></div>
-            <div class="stat-text">Avg Score Requests</div>
-        </div>
-        <div class="glass stat-glass">
-            <div class="stat-total" id="statAvgReqPending"><span class="spinner"></span></div>
-            <div class="stat-text">Decisions Pending</div>
-        </div>
-        <div class="glass stat-glass">
-            <div class="stat-total" id="statAvgReqApproved"><span class="spinner"></span></div>
-            <div class="stat-text">Requests Approved</div>
-        </div>
+    <div id="resultsStats" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+        <span class="badge badge-approved"><span id="statProcessed">—</span> Processed This Season</span>
+        <span class="badge badge-default"><span id="statOutstanding">—</span> Awaiting Processing</span>
+        <span class="badge badge-default"><span id="statAvgReqTotal">—</span> Avg Score Requests</span>
+        <span class="badge" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;"><span id="statAvgReqPending">—</span> Decisions Pending</span>
+        <span class="badge badge-approved"><span id="statAvgReqApproved">—</span> Requests Approved</span>
     </div>
 
     <!-- Processed Results Files -->
