@@ -323,7 +323,7 @@ const FUNCTIONS = [
 
             // helper to pull Competition regattas
             const getCompVal = (row) => getRowVal(row, [
-                "Competition", 
+                "Event Type", 
                 "competition"
             ]).trim().toLowerCase();
 
@@ -557,7 +557,7 @@ async function loadMemberHealth(){
         const withActive = total;
         const withAddr = activeMembers.filter(m => hasVal(m, ["Address Line", "Post Code"])).length;
         const withCont = activeMembers.filter(m => hasVal(m, ["Emergency Contact Name", "Emergency Contact"])).length;
-        const withMulti    = activeMembers.filter(m => !m["Home Club"] || m["Home Club"].trim() === '').length;
+        const withMulti    = activeMembers.filter(m => !m["Home Club"] || m["Home Club"].trim() === '').length; 
 
         const stats = [
             { id: "health-phone", count: withPhone },
