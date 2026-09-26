@@ -418,11 +418,11 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
     </div>
 
     <div class="panel">
-        <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div class="panel-header">
             <div class="panel-title-left"><span class="dot"></span><h3>Pending Decisions</h3></div>
         </div>
         <div class="tab-content active">
-            <div class="panel-toolbar">
+            <div class="panel-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
                 <select id="avgReqFilter" class="mm-select" onchange="filterAvgRequests()">
                     <option value="all">All Requests</option>
                     <option value="pending">Pending</option>
