@@ -779,6 +779,17 @@ function renderResultPage() {
     updateResultChevrons();
 
     scroller.onscroll = () => updateResultChevrons();
+    if (!scroller._keyHandler) {
+    scroller._keyHandler = true;
+    window.addEventListener('keydown', e => {
+        if (e.key === 'PageDown' || e.key === 'PageUp') {
+            const scroller = document.getElementById('resultRowsScroll');
+            if (!scroller) return;
+            e.preventDefault();
+            scroller.scrollBy({ top: (e.key === 'PageDown' ? 1 : -1) * 10 * 54, behavior: 'smooth' });
+        }
+    });
+}
 }
 
 function updateResultChevrons() {
