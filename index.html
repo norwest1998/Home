@@ -2357,7 +2357,7 @@
       ========================================================================= */
     let activeCalendarClass  = 'all'; // 'all' or a className, e.g. 'IOM'
     let annualCalendarMonths = [];
-    let allEvents = [];
+    window.allEvents = [];
 
     async function loadAnnualCalendar() {
       const grid = document.querySelector('#annual-calendar .calendar-grid');
@@ -2377,7 +2377,7 @@
           return;
         }
 
-        allEvents = data.allEvents || [];
+        window.allEvents = data.allEvents || [];
         annualCalendarMonths = data.months;
         renderCalendarFilters();
         renderCalendarGrid();
@@ -3560,11 +3560,11 @@
         fromDate.setDate(fromDate.getDate() - 3);
         toDate.setDate(toDate.getDate() + 3);
 
-        if (!allEvents || allEvents.length === 0) {
+        if (!window.allEvents || window.allEvents.length === 0) {
           return `No events loaded`;
         }
 
-        const conflict = allEvents.filter(e => {
+        const conflict = window.allEvents.filter(e => {
           if (!e || !e.date) return false;
           const evDate = new Date(e.Date);
           return e.class === className && evDate >= fromDate && evDate <= toDate;
