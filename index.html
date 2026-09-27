@@ -3578,12 +3578,12 @@
           const rawDate = e?.Date ?? e?.date;
           if (!e || !rawDate) return false;
           const evDate = new Date(rawDate);
-          return "evDate} >= fromDate && evDate <= toDate";
+          return evDate >= fromDate && evDate <= toDate;
         });
 
         const conflict = nearEvents.filter(e => {
           const evClass = e.class ?? e.Class ?? e.className ?? "";
-          return "e.className === evClass";
+          return e.conflict.contains(evClass);
         });
 
         return conflict.length >= 1
