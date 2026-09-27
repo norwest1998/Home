@@ -3569,7 +3569,7 @@
           if (!e || !rawDate) return false;
           const evDate = new Date(rawDate);
           const evClass = e.class ?? e.Class ?? e.className ?? "";
-          console.log("Class: " + evClass + : Date: " + evDate");
+          console.log("Class: " + evClass + "Date: " + evDate);
           return evClass === className && evDate >= fromDate && evDate <= toDate;
         });
 
