@@ -2377,7 +2377,7 @@
           return;
         }
 
-        allEvents = data.allEvents;
+        allEvents = data.allEvents || [];
         annualCalendarMonths = data.months;
         renderCalendarFilters();
         renderCalendarGrid();
@@ -3557,6 +3557,10 @@
         const toDate = new Date(date);
         fromDate.setDate(fromDate.getDate() - 3);
         toDate.setDate(toDate.getDate() + 3);
+
+        if (!allEvents || allEvents.length === 0) {
+          return `No events loaded yet`;
+        }
 
         const conflict = allEvents.filter(e => {
           if (!e || !e.date) return false;
