@@ -3571,7 +3571,7 @@ console.log("events: " + window.allEvents);
           const evClass = e.class ?? e.Class ?? e.className ?? "";
           return evClass === className && evDate >= fromDate && evDate <= toDate;
         });
-
+console.log("Filter: " + `evClass === className && evDate >= fromDate && evDate <= toDate`)
         return conflict.length >= 1
           ? conflict[0].event
           : `No conflicting event found for ${className} between ${fromDate.toDateString()} and ${toDate.toDateString()}`;
