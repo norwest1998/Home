@@ -3559,9 +3559,18 @@
         const toDate = new Date(date);
         fromDate.setDate(fromDate.getDate() - 3);
         toDate.setDate(toDate.getDate() + 3);
-console.log("events: " + window.allEvents);
+
         if (!window.allEvents || window.allEvents.length === 0) {
-          return `No events loaded`;
+          try {
+            const resp = await fetch(`${CALENDAR_URL}?type=calendar`);
+            const data = await resp.json();
+            window.allEvents = data.allEvents || [];
+          } catch (err) {
+            return `Unable to load events`;
+          }
+          if (window.allEvents.length === 0) {
+            return `No events found in calendar`;
+          }
         }
 
         const conflict = window.allEvents.filter(e => {
@@ -3571,7 +3580,7 @@ console.log("events: " + window.allEvents);
           const evClass = e.class ?? e.Class ?? e.className ?? "";
           return evClass === className && evDate >= fromDate && evDate <= toDate;
         });
-console.log("Filter: " + `evClass === className && evDate >= fromDate && evDate <= toDate`)
+
         return conflict.length >= 1
           ? conflict[0].event
           : `No conflicting event found for ${className} between ${fromDate.toDateString()} and ${toDate.toDateString()}`;
