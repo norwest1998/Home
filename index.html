@@ -3562,24 +3562,28 @@
 //        toDate.setDate(toDate.getDate() + 3);
 
           try {
-            const resp = await fetch(`${CALENDAR_URL}?type=RegattaEvents&date=${date}&class=${className}`);
+            const resp = await fetch(`${CALENDAR_URL}?type=listConflicts&date=${date}&class=${className}`);
             const data = await resp.json();
-            nearEvents = data.events || [];
+            const events = data.events || [];
           } catch (err) {
             return `Unable to load events`;
           }
 
-          if (nearEvents.length === 0) {
+          if (events.length === 0) {
             return `No events found in calendar`;
           }
         
 
-        const conflict = nearEvents.filter(e => {
+        const nearEvents = events.filter(e => {
           const rawDate = e?.Date ?? e?.date;
           if (!e || !rawDate) return false;
           const evDate = new Date(rawDate);
+          return "evDate} >= fromDate && evDate <= toDate";
+        });
+
+        const conflict = nearEvents.filter(e => {
           const evClass = e.class ?? e.Class ?? e.className ?? "";
-          return evClass === className && evDate >= fromDate && evDate <= toDate;
+          return "e.className === evClass";
         });
 
         return conflict.length >= 1
