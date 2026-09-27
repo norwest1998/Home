@@ -3338,8 +3338,9 @@
           if (!selectedOpt) {
             document.getElementById("reqConflictingRegatta").value  = "Will load after Class is selected";
           } else {
-            document.getElementById("reqConflictingRegatta").value  = `"Searching for conflicting ${selectedOpt.value} event around the ${misDate}"`;
-            document.getElementById("reqConflictingRegatta").value  = getConflictingEvents(selectedOpt, misDate);
+            const field = document.getElementById("reqConflictingRegatta");
+            field.value = `⏳ Searching for ${selectedOpt} event near ${misDate}…`;
+            getConflictingEvents(selectedOpt, misDate).then(result => { field.value = result; });
           }
         }
       });
@@ -3357,8 +3358,9 @@
           if (!misDate)  {
               document.getElementById("reqConflictingRegatta").value  = "Will load after Date is selected";
           } else {
-              document.getElementById("reqConflictingRegatta").value  = `"Searching for conflicting ${selectedOpt.value} event around the ${misDate}"`;
-              document.getElementById("reqConflictingRegatta").value  = getConflictingEvents(selectedOpt, misDate);
+            const field = document.getElementById("reqConflictingRegatta");
+            field.value = `⏳ Searching for ${selectedOpt} event near ${misDate}…`;
+            getConflictingEvents(selectedOpt, misDate).then(result => { field.value = result; });
           }           
         }
       });
@@ -3552,14 +3554,14 @@
       }
 
       /* Find ranked events for date of missed event */
-      function getConflictingEvents(className, date) {
+      async function getConflictingEvents(className, date) {
         const fromDate = new Date(date);
         const toDate = new Date(date);
         fromDate.setDate(fromDate.getDate() - 3);
         toDate.setDate(toDate.getDate() + 3);
 
         if (!allEvents || allEvents.length === 0) {
-          return `No events loaded yet`;
+          return `No events loaded`;
         }
 
         const conflict = allEvents.filter(e => {
@@ -3568,10 +3570,9 @@
           return e.class === className && evDate >= fromDate && evDate <= toDate;
         });
 
-        if (conflict.length >= 1) {
-          return conflict[0].event;  // or whatever the field name is (e.g. conflict[0].eventName)
-        }
-        return `No conflicting event found for ${className} between ${fromDate.toDateString()} and ${toDate.toDateString()}`;
+        return conflict.length >= 1
+          ? conflict[0].event
+          : `No conflicting event found for ${className} between ${fromDate.toDateString()} and ${toDate.toDateString()}`;
       }
 
       /**
