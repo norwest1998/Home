@@ -233,7 +233,7 @@
   
   }
 
-  .panel-header {
+  /* .panel-header {
       padding: 16px 24px;
       border-bottom: 1px solid var(--glass-border);
       min-height: 56px;
@@ -243,8 +243,16 @@
       flex-direction: column;
       align-items: flex-end;;
       gap: 10px;
+  } */
+  .panel-header {
+      padding: 16px 24px 0;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
   }
-
+  
   .panel-header--tabbed {
       padding-bottom: 0;
       align-items: flex-end;
