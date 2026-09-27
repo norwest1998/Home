@@ -3565,9 +3565,12 @@
         }
 
         const conflict = window.allEvents.filter(e => {
-          if (!e || !e.date) return false;
-          const evDate = new Date(e.Date);
-          return e.class === className && evDate >= fromDate && evDate <= toDate;
+          const rawDate = e?.Date ?? e?.date;
+          if (!e || !rawDate) return false;
+          const evDate = new Date(rawDate);
+          const evClass = e.class ?? e.Class ?? e.className ?? "";
+          console.log("Class: " + evClass + : Date: " + evDate");
+          return evClass === className && evDate >= fromDate && evDate <= toDate;
         });
 
         return conflict.length >= 1
