@@ -3559,7 +3559,7 @@
         const toDate = new Date(date);
         fromDate.setDate(fromDate.getDate() - 3);
         toDate.setDate(toDate.getDate() + 3);
-
+console.log("events: " + window.allEvents);
         if (!window.allEvents || window.allEvents.length === 0) {
           return `No events loaded`;
         }
@@ -3569,7 +3569,6 @@
           if (!e || !rawDate) return false;
           const evDate = new Date(rawDate);
           const evClass = e.class ?? e.Class ?? e.className ?? "";
-          console.log("Class: " + evClass + "Date: " + evDate);
           return evClass === className && evDate >= fromDate && evDate <= toDate;
         });
 
