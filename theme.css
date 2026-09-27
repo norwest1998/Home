@@ -228,9 +228,7 @@
     border-radius: 20px;
     backdrop-filter: blur(18px) saturate(140%);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 18px 40px rgba(2,10,18,0.35);
-    overflow: hidden;
-  
+    box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 18px 40px rgba(2,10,18,0.35); 
   }
 
   /* .panel-header {
@@ -252,7 +250,7 @@
       align-items: stretch;
       gap: 10px;
   }
-  
+
   .panel-header--tabbed {
       padding-bottom: 0;
       align-items: flex-end;
@@ -290,6 +288,12 @@
     animation: pulse 2.4s ease-in-out infinite;
     flex-shrink: 0;
   }
+
+  .panel > *:last-child {
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    overflow: hidden;
+}
   
   @keyframes pulse {
     0%, 100% { opacity: 1; }
