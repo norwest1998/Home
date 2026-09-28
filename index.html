@@ -3556,6 +3556,9 @@
 
       /* Find ranked events for date of missed event */
       async function getConflictingEvents(className, date) {
+
+        const events = [];
+
         const fromDate = new Date(date);
         const toDate = new Date(date);
         fromDate.setDate(fromDate.getDate() - 3);
@@ -3564,9 +3567,9 @@
           try {
             const resp = await fetch(`${CALENDAR_URL}?action=listConflicts&date=${date}`);
             const data = await resp.json();
-            const events = data.events || [];
+            events = data.events || [];
           } catch (err) {
-            return `Unable to load events: ${err.message}`;
+            return `Failed to load events: ${err.message}`;
           }
 
           if (events.length === 0) {
