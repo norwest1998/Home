@@ -1,0 +1,2072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendar Management Console — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Link Shared Theme -->
+<link rel="stylesheet" href="theme.css">
+
+<style>
+  /* =========================================================
+     ADMIN LAYOUT & CONSOLE WORKSPACE STYLES 
+     ========================================================= */
+  .admin-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 36px auto 16px; flex-wrap: wrap;
+  }
+  .admin-title-group { display: flex; flex-direction: column; gap: 4px; }
+  .admin-title-group h1 { font-family: var(--font-display); font-size: 28px; color: var(--foam); }
+  .admin-badge {
+    display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-data);
+    font-size: 9px; color: var(--signal); padding: 4px 10px; border-radius: 4px;
+    background: rgba(255,106,61,0.12); border: 1px solid rgba(255,106,61,0.3); width: fit-content;
+  }
+
+  /* Calendar Health & Status Bar */
+  .health-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-radius: 12px; background: rgba(15,53,80,0.6);
+    border: 1px solid var(--glass-border); margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+  }
+  .health-status-group { display: flex; align-items: center; gap: 12px; }
+  .health-indicator {
+    display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-data);
+    font-size: 13px; color: var(--foam); font-weight: 600;
+  }
+  .status-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #4ade80; box-shadow: 0 0 10px rgba(74,222,128,0.6);
+  }
+  .status-dot.amber { background: #fbbf24; box-shadow: 0 0 10px rgba(251,191,36,0.6); }
+  .status-dot.red { background: #f87171; box-shadow: 0 0 10px rgba(248,113,113,0.6); }
+
+  /* Quick Stats Bar - Season Moved Far Left */
+  .admin-stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;
+  }
+  @media (max-width: 900px) { .admin-stats-row { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .admin-stats-row { grid-template-columns: 1fr; } }
+
+  .admin-stat-card { padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+  .admin-stat-card .num { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--foam); }
+  .admin-stat-card .lbl { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; color: var(--foam-dim); }
+  
+  /* Class Events Scheduled Row */
+  .class-events-section {
+    background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border);
+    border-radius: 12px; padding: 14px 18px; margin-bottom: 24px;
+  }
+  .class-events-header {
+    font-family: var(--font-data); font-size: 11px; text-transform: uppercase;
+    color: var(--glow); letter-spacing: 0.05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .class-pill-list { display: flex; align-items: stretch; gap: 10px; flex-wrap: nowrap; overflow-x: auto; }
+  .class-stat-pill {
+    display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+    border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);
+    color: var(--foam); font-size: 13px; font-family: var(--font-data); transition: all 0.15s ease;
+    cursor: pointer; flex: 1; min-width: 0; white-space: nowrap;
+  }
+  .class-stat-pill:hover {
+    background: rgba(255,106,61,0.15); border-color: rgba(255,106,61,0.4);
+  }
+  .class-stat-pill img { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
+  .class-stat-pill .pill-label { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+  .class-stat-pill .count {
+    background: rgba(255,106,61,0.2); color: var(--signal); font-weight: 700;
+    padding: 3px 10px; border-radius: 12px; font-size: 12px; border: 1px solid rgba(255,106,61,0.3);
+    flex-shrink: 0;
+  }
+
+  /* Calendar Bulk Sync Card */
+  .calendar-sync-banner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; background: rgba(37,127,182,0.12); border: 1px solid rgba(37,127,182,0.3);
+    border-radius: 12px; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;
+  }
+  .sync-info { display: flex; flex-direction: column; gap: 4px; }
+  .sync-info h4 { margin: 0; color: var(--foam); font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .sync-info p { margin: 0; color: var(--foam-dim); font-size: 12px; }
+
+  /* Filter Bar (Season Dropdown + Rescheduled toggle + class pills) */
+  .filter-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .season-select-wrapper { display: flex; align-items: center; gap: 8px; }
+  .season-select-wrapper label { font-family: var(--font-data); font-size: 11px; text-transform: uppercase; color: var(--foam-dim); }
+  .season-dropdown {
+    padding: 8px 12px; border-radius: 8px; border: 1px solid var(--glass-border);
+    background: rgba(0,0,0,0.4); color: var(--foam); font-size: 13px; font-family: var(--font-data);
+    cursor: pointer; min-width: 130px;
+  }
+  .season-dropdown option { background: #0f3550; color: #fff; }
+
+  .filter-pill {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+    border-radius: 999px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.25);
+    color: var(--foam-dim); font-family: var(--font-data); font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.05em; cursor: pointer; transition: all 0.15s ease;
+  }
+  .filter-pill:hover { background: var(--glass-fill-hi); }
+  .filter-pill.active {
+    background: rgba(255,106,61,0.18); border-color: rgba(255,106,61,0.4); color: var(--signal);
+  }
+  .class-pill-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .class-pill {
+    width: 44px; height: 36px; border-radius: 8px; padding: 0; overflow: hidden;
+    border: 1px solid var(--glass-border); background: rgba(0,0,0,0.25); cursor: pointer;
+    transition: all 0.15s ease; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .class-pill img { width: 24px; height: 24px; object-fit: contain; }
+  .class-pill:hover { border-color: var(--glow); }
+  .class-pill.active { border-color: var(--signal); box-shadow: 0 0 0 2px rgba(255,106,61,0.3); }
+
+  /* Events Table & Action Buttons */
+  .admin-table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--glass-border); }
+  table.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.admin-table th {
+    font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--glow); text-align: left; padding: 12px 14px;
+    background: rgba(15,53,80,0.92); border-bottom: 1px solid var(--glass-border); white-space: nowrap;
+  }
+  table.admin-table td {
+    padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    color: var(--foam); vertical-align: middle;
+  }
+  table.admin-table tbody tr { transition: background 0.12s ease; }
+  table.admin-table tbody tr:hover { background: var(--glass-fill-hi); }
+  table.admin-table tbody tr.selected { background: rgba(255,106,61,0.08); }
+
+  /* Action Buttons Group in Row */
+  .row-actions { display: flex; align-items: center; gap: 6px; }
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--glass-border);
+    background: rgba(0,0,0,0.3); color: var(--foam-dim); display: inline-flex;
+    align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease;
+  }
+  .icon-btn:hover { color: var(--foam); background: var(--glass-fill-hi); border-color: var(--glow); }
+  .icon-btn.btn-cal:hover { color: #38bdf8; border-color: rgba(56,189,248,0.5); }
+  .icon-btn.btn-resched:hover { color: #f59e0b; border-color: rgba(245,158,11,0.5); }
+  .icon-btn.btn-edit:hover { color: #4ade80; border-color: rgba(74,222,128,0.5); }
+
+  /* Action Panel Grid */
+  .action-panel-grid {
+    display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; margin-top: 24px;
+  }
+  @media (max-width: 900px) { .action-panel-grid { grid-template-columns: 1fr; } }
+
+  .action-bar { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  .btn-approve { background: rgba(74,222,128,0.18); color: #4ade80; border: 1px solid rgba(74,222,128,0.4); }
+  .btn-approve:hover { background: rgba(74,222,128,0.28); }
+  .btn-hold { background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
+  .btn-hold:hover { background: rgba(245,158,11,0.28); }
+
+  .tally-box {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-radius: 10px; background: rgba(0,0,0,0.25);
+    border: 1px solid var(--glass-border); margin-top: 10px;
+  }
+
+  /* Form fields & Card display */
+  .app-detail-grid label { font-family: var(--font-data); font-size: 10.5px; text-transform: uppercase; color: var(--foam-dim); display:block; margin-bottom:4px; }
+  .app-detail-grid select, .app-detail-grid input {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--glass-border);
+    background: rgba(0,0,0,0.25); color: var(--foam); font-size: 13px; margin-bottom: 14px;
+  }
+  .app-detail-grid select option { background: #0f3550; color: #fff; }
+
+  .event-details-card {
+    padding: 14px 16px; border-radius: 8px;
+    background: rgba(0, 0, 0, 0.25); border: 1px solid var(--glass-border);
+  }
+  .event-details-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;
+  }
+  .event-detail-item { display: flex; flex-direction: column; gap: 2px; }
+  .event-detail-item .lbl { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; color: var(--foam-dim); }
+  .event-detail-item .val { font-size: 13px; color: var(--foam); font-weight: 600; }
+
+  /* Modals */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+    opacity: 0; pointer-events: none; transition: all 0.2s ease;
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .modal-card {
+    width: 100%; max-width: 500px; background: #0c2b42; border: 1px solid var(--glass-border);
+    border-radius: 12px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  }
+
+   /* =========================================================
+   SEASON OPERATIONS (3-Column Layout)
+   ========================================================= */
+  .season-actions-grid {
+    display: grid;
+    grid-template-rows: repeat(3, 1fr);
+    gap: 18px;
+  }
+
+  @media (max-width: 1024px) {
+    .season-actions-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .season-action-card{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:18px;
+    border-radius:16px;
+    background:var(--glass-fill);
+    border:1px solid var(--glass-border);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+  }
+
+  .season-action-icon{
+    width:54px;
+    height:54px;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(37,127,182,0.18);
+    border:1px solid rgba(37,127,182,0.25);
+    color:var(--glow);
+  }
+
+  .season-action-content{
+    flex:1;
+  }
+
+  .season-action-content h4{
+    margin:0 0 6px;
+    color:var(--foam);
+  }
+
+  .season-action-content p{
+    margin:0;
+    color:var(--foam-dim);
+    font-size:12px;
+    line-height:1.45;
+  }
+
+  .btn-busy{
+    opacity:.7;
+    pointer-events:none;
+  }
+
+  .season-operations-panel{
+    background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border);
+    border-radius: 12px; padding: 14px 18px; margin-bottom: 24px;
+  }
+
+  /* Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--glow, #38bdf8);
+  animation: spin 0.75s linear infinite;
+}
+
+/* Season Operation Response Messages */
+.season-op-msg {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  display: none;
+}
+
+.season-op-msg.active {
+  display: block;
+}
+
+.season-op-msg.status-loading {
+  color: var(--glow, #38bdf8);
+}
+
+.season-op-msg.status-success {
+  color: #4ade80;
+}
+
+.season-op-msg.status-error {
+  color: #f87171;
+}
+
+/* Filter Bar Ordering (Left to Right: Month -> Season -> Rescheduled -> Classes) */
+.filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.filter-select {
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* Modal Layout */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay.hidden {
+  display: none !important;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-surface, #1e293b);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.full-width {
+  grid-column: span 2;
+}
+
+.form-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: inherit;
+  font-size: 14px;
+}
+
+.form-input[readonly] {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Class Emblem Preview Container */
+.emblem-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+}
+
+.emblem-img {
+  max-height: 30px;
+  max-width: 30px;
+  object-fit: contain;
+}
+
+/* Conditional Field Hiding */
+.full-field-only.hidden-field {
+  display: none !important;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Row Checkbox */
+.row-check { display: flex; align-items: center; justify-content: center; }
+.row-check input[type="checkbox"] {
+width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
+background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 3px;
+}
+
+/* Select All Header */
+.select-all-wrap { display: flex; align-items: center; gap: 8px; }
+.select-all-wrap input[type="checkbox"] {
+width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
+}
+.select-all-label { font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--glow); }
+
+
+/* Bulk Actions Bar */
+.bulk-actions-bar {
+display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+background: rgba(94,234,212,0.06); border: 1px solid rgba(94,234,212,0.2);
+border-radius: 8px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.bulk-actions-label { font-family: var(--font-data); font-size: 11px; color: var(--glow); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px; }
+.bulk-icon-btn {
+width: 32px; height: 32px; padding: 0;
+display: inline-flex; align-items: center; justify-content: center;
+border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);
+color: var(--glow); cursor: pointer; transition: all 0.15s ease;
+}
+.bulk-icon-btn:hover { background: var(--glass-fill-hi); border-color: var(--glow); color: var(--foam); }
+.bulk-icon-btn.bulk-cal:hover { color: #38bdf8; border-color: rgba(56,189,248,0.4); }
+.bulk-icon-btn.bulk-resched:hover { color: #f59e0b; border-color: rgba(245,158,11,0.4); }
+.bulk-icon-btn.bulk-del:hover { color: #f87171; border-color: rgba(248,113,113,0.4); }
+
+/* Select All Wrap in filter bar */
+.select-all-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.select-all-wrap input[type="checkbox"] {
+  width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
+}
+
+/* Filter bar layout */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.bulk-align-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.bulk-align-group .select-all-wrap {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+.bulk-align-group .select-all-label {
+  font-family: var(--font-data); font-size: 10px; text-transform: uppercase; color: var(--foam-dim); white-space: nowrap;
+}
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+/* Narrow/wide action column toggling */
+@media (min-width: 769px) {
+  .col-actions-narrow { display: none !important; }
+}
+@media (max-width: 768px) {
+  .col-actions-full { display: none !important; }
+}
+
+/* Ellipsis row dropdown */
+.row-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #0c2b42;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  min-width: 160px;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+.row-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 14px;
+  background: none;
+  border: none;
+  color: var(--foam);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.row-dropdown button:hover { background: var(--glass-fill-hi); }
+
+/* Loading states */
+.table-loading-row td {
+  padding: 32px 0; text-align: center;
+}
+.section-loading {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; padding: 24px; color: var(--foam-dim);
+  font-family: var(--font-data); font-size: 12px;
+}
+.section-loading .spinner { flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<header class="nav-glass">
+  <a href="admin.html" class="brand">
+    <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+    <div class="brand-text">
+      <strong>Sydney Maritime Modellers Club</strong>
+      <span>CALENDAR MANAGEMENT CONSOLE</span>
+    </div>  
+    <i class="nav-icon" data-lucide="folder-key" color="#b41d1d"></i>
+    <p style="color:#b41d1d;"><strong>Restricted Area</strong></p>
+  </a>
+  <ul class="nav-links">
+    <li class="nav-item"><a href="index.html" class="nav-link">Public Site</a></li>
+    <li class="nav-item"><a href="#queue" class="nav-link">Events Queue</a></li>
+    <li class="nav-item"><a href="#calendar-sync" class="nav-link">Calendar Sync</a></li>
+    <li class="nav-item"><a href="#audit-log" class="nav-link">Audit Log</a></li>
+  </ul>
+</header>
+
+<main class="container">
+
+  <div class="admin-header">
+    <div class="admin-title-group">
+      <h1>Calendar Management Console</h1>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <a href="admin.html" class="btn btn-ghost">Back to Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Calendar Health & Status Bar -->
+  <div class="health-bar glass">
+    <div class="health-status-group">
+      <div class="status-dot" id="healthDot"></div>
+      <div class="health-indicator">
+        <span>Calendar Health:</span>
+        <strong id="healthText">Checking health…</strong>
+      </div>
+    </div>
+    <div style="font-family: var(--font-data); font-size: 11px; color: var(--foam-dim);" id="lastSyncTime">
+      Last Synced: Just now
+    </div>
+  </div>
+
+  <!-- Statistics Row - Season Pill Moved Far Left -->
+  <div class="admin-stats-row">
+    <div class="admin-stat-card glass">
+      <span class="lbl">Active Season</span>
+      <span class="num" id="statSeason" style="color:var(--glow);">–</span>
+    </div>
+    <div class="admin-stat-card glass">
+      <span class="lbl">Events Scheduled</span>
+      <span class="num" id="statTotalEvents">–</span>
+    </div>
+    <div class="admin-stat-card glass">
+      <span class="lbl">Rescheduled Events</span>
+      <span class="num" style="color:var(--glow);" id="statRescheduled">–</span>
+    </div>
+    <div class="admin-stat-card glass">
+      <span class="lbl">Pending Approval</span>
+      <span class="num" style="color:var(--signal);" id="statPending">–</span>
+    </div>
+  </div>
+
+  <!-- Class Events Scheduled Row -->
+  <div class="class-events-section">
+    <div class="class-events-header">
+      <i data-lucide="shield" size="14"></i> Class Events Scheduled
+    </div>
+    <div class="class-pill-list" id="classEventsPills">
+      <span style="color: var(--foam-dim); font-size: 12px;">Loading class events…</span>
+    </div>
+  </div>
+
+
+<!-- Season Operations Panel (3 Columns) -->
+<div class="season-operations-panel" id="season-operations">
+  <div class="panel-header">
+    <div class="panel-title">
+      <span class="dot"></span>
+      <h3>Season Operations</h3>
+    </div>
+  </div>
+
+  <div class="tab-content active">
+    <div class="season-actions-grid">
+      
+      <!-- Operation 1: Export Events -->
+      <div class="season-action-card glass">
+        <div class="season-action-icon">
+          <i data-lucide="calendar-plus" color="#38bdf8"></i>
+        </div>
+        <div class="season-action-content">
+          <h4>Export to Google Calendar</h4>
+          <p>
+            Publish all pending and rescheduled events directly into class-specific Google Calendars.
+          </p>
+          <div class="season-op-msg" id="msgBulkExport"></div>
+        </div>
+        <button id="btnBulkExport" class="btn btn-approve">
+          <i data-lucide="cloud-upload" size="16"></i> Bulk Add All
+        </button>
+      </div>
+
+      <!-- Operation 2: Regional Conflict Scan -->
+      <div class="season-action-card glass">
+        <div class="season-action-icon">
+          <i data-lucide="map-pinned"></i>
+        </div>
+        <div class="season-action-content">
+          <h4>Regional Conflict Scan</h4>
+          <p>
+            Check all regattas against Australian regional championship events and update conflict references.
+          </p>
+          <div class="season-op-msg" id="msgRegionalConflict"></div>
+        </div>
+        <button id="regionalConflictBtn" class="btn btn-ghost">
+          Run Scan
+        </button>
+      </div>
+
+      <!-- Operation 3: Schedule Next Season -->
+      <div class="season-action-card glass">
+        <div class="season-action-icon">
+          <i data-lucide="calendar-range"></i>
+        </div>
+        <div class="season-action-content">
+          <h4>Schedule Next Season</h4>
+          <p>
+            Generate the next season fixture list using the Club Management Regatta definitions.
+          </p>
+          <div class="season-op-msg" id="msgGenerateSeason"></div>
+        </div>
+        <button id="generateSeasonBtn" class="btn btn-approve">
+          Generate Fixtures
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+  <!-- Main Events Table Queue -->
+  <div class="panel" id="queue">
+    <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div class="panel-title"><span class="dot"></span><h3>Scheduled Events</h3></div>
+      <button class="btn btn-ghost" id="addEventBtn" style="flex-shrink:0;"><i data-lucide="plus" size="14"></i> Add Event</button>
+    </div>
+    <div class="tab-content active">
+      
+      <!-- Filter Bar -->
+      <div class="filter-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <!-- Left: Filters -->
+        <div class="filter-controls" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;">
+          <select id="seasonSelect" class="season-dropdown"></select>
+          <select id="monthSelect" class="season-dropdown" style="min-width:140px;"></select>
+          <button class="filter-pill" id="rescheduledToggle">Rescheduled Only</button>
+          <div class="class-pill-group" id="classPillGroup"></div>
+        </div>
+        <!-- Right: Bulk icons + Select All — aligns with table Actions | Select columns -->
+        <div class="bulk-align-group" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:auto;">
+          <button class="bulk-icon-btn bulk-cal" id="bulkAddCalBtn" title="Add selected to Calendar">
+            <i data-lucide="calendar-plus" size="15"></i>
+          </button>
+          <button class="bulk-icon-btn bulk-resched" id="bulkReschedBtn" title="Reschedule selected">
+            <i data-lucide="calendar-sync" size="15"></i>
+          </button>
+          <button class="bulk-icon-btn bulk-del" id="bulkDeleteBtn" title="Delete selected">
+            <i data-lucide="trash-2" size="15"></i>
+          </button>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding-left:4px;">
+            <label for="selectAllChk" class="select-all-label" style="font-family:var(--font-data);font-size:9px;text-transform:uppercase;color:var(--glow);letter-spacing:0.06em;">Select</label>
+            <input type="checkbox" id="selectAllChk" style="width:16px;height:16px;accent-color:var(--glow);cursor:pointer;">
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width:36px;"></th>
+              <th>Date</th>
+              <th>Class</th>
+              <th>Event Type</th>
+              <th>Calendar Status</th>
+              <th>Reschedule Status</th>
+              <th class="col-actions-full" style="text-align: right;">Actions</th>
+              <th class="col-actions-narrow" style="text-align:right; width:36px;"></th>
+            </tr>
+          </thead>
+          <tbody id="eventsBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--foam-dim);">Loading events…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-panel-grid">
+
+    <!-- Rescheduling Details Panel -->
+    <div class="panel" id="reschedulePanel">
+      <div class="panel-header">
+        <div class="panel-title"><h3>Rescheduling details</h3></div>
+      </div>
+      <div class="tab-content active">
+        
+        <!-- Original Event Section -->
+        <div class="app-detail-section" style="margin-bottom: 20px;">
+          <span class="app-detail-section-title">Original Event (Event to be Rescheduled)</span>
+          <div id="selectedEventCard" class="event-details-card">
+            <p style="color: var(--foam-dim); margin: 0; font-style: italic;">No event selected. Click the reschedule icon <i data-lucide="calendar-sync" size="14"></i> in the events table above.</p>
+          </div>
+        </div>
+
+        <!-- Available Date & Destination Data -->
+        <div class="app-detail-section">
+          <span class="app-detail-section-title">Select Available Date</span>
+          <div class="app-detail-grid">
+            <div class="app-detail-item full-width">
+              <label for="availableDates">Available Dates (Saturdays, no conflicting competition)</label>
+              <select id="availableDates"></select>
+            </div>
+          </div>
+
+          <span class="app-detail-section-title" style="margin-top: 10px; display: block;">Rescheduled Event Data (Destination Details)</span>
+          <div id="newEventPreviewCard" class="event-details-card">
+            <p style="color: var(--foam-dim); margin: 0; font-style: italic;">Select an available date above to populate event details.</p>
+          </div>
+        </div>
+
+        <div class="action-bar">
+          <button class="btn btn-approve" id="requestRescheduleBtn"><i data-lucide="calendar-plus" color="#257fb6"></i> Request Reschedule</button>
+          <button class="btn btn-hold" id="approveRescheduleBtn"><i data-lucide="check-circle" color="#257fb6"></i> Approve Reschedule</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reschedule Audit Log -->
+    <div class="panel" id="audit-log">
+      <div class="panel-header">
+        <div class="panel-title"><h3>Management Audit</h3></div>
+      </div>
+      <div class="tab-content active">
+        <div class="tally-box">
+          <span class="app-detail-label">Last Action</span>
+          <span class="votes-for" id="lastActionLabel">—</span>
+        </div>
+        <div style="margin-top:14px;">
+          <span class="app-detail-label">Audit Trail</span>
+          <div class="log-box" id="auditTrail" style="margin-top:6px;">No actions yet this session.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  
+  <!-- AUDIT LOG -->
+  <div class="section-head" id="audit-log">
+      <h2>Audit Log</h2>
+      <p>Actions recorded to the AuditLog sheet.</p>
+  </div>
+  <div class="panel">
+      <div class="panel-header">
+          <div class="panel-title"><span class="dot"></span><h3>Activity</h3></div>
+          <div class="panel-toolbar">
+              <div class="audit-toggle">
+                  <button id="auditFilterMembers" class="active">Members</button>
+                  <button id="auditFilterAll">All</button>
+              </div>
+              <div class="search-wrap">
+                  <i class="nav-icon" data-lucide="search"></i>
+                  <input class="search-input" id="auditSearch" placeholder="Search user, action, field…">
+              </div>
+              <button type="button" class="btn btn-ghost" id="refreshLogBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+          </div>
+      </div>
+      <div class="tab-content active">
+          <div class="log-table-wrap">
+              <table class="log-table">
+                  <thead><tr><th>Time</th><th>User</th><th>Domain</th><th>Sheet</th><th>Action</th><th>Field</th><th>Value</th><th>Status</th></tr></thead>
+                  <tbody id="auditBody"></tbody>
+              </table>
+          </div>
+          <div class="empty-state" id="auditEmpty" style="display:none;">No activity yet.</div>
+      </div>
+  </div>
+</main>
+
+<!-- Class Specific Google Calendar Modal with Season Selector -->
+<div class="modal-overlay" id="calendarModal">
+  <div class="modal-card" style="max-width: 800px; width: 90%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0; color:var(--foam);" id="calendarModalTitle">Class Events</h3>
+      
+      <!-- Season Selector Controls (< CurrentSeason >) -->
+      <div id="modalSeasonSelector" style="display:flex; align-items:center; gap:8px;">
+        <button class="icon-btn" id="modalPrevSeason" onclick="shiftModalSeason(-1)" title="Previous Season">
+          <i data-lucide="chevron-left" size="18"></i>
+        </button>
+        <span id="modalSeasonDisplay" style="font-family:var(--font-data); font-weight:600; color:var(--glow); font-size:14px; min-width:80px; text-align:center;">
+          2026-27
+        </span>
+        <button class="icon-btn" id="modalNextSeason" onclick="shiftModalSeason(1)" title="Next Season">
+          <i data-lucide="chevron-right" size="18"></i>
+        </button>
+      </div>
+
+      <button class="icon-btn" onclick="closeCalendarModal()"><i data-lucide="x"></i></button>
+    </div>
+    <div id="calendarModalBody" style="min-height: 380px;">
+      <!-- Filtered event table populated dynamically -->
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Event Modal -->
+<div id="eventModal" class="modal-overlay hidden">
+  <div class="modal-card glass">
+    <div class="modal-header">
+      <h3 id="modalTitle">Add Event</h3>
+      <button type="button" id="closeModalBtn" class="btn-icon">&times;</button>
+    </div>
+
+    <form id="eventForm" class="modal-form">
+      <input type="hidden" id="modalMode" value="add">
+
+      <div class="form-grid">
+        <!-- Event Type -->
+        <div class="form-group">
+          <label for="modalEventType">Event Type</label>
+          <select id="modalEventType" class="form-input" required>
+            <option value="Competition">Competition</option>
+            <option value="Social">Social</option>
+            <option value="Meeting">Meeting</option>
+            <option value="Working Bee">Working Bee</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <!-- Class Emblem Display -->
+        <div class="form-group emblem-container full-field-only">
+          <label>Emblem</label>
+          <div class="emblem-preview">
+            <img id="modalEmblemImg" src="" alt="Emblem" class="emblem-img hidden">
+            <span id="modalEmblemPlaceholder" class="text-muted" style="font-size: 12px;">Select a Class</span>
+          </div>
+        </div>
+
+        <!-- Date (yyyy/MM/dd) -->
+        <div class="form-group">
+          <label for="modalDate">Date</label>
+          <input type="date" id="modalDate" class="form-input" required>
+        </div>
+
+        <!-- Month (MMM - Derived) -->
+        <div class="form-group full-field-only">
+          <label for="modalMonth">Month</label>
+          <input type="text" id="modalMonth" class="form-input" readonly placeholder="Auto (MMM)">
+        </div>
+
+        <!-- Start Time (hh:mm) -->
+        <div class="form-group">
+          <label for="modalStart">Start Time</label>
+          <input type="time" id="modalStart" class="form-input" required>
+        </div>
+
+        <!-- Finish Time (hh:mm) -->
+        <div class="form-group">
+          <label for="modalFinish">Finish Time</label>
+          <input type="time" id="modalFinish" class="form-input" required>
+        </div>
+
+        <!-- Class -->
+        <div class="form-group full-field-only">
+          <label for="modalClass">Class</label>
+          <select id="modalClass" class="form-input">
+            <option value="">Select Class...</option>
+          </select>
+        </div>
+
+        <!-- Regatta Type -->
+        <div class="form-group full-field-only">
+          <label for="modalRegattaType">Regatta Type</label>
+          <input type="text" id="modalRegattaType" class="form-input" placeholder="e.g. Club Championship">
+        </div>
+
+        <!-- Season -->
+        <div class="form-group full-field-only">
+          <label for="modalSeason">Season</label>
+          <input type="text" id="modalSeason" class="form-input" placeholder="e.g. 2026-27">
+        </div>
+
+        <!-- Round No -->
+        <div class="form-group full-field-only">
+          <label for="modalRoundNo">Round No</label>
+          <input type="text" id="modalRoundNo" class="form-input" placeholder="e.g. 1">
+        </div>
+
+        <!-- Results -->
+        <div class="form-group full-field-only">
+          <label for="modalResults">Results</label>
+          <select id="modalResults" class="form-input">
+            <option value="Not Started">Not Started</option>
+            <option value="Processed">Processed</option>
+            <option value="No Score">No Score</option>
+          </select>
+        </div>
+
+        <!-- Rescheduled Date -->
+        <div class="form-group full-field-only">
+          <label for="modalRescheduledDate">Rescheduled Date</label>
+          <input type="date" id="modalRescheduledDate" class="form-input">
+        </div>
+
+        <!-- HexKey (Not Editable) -->
+        <div class="form-group full-field-only">
+          <label for="modalHexKey">HexKey</label>
+          <input type="text" id="modalHexKey" class="form-input" readonly placeholder="Auto-generated">
+        </div>
+
+        <!-- Updated to Calendar (Calendar ID) -->
+        <div class="form-group full-field-only">
+          <label for="modalCalendarId">Updated to Calendar</label>
+          <input type="text" id="modalCalendarId" class="form-input" readonly placeholder="Class Calendar ID when synced">
+        </div>
+
+        <!-- Regional Conflicts (Read-only array/list) -->
+        <div class="form-group full-width full-field-only">
+          <label for="modalRegionalConflicts">Regional Conflicts</label>
+          <input type="text" id="modalRegionalConflicts" class="form-input" readonly placeholder="None">
+        </div>
+
+        <!-- Event Name (Freehand or Concatenated) -->
+        <div class="form-group full-width">
+          <label for="modalEvent" id="modalEventLabel">Event Name</label>
+          <input type="text" id="modalEvent" class="form-input" required placeholder="Event description">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="cancelModalBtn" class="btn btn-ghost">Cancel</button>
+        <button type="submit" class="btn btn-approve">Save Event</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+
+<footer>
+  <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+</footer>
+<script src="shared.js"></script>   <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
+<script src="auditLog.js"></script>
+<script>
+    AuditLog.init('calendar', 'Calendar');  // or 'all' to default to unfiltered
+</script>
+<script>
+
+
+/* =========================================================
+   DATE & TIME HELPERS
+   ========================================================= */
+function parseLocalDate(dateStr) {
+  if (!dateStr) return null;
+  if (dateStr instanceof Date) return dateStr;
+  const str = String(dateStr).trim();
+  if (!str) return null;
+
+  if (str.includes("T")) {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  const parts = str.split(/[-/.]/);
+  if (parts.length === 3) {
+    const p0 = parseInt(parts[0], 10);
+    const p1 = parseInt(parts[1], 10);
+    const p2 = parseInt(parts[2], 10);
+
+    if (parts[0].length === 4) return new Date(p0, p1 - 1, p2);
+    if (parts[2].length === 4) return new Date(p2, p1 - 1, p0);
+  }
+
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatDate(dateStr) {
+  const d = parseLocalDate(dateStr);
+  if (!d) return dateStr || "—";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}/${m}/${day}`;
+}
+
+function formatTime(timeStr) {
+  if (!timeStr) return "11:00 AM";
+  const str = String(timeStr).trim();
+  
+  if (str.includes("T")) {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      let hours = d.getHours();
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const h12 = hours % 12 || 12;
+      return `${String(h12).padStart(2, '0')}:${minutes} ${ampm}`;
+    }
+  }
+  
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(str)) {
+    const [h, m] = str.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
+  }
+
+  return str;
+}
+
+/* =========================================================
+   APPLICATION STATE & INSIGNIA
+   ========================================================= */
+let eventData = [];
+let classes = [];
+let selectedHex = null;
+let editingHex = null;
+
+const INSIGNIA_OVERRIDES = { General: 'smmc-logo.png', Social: 'SmileyFace.png' };
+function classInsignia(className) {
+  return `<img src="images/classes/${INSIGNIA_OVERRIDES[className] || className + '.png'}" alt="${className}">`;
+}
+
+const now = new Date();
+const CURRENT_SEASON_START = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+let selectedSeason = String(CURRENT_SEASON_START);
+let selectedClass = "";
+let rescheduledOnly = false;
+let selectedMonth = "";
+let selectedRows = new Set();
+
+/* DOM References */
+const eventsBody = document.getElementById("eventsBody");
+const rescheduledToggle = document.getElementById("rescheduledToggle");
+const classPillGroup = document.getElementById("classPillGroup");
+const seasonSelect = document.getElementById("seasonSelect");
+const availableDates = document.getElementById("availableDates");
+const requestBtn = document.getElementById("requestRescheduleBtn");
+const approveBtn = document.getElementById("approveRescheduleBtn");
+const btnBulkExport = document.getElementById("btnBulkExport");
+const auditTrail = document.getElementById("auditTrail");
+const lastActionLabel = document.getElementById("lastActionLabel");
+const regionalConflictBtn = document.getElementById("regionalConflictBtn");
+const generateSeasonBtn = document.getElementById("generateSeasonBtn");
+
+const filterMonth = document.getElementById("filterMonth");
+const eventModal = document.getElementById("eventModal");
+const eventForm = document.getElementById("eventForm");
+const modalTitle = document.getElementById("modalTitle");
+const modalMode = document.getElementById("modalMode");
+
+const modalHexKey = document.getElementById("modalHexKey");
+const modalMonth = document.getElementById("modalMonth");
+const modalDate = document.getElementById("modalDate");
+const modalStart = document.getElementById("modalStart");
+const modalFinish = document.getElementById("modalFinish");
+const modalClass = document.getElementById("modalClass");
+const modalRegattaType = document.getElementById("modalRegattaType");
+const modalEventType = document.getElementById("modalEventType");
+const modalSeason = document.getElementById("modalSeason");
+const modalRoundNo = document.getElementById("modalRoundNo");
+const modalResults = document.getElementById("modalResults");
+const modalRescheduledDate = document.getElementById("modalRescheduledDate");
+const modalCalendarId = document.getElementById("modalCalendarId");
+const modalRegionalConflicts = document.getElementById("modalRegionalConflicts");
+const modalEvent = document.getElementById("modalEvent");
+const modalEmblemImg = document.getElementById("modalEmblemImg");
+const modalEmblemPlaceholder = document.getElementById("modalEmblemPlaceholder");
+
+// Class Image Map lookup object (Populated during data load)
+let classImageMap = {};
+
+function logAction(msg) {
+  const time = new Date().toLocaleTimeString();
+  auditTrail.textContent = `[${time}] ${msg}\n` + (auditTrail.textContent === "No actions yet this session." ? "" : auditTrail.textContent);
+  lastActionLabel.textContent = msg;
+}
+
+/* =========================================================
+   RENDER ENGINE & FILTERS
+   ========================================================= */
+function seasonEvents() {
+  return eventData.filter(e => {
+    if (e.Class === "M") return false; // Exclude Marblehead
+    if (selectedMonth) {
+      const eDate = parseLocalDate(e.Date);
+      if (!eDate) return false;
+      const monthStr = eDate.toLocaleString("en-AU", { month: "short" });
+      if (monthStr !== selectedMonth) return false;
+    }
+    if (selectedSeason && !String(e.Season).startsWith(String(selectedSeason))) return false;
+    if (selectedClass && e.Class !== selectedClass) return false;
+    if (rescheduledOnly && !(e["Rescheduled Date"] || "")) return false;
+    return true;
+  });
+}
+
+function renderSeasonDropdown() {
+  const seasons = Array.from(new Set(eventData.map(e => e.Season).filter(Boolean))).sort().reverse();
+  if (!seasons.length) seasons.push(String(CURRENT_SEASON_START));
+
+  seasonSelect.innerHTML = seasons.map(s => 
+    `<option value="${s}" ${String(s) === String(selectedSeason) ? 'selected' : ''}>${s}</option>`
+  ).join("");
+
+  seasonSelect.addEventListener("change", (e) => {
+    selectedSeason = e.target.value;
+    selectedMonth = "";
+    selectedRows.clear();
+    renderStats();
+    renderClassEventsPills();
+    renderMonthDropdown();
+    renderTable();
+  });
+}
+
+let _monthDropdownBound = false;
+function renderMonthDropdown() {
+  const monthSelect = document.getElementById("monthSelect");
+  if (!monthSelect) return;
+
+  const seasonRows = eventData.filter(e => !selectedSeason || String(e.Season).startsWith(String(selectedSeason)));
+  const monthsSet = new Set();
+  seasonRows.forEach(e => {
+    const d = parseLocalDate(e.Date);
+    if (d) monthsSet.add(d.toLocaleString("en-AU", { month: "short" }));
+  });
+
+  const monthOrder = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const months = monthOrder.filter(m => monthsSet.has(m));
+
+  monthSelect.innerHTML = `<option value="">All Months</option>` +
+    months.map(m => `<option value="${m}" ${m === selectedMonth ? 'selected' : ''}>${m}</option>`).join("");
+
+  if (!_monthDropdownBound) {
+    monthSelect.addEventListener("change", (e) => {
+      selectedMonth = e.target.value;
+      renderTable();
+    });
+    _monthDropdownBound = true;
+  }
+}
+
+function renderStats() {
+  const activeEvents = eventData.filter(e => e.Class !== "M" && String(e.Season).startsWith(String(selectedSeason)));
+  document.getElementById("statSeason").textContent = selectedSeason;
+  document.getElementById("statTotalEvents").textContent = activeEvents.length;
+  document.getElementById("statRescheduled").textContent = activeEvents.filter(e => e.Results === "Rescheduled" || (e["Rescheduled Date"] && !e["Rescheduled Date"].includes("Pending"))).length;
+  document.getElementById("statPending").textContent = activeEvents.filter(e => (e["Rescheduled Date"] || "").includes("Pending")).length;
+
+  // Calendar Health Calculation
+  const syncedCount = activeEvents.filter(e => e.AddedStatus || e["Calendar Synced"] === "TRUE").length;
+  const healthPercent = activeEvents.length ? Math.round((syncedCount / activeEvents.length) * 100) : 100;
+  
+  const healthDot = document.getElementById("healthDot");
+  const healthText = document.getElementById("healthText");
+  
+  if (healthPercent > 80) {
+    healthDot.className = "status-dot";
+    healthText.textContent = `${healthPercent}% Synced — Operational (${syncedCount}/${activeEvents.length} on Calendar)`;
+  } else if (healthPercent > 40) {
+    healthDot.className = "status-dot amber";
+    healthText.textContent = `${healthPercent}% Synced — Action Required (${syncedCount}/${activeEvents.length} on Calendar)`;
+  } else {
+    healthDot.className = "status-dot red";
+    healthText.textContent = `${healthPercent}% Synced — Out of Sync (${syncedCount}/${activeEvents.length} on Calendar)`;
+  }
+}
+
+function renderClassEventsPills() {
+  const classEventsContainer = document.getElementById("classEventsPills");
+  const seasonRows = eventData.filter(e => e.Class !== "M" && String(e.Season).startsWith(String(selectedSeason)));
+  
+  const classCounts = {};
+  seasonRows.forEach(e => {
+    if (e.Class) classCounts[e.Class] = (classCounts[e.Class] || 0) + 1;
+  });
+
+  if (Object.keys(classCounts).length === 0) {
+    classEventsContainer.innerHTML = `<span style="color:var(--foam-dim); font-size:12px;">No class events scheduled for this season.</span>`;
+    return;
+  }
+
+  classEventsContainer.innerHTML = Object.entries(classCounts)
+    .sort(([,a],[,b]) => b - a)
+    .map(([className, count]) => `
+    <div class="class-stat-pill" onclick="openClassCalendarModal('${className}')" title="${className} — ${count} events">
+      ${classInsignia(className)}
+      <span class="pill-label">${className}</span>
+      <span class="count">${count}</span>
+    </div>
+  `).join("");
+}
+
+/* =========================================================
+   CLASS MODAL & SEASON FILTER CONTROL
+   ========================================================= */
+let modalCurrentClass = "";
+let modalSeasonIndex = 0;
+let modalSeasonsList = [];
+
+function openClassCalendarModal(className) {
+  modalCurrentClass = className;
+
+  // 1. Filter scheduled events table on main console by class
+  selectedClass = className;
+  renderClassPills();
+  renderTable();
+
+  // 2. Extract available seasons from season dropdown / Event Data (Sorted Chronologically)
+  const seasonSelectElem = document.getElementById("seasonSelect");
+  if (seasonSelectElem && seasonSelectElem.options.length > 0) {
+    modalSeasonsList = Array.from(seasonSelectElem.options).map(opt => opt.value).reverse();
+  } else {
+    modalSeasonsList = Array.from(new Set(eventData.map(e => e.Season).filter(Boolean))).sort();
+  }
+
+  if (!modalSeasonsList.length) {
+    modalSeasonsList = ["2026-27"];
+  }
+
+  // 3. Default to '2026-27' or currently active dropdown season
+  const targetDefault = selectedSeason || "2026-27";
+  const defaultIdx = modalSeasonsList.findIndex(s => String(s).startsWith(String(targetDefault)));
+  modalSeasonIndex = defaultIdx !== -1 ? defaultIdx : 0;
+
+  document.getElementById("calendarModalTitle").textContent = `${className} — Class Events`;
+  document.getElementById("calendarModal").classList.add("active");
+
+  renderModalSeasonView();
+}
+
+function shiftModalSeason(direction) {
+  const newIndex = modalSeasonIndex + direction;
+  if (newIndex >= 0 && newIndex < modalSeasonsList.length) {
+    modalSeasonIndex = newIndex;
+    renderModalSeasonView();
+  }
+}
+
+function renderModalSeasonView() {
+  const currentSeason = modalSeasonsList[modalSeasonIndex];
+
+  // Update Season display label
+  document.getElementById("modalSeasonDisplay").textContent = currentSeason;
+
+  // Show/Hide Chevrons based on boundary conditions
+  const prevBtn = document.getElementById("modalPrevSeason");
+  const nextBtn = document.getElementById("modalNextSeason");
+
+  if (prevBtn) prevBtn.style.visibility = modalSeasonIndex > 0 ? "visible" : "hidden";
+  if (nextBtn) nextBtn.style.visibility = modalSeasonIndex < modalSeasonsList.length - 1 ? "visible" : "hidden";
+
+  // Filter events by selected Class AND active Modal Season
+  const classEvs = eventData.filter(e => 
+    e.Class === modalCurrentClass && 
+    String(e.Season).startsWith(String(currentSeason))
+  );
+
+  const body = document.getElementById("calendarModalBody");
+  body.innerHTML = `
+    <div style="margin-bottom:12px; color:var(--foam-dim); font-size:12px;">
+      Showing scheduled events for <strong>${modalCurrentClass}</strong> in season <strong>${currentSeason}</strong>:
+    </div>
+    <div class="admin-table-wrap" style="max-height: 380px; overflow-y: auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Event Title</th>
+            <th>Event Type</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${classEvs.length ? classEvs.map(e => `
+            <tr>
+              <td>${formatDate(e.Date)}</td>
+              <td>${e.Event || e.Competition || "—"}</td>
+              <td>${e.Competition || e["Event Type"] || e["Regatta Type"] || "—"}</td>
+              <td>${formatTime(e.Start)} –${formatTime(e.Finish)}</td>
+            </tr>
+          `).join('') : `<tr><td colspan="4" style="text-align:center;color:var(--foam-dim);">No events scheduled for ${modalCurrentClass} in season${currentSeason}.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeCalendarModal() {
+  document.getElementById("calendarModal").classList.remove("active");
+}
+
+function renderTable() {
+  const rows = seasonEvents();
+  eventsBody.innerHTML = rows.length
+    ? rows.map(e => `
+      <tr data-hex="${e.HexKey}" class="${e.HexKey === selectedHex ? 'selected' : ''}">
+        <td style="width:36px;padding:12px 8px 12px 14px;">
+          <input type="checkbox" class="row-check-input" data-hex="${e.HexKey}" ${selectedRows.has(e.HexKey) ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--glow);cursor:pointer;display:block;">
+        </td>
+        <td>${formatDate(e.Date)}</td>
+        <td>${e.Class}</td>
+        <td>${e.Competition || e["Event Type"] || e.Event || e["Regatta Type"] || ""}</td>
+        <td>${e.AddedStatus || e["Calendar Synced"] 
+              ? `<span class="app-status-badge status-progress">In Calendar</span>` 
+              : `<span class="app-status-badge status-awaiting">Not Synced</span>`}</td>
+        <td>${(e["Rescheduled Date"] || "").includes("Pending")
+              ? `<span class="app-status-badge status-awaiting">Pending</span>`
+              : e["Rescheduled Date"]
+                ? `<span class="app-status-badge status-progress">Rescheduled</span>`
+                : `<span class="app-status-badge">—</span>`}</td>
+        <td class="col-actions-full" style="text-align:right; padding-right:10px;">
+          <div class="row-actions" style="justify-content:flex-end;">
+            <button class="icon-btn btn-cal" title="Add to Calendar" onclick="addToCalendar('${e.HexKey}')">
+              <i data-lucide="calendar-plus" size="15"></i>
+            </button>
+            <button class="icon-btn btn-resched" title="Reschedule Event" onclick="selectEvent('${e.HexKey}')">
+              <i data-lucide="calendar-sync" size="15"></i>
+            </button>
+            <button class="icon-btn btn-edit" title="Edit Event" onclick="openEditModal('${e.HexKey}')">
+              <i data-lucide="pencil" size="15"></i>
+            </button>
+          </div>
+        </td>
+        <td class="col-actions-narrow" style="text-align:right; padding-right:10px;">
+          <div class="row-ellipsis-wrap" style="position:relative; display:inline-block;">
+            <button class="icon-btn" title="Actions" onclick="toggleRowMenu(event,'${e.HexKey}')">
+              <i data-lucide="ellipsis-vertical" size="15"></i>
+            </button>
+            <div class="row-dropdown" id="menu-${e.HexKey}" style="display:none;">
+              <button onclick="addToCalendar('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="calendar-plus" size="13"></i> Add to Calendar</button>
+              <button onclick="selectEvent('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="calendar-sync" size="13"></i> Reschedule</button>
+              <button onclick="openEditModal('${e.HexKey}'); closeAllRowMenus()"><i data-lucide="pencil" size="13"></i> Edit</button>
+            </div>
+          </div>
+        </td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="8" style="text-align:center;color:var(--foam-dim);">No events found matching criteria.</td></tr>`;
+  
+  // Attach checkbox listeners
+  eventsBody.querySelectorAll(".row-check-input").forEach(chk => {
+    chk.addEventListener("change", () => {
+      const hex = chk.dataset.hex;
+      if (chk.checked) selectedRows.add(hex);
+      else selectedRows.delete(hex);
+      updateSelectAllState();
+    });
+  });
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function updateSelectAllState() {
+  const allChk = document.getElementById("selectAllChk");
+  if (!allChk) return;
+  const rows = seasonEvents();
+  const allSelected = rows.length > 0 && rows.every(e => selectedRows.has(e.HexKey));
+  const someSelected = rows.some(e => selectedRows.has(e.HexKey));
+  allChk.checked = allSelected;
+  allChk.indeterminate = !allSelected && someSelected;
+}
+
+function getAvailableDates() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const futureSaturdays = eventData.filter(e => {
+    if (!e.Date) return false;
+    const d = parseLocalDate(e.Date);
+    return d && d >= today && d.getDay() === 6;
+  });
+
+  const openSlots = futureSaturdays.filter(e => {
+    const evt = String(e.Event || "").trim().toLowerCase();
+    const reg = String(e.Competition || e["Event Type"] || e["Regatta Type"] || "").trim().toLowerCase();
+    return (
+      evt === "" || reg === "" ||
+      evt.includes("social") || reg.includes("social") ||
+      evt.includes("no event") || reg.includes("no event") ||
+      evt.includes("open") || reg.includes("open")
+    );
+  });
+
+  return openSlots.length > 0 ? openSlots : futureSaturdays;
+}
+
+function renderAvailableDates(extraDate = null) {
+  let dates = getAvailableDates();
+  const uniqueDatesMap = new Map();
+  dates.forEach(e => {
+    const dateKey = formatDate(e.Date);
+    if (!uniqueDatesMap.has(dateKey)) uniqueDatesMap.set(dateKey, e);
+  });
+
+  if (extraDate) {
+    const extraFmt = formatDate(extraDate);
+    if (!uniqueDatesMap.has(extraFmt)) {
+      const match = eventData.find(e => formatDate(e.Date) === extraFmt);
+      if (match) uniqueDatesMap.set(extraFmt, match);
+      else uniqueDatesMap.set(extraFmt, { Date: extraDate, Start: "11:00", Finish: "16:00", Event: "Rescheduled Target" });
+    }
+  }
+
+  const sortedDates = Array.from(uniqueDatesMap.values()).sort((a, b) => (parseLocalDate(a.Date) || 0) - (parseLocalDate(b.Date) || 0));
+
+  availableDates.innerHTML = sortedDates.map(e => {
+    const title = e.Event || e.Competition || e["Event Type"] || e["Regatta Type"] || "Open Slot";
+    return `<option value="${e.Date}">${formatDate(e.Date)} (${formatTime(e.Start)}–${formatTime(e.Finish)}) - ${title}</option>`;
+  }).join("");
+
+  renderNewEventPreview();
+}
+
+function selectEvent(hex) {
+  selectedHex = hex;
+  const selectedEvent = eventData.find(e => e.HexKey === hex);
+
+  let targetResDate = "";
+  if (selectedEvent && selectedEvent["Rescheduled Date"]) {
+    targetResDate = selectedEvent["Rescheduled Date"].replace(/^Pending\s+/, "").trim();
+  }
+
+  renderAvailableDates(targetResDate);
+  if (targetResDate) availableDates.value = targetResDate;
+
+  renderTable();
+  renderSelectedEventDetails();
+  renderNewEventPreview();
+
+  const panel = document.getElementById("reschedulePanel");
+  if (panel) {
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function renderSelectedEventDetails() {
+  const container = document.getElementById("selectedEventCard");
+  if (!selectedHex) {
+    container.innerHTML = `<p style="color: var(--foam-dim); margin: 0; font-style: italic;">No event selected. Click the reschedule icon in table above.</p>`;
+    return;
+  }
+
+  const event = eventData.find(e => e.HexKey === selectedHex);
+  if (!event) return;
+
+  container.innerHTML = `
+    <div class="event-details-grid">
+      <div class="event-detail-item">
+        <span class="lbl">Original Date</span>
+        <span class="val">${formatDate(event.Date)}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Class</span>
+        <span class="val">${event.Class || '—'}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Event Name</span>
+        <span class="val">${event.Event || event.Competition || event["Event Type"] || event["Regatta Type"] || '—'}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Time</span>
+        <span class="val">${formatTime(event.Start)} – ${formatTime(event.Finish)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderNewEventPreview() {
+  const container = document.getElementById("newEventPreviewCard");
+  const selectedEvent = eventData.find(e => e.HexKey === selectedHex);
+  const targetDateStr = availableDates.value;
+
+  if (!selectedEvent || !targetDateStr) {
+    container.innerHTML = `<p style="color: var(--foam-dim); margin: 0; font-style: italic;">Select an event and date above to preview.</p>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="event-details-grid">
+      <div class="event-detail-item">
+        <span class="lbl">Rescheduled Date</span>
+        <span class="val" style="color: var(--glow);">${formatDate(targetDateStr)}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Class</span>
+        <span class="val">${selectedEvent.Class || '—'}</span>
+      </div>
+      <div class="event-detail-item">
+        <span class="lbl">Event Name</span>
+        <span class="val">${selectedEvent.Event || selectedEvent.Competition || selectedEvent["Event Type"] || selectedEvent["Regatta Type"] || '—'}</span>
+      </div>
+    </div>
+  `;
+}
+
+availableDates.addEventListener("change", renderNewEventPreview);
+
+/* =========================================================
+   ADD EVENT MODAL & LOGIC
+   ========================================================= */
+function updateModalVisibility() {
+  const isAddMode = modalMode.value === "add";
+  const eventType = modalEventType.value;
+  const isCompOrSocial = ["Competition", "Social"].includes(eventType);
+
+  const fullFields = document.querySelectorAll(".full-field-only");
+
+  // Rule: When adding an Event, if Event Type is NOT 'Competition' or 'Social':
+  // Only show Date, Start, Finish, Event (Name freehand)
+  if (isAddMode && !isCompOrSocial) {
+    fullFields.forEach(el => el.classList.add("hidden-field"));
+    modalEvent.readOnly = false;
+  } else {
+    fullFields.forEach(el => el.classList.remove("hidden-field"));
+    if (isCompOrSocial) {
+      updateAutoEventName();
+    }
+  }
+}
+
+modalDate.addEventListener("change", () => {
+  const d = new Date(modalDate.value);
+  if (!isNaN(d.getTime())) {
+    modalMonth.value = d.toLocaleString("en-US", { month: "short" });
+  } else {
+    modalMonth.value = "";
+  }
+  updateAutoEventName();
+});
+
+// --- 4. Class -> Emblem Update ---
+modalClass.addEventListener("change", () => {
+  const selectedClass = modalClass.value;
+  const imageUrl = classImageMap[selectedClass] || classImageMap["General"] || "";
+
+  if (imageUrl) {
+    modalEmblemImg.src = imageUrl;
+    modalEmblemImg.classList.remove("hidden");
+    modalEmblemPlaceholder.classList.add("hidden");
+  } else {
+    modalEmblemImg.src = "";
+    modalEmblemImg.classList.add("hidden");
+    modalEmblemPlaceholder.classList.remove("hidden");
+  }
+  updateAutoEventName();
+});
+
+function updateAutoEventName() {
+  const eventType = modalEventType.value;
+  if (!["Competition", "Social"].includes(eventType)) return;
+
+  const start = modalStart.value || "";
+  const finish = modalFinish.value || "";
+  const cls = modalClass.value || "";
+  const regatta = modalRegattaType.value || "";
+  const round = modalRoundNo.value ? `Rd ${modalRoundNo.value}` : "";
+
+  const timeStr = start && finish ? `${start} - ${finish}` : (start || finish);
+  const parts = [timeStr, cls, regatta, round].filter(Boolean);
+
+  modalEvent.value = parts.join(" ").trim();
+}
+
+[modalStart, modalFinish, modalRegattaType, modalRoundNo, modalEventType].forEach(el => {
+  el.addEventListener("input", () => {
+    updateModalVisibility();
+    updateAutoEventName();
+  });
+  el.addEventListener("change", () => {
+    updateModalVisibility();
+    updateAutoEventName();
+  });
+});
+
+function openAddEventModal() {
+  modalTitle.textContent = "Add Event";
+  modalMode.value = "add";
+  eventForm.reset();
+
+  modalHexKey.value = "";
+  modalMonth.value = "";
+  modalCalendarId.value = "";
+  modalRegionalConflicts.value = "";
+  
+  modalEmblemImg.classList.add("hidden");
+  modalEmblemPlaceholder.classList.remove("hidden");
+
+  updateModalVisibility();
+  eventModal.classList.remove("hidden");
+}
+
+function openEditEventModal(hexKey) {
+  const event = eventData.find(e => e.HexKey === hexKey);
+  if (!event) return;
+
+  modalTitle.textContent = "Edit Event";
+  modalMode.value = "edit";
+
+  modalHexKey.value = event.HexKey || "";
+  modalDate.value = event.Date ? new Date(event.Date).toISOString().split("T")[0] : "";
+  modalMonth.value = event.Month || "";
+  modalStart.value = event.Start || "";
+  modalFinish.value = event.Finish || "";
+  modalClass.value = event.Class || "";
+  modalRegattaType.value = event["Regatta Type"] || "";
+  modalEventType.value = event["Event Type"] || "Competition";
+  modalSeason.value = event.Season || "";
+  modalRoundNo.value = event["Round no"] || "";
+  modalResults.value = event.Results || "Not Started";
+  modalRescheduledDate.value = event["Rescheduled Date"] ? new Date(event["Rescheduled Date"]).toISOString().split("T")[0] : "";
+  modalCalendarId.value = event["Updated to Calendar"] || "";
+  
+  const conflicts = Array.isArray(event["Regional Conflicts"]) 
+    ? event["Regional Conflicts"].join(", ") 
+    : (event["Regional Conflicts"] || "");
+  modalRegionalConflicts.value = conflicts;
+
+  modalEvent.value = event.Event || "";
+
+  // Trigger Class Emblem change
+  modalClass.dispatchEvent(new Event("change"));
+
+  updateModalVisibility();
+  eventModal.classList.remove("hidden");
+}
+
+document.getElementById("closeModalBtn")?.addEventListener("click", () => eventModal.classList.add("hidden"));
+document.getElementById("cancelModalBtn")?.addEventListener("click", () => eventModal.classList.add("hidden"));
+
+function closeAddEventModal() {
+  document.getElementById("addEventModal").classList.remove("active");
+}
+
+eventForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const isAdd = modalMode.value === "add";
+  const rowData = {
+    "Event Type": modalEventType.value,
+    "Date": modalDate.value,
+    "Start": modalStart.value,
+    "Finish": modalFinish.value,
+    "Event": modalEvent.value,
+  };
+
+  // Add remaining fields if Competition/Social or in Edit mode
+  if (!isAdd || ["Competition", "Social"].includes(modalEventType.value)) {
+    Object.assign(rowData, {
+      "Month": modalMonth.value,
+      "Class": modalClass.value,
+      "Regatta Type": modalRegattaType.value,
+      "Season": modalSeason.value,
+      "Round no": modalRoundNo.value,
+      "Results": modalResults.value,
+      "Rescheduled Date": modalRescheduledDate.value
+    });
+    
+  }
+
+  try {
+    if (isAdd) {
+      logAction("Adding new event...");
+      await appendSheet(DOMAIN.calendar, "Event Data", rowData);
+      logAction("Event added successfully.");
+    } else {
+      logAction(`Updating event ${modalHexKey.value}...`);
+      await updateSheet(DOMAIN.calendar, "Event Data", modalHexKey.value, rowData);
+      logAction("Event updated successfully.");
+    }
+
+    eventModal.classList.add("hidden");
+    await loadData();
+  } catch (err) {
+    logAction(`Save failed: ${err.message}`);
+  }
+});
+
+/* =========================================================
+   ACTION HANDLERS (ADD TO CALENDAR, RESCHEDULE, EDIT)
+   ========================================================= */
+async function addToCalendar(hexKey) {
+  const event = eventData.find(e => e.HexKey === hexKey);
+  if (!event) return;
+
+  const targetCalName = "Regattas - " + event.Class;
+  logAction(`Exporting "${event.Class} - ${event.Event || event.Competition || event["Event Type"]}" to ${targetCalName}...`);
+
+  try {
+    const res = await fetch(SHEETS.calWebAppUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "exportToCalendar", hexKey: hexKey })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    event.AddedStatus = targetCalName;
+    AdminLog.add({
+      hexCode: hexKey,
+      name: event.Class,
+      field: "AddedStatus",
+      before: "",
+      after: targetCalName,
+      status: "success",
+      message: `Exported to ${targetCalName}`
+    });
+
+    logAction(`Successfully added event to "${targetCalName}"!`);
+    renderStats();
+    renderTable();
+  } catch (err) {
+    logAction(`Calendar Export Failed: ${err.message}`);
+  }
+}
+
+/* --- Bulk Calendar Export --- */
+btnBulkExport.addEventListener("click", () => {
+  const msgElem = document.getElementById("msgBulkExport");
+  runSeasonOp({
+    btn: btnBulkExport,
+    msgElem: msgElem,
+    loadingMsg: "Syncing events with Google Calendar...",
+    actionFn: async () => {
+      const res = await fetch(SHEETS.calWebAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "exportToCalendar", hexKey: null })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      
+      await loadData();
+      return `Bulk Sync Complete: ${data.count || 0} events added to Google Calendar.`;
+    }
+  });
+});
+
+/* Modal Controls */
+function openEditModal(hexKey) {
+  editingHex = hexKey;
+  const event = eventData.find(e => e.HexKey === hexKey);
+  if (!event) return;
+
+  document.getElementById("editEventName").value = event.Event || event.Competition || event["Event Type"] || "";
+  document.getElementById("editEventDate").value = formatDate(event.Date).replace(/\//g, "-");
+  document.getElementById("editStartTime").value = event.Start || "";
+  document.getElementById("editFinishTime").value = event.Finish || "";
+
+  document.getElementById("editModal").classList.add("active");
+}
+
+function closeEditModal() {
+  document.getElementById("editModal").classList.remove("active");
+  editingHex = null;
+}
+
+/* --- Request Reschedule --- */
+requestBtn.addEventListener("click", async () => {
+  if (!selectedHex) { logAction("No event selected."); return; }
+  const newDate = availableDates.value;
+  if (!newDate) { logAction("No available date selected."); return; }
+
+  const currentEvent = eventData.find(e => e.HexKey === selectedHex);
+  requestBtn.disabled = true;
+  try {
+    await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "Pending " + newDate });
+    AdminLog.add({ hexCode: selectedHex, name: currentEvent ? currentEvent.Class : selectedHex, field: "Rescheduled Date", before: "", after: "Pending " + newDate });
+    logAction(`Reschedule requested for ${currentEvent ? currentEvent.Class : selectedHex} → ${formatDate(newDate)}`);
+    await loadData();
+  } catch (err) {
+    logAction(`Error: ${err.message}`);
+  } finally {
+    requestBtn.disabled = false;
+  }
+});
+
+/* --- Approve Reschedule --- */
+approveBtn.addEventListener("click", async () => {
+  if (!selectedHex) { logAction("No event selected."); return; }
+  const event = eventData.find(e => e.HexKey === selectedHex);
+  if (!event || !(event["Rescheduled Date"] || "").includes("Pending")) {
+    logAction("Selected event has no pending reschedule.");
+    return;
+  }
+
+  approveBtn.disabled = true;
+  try {
+    const newDate = event["Rescheduled Date"].replace("Pending ", "");
+    const d = parseLocalDate(newDate);
+    const newMonth = d ? d.toLocaleString("en-AU", { month: "short" }) : "";
+    const newDateFmt = formatDate(newDate);
+
+    await appendSheet(DOMAIN.calendar, "Event Data", {
+      HexKey: crypto.randomUUID(), Month: newMonth, Date: newDateFmt,
+      Start: "11:00", Finish: "16:00", Emblem: event.Emblem || "",
+      Class: event.Class || "", Competition: event.Competition || event["Event Type"] || "",
+      Season: event.Season || ""
+    });
+
+    await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "", Results: "Rescheduled" });
+    logAction(`Reschedule approved for ${event.Class} → ${newDateFmt}`);
+    await loadData();
+  } catch (err) {
+    logAction(`Error: ${err.message}`);
+  } finally {
+    approveBtn.disabled = false;
+  }
+});
+
+rescheduledToggle.addEventListener("click", () => {
+  rescheduledOnly = !rescheduledOnly;
+  rescheduledToggle.classList.toggle("active", rescheduledOnly);
+  renderTable();
+});
+
+/* Select All */
+document.getElementById("selectAllChk").addEventListener("change", function() {
+  const rows = seasonEvents();
+  if (this.checked) rows.forEach(e => selectedRows.add(e.HexKey));
+  else selectedRows.clear();
+  renderTable();
+});
+
+/* Bulk Actions */
+document.getElementById("bulkAddCalBtn").addEventListener("click", async () => {
+  if (!selectedRows.size) { logAction("No events selected."); return; }
+  logAction(`Adding ${selectedRows.size} selected event(s) to Calendar...`);
+  for (const hex of selectedRows) { await addToCalendar(hex); }
+  selectedRows.clear();
+  renderTable();
+});
+
+document.getElementById("bulkReschedBtn").addEventListener("click", () => {
+  if (!selectedRows.size) { logAction("No events selected."); return; }
+  const first = Array.from(selectedRows)[0];
+  selectEvent(first);
+  logAction(`${selectedRows.size} event(s) selected. Use reschedule panel below.`);
+});
+
+document.getElementById("bulkDeleteBtn").addEventListener("click", async () => {
+  if (!selectedRows.size) { logAction("No events selected."); return; }
+  if (!confirm(`Delete ${selectedRows.size} selected event(s)? This cannot be undone.`)) return;
+  logAction(`Deleting ${selectedRows.size} event(s)...`);
+  for (const hex of selectedRows) {
+    try {
+      await updateSheet(DOMAIN.calendar, "Event Data", hex, { Results: "Deleted" });
+      logAction(`Deleted event ${hex}`);
+    } catch(err) { logAction(`Error deleting ${hex}: ${err.message}`); }
+  }
+  selectedRows.clear();
+});
+
+function renderClassPills() {
+  classPillGroup.innerHTML = classes
+  .filter(c => c.ClassName !== "M")
+  .map(c => `
+    <button class="class-pill ${c.ClassName === selectedClass ? 'active' : ''}" data-class="${c.ClassName}" title="${c.ClassName}">
+      ${classInsignia(c.ClassName)}
+    </button>
+  `).join("");
+
+  classPillGroup.querySelectorAll(".class-pill").forEach(btn =>
+    btn.addEventListener("click", () => {
+      selectedClass = selectedClass === btn.dataset.class ? "" : btn.dataset.class;
+      classPillGroup.querySelectorAll(".class-pill").forEach(b => b.classList.toggle("active", b.dataset.class === selectedClass));
+      renderTable();
+    })
+  );
+}
+
+async function runSeasonOp({ btn, msgElem, loadingMsg, actionFn }) {
+  const originalBtnHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>`;
+
+  msgElem.className = "season-op-msg active status-loading";
+  msgElem.textContent = loadingMsg;
+
+  try {
+    const successMsg = await actionFn();
+    msgElem.className = "season-op-msg active status-success";
+    msgElem.textContent = successMsg;
+    logAction(successMsg);
+  } catch (err) {
+    const errorMsg = `Failed: ${err.message}`;
+    msgElem.className = "season-op-msg active status-error";
+    msgElem.textContent = errorMsg;
+    logAction(errorMsg);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalBtnHTML;
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+/* =========================================================
+   REGIONAL CONFLICT CHECK
+========================================================= */
+regionalConflictBtn?.addEventListener("click", () => {
+  const msgElem = document.getElementById("msgRegionalConflict");
+  runSeasonOp({
+    btn: regionalConflictBtn,
+    msgElem: msgElem,
+    loadingMsg: "Scanning regional championship calendars...",
+    actionFn: async () => {
+      const res = await fetch(SHEETS.calWebAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "runRegionalConflicts" })
+      });
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+      if (result.success === false) throw new Error(result.error || "Conflict scan failed");
+
+      await loadData();
+      return `Conflict scan completed. ${result.totalConflictsFound ?? 0} conflicts found across ${result.datesWithConflicts ?? 0} event dates.`;
+    }
+  });
+});
+
+/* =========================================================
+   GENERATE NEXT SEASON
+========================================================= */
+generateSeasonBtn?.addEventListener("click", () => {
+  const nextSeason = `${CURRENT_SEASON_START + 1}-${String(CURRENT_SEASON_START + 2).slice(-2)}`;
+  const msgElem = document.getElementById("msgGenerateSeason");
+  
+  runSeasonOp({
+    btn: generateSeasonBtn,
+    msgElem: msgElem,
+    loadingMsg: `Generating fixtures for season ${nextSeason}...`,
+    actionFn: async () => {
+      const res = await fetch(SHEETS.ssnWebAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "generateSeasonFixtures" })
+      });
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+
+      await loadData();
+      return `${result.eventsCreated} fixtures generated (${result.competitionEvents} regattas, ${result.socialEvents} social sailing events).`;
+    }
+  });
+});
+
+/* =========================================================
+   INITIAL DATA LOAD
+========================================================= */
+async function loadData() {
+  // Show loading state in all relevant sections
+  eventsBody.innerHTML = `<tr class="table-loading-row"><td colspan="7"><div class="section-loading"><span class="spinner"></span> Loading events…</div></td></tr>`;
+
+  const classEventsContainer = document.getElementById("classEventsPills");
+  if (classEventsContainer) classEventsContainer.innerHTML = `<div class="section-loading"><span class="spinner"></span> Loading class data…</div>`;
+
+  const healthText = document.getElementById("healthText");
+  if (healthText) healthText.textContent = "Checking health…";
+
+  const availableDatesEl = document.getElementById("availableDates");
+  if (availableDatesEl) availableDatesEl.innerHTML = `<option disabled selected>Loading dates…</option>`;
+
+  const selectedEventCard = document.getElementById("selectedEventCard");
+  if (selectedEventCard) selectedEventCard.innerHTML = `<div class="section-loading"><span class="spinner"></span> Loading…</div>`;
+
+  try {
+    eventData = await fetchSheet(DOMAIN.calendar, "Event Data");
+    classes = await fetchSheet(DOMAIN.members, "Classes");
+
+    renderSeasonDropdown();
+    renderMonthDropdown();
+    renderClassPills();
+    renderStats();
+    renderClassEventsPills();
+    renderTable();
+    renderAvailableDates();
+    renderSelectedEventDetails();
+    
+  } catch (err) {
+    eventsBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
+  }
+}
+
+/* Add Event button */
+document.getElementById('addEventBtn')?.addEventListener('click', openAddEventModal);
+
+/* Ellipsis row menu helpers */
+function toggleRowMenu(evt, hex) {
+  evt.stopPropagation();
+  const menu = document.getElementById(`menu-${hex}`);
+  const isOpen = menu.style.display !== 'none';
+  closeAllRowMenus();
+  if (!isOpen) { menu.style.display = 'block'; if (window.lucide) lucide.createIcons(); }
+}
+function closeAllRowMenus() {
+  document.querySelectorAll('.row-dropdown').forEach(m => m.style.display = 'none');
+}
+document.addEventListener('click', closeAllRowMenus);
+
+loadData();
+if (window.lucide) lucide.createIcons();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<div class="section-head" id="system-health">
+    <h2>System Health</h2>
+    <p>Live schema registry — sheet reachability, column layout and drift detection.</p>
+</div>
+<div class="panel">
+    <div class="panel-header">
+        <div class="panel-title-left">
+            <span class="dot" id="sysHealthDot"></span>
+            <h3>Schema Registry</h3>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+            <span id="sysHealthSummary" style="font-size:12px;color:var(--foam-dim);"></span>
+            <button type="button" class="btn btn-ghost" id="refreshHealthBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+        </div>
+    </div>
+    <div class="tab-content active">
+        <div class="log-table-wrap">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Domain</th>
+                        <th>Sheet</th>
+                        <th>Columns</th>
+                        <th>Rows</th>
+                        <th>Last Checked</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="sysHealthBody">
+                    <tr><td colspan="6" style="text-align:center;padding:20px;">
+                        <span class="spinner"></span>
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="sysHealthDriftAlert" style="display:none;margin-top:12px;padding:10px 14px;border-radius:10px;background:rgba(255,106,61,0.12);border:1px solid rgba(255,106,61,0.3);font-size:12px;color:var(--signal);">
+            ⚠ Schema drift detected on one or more sheets. Column headers have changed since last baseline.
+        </div>
+    </div>
+</div>
