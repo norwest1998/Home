@@ -1,0 +1,124 @@
+      /**
+       * Checks if a member's name appears in the results of a specific ARYA ranked event.
+       *
+       * @param {string} memberName - The full name of the member (e.g., "Neil Martin")
+       * @param {string} eventState - The state (e.g., "SA")
+       * @param {string} eventDate - The date in YYYY/MM/DD format (e.g., "2026/08/30")
+       * @param {string} eventClass - The class (e.g., "A")
+       * @returns {boolean} True if the member is found in the event results, False otherwise.
+       */
+      function isMemberInRankedEvent(memberName, eventState, eventDate, eventClass) {
+        var baseUrl = "https://radiosailing.org.au/";
+        var listUrl = baseUrl + "index.php?arcade=results-list";
+        var rankedKeywords = ["championship", "gp", "tt", "regional", "state"];
+
+        // 1. Generate date permutations to check against the HTML
+        var dateParts = eventDate.split('/');
+        if (dateParts.length !== 3) {
+          Logger.log("Invalid date format. Please use YYYY/MM/DD");
+          return false;
+        }
+        
+        var year = dateParts[0];
+        var month = dateParts[1];
+        var day = dateParts[2];
+        
+        var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        var monthName = monthNames[parseInt(month, 10) - 1];
+        
+        // Potential date formats ARYA might use
+        var dateFormatsToCheck = [
+          day + "/" + month + "/" + year,          // 30/08/2026
+          day + "-" + month + "-" + year,          // 30-08-2026
+          day + " " + monthName + " " + year,      // 30 Aug 2026
+          day + "-" + monthName + "-" + year,      // 30-Aug-2026
+          year + "-" + month + "-" + day           // 2026-08-30
+        ].map(function(d) { return d.toLowerCase(); });
+
+        try {
+          // 2. Fetch the Results List
+          var response = UrlFetchApp.fetch(listUrl);
+          var html = response.getContentText();
+
+          // 3. Parse HTML to find rows (<tr>)
+          var trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+          var trMatch;
+          
+          while ((trMatch = trRegex.exec(html)) !== null) {
+            var rowHtml = trMatch[1];
+            
+            // Extract all cells (<td>) in this row
+            var tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+            var cellsText = [];
+            var tdMatch;
+            
+            while ((tdMatch = tdRegex.exec(rowHtml)) !== null) {
+              // Strip HTML tags, replace non-breaking spaces, and trim whitespace
+              var cleanCell = tdMatch[1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim();
+              cellsText.push(cleanCell.toLowerCase());
+            }
+
+            if (cellsText.length === 0) continue;
+
+            // Extract the result link (<a> tag with arcade=results&eventid)
+            var linkRegex = /<a[^>]+href=["']([^"']*arcade=results&eventid=[^"']*)["'][^>]*>([\s\S]*?)<\/a>/i;
+            var linkMatch = linkRegex.exec(rowHtml);
+            
+            if (!linkMatch) continue;
+
+            var href = linkMatch[1].replace(/&amp;/g, '&'); // Clean URL entities
+            var eventName = linkMatch[2].replace(/<[^>]+>/g, '').trim().toLowerCase();
+
+            // Check 1: Is it a Ranked Event?
+            var isRanked = rankedKeywords.some(function(kw) { return eventName.indexOf(kw) !== -1; });
+            if (!isRanked) continue;
+
+            // Check 2: Does the Date Match? (Is any date format found inside any cell text?)
+            var hasDate = cellsText.some(function(cell) {
+              return dateFormatsToCheck.some(function(df) {
+                return cell.indexOf(df) !== -1;
+              });
+            });
+            if (!hasDate) continue;
+
+            // Check 3: Does the State Match? (Exact case-insensitive match)
+            var hasState = cellsText.some(function(cell) { return cell === eventState.toLowerCase(); });
+            if (!hasState) continue;
+
+            // Check 4: Does the Class Match? (Exact case-insensitive match)
+            var hasClass = cellsText.some(function(cell) { return cell === eventClass.toLowerCase(); });
+            if (!hasClass) continue;
+
+            // --- EVENT MATCH FOUND ---
+            
+            // Construct the absolute URL (handle relative links)
+            var eventUrl = href.indexOf('http') === 0 ? href : baseUrl + (href.indexOf('/') === 0 ? href.substring(1) : href);
+            
+            // 4. Fetch the specific event results page
+            var eventResponse = UrlFetchApp.fetch(eventUrl);
+            var eventHtml = eventResponse.getContentText();
+            
+            // Strip all HTML tags to create a clean text block (replaces tags with spaces to avoid joining words)
+            var cleanPageText = eventHtml.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ');
+            
+            // 5. Search for the Member's Name safely
+            // Escape regex special characters in the name, and replace spaces with \s+ to handle HTML formatting gaps
+            var escapedName = memberName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            var namePatternStr = '\\b' + escapedName.replace(/\s+/g, '\\s+') + '\\b';
+            var searchPattern = new RegExp(namePatternStr, 'i');
+            
+            if (searchPattern.test(cleanPageText)) {
+              return true;
+            } else {
+              return false;
+            }
+          }
+          
+          // Looped through everything and didn't find the event
+          return false;
+
+        } catch (e) {
+          Logger.log("Error fetching or parsing data: " + e.toString());
+          return false;
+        }
+      }
