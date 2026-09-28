@@ -122,3 +122,24 @@
           return false;
         }
       }
+
+            // ==========================================
+      // Test Function 
+      // ==========================================
+      function testIsMemberInRankedEvent() {
+        var payload = {
+          memberName: "Neil Martin",
+          eventState: "SA",
+          eventDate: "2026/08/30",
+          eventClass: "A"
+        };
+
+        var result = isMemberInRankedEvent(
+          payload.memberName, 
+          payload.eventState, 
+          payload.eventDate, 
+          payload.eventClass
+        );
+        
+        Logger.log("Was the member found? " + result);
+      }
