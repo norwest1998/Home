@@ -3562,7 +3562,7 @@
         toDate.setDate(toDate.getDate() + 3);
 
           try {
-            const resp = await fetch(`${CALENDAR_URL}?type=listConflicts&date=${date}`);
+            const resp = await fetch(`${CALENDAR_URL}?action=listConflicts&date=${date}`);
             const data = await resp.json();
             const events = data.events || [];
           } catch (err) {
