@@ -340,9 +340,9 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
                 </div>
               </div>
             </div>
-            <div id="varPalette" style="margin-bottom:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-              <span style="font-size:9.5px;color:var(--foam-dim);letter-spacing:.06em;text-transform:uppercase;margin-right:4px;">Variables:</span>
-              <span id="varPaletteChips" style="display:flex;flex-wrap:wrap;gap:5px;"></span>
+            <div id="varPalette" style="margin-bottom:8px;display:flex;flex-direction:column;gap:6px;">
+              <span style="font-size:9.5px;color:var(--foam-dim);letter-spacing:.06em;text-transform:uppercase;">Variables:</span>
+              <div id="varPaletteChips" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; width: 100%;"></div>
             </div>
             <div id="bodyEditor"></div>
           </div>
@@ -1338,7 +1338,7 @@ function renderVarPalette(){
   if(!el)return;
   
   el.innerHTML = Object.keys(VAR_TOPICS).map(topic => `
-    <select class="glass-select var-select" style="padding:4px 18px 4px 8px; font-size:11px; min-width:110px;">
+    <select class="glass-select var-select" style="width: 100%; padding:4px 18px 4px 8px; font-size:11px;">
       <option value="">${topic}…</option>
       ${VAR_TOPICS[topic].map(f => `<option value="\${${f.key}}">${escapeHtml(f.label)}</option>`).join("")}
     </select>
