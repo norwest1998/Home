@@ -1750,13 +1750,16 @@
       <a href="#race-results">Results Hub</a>
     </div>
   </footer>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script>
     // =========================================================
     // API CONFIGURATION
     // =========================================================
-    const DISCOVERY_URL = "https://script.google.com/macros/s/AKfycbxaLDa75WGJ8yqzEnAoLQbvfIyxT9ZDG-YJLP2qSQFtDTEvnbgbjZpsX_7aFcOu0sdl/exec"; 
     const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
     const HOME_DATA_API = "https://script.google.com/macros/s/AKfycbzGgNMh8KNWYquGuOoGvmrasDR5npiPoNXTouuzVeY9sRwrhDo29BVDbWGrh_FfgoieXQ/exec";
+    const DISCOVERY_URL = HOME_DATA_API; // legacy ?ss= contract is served by the same deployment
+    const CALENDAR_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec';
+    const WEATHER_API = 'https://script.google.com/macros/s/AKfycbworw_FnbKehShRIfhbXTuxlAa36jJt8d7MLCvjzAWUfp-_xXORa2ZzC_0m20msa1oj/exec?action=data';
     const APP_DETAIL_API = 'https://script.google.com/macros/s/AKfycbyWulPkIPBPaLA4f85ygVDpJUa-e3fWpY-XOYzTQ_2gF8h9EfuWinBdTiR1DtjYWSwl9g/exec';
         
     
@@ -1792,91 +1795,76 @@
     let activeAppStatus = 'all';
     let boatFilters = { class: 'all', active: false, gh: false };
     let activeCalendarClass = 'all';
-    let avgReqFilterStatus = 'all';
-    let avgReqSearchTerm = '';
 
     // Utilities
     function esc(s) { const d = document.createElement('div'); d.textContent = (s == null) ? '' : String(s); return d.innerHTML; }
     function showError(el, msg) { const e = typeof el === 'string' ? document.getElementById(el) : el; if (e) e.innerHTML = `<div class="empty-state" style="color:var(--signal);">⚠️ ${esc(msg)}</div>`; }
     function showSpinner(el) { const e = typeof el === 'string' ? document.getElementById(el) : el; if (e) e.innerHTML = `<div class="empty-state"><div class="spinner"></div></div>`; }
-    function apiConfigured() { return typeof HOME_DATA_API === 'string' && HOME_DATA_API.trim() !== ''; }
 
 
     // =========================================================
     // BOOTSTRAP & CACHE ARCHITECTURE (Stale-While-Revalidate)
     // =========================================================
-    const CACHE_KEY = "SMMC_APP_DATA";
+    const CACHE_KEY = "SMMC_APP_DATA_v2";   // bump on payload schema change
     const BOOTSTRAP_API = HOME_DATA_API + "?action=bootstrap";
+    const getJSON = u => fetch(u).then(r => r.json());
+
+    function readCache() { try { return localStorage.getItem(CACHE_KEY); } catch (e) { return null; } }
+
+    async function refreshBootstrap(cachedRaw) {
+      try {
+        const raw = await (await fetch(BOOTSTRAP_API)).text();
+        const data = JSON.parse(raw);
+        if (data.error) throw new Error(data.error);
+        if (raw !== cachedRaw) renderTopDown(data);          // skip identical re-render
+        try { localStorage.setItem(CACHE_KEY, raw); } catch (e) {}
+        return raw;
+      } catch (err) {
+        console.error("Bootstrap failed:", err);
+        if (!cachedRaw) ['memberList', 'appList', 'boatList', 'statusBreakdown'].forEach(id => showError(id, 'Data unavailable'));
+        return cachedRaw;
+      }
+    }
+
+    // Weather / next event / calendar live in other projects, so they load in parallel with bootstrap
+    function loadSideData() {
+      getJSON(WEATHER_API).then(d => {
+        if (!d.forecast) throw new Error(d.error || 'No forecast');
+        renderWeather(d.forecast);
+      }).catch(() => showError('weatherWeek', 'Weather data temporarily unavailable'));
+
+      getJSON(`${CALENDAR_URL}?type=display&load=next`).then(d => {
+        if (d.html == null) throw new Error(d.error || 'No event data');
+        document.getElementById('event-display-container').innerHTML = d.html;
+        if (window.lucide) lucide.createIcons();
+      }).catch(() => showError('event-display-container', 'Unable to load event details.'));
+
+      getJSON(`${CALENDAR_URL}?type=calendar`)
+        .then(renderAnnualCalendarData)
+        .catch(() => showError(document.querySelector('.calendar-grid'), 'Unable to load calendar. Please try again later.'));
+    }
 
     async function initApp() {
-    // 1. Try Cache First (Instant Load)
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-        try {
-        const data = JSON.parse(cached);
-        renderTopDown(data);
-        } catch (e) { console.warn("Cache parse error", e); }
+      loadSideData();
+      const cachedRaw = readCache();
+      if (cachedRaw) { try { renderTopDown(JSON.parse(cachedRaw)); } catch (e) { console.warn("Cache parse error", e); } }
+      await refreshBootstrap(cachedRaw);
     }
 
-    // 2. Fetch Fresh Data (Background)
-    if (apiConfigured()) {
-        try {
-        const res = await fetch(BOOTSTRAP_API);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        
-        // Save to local cache
-        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-        
-        // Update UI with fresh data
-        renderTopDown(data);
-        } catch (err) {
-        console.error("Failed to fetch fresh bootstrap data:", err);
-        }
-    }
-    }
-
-    /**
-     * Priority Rendering - Top of page down to the bottom
-     */
+    /** Priority rendering - top of page down. Weather, next event and calendar are handled by loadSideData(). */
     function renderTopDown(data) {
-    if (!data) return;
-    
-    // Priority 1: Hero & Latest Results
-    if (data.latestResults) renderLatestResults(data.latestResults);
-    
-    // Priority 2: Weather & Next Event Cards
-    if (data.weather) renderWeather(data.weather);
-    if (data.nextEventHtml) {
-        document.getElementById('event-display-container').innerHTML = data.nextEventHtml;
-        if (window.lucide) lucide.createIcons();
-    }
-
-    // Priority 3: Middle Page - Stats & Calendar
-    if (data.stats) renderMembershipStats(data.stats);
-    if (data.calendar) renderAnnualCalendarData(data.calendar);
-
-    // Priority 4: Background Data & Drawers (Members, Apps, Boats, Requests)
-    if (data.members) {
+      if (!data) return;
+      if (data.latestResults) renderLatestResults(data.latestResults);
+      if (data.stats) renderMembershipStats(data.stats);
+      if (data.members) {
         allMembers = data.members;
         renderMembers();
-        initActiveMembersDropdown(); // Refresh the select list in Avg Score app
+        initActiveMembersDropdown();
+      }
+      if (data.applications) { allApplications = data.applications; renderApplications(); }
+      if (data.boats) { allBoats = data.boats; renderBoatFilters(); renderBoats(); }
+      if (data.requests) { rawRequestsData = data.requests; applyFiltersAndRenderAvgReq(); }
     }
-    if (data.applications) {
-        allApplications = data.applications;
-        renderApplications();
-    }
-    if (data.boats) {
-        allBoats = data.boats;
-        renderBoatFilters();
-        renderBoats();
-    }
-    if (data.requests) {
-        rawRequestsData = data.requests;
-        applyFiltersAndRenderAvgReq(); // Refresh AvgScore app list
-    }
-    }
-
 
     // =========================================================
     // RENDER FUNCTIONS (Decoupled from HTTP Fetches)
@@ -1993,7 +1981,6 @@
     renderCalendarGrid();
     }
     
-    // (Preserve your existing renderCalendarFilters and renderCalendarGrid functions here)
     function renderCalendarFilters() {
     const wrap = document.getElementById('calendarFilters');
     if (!wrap) return;
@@ -2025,9 +2012,151 @@
     }).join('');
     }
 
-    // --- Standings Engine (Loads purely on demand/click) ---
-    // (Keep your existing fetchSheet, loadActiveSheet, renderRoundTabs logic here untouched)
-    // ...
+    // --- Standings Engine ---
+    async function getSheetsForClass(classKey){
+      if (sheetListCache[classKey]) return sheetListCache[classKey];
+ 
+      const cls = RESULTS_CONFIG[classKey];
+      if (!cls.spreadsheetId) {
+        throw new Error(`No scoresheets configured for ${cls.label}`);
+      }   
+      const res = await fetch(`${DISCOVERY_URL}?ss=${cls.spreadsheetId}`);
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+      sheetListCache[classKey] = data.sheets;
+      return sheetListCache[classKey];
+    }
+
+    /* Update dynamic class insignia image */
+    function updateClassInsignia(classKey) {
+      const imgEl = document.getElementById('classInsignia');
+      if (!imgEl) return;
+      
+        const cls = RESULTS_CONFIG[classKey];
+      if (cls && cls.insignia) {
+        imgEl.src = cls.insignia;
+        imgEl.alt = `${cls.label} Insignia`;
+        imgEl.style.display = 'block';
+      } else {
+        imgEl.style.display = 'none';
+        imgEl.src = '';
+      }
+    }
+
+    /* =========================================================================
+      Engine
+      ========================================================================= */
+    async function fetchSheet(spreadsheetId, sheetName){
+      const url = `${DISCOVERY_URL}?ss=${spreadsheetId}&sheet=${encodeURIComponent(sheetName)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      return { meta: data.meta, headers: data.headers, rows: data.rows };
+    }
+    
+    function renderTable(meta, headers, rows){
+      document.getElementById('sheetMeta').textContent = meta.join(' • ');
+    
+      const CENTER_HEADERS = /^(R\d+|Round\s*\d+|Pos|Result|Sail\s*#|Total|Drop|W|T3|T5|Rank|Discard)$/i;
+      const centerCols = headers.map(h => CENTER_HEADERS.test(String(h).trim()));
+      const sailorIdx = headers.findIndex(h =>String(h).trim().toLowerCase() === 'member name');
+
+      document.getElementById('tableHead').innerHTML =
+        '<tr>' + headers.map((h, i) => `<th class="${centerCols[i] ? 'col-center' : ''}">${h}</th>`).join('') + '</tr>';
+      const attIdx = headers.findIndex(h => String(h).trim().toUpperCase() === 'ATT');
+      const filteredRows = attIdx >= 0 ? rows.filter(r => Number(r[attIdx]) > 0) : rows;
+
+      document.getElementById('tableBody').innerHTML =
+        filteredRows.map(r =>
+          '<tr>' + r.map((c, i) =>
+            `<td class="${centerCols[i] ? 'col-center' : ''}"${sailorIdx >= 0 ? ` data-sailor="${esc(r[sailorIdx]).replace(/"/g, '&quot;')}"` : ''}>${c}</td>`
+          ).join('') + '</tr>'
+        ).join('');
+    }
+    
+    let activeClass = Object.keys(RESULTS_CONFIG)[0];
+    let activeSheetIndex = 0; // index into the discovered sheet list for the active class
+    
+    async function loadActiveSheet(){
+      const statusEl = document.getElementById('statusLine');
+      document.getElementById('tableHead').innerHTML = '';
+      document.getElementById('tableBody').innerHTML =
+        '<tr><td colspan="100%"><div class="empty-state"><div class="spinner"></div></div></td></tr>';
+      updateClassInsignia(activeClass);
+
+      const cls = RESULTS_CONFIG[activeClass];
+      let sheet;
+      try{
+        const sheets = await getSheetsForClass(activeClass);
+        sheet = sheets[activeSheetIndex];
+        if (!sheet){ document.getElementById('tableBody').innerHTML = ''; statusEl.textContent = 'No sheets found.'; return; }
+        const { meta, headers, rows } = await fetchSheet(cls.spreadsheetId, sheet.name);
+        renderTable(meta, headers, rows);
+        statusEl.textContent = `${cls.label} • ${sheet.name} • live from Results Sheets`;
+      }catch(err){
+        document.getElementById('tableHead').innerHTML = '';
+        statusEl.textContent = `Couldn't load results: ${err.message}`;
+        showError('tableBody', `Error fetching ${sheet ? 'sheet "' + sheet.name + '"' : 'sheet list'}: ${err.message}`);
+      }
+    }
+    
+    async function renderRoundTabs(){
+      let sheets;
+      try { sheets = await getSheetsForClass(activeClass); }
+      catch (e) { document.getElementById('roundTabs').innerHTML = ''; return; }
+      document.getElementById('roundTabs').innerHTML = sheets.map((s, i) =>
+        `<button class="round-tab ${i===activeSheetIndex?'active':''}" data-index="${i}">${s.name}</button>`
+      ).join('');
+      document.querySelectorAll('.round-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeSheetIndex = parseInt(btn.dataset.index);
+          renderRoundTabs();
+          loadActiveSheet();
+        });
+      });
+    }
+    
+    function renderClassTabs(){
+      const container = document.getElementById('classTabs');
+      container.className = 'class-select-wrap';
+      container.innerHTML = `
+        <select class="class-select" id="classSelector">
+          ${Object.entries(RESULTS_CONFIG).map(([key, cls]) => 
+            `<option value="${key}" ${key === activeClass ? 'selected' : ''}>${cls.label}</option>`
+          ).join('')}
+        </select>
+      `;
+      
+      document.getElementById('classSelector').addEventListener('change', async (e) => {
+        activeClass = e.target.value;
+        activeSheetIndex = 0;
+        updateClassInsignia(activeClass);
+        await renderRoundTabs();
+        loadActiveSheet();
+      });
+    }
+
+    function selectClass(classKey) {
+      if (!RESULTS_CONFIG[classKey]) return true; // unknown key, let default nav happen
+      activeClass = classKey;
+      activeSheetIndex = 0;
+
+      const selectEl = document.getElementById('classSelector');
+      if (selectEl) selectEl.value = classKey; // keep dropdown UI in sync
+
+      updateClassInsignia(activeClass);
+      renderRoundTabs().then(loadActiveSheet);
+
+      document.getElementById('race-results-hub').scrollIntoView({ behavior: 'smooth' });
+      return false; // prevent default jump so smooth scroll isn't fought
+    }
+
+    document.getElementById('tableBody').addEventListener('click', e => {
+      const td = e.target.closest('td[data-sailor]');
+      if (td) showMemberStats(td.dataset.sailor);
+    });
+
     (function () {
       const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/edit?usp=sharing";
 
@@ -2214,128 +2343,1082 @@
       };
     })();
     // =========================================================
-    // APPS / LIST MODULES (Render directly from Global Arrays)
+    // APPS / LIST MODULES
     // =========================================================
-    
-    // Members List
-    function renderMembers() {
-    const q = (document.getElementById('memberSearch').value || '').trim().toLowerCase();
-    const list = allMembers.filter(m => {
+
+    function membershipBadgeClass(type) {
+      const t = String(type).toLowerCase();
+      if (t.includes('full'))      return 'badge-full';
+      if (t.includes('expired'))   return 'badge-expired';
+      if (t.includes('affiliate')) return 'badge-affiliate';
+      return 'badge-default';
+    }
+
+    function initials(name) {
+      return String(name).split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    }
+
+    function applyMemberFilters() {
+      const q = (document.getElementById('memberSearch').value || '').trim().toLowerCase();
+      return allMembers.filter(m => {
         if (q && !m.name.toLowerCase().includes(q)) return false;
         if (memberFilters.membership && !String(m.membership).toLowerCase().includes(memberFilters.membership)) return false;
-        if (memberFilters.active && !m.active) return false;
-        if (memberFilters.whatsapp && !m.whatsapp) return false;
+        if (memberFilters.active    && !m.active)    return false;
+        if (memberFilters.whatsapp  && !m.whatsapp)  return false;
         if (memberFilters.committee && !m.committee) return false;
         return true;
-    });
+      });
+    }
 
-    document.getElementById('memberCount').innerHTML = `Showing <strong>${list.length}</strong> of <strong>${allMembers.length}</strong>`;
-    const container = document.getElementById('memberList');
-    if (!list.length) return container.innerHTML = `<div class="empty-state">No matches found.</div>`;
+    function renderMembers() {
+      const list     = applyMemberFilters();
+      const container = document.getElementById('memberList');
+      const countEl  = document.getElementById('memberCount');
 
-    container.innerHTML = list.map((m, idx) => `
-        <div class="app-row" onclick="openMemberDrawer(${idx})" style="cursor:pointer;">
-        <div><div class="app-name">${esc(m.name)}</div></div>
-        <i data-lucide="chevron-right" class="member-chevron"></i>
-        </div>`).join('');
-    if (window.lucide) lucide.createIcons();
+      countEl.innerHTML = `Showing <strong>${list.length}</strong> of <strong>${allMembers.length}</strong> members`;
+
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state">No members match the current filters.</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map((m, idx) => {
+        const flags = [
+          m.active    ? `<span class="committee-yes">Active</span>`    : '',
+          m.whatsapp  ? `<span class="whatsApp-yes">WhatsApp</span>`  : '',
+          m.committee ? `<span class="committee-yes">Committee</span>` : '',
+        ].filter(Boolean).join(' ');
+
+        return `
+          <div class="app-row" data-idx="${idx}" style="cursor:pointer;">
+            <div>
+              <div class="app-name">${esc(m.name)}</div>
+              <div class="app-meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;">
+                <span class="badge ${membershipBadgeClass(m.membership)}">${esc(m.membership)}</span>
+                ${flags}
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="member-chevron"></i>
+          </div>`;
+      }).join('');
+
+      container.querySelectorAll('.app-row[data-idx]').forEach(row => {
+        row.addEventListener('click', () => openMemberDrawer(applyMemberFilters()[parseInt(row.dataset.idx)]));
+      });
+      if (window.lucide) lucide.createIcons();
     }
     
     function openMemberDrawer(m) {
-        if (!m) return;
-            const body = document.getElementById('memberDrawerBody');
-            body.innerHTML = `
-                <div class="drawer-name-row">
-                <div class="drawer-avatar">${esc(initials(m.name))}</div>
-                <div class="drawer-name-col">
-                    <span class="drawer-name">${esc(m.name)}</span>
-                    <span class="badge ${membershipBadgeClass(m.membership)}" style="width:fit-content">${esc(m.membership)}</span>
-                </div>
-                </div>
-                <div class="detail-grid">
-                <div class="detail-item">
-                    <span class="detail-label">Active</span>
-                    <span class="detail-value">${m.active    ? '<span class="committee-yes">Active</span>'  : '—'}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">WhatsApp</span>
-                    <span class="detail-value">${m.whatsapp  ? '<span class="committee-yes">Active</span>'  : '—'}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Committee</span>
-                    <span class="detail-value">${m.committee ? '<span class="committee-yes">Member</span>'  : '—'}</span>
-                </div>
-                </div>`;
-            document.getElementById('memberDrawer').classList.add('open');
+      if (!m) return;
+      const body = document.getElementById('memberDrawerBody');
+      body.innerHTML = `
+        <div class="drawer-name-row">
+          <div class="drawer-avatar">${esc(initials(m.name))}</div>
+          <div class="drawer-name-col">
+            <span class="drawer-name">${esc(m.name)}</span>
+            <span class="badge ${membershipBadgeClass(m.membership)}" style="width:fit-content">${esc(m.membership)}</span>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Active</span>
+            <span class="detail-value">${m.active    ? '<span class="committee-yes">Active</span>'  : '—'}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">WhatsApp</span>
+            <span class="detail-value">${m.whatsapp  ? '<span class="committee-yes">Active</span>'  : '—'}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Committee</span>
+            <span class="detail-value">${m.committee ? '<span class="committee-yes">Member</span>'  : '—'}</span>
+          </div>
+        </div>`;
+      document.getElementById('memberDrawer').classList.add('open');
 
-            // Filter Registered Boats by selected member
-            const boatSearch = document.getElementById('boatSearch');
-            if (boatSearch) {
-                boatSearch.value = m.name;
-                boatSearch.dispatchEvent(new Event('input'));
-        }
+      // Filter Registered Boats by selected member
+      const boatSearch = document.getElementById('boatSearch');
+      if (boatSearch) {
+        boatSearch.value = m.name;
+        boatSearch.dispatchEvent(new Event('input'));
+      }
+    }
+    
+    // Filter wiring
+    document.getElementById('memberSearch').addEventListener('input', renderMembers);
+
+    document.getElementById('filterMembership').addEventListener('change', e => {
+      memberFilters.membership = e.target.value;
+      const hasValue = !!e.target.value;
+      e.target.classList.toggle('active', hasValue);
+      renderMembers();
+    });
+
+    document.querySelectorAll('#memberFilters .member-filter-btn[data-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.filter;
+        memberFilters[key] = !memberFilters[key];
+        btn.classList.toggle('active', memberFilters[key]);
+        renderMembers();
+      });
+    });
+
+    document.getElementById('closeMemDrawer').addEventListener('click', () => {
+      document.getElementById('memberDrawer').classList.remove('open');
+      clearBoatMemberFilter();
+    });
+
+    document.getElementById('memberDrawer').addEventListener('click', e => {
+      if (e.target === document.getElementById('memberDrawer')) {
+        document.getElementById('memberDrawer').classList.remove('open');
+        clearBoatMemberFilter();
+      }
+    });
+ 
+    /* ── Tab switching ── */
+    const ADD_APPLICATION_URL = 'https://script.google.com/macros/s/AKfycbxYlGnKzYSprv0xQWuE3jEVg8s_1HyEp3JWTWPq-I9Tm8k2S5hvk9_bX5DzFwBrCb57SA/exec';
+
+    function selectMemberTab(key, scroll) {
+      const tabBtn = document.querySelector('#members-list .tab[data-tab="' + key + '"]');
+      const tabContent = document.getElementById('tab-' + key);
+      if (!tabBtn || !tabContent) return true; // unknown key, let default nav happen
+
+      document.querySelectorAll('#members-list .tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('#members-list .tab-content').forEach(c => c.classList.remove('active'));
+      tabBtn.classList.add('active');
+      tabContent.classList.add('active');
+
+      const addAppPill = document.getElementById('addApplicationPill');
+      if (addAppPill) addAppPill.classList.toggle('visible', key === 'applications');
+
+      if (scroll) {
+        document.getElementById('members-list').scrollIntoView({ behavior: 'smooth' });
+      }
+      return false; // prevent default jump so smooth scroll isn't fought
     }
 
-    // Applications List
+    document.querySelectorAll('#members-list .tab').forEach(tab => {
+      tab.addEventListener('click', () => selectMemberTab(tab.dataset.tab, false));
+    });
+
+    /* ── Add Application pill ── */
+    const addApplicationPill = document.getElementById('addApplicationPill');
+    if (addApplicationPill) {
+      addApplicationPill.addEventListener('click', () => {
+        // Build a return URL pointing back to this page's Applications tab,
+        // in case the destination form supports a redirect/return param.
+        const returnUrl = window.location.origin + window.location.pathname + '#applications';
+        const separator = ADD_APPLICATION_URL.includes('?') ? '&' : '?';
+        window.location.href = ADD_APPLICATION_URL + separator + 'returnUrl=' + encodeURIComponent(returnUrl);
+      });
+    }
+
+    // If we've arrived back with #applications (e.g. after submitting the
+    // Add Application form), open straight to the Applications tab.
+    if (window.location.hash === '#applications') {
+      selectMemberTab('applications', true);
+    }
+
+    function appStatusCSSClass(status) {
+      const s = String(status).toLowerCase();
+      if (s.includes('received'))  return 'status-received';
+      if (s.includes('progress'))  return 'status-progress';
+      if (s.includes('awaiting'))  return 'status-awaiting';
+      if (s.includes('processed')) return 'status-processed';
+      if (s.includes('urgent'))    return 'status-urgent';
+      return 'status-received';
+    }
+
     function renderApplications() {
-    const list = activeAppStatus === 'all' ? allApplications : allApplications.filter(a => a.status === activeAppStatus);
-    document.getElementById('appCount').innerHTML = `Showing <strong>${list.length}</strong> of <strong>${allApplications.length}</strong>`;
-    document.getElementById('appList').innerHTML = list.length ? list.map(a => `<div class="app-row" onclick="openAppDrawer('${esc(a.rowId)}')"><div><div class="app-name">${esc(a.firstName)} ${esc(a.surname)}</div></div></div>`).join('') : `<div class="empty-state">No applications found.</div>`;
+      const list = activeAppStatus === 'all'
+        ? allApplications
+        : allApplications.filter(a => a.status === activeAppStatus);
+
+      document.getElementById('appCount').innerHTML =
+        `Showing <strong>${list.length}</strong> of <strong>${allApplications.length}</strong> applications`;
+
+      const container = document.getElementById('appList');
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state">No applications with status "${activeAppStatus}".</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(a => `
+        <div class="app-row" data-rowid="${esc(a.rowId)}">
+          <div>
+            <div class="app-name">${esc(a.firstName)} ${esc(a.surname)}</div>
+            <div class="app-meta">${esc(a.membershipType)} · Nominated by ${esc(a.nominator)}· Seconded by ${esc(a.seconder)} · Updated ${esc(a.lastUpdated)}</div>
+          </div>
+          <span class="app-status ${appStatusCSSClass(a.status)}">${esc(a.status)}</span>
+          <span class="app-chevron">›</span>
+        </div>`).join('');
+
+      container.querySelectorAll('.app-row').forEach(row => {
+        row.addEventListener('click', () => openAppDrawer(row.dataset.rowid));
+      });
     }
 
-    // Boats List
-    function renderBoats() {
-    const q = (document.getElementById('boatSearch').value || '').trim().toLowerCase();
-    const list = allBoats.filter(b => {
+    document.querySelectorAll('#appFilters .app-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#appFilters .app-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeAppStatus = btn.dataset.status;
+        renderApplications();
+      });
+    });
+
+    async function openAppDrawer(rowId) {
+      const app  = allApplications.find(a => a.rowId === rowId);
+      const name = app ? `${app.firstName} ${app.surname}` : 'Application';
+
+      document.getElementById('appDrawerName').textContent = name;
+      document.getElementById('appDrawerSub').textContent  = `Row ID: ${rowId}`;
+
+      const content = document.getElementById('appDrawerContent');
+      content.innerHTML = `
+        <div class="drawer-loading">
+          <div class="spinner"></div>
+          <span>Loading application details…</span>
+        </div>`;
+      document.getElementById('appDrawer').classList.add('open');
+
+      try {
+        const res = await fetch(`${APP_DETAIL_API}?token=${encodeURIComponent(rowId)}&action=display`);
+        const d   = await res.json();
+        if (d.error) throw new Error(d.error);
+
+        document.getElementById('appDrawerName').textContent = d.fullName || name;
+
+        const sCls      = appStatusCSSClass(d.statusClass || d.status || '');
+        const urgentNote = d.statusClass === 'status-urgent'
+          ? `<span class="urgent-note">⚠️ Requires attention — last updated: ${esc(d.lastUpdatedStr)}</span>`
+          : '';
+
+        content.innerHTML = `
+          <div class="drawer-body">
+
+            <div class="app-status-badge ${sCls}">
+              ${esc(d.status)}${urgentNote}
+            </div>
+
+            <!-- Club Details -->
+            <div class="app-detail-section">
+              <div class="app-detail-section-title">Club Details</div>
+              <div class="app-detail-grid">
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Membership Type</span>
+                  <span class="app-detail-value">
+                    <span class="badge ${membershipBadgeClass(d.type)}">${esc(d.type) || '—'}</span>
+                  </span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Current Club</span>
+                  <span class="app-detail-value">${esc(d.currentClub) || '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Governance & Votes -->
+            <div class="app-detail-section">
+              <div class="app-detail-section-title">Governance &amp; Votes</div>
+              <div class="app-detail-grid">
+                <div class="app-detail-item full-width">
+                  <span class="app-detail-label">Disclaimer Signed</span>
+                  <span class="app-detail-value">${esc(d.disclaimer) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Nominator</span>
+                  <span class="app-detail-value">${esc(d.nominator) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Seconder</span>
+                  <span class="app-detail-value">${esc(d.seconder) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Nominator Comment</span>
+                  <span class="app-detail-value">${esc(d.nominatorComment) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Seconder Comment</span>
+                  <span class="app-detail-value">${esc(d.seconderComment) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Votes For</span>
+                  <span class="app-detail-value votes-for">${esc(d.votesFor) ?? '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Votes Against</span>
+                  <span class="app-detail-value votes-against">${esc(d.votesAgainst) ?? '—'}</span>
+                </div>
+                ${d.rejectionReason ? `
+                <div class="app-detail-item full-width">
+                  <span class="app-detail-label">Rejection Reason</span>
+                  <span class="app-detail-value" style="color:var(--signal);">${esc(d.rejectionReason)}</span>
+                </div>` : ''}
+              </div>
+            </div>
+
+            <!-- Activity Log -->
+            ${d.log ? `
+            <div class="app-detail-section">
+              <div class="app-detail-section-title">Activity Log</div>
+              <div class="log-box">${esc(d.log)}</div>
+            </div>` : ''}
+
+          </div>`;
+
+      } catch (err) {
+        showError('appDrawerContent', `Could not load application details — ${err.message}`);
+      }
+    }
+
+    document.getElementById('closeAppDrawer').addEventListener('click', () =>
+      document.getElementById('appDrawer').classList.remove('open'));
+    document.getElementById('appDrawer').addEventListener('click', e => {
+      if (e.target === document.getElementById('appDrawer'))
+        document.getElementById('appDrawer').classList.remove('open');
+    });
+
+    function renderBoatFilters() {
+      const wrap = document.getElementById('boatClassFilters');
+      if (!wrap) return;
+      const classes = Object.keys(CLASS_IMAGE_MAP).filter(c => c !== 'Social' && c !== 'M');
+      wrap.innerHTML = `
+        <div class="filter-row--classes">
+          ${classes.map(c => `
+            <button class="cal-filter-btn ${boatFilters.class===c?'active':''}" data-class="${esc(c)}">
+              <img class="cal-filter-icon" src="${esc(CLASS_IMAGE_MAP[c])}" alt="${esc(c)}">
+              <span>${esc(c)}</span>
+            </button>`).join('')}
+        </div>
+        <div class="filter-row--subfilters">
+          <button class="cal-filter-btn ${boatFilters.class==='all'?'active':''}" data-class="all">
+            <span class="cal-filter-icon--all">★</span><span>All</span>
+          </button>
+          <button class="member-filter-btn ${boatFilters.active?'active':''}" data-toggle="active">
+            Active
+          </button>
+          <button class="member-filter-btn ${boatFilters.gh?'active':''}" data-toggle="gh">
+            GH
+          </button>
+        </div>`;
+        
+      wrap.querySelectorAll('.cal-filter-btn').forEach(btn => btn.addEventListener('click', () => {
+        boatFilters.class = btn.dataset.class;
+        renderBoatFilters();
+        renderBoats();
+      }));
+      
+      wrap.querySelectorAll('.member-filter-btn').forEach(btn => btn.addEventListener('click', () => {
+        const key = btn.dataset.toggle;
+        boatFilters[key] = !boatFilters[key];
+        renderBoatFilters();
+        renderBoats();
+      }));
+    }
+
+    function applyBoatFilters() {
+      const q = (document.getElementById('boatSearch').value || '').trim().toLowerCase();
+      return allBoats.filter(b => {
         if (q && !`${b.member} ${b.sailNo} ${b.model}`.toLowerCase().includes(q)) return false;
         if (boatFilters.class !== 'all' && b.class !== boatFilters.class) return false;
         if (boatFilters.active && !b.active) return false;
         if (boatFilters.gh && !b.gh) return false;
         return true;
-    });
-    document.getElementById('boatCount').innerHTML = `Showing <strong>${list.length}</strong> of <strong>${allBoats.length}</strong> boats`;
-    document.getElementById('boatList').innerHTML = list.length ? list.map(b => `<div class="app-row" onclick="openBoatModal('${esc(b.boatId)}')"><div><div class="app-name">${esc(b.member)}</div><div class="app-meta">${esc(b.class)} • ${esc(b.sailNo)}</div></div></div>`).join('') : `<div class="empty-state">No boats found.</div>`;
+      });
     }
 
-    // Average Score Requests
-    function applyFiltersAndRenderAvgReq() {
-    let filtered = [...rawRequestsData];
-    if (avgReqFilterStatus !== 'all') {
-        filtered = filtered.filter(r => (r.status || r.Status || 'Received').toString().toLowerCase() === avgReqFilterStatus.toLowerCase());
-    }
-    if (avgReqSearchTerm) {
-        filtered = filtered.filter(r => JSON.stringify(r).toLowerCase().includes(avgReqSearchTerm));
-    }
-    document.getElementById("avgReqCount").textContent = `${filtered.length} Request${filtered.length === 1 ? '' : 's'}`;
-    // Render logic
-    const container = document.getElementById("avgReqList");
-    container.innerHTML = filtered.length ? filtered.map(item => `<div class="app-card">...</div>`).join('') : `<div class="empty-state">No requests found.</div>`;
+    // Helper function to safely extract the member's name from any key variant
+    function getBoatOwner(boat) {
+      return boat.member || boat.memberName || boat.MemberName || boat.owner || boat.ownerName || boat.Helm || boat.Skipper || 'Unknown Member';
     }
 
-    function initActiveMembersDropdown() {
-    const select = document.getElementById("reqMemberName");
-    if (!select) return;
-    select.innerHTML = '<option value="" disabled selected>Select active member…</option>';
-    allMembers.filter(m => m.active).forEach(m => {
-        const opt = document.createElement("option"); opt.value = m.name; opt.textContent = m.name; select.appendChild(opt);
-    });
+    function renderBoats() {
+      const filtered = applyBoatFilters();   // ← use this instead of inline filter
+
+      const container = document.getElementById('boatList');
+      const countEl = document.getElementById('boatCount');
+      
+      if (countEl) {
+        countEl.innerHTML = `Showing <strong>${filtered.length}</strong> of <strong>${allBoats.length}</strong> boats`;
+      }
+
+      if (!filtered.length) {
+        const q = (document.getElementById('boatSearch')?.value || '').trim();
+        container.innerHTML = `<div class="empty-state">No registered boats found${q ? ` matching "${esc(q)}"` : ''}.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(b => {
+        const owner = getBoatOwner(b);
+        const sailNo = b.sailNo || b.SailNo || 'N/A';
+        const boatClass = b.class || b.Class || 'Unclassed';
+        const boatModel = b.model || b.Model || 'Standard';
+        const boatColour = b.colour || 'white';
+
+        const activePill = b.active
+        ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` 
+        : `<span class="inactive-yes" style="margin-right: 8px;">Inactive</span>`;
+
+        return `
+          <div class="app-row" onclick="openBoatModal('${esc(b.boatId)}')">
+            <div
+              class="sail-badge"
+              style="
+                background-color:${boatColour};
+                color:${isDarkColour(boatColour) ? '#fff' : '#000'};
+                border:1px solid rgba(255,255,255,0.35);
+                box-shadow:0 2px 8px rgba(0,0,0,0.25);
+              "
+            >
+              ${esc(sailNo)}
+            </div>
+
+            <div class="app-row-content">
+              <div class="app-name">${esc(owner)}</div>
+              <div class="app-meta">${esc(boatClass)} · ${esc(boatModel)}</div>
+            </div>
+
+            <div class="app-row-right">
+              ${activePill}
+
+              ${CLASS_IMAGE_MAP[boatClass] ? `
+                <img class="boat-class-icon"
+                    src="${esc(CLASS_IMAGE_MAP[boatClass])}"
+                    alt="${esc(boatClass)}">
+              ` : `
+                <img class="boat-class-icon"
+                    src="${esc(CLASS_IMAGE_MAP["General"])}"
+                    alt="${esc("General")}">
+              `}
+
+              <i data-lucide="chevron-right" class="boat-chevron"></i>
+            </div>
+          </div>
+        `;        
+      }).join('');
+      if (window.lucide) lucide.createIcons();
     }
+
+    function isDarkColour(colour) {
+      if (!colour) return false;
+
+      const darkColours = [
+        'black',
+        'navy',
+        'darkblue',
+        'blue',
+        'midnightblue',
+        'darkgreen',
+        'green',
+        'forestgreen',
+        'darkred',
+        'red',
+        'maroon',
+        'purple',
+        'indigo',
+        'brown',
+        'grey',
+        'gray',
+        'darkgrey',
+        'darkgray'
+      ];
+
+      return darkColours.includes(colour.toLowerCase().trim());
+    }
+
+    function clearBoatMemberFilter() {
+      const boatSearch = document.getElementById('boatSearch');
+      if (boatSearch && boatSearch.value !== '') {
+        boatSearch.value = '';
+        boatSearch.dispatchEvent(new Event('input'));
+      }
+    }
+
+    // Open Boat Modal Function
+    function openBoatModal(boatId) {
+      // Retrieve boat object (adjust dataset source variable as needed)
+      const source = Array.isArray(allBoats)
+          ? allBoats
+          : (Array.isArray(boats) ? boats : []);
+
+      const boat = source.find(
+          b => String(b.boatId) === String(boatId)
+      );
+
+      if (!boat) {
+          console.warn("Boat not found:", boatId);
+          return;
+      }
+
+      const classImg = getClassImage(boat.class);
+      const boatColour = boat.colour || '#ffffff';
+      const activeStatus = boat.active 
+        ? `<span class="committee-yes">Active</span>` 
+        : `<span class="committee-no">Inactive</span>`;
+
+      const modalHtml = `
+        <div id="boatDetailModalOverlay" class="boat-modal-overlay" onclick="onBoatModalOverlayClick(event)">
+          <div class="boat-modal-card glass">
+            <div class="drawer-header">
+                <div class="drawer-name-row">
+                    <div
+                      class="sail-badge"
+                      style="
+                        background-color:${boatColour};
+                        color:${isDarkColour(boatColour)?'#fff':'#000'};
+                      ">
+                      ${esc(boat.sailNo)}
+                    </div>
+
+                    <div class="drawer-name-col">
+                        <span class="drawer-name">${esc(boat.member)}</span>
+                        <span class="badge badge-default">${esc(boat.class)}</span>
+                    </div>
+                </div>
+
+                <button class="drawer-close" onclick="closeBoatModal()">✕</button>
+            </div>
+            <div class="app-detail-section">
+
+              <div class="app-detail-section-title">
+                Registration
+              </div>
+
+              <div class="app-detail-grid">
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Boat ID</span>
+                  <span class="app-detail-value">${esc(boat.boatId)}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Status</span>
+                  <span class="app-detail-value">
+                    ${boat.active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Class</span>
+                  <span class="app-detail-value">${esc(boat.class)}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Model</span>
+                  <span class="app-detail-value">${esc(boat.model)}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Sail Number</span>
+                  <span class="app-detail-value">${esc(boat.sailNo)}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Colour</span>
+                  <span class="app-detail-value">${esc(boat.colour || 'White')}</span>
+                </div>
+
+              </div>
+
+            </div>
+            <div class="app-detail-section">
+
+              <div class="app-detail-section-title">
+                Ownership
+              </div>
+
+              <div class="app-detail-grid">
+
+                <div class="app-detail-item full-width">
+                  <span class="app-detail-label">Member</span>
+                  <span class="app-detail-value">${esc(boat.member)}</span>
+                </div>
+
+              </div>
+
+            </div>
+            <div class="app-detail-section">
+
+              <div class="app-detail-section-title">
+                Racing Configuration
+              </div>
+
+              <div class="app-detail-grid">
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Handicap</span>
+                  <span class="app-detail-value">${esc(boat.handicap || '-')}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">HRN</span>
+                  <span class="app-detail-value">${esc(boat.hrn || '-')}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">GH Eligible</span>
+                  <span class="app-detail-value">${esc(boat.gh || '-')}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">GH Handicap</span>
+                  <span class="app-detail-value">${esc(boat.ghHcap || '-')}</span>
+                </div>
+
+              </div>
+
+            </div>
+            <div class="app-detail-section">
+
+              <div class="app-detail-section-title">
+                Documentation
+              </div>
+
+              <div class="app-detail-grid">
+
+                  ...
+
+              </div>
+
+            </div>
+          </div>  
+        </div>
+        
+      `;
+
+      // Remove any existing instance before injecting
+      closeBoatModal();
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      document.addEventListener('keydown', onBoatModalEsc);
+    }
+
+    // Close Functions & Event Listeners
+    function closeBoatModal() {
+      const overlay = document.getElementById('boatDetailModalOverlay');
+      if (overlay) overlay.remove();
+      document.removeEventListener('keydown', onBoatModalEsc);
+    }
+
+    function onBoatModalOverlayClick(e) {
+      if (e.target.id === 'boatDetailModalOverlay') {
+        closeBoatModal();
+      }
+    }
+
+    function onBoatModalEsc(e) {
+      if (e.key === 'Escape') {
+        closeBoatModal();
+      }
+    }
+
+    (function() {
+      let currentFilterStatus = 'all';
+      let currentSearchTerm = '';
+
+      document.addEventListener("DOMContentLoaded", function() {
+        initTabNavigation();
+        initActiveMembersDropdown();
+        initFilterAndSearch();
+        initDrawerEvents();
+      });
+
+      function initTabNavigation() {
+        const root = document.getElementById("avg-score-requests");
+        if (!root) return;
+
+        const tabButtons = root.querySelectorAll("#avgReqTabRow .tab");
+        tabButtons.forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            switchTab(btn.getAttribute("data-avg-tab"));
+          });
+        });
+
+        const pillBtn = root.querySelector("#addAvgReqPill");
+        if (pillBtn) {
+          pillBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            switchTab("req-app");
+          });
+        }
+      }
+
+      function switchTab(tabKey) {
+        const root = document.getElementById("avg-score-requests");
+        if (!root) return;
+
+        const tabButtons = root.querySelectorAll("#avgReqTabRow .tab");
+        tabButtons.forEach(btn => {
+          btn.classList.toggle("active", btn.getAttribute("data-avg-tab") === tabKey);
+        });
+
+        const listTab = root.querySelector("#avg-tab-req-list");
+        const appTab = root.querySelector("#avg-tab-req-app");
+
+        if (tabKey === "req-list") {
+          if (listTab) listTab.classList.add("active");
+          if (appTab) appTab.classList.remove("active");
+        } else {
+          if (appTab) appTab.classList.add("active");
+          if (listTab) listTab.classList.remove("active");
+          initActiveMembersDropdown();
+        }
+      }
+
+      function initActiveMembersDropdown() {
+        const select = document.getElementById("reqMemberName");
+        if (!select) return;
+
+        const currentValue = select.value;
+        select.innerHTML = '<option value="" disabled selected>Select active member…</option>';
+
+        if (typeof allMembers !== 'undefined' && Array.isArray(allMembers) && allMembers.length > 0) {
+          const activeMembers = allMembers.filter(m => {
+            const isActiveVal = m.Active ?? m.active ?? m.IsActive ?? m.isActive;
+            const statusVal = m.Status ?? m.status ?? m.MembershipStatus ?? "";
+            return (
+              isActiveVal === true || 
+              String(isActiveVal).toLowerCase() === "true" ||
+              String(statusVal).toLowerCase() === "active"
+            );
+          });
+
+          activeMembers.forEach(m => {
+            const name = m.Name || m.name || m.memberName || m.memberNameFull || m["Member Name"] || "";
+            const email = m.Email || m.email || m.memberEmail || m["Member Email"] || "";
+            
+            if (name) {
+              const opt = document.createElement("option");
+              opt.value = name;
+              opt.textContent = name;
+              opt.dataset.email = email;
+              if (name === currentValue) opt.selected = true;
+              select.appendChild(opt);
+            }
+          });
+        }
+      }
+
+      document.getElementById("reqEventDate").addEventListener("change", function(e) {
+        const misDate = document.getElementById("reqEventDate").value;
+        const selectedOpt = document.getElementById("reqBoatClass").value;
+        if (!misDate)  {
+          if (!selectedOpt) {
+            document.getElementById("reqConflictingRegatta").value  = "Will load after Date and Class are selected";
+          } else {
+            document.getElementById("reqConflictingRegatta").value  = "Will load after Date is selected";
+          }
+        } else {
+          if (!selectedOpt) {
+            document.getElementById("reqConflictingRegatta").value  = "Will load after Class is selected";
+          } else {
+            const field = document.getElementById("reqConflictingRegatta");
+            field.value = `⏳ Searching for ${selectedOpt} event near ${misDate}…`;
+            getConflictingEvents(selectedOpt, misDate).then(result => { field.value = result; });
+          }
+        }
+      });
+      
+      document.getElementById("reqBoatClass").addEventListener("change", function(e) {
+        const selectedOpt = e.target.value;
+        const misDate = document.getElementById("reqEventDate").value;
+        if (!selectedOpt) {
+          if (!misDate)  {
+              document.getElementById("reqConflictingRegatta").value  = "Will load after Date and Class are selected";
+          } else {
+              document.getElementById("reqConflictingRegatta").value  = "Will load after Class is selected";
+          } 
+        } else {
+          if (!misDate)  {
+              document.getElementById("reqConflictingRegatta").value  = "Will load after Date is selected";
+          } else {
+            const field = document.getElementById("reqConflictingRegatta");
+            field.value = `⏳ Searching for ${selectedOpt} event near ${misDate}…`;
+            getConflictingEvents(selectedOpt, misDate).then(result => { field.value = result; });
+          }           
+        }
+      });
+
+      document.getElementById("reqMemberName").addEventListener("change", function(e) {
+        const selectedOpt = e.target.options[e.target.selectedIndex];
+        document.getElementById("reqMemberEmail").value = selectedOpt ? (selectedOpt.dataset.email || "") : "";
+      });
+
+
+      function initFilterAndSearch() {
+        const root = document.getElementById("avg-score-requests");
+        if (!root) return;
+
+        const filterBtns = root.querySelectorAll("#avgReqFilters .app-filter-btn");
+        filterBtns.forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            filterBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            currentFilterStatus = btn.getAttribute("data-status");
+            applyFiltersAndRender();
+          });
+        });
+
+        const searchInput = root.querySelector("#avgReqSearch");
+        if (searchInput) {
+          searchInput.addEventListener("input", (e) => {
+            currentSearchTerm = e.target.value.toLowerCase().trim();
+            applyFiltersAndRender();
+          });
+        }
+      }
+
+      function formatDate(dateInput) {
+        if (!dateInput) return '';
+
+        // If passed a string (e.g. "2026-09-26"), parse it into a Date object
+        let date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+
+        // Check if it's a valid date
+        if (isNaN(date.getTime())) {
+          return dateInput; // Fallback if invalid
+        }
+
+        // Now .getFullYear() works properly
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${day}/${month}/${year}`; // Adjust format as needed (e.g. DD/MM/YYYY)
+      }
+
+      // Backend (getRequestList) returns camelCase keys; sheet-style keys kept as fallbacks
+      function normReq(r, i) {
+        return {
+          reqId:        r["Request ID"] || r.requestId || r.reqId || `REQ-${i + 1}`,
+          member:       r["Member Name"] || r.memberName || r.member || "Unknown Member",
+          email:        r["Member Email"] || r.memberEmail || r.email || "-",
+          eventName:    r["Event Name"] || r.eventName || [r.className, r.regattaType].filter(Boolean).join(" ") || "Average Score Request",
+          date:         formatDate(r["Event Date"] || r.eventDate || r.date) || "-",
+          conflict:     r["Conflicting Regatta"] || r.conflictingRegatta || r.conflict || "-",
+          status:       String(r.Status || r.status || "Received"),
+          decisionDate: formatDate(r["Decision Date"] || r.decisionDate) || "-",
+          decisionBy:   r["Decision By"] || r.decisionBy || r.committee || "-",
+          reason:       r["Rejected Reason"] || r.rejectedReason || r.readon || "N/A"
+        };
+      }
+
+      function applyFiltersAndRender() {
+        let items = (Array.isArray(rawRequestsData) ? rawRequestsData : []).map((r, i) => ({ raw: r, n: normReq(r, i) }));
+
+        if (currentFilterStatus !== 'all') {
+          items = items.filter(x => x.n.status.toLowerCase() === currentFilterStatus.toLowerCase());
+        }
+        if (currentSearchTerm) {
+          items = items.filter(x => [x.n.member, x.n.eventName, x.n.reqId].some(v => String(v).toLowerCase().includes(currentSearchTerm)));
+        }
+
+        const countChip = document.getElementById("avgReqCount");
+        if (countChip) countChip.textContent = `${items.length} Request${items.length === 1 ? '' : 's'}`;
+
+        renderList(items.map(x => x.n));
+      }
+
+      function renderList(items) {
+        const container = document.getElementById("avgReqList");
+        if (!container) return;
+        container.innerHTML = "";
+
+        if (!items || items.length === 0) {
+          container.innerHTML = `<div class="empty-state"><div>No matching requests found.</div></div>`;
+          return;
+        }
+
+        items.forEach(n => {
+          const card = document.createElement("div");
+          card.className = "app-card";
+          card.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:12px; margin-bottom:8px; border-radius:8px; background:var(--glass-fill, rgba(255,255,255,0.03)); border:1px solid var(--glass-border, rgba(255,255,255,0.08)); cursor:pointer; transition:background 0.2s;";
+
+          card.addEventListener("mouseover", () => card.style.background = "rgba(255,255,255,0.07)");
+          card.addEventListener("mouseout", () => card.style.background = "var(--glass-fill, rgba(255,255,255,0.03))");
+          card.addEventListener("click", () => openDrawer(n));
+
+          let statusStyle = "background:rgba(234, 179, 8, 0.15); color:#eab308;";
+          if (n.status.toLowerCase() === "approved") statusStyle = "background:rgba(74, 222, 128, 0.15); color:#4ade80;";
+          if (n.status.toLowerCase() === "rejected") statusStyle = "background:rgba(239, 68, 68, 0.15); color:#ef4444;";
+
+          card.innerHTML = `
+            <div>
+              <div style="font-weight:600; font-size:14px; color:var(--foam, #fff);">${esc(n.member)}</div>
+              <div style="font-size:12px; color:var(--glow, #257fb6); margin-top:2px;">${esc(n.eventName)} &bull; <span style="color:var(--foam-sub, #aaa);">${esc(n.date)}</span></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="padding:4px 10px; border-radius:12px; font-size:11px; font-weight:600; ${statusStyle}">${esc(n.status)}</span>
+              <span style="font-size:12px; color:var(--foam-sub, #888);">${esc(n.reqId)}</span>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      function initDrawerEvents() {
+        const closeBtn = document.getElementById("closeAvgReqDrawer");
+        const overlay = document.getElementById("avgReqDrawer");
+
+        if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+        if (overlay) {
+          overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) closeDrawer();
+          });
+        }
+      }
+
+      function openDrawer(n) {
+        const overlay = document.getElementById("avgReqDrawer");
+        document.getElementById("avgReqDrawerTitle").textContent = n.reqId;
+        document.getElementById("avgReqDrawerSub").textContent = n.member;
+        const L = t => `<strong style="color:var(--glow, #257fb6);">${t}</strong><br>`;
+
+        document.getElementById("avgReqDrawerBody").innerHTML = `
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:13px; line-height:1.5;">
+            <div>${L('Member Name')}${esc(n.member)}</div>
+            <div>${L('Member Email')}${esc(n.email)}</div>
+            <div>${L('Missed Event Date')}${esc(n.date)}</div>
+            <div>${L('Missed Regatta')}${esc(n.eventName)}</div>
+            <div style="grid-column: span 2;">${L('Conflicting ARYA Regatta')}${esc(n.conflict)}</div>
+            <div>${L('Status')}${esc(n.status)}</div>
+            <div>${L('Decision Date')}${esc(n.decisionDate)}</div>
+            <div>${L('Decision By')}${esc(n.decisionBy)}</div>
+            <div style="grid-column: span 2;">${L('Rejection Reason')}${esc(n.reason)}</div>
+          </div>`;
+
+        overlay.classList.add("active");
+      }
+
+      function closeDrawer() {
+        const overlay = document.getElementById("avgReqDrawer");
+        if (overlay) overlay.classList.remove("active");
+      }
+
+      /* Find ranked events for date of missed event */
+      async function getConflictingEvents(className, date) {
+
+        let events = [];
+
+        const fromDate = new Date(date);
+        const toDate = new Date(date);
+        fromDate.setDate(fromDate.getDate() - 3);
+        toDate.setDate(toDate.getDate() + 3);
+
+        try {
+          const resp = await fetch(`${CALENDAR_URL}?action=listConflicts&date=${encodeURIComponent(date)}`);
+          const data = await resp.json();
+          events = data.events || [];
+        } catch (err) {
+          return `Failed to load events: ${err.message}`;
+        }
+
+        if (events.length === 0) {
+          return `No events found in calendar`;
+        }
+        
+        const nearEvents = events.filter(e => {
+          const rawDate = e?.Date ?? e?.date;
+          if (!e || !rawDate) return false;
+          const evDate = new Date(rawDate);
+          return evDate >= fromDate && evDate <= toDate;
+        });
+
+        const conflict = nearEvents.filter(e => {
+          const evClass = (e.class ?? e.Class ?? e.className ?? "").toLowerCase();
+          return evClass === className.toLowerCase();
+        });
+
+        return conflict.length >= 1
+          ? conflict[0].conflict
+          : `No conflicting event found for ${className} between ${fromDate.toDateString()} and ${toDate.toDateString()}`;
+      }
+
+      async function submitAverageScoreRequest(payload) {
+        if (typeof GATEWAY_URL === 'undefined' || !GATEWAY_URL) {
+          throw new Error("GATEWAY_URL is not defined.");
+        }
+
+        const response = await fetch(GATEWAY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "appendAvgScrReq", domain: "requests", sheet: "AvgScrReq", rowData: payload.rowData})
+          
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const result = await response.json();
+        if (result.error) throw new Error(result.error.message);
+
+        return result;
+      }
+
+      document.getElementById("avgScoreForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const statusDiv = document.getElementById("avgReqFormStatus");
+        const submitBtn = document.getElementById("btnSubmitAvgReq");
+        const requestor = document.getElementById("reqMemberName").value;
+
+        statusDiv.style.color = "var(--glow, #257fb6)";
+        statusDiv.innerHTML = "Submitting request…";
+        submitBtn.disabled = true;
+
+        const regattaType = document.getElementById("reqRegattaType")?.value || "";
+        const payload = {
+          rowData: {
+            requestId: "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
+            timestamp: new Date().toISOString(),
+            memberName: requestor,
+            memberEmail: document.getElementById("reqMemberEmail").value,
+            eventDate: document.getElementById("reqEventDate").value,
+            boatClass: document.getElementById("reqBoatClass").value,
+            regattaType: regattaType,
+            eventName: (document.getElementById("reqBoatClass").value + " " + regattaType).trim(),
+            conflictingRegatta: document.getElementById("reqConflictingRegatta").value,
+            status: "Received"
+          }
+        };
+
+        try {
+          
+          await submitAverageScoreRequest(payload);
+          statusDiv.style.color = "#4ade80";
+          statusDiv.innerHTML = "Submitted successfully! Returning to list…";
+
+          setTimeout(() => {
+            document.getElementById("avgScoreForm").reset();
+            statusDiv.innerHTML = "";
+            submitBtn.disabled = false;
+
+            switchTab("req-list");
+            refreshBootstrap(readCache());
+          }, 1000);
+
+        } catch (err) {
+          console.error("Submission error:", err);
+          statusDiv.style.color = "var(--signal, #ef4444)";
+          statusDiv.innerHTML = "Error submitting: " + err.message;
+          submitBtn.disabled = false;
+        }
+      });
+      window.initActiveMembersDropdown = initActiveMembersDropdown;
+      window.applyFiltersAndRenderAvgReq = applyFiltersAndRender;
+    })();
 
     // =========================================================
     // INITIALIZATION
     // =========================================================
-    document.addEventListener('DOMContentLoaded', () => {
-    // Setup event listeners for UI (search boxes, tabs, etc)
-    document.getElementById('memberSearch')?.addEventListener('input', renderMembers);
-    document.getElementById('boatSearch')?.addEventListener('input', renderBoats);
-    document.getElementById('avgReqSearch')?.addEventListener('input', (e) => { avgReqSearchTerm = e.target.value.toLowerCase().trim(); applyFiltersAndRenderAvgReq(); });
-    
-    // Kick off the unified app load
-    initApp();
-    
-    // Keep existing Championship Standings init
-    renderClassTabs();
-    loadActiveSheet(); // Note: Standings module still uses the DISCOVERY_URL since it pulls dynamic sheets
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('boatSearch')?.addEventListener('input', renderBoats);
+      initApp();                       // bootstrap + side data (non-blocking)
+
+      // Championship Standings (on-demand sheets via HOME_DATA_API ?ss=)
+      renderClassTabs();
+      updateClassInsignia(activeClass);
+      await renderRoundTabs();
+      loadActiveSheet();
     });
 
   </script>
