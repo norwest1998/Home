@@ -118,6 +118,27 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 .step-badge{width:22px;height:22px;border-radius:50%;background:var(--glow);color:#071b2c;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-right:10px;flex-shrink:0;}
 .compose-lbl{font-family:var(--font-data);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--foam-dim);margin-bottom:6px;display:block;}
 
+/* ── Tabs inside Recipients ── */
+.compose-tabs{display:flex;gap:4px;border-bottom:1px solid var(--glass-border);margin-bottom:4px;}
+.compose-tab{background:none;border:none;color:var(--foam-dim);font-size:12px;font-weight:600;padding:8px 14px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;}
+.compose-tab:hover{color:var(--foam);}
+.compose-tab.active{color:var(--glow);border-bottom-color:var(--glow);}
+.compose-tab-pane{display:none;flex-direction:column;gap:14px;}
+.compose-tab-pane.active{display:flex;}
+
+/* ── Member List Picker ── */
+.filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.filter-grid select{font-size:11px;padding:6px 20px 6px 10px;}
+.member-list-scroll{max-height:280px;overflow-y:auto;border:1px solid var(--glass-border);border-radius:8px;background:rgba(0,0,0,0.15);}
+.member-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--glass-border);cursor:pointer;transition:background .15s;}
+.member-row:hover{background:rgba(255,255,255,0.04);}
+.member-row:last-child{border-bottom:none;}
+.member-row.disabled{opacity:0.5;cursor:not-allowed;}
+.member-row input[type="checkbox"]{margin:0;accent-color:var(--glow);width:14px;height:14px;cursor:pointer;}
+.member-row .mr-name{font-size:13px;color:var(--foam);font-weight:500;}
+.member-row .mr-meta{font-size:11px;color:var(--foam-dim);}
+.member-row .mr-warn{font-size:10px;color:#ffb347;margin-left:auto;}
+
 /* ── Recipient chips ── */
 .chip-input-wrap{display:flex;flex-wrap:wrap;gap:5px;align-items:center;background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);border-radius:8px;padding:5px 10px;min-height:38px;cursor:text;transition:border-color .2s;position:relative;}
 .chip-input-wrap:focus-within{border-color:var(--foam);}
@@ -178,8 +199,6 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 /* ── Template & Signature management grid ── */
 .tmpl-mgmt-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
 @media(max-width:700px){.tmpl-mgmt-grid{grid-template-columns:1fr;}}
-
-/* List panel inside the grid */
 .list-panel{background:var(--glass-fill);border:1px solid var(--glass-border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;}
 .list-panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--glass-border);}
 .list-panel-header h4{font-size:14px;font-weight:600;color:var(--foam);margin:0;}
@@ -190,8 +209,6 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 .list-item-meta{font-size:11px;color:var(--foam-dim);}
 .list-empty{padding:20px;text-align:center;font-size:12px;color:var(--foam-dim);}
 .list-scroll{max-height:320px;overflow-y:auto;}
-
-/* ── Large modal for template/signature editing ── */
 .large-modal{max-width:700px!important;}
 </style>
 </head>
@@ -216,7 +233,6 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
   <div class="glass stat-card"><div class="stat-val" id="stat-avg-days"><span class="spinner"></span></div><div class="stat-label">Avg Response Days</div></div>
 </div>
 
-<!-- Batches -->
 <div class="panel">
   <div class="panel-header">
     <div class="panel-title-left"><span class="dot"></span><h3>Communication Batches</h3></div>
@@ -279,7 +295,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
      ══════════════════════════════════════════════════════ -->
 <div class="section-head" id="compose-email">
   <h2>Compose Email</h2>
-  <p>Draft your message, specify recipients, and send your campaign.</p>
+  <p>Draft your message, select filtered recipients, and send your campaign.</p>
 </div>
 <div class="panel">
   <div class="panel-header">
@@ -378,55 +394,83 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
       <!-- ── Right Column: Recipients & Send ── -->
       <div class="compose-col compose-col-right">
         
-        <div class="compose-card">
+        <div class="compose-card" style="padding:16px 20px;">
           <h2 class="compose-card-title"><span class="step-badge">2</span> Recipients</h2>
           
-          <div class="form-group">
-            <label class="compose-lbl">Member Group</label>
-            <select id="groupSelect" class="glass-select">
-              <option value="">— Select Group —</option>
-              <option value="all_active">All Active Members</option>
-              <option value="full">Full Members</option>
-              <option value="affiliate">Affiliate Members</option>
-              <option value="financial">Financial Members</option>
-              <option value="committee">Committee Members</option>
-            </select>
-            <div style="font-size:11px;color:var(--foam-dim);margin-top:2px;">Select an automatic group based on the Members list.</div>
+          <div class="compose-tabs">
+            <button class="compose-tab active" data-tab="tab-members">Members List</button>
+            <button class="compose-tab" data-tab="tab-extra">Custom To / CC / BCC</button>
           </div>
 
-          <div class="form-group" style="margin-top:6px;">
-            <label class="compose-lbl">To <span style="text-transform:none;opacity:0.6;font-size:9.5px;margin-left:4px;">(Extra individual recipients)</span></label>
-            <div class="chip-input-wrap" id="toWrap">
-              <div id="toChips"></div>
-              <input class="chip-input" id="toInput" placeholder="name or email…" autocomplete="off">
-              <div class="autocomplete-list" id="toAC" style="display:none;"></div>
+          <!-- Tab: Members List & Filters -->
+          <div id="tab-members" class="compose-tab-pane active">
+            <div class="filter-grid">
+              <select id="fltType" class="glass-select" title="Membership Type"><option value="">All Types</option></select>
+              <select id="fltStatus" class="glass-select" title="Active Status">
+                <option value="">All Statuses</option><option value="active">Active Only</option><option value="inactive">Inactive Only</option>
+              </select>
+              <select id="fltFin" class="glass-select" title="Financial Status">
+                <option value="">All Financial</option><option value="paid">Paid Up</option><option value="unpaid">Unpaid</option>
+              </select>
+              <select id="fltClass" class="glass-select" title="Class of Boat"><option value="">All Classes</option></select>
+              <select id="fltMissing" class="glass-select" style="grid-column:1/-1;" title="Missing Data">
+                <option value="">No Data Filter</option><option value="no-email">No Email Address</option><option value="no-phone">No Phone Number</option>
+              </select>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <div class="search-wrap" style="flex:1; margin:0;">
+                <i class="nav-icon search-icon" data-lucide="search" style="width:14px;height:14px;"></i>
+                <input class="search-input" id="fltSearch" placeholder="Search filtered members…" style="padding:5px 10px 5px 30px; font-size:12px;">
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-ghost" id="btnSelectAll" style="padding:4px 8px; font-size:10px;">Select All</button>
+                <button class="btn btn-ghost" id="btnDeselectAll" style="padding:4px 8px; font-size:10px;">Clear</button>
+              </div>
+            </div>
+
+            <div class="member-list-scroll" id="memberCheckList">
+              <div class="list-empty"><span class="spinner"></span> Loading members…</div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="compose-lbl">CC <span style="text-transform:none;opacity:0.6;font-size:9.5px;margin-left:4px;">(Copied on every email)</span></label>
-            <div class="chip-input-wrap" id="ccWrap">
-              <div id="ccChips"></div>
-              <input class="chip-input" id="ccInput" placeholder="name or email…" autocomplete="off">
-              <div class="autocomplete-list" id="ccAC" style="display:none;"></div>
+          <!-- Tab: Extra Custom Recipients -->
+          <div id="tab-extra" class="compose-tab-pane">
+            <div class="form-group">
+              <label class="compose-lbl">To <span style="text-transform:none;opacity:0.6;font-size:9.5px;margin-left:4px;">(Extra individual recipients)</span></label>
+              <div class="chip-input-wrap" id="toWrap">
+                <div id="toChips"></div>
+                <input class="chip-input" id="toInput" placeholder="name or email…" autocomplete="off">
+                <div class="autocomplete-list" id="toAC" style="display:none;"></div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="compose-lbl">CC <span style="text-transform:none;opacity:0.6;font-size:9.5px;margin-left:4px;">(Copied on every email)</span></label>
+              <div class="chip-input-wrap" id="ccWrap">
+                <div id="ccChips"></div>
+                <input class="chip-input" id="ccInput" placeholder="name or email…" autocomplete="off">
+                <div class="autocomplete-list" id="ccAC" style="display:none;"></div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="compose-lbl">BCC <span style="text-transform:none;opacity:0.6;font-size:9.5px;margin-left:4px;">(Hidden copy)</span></label>
+              <div class="chip-input-wrap" id="bccWrap">
+                <div id="bccChips"></div>
+                <input class="chip-input" id="bccInput" placeholder="name or email…" autocomplete="off">
+                <div class="autocomplete-list" id="bccAC" style="display:none;"></div>
+              </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="compose-lbl">BCC <span style="text-transform:none;opacity:0.6;font-size:9.5px;margin-left:4px;">(Hidden copy)</span></label>
-            <div class="chip-input-wrap" id="bccWrap">
-              <div id="bccChips"></div>
-              <input class="chip-input" id="bccInput" placeholder="name or email…" autocomplete="off">
-              <div class="autocomplete-list" id="bccAC" style="display:none;"></div>
-            </div>
-          </div>
-
+          <!-- Total Count Pill -->
           <div class="count-pill">
             <div>
               <div style="font-size:13px; font-weight:600; color:var(--foam);">Will receive this email</div>
-              <div style="font-size:11px; color:var(--foam-dim);" id="groupCountMsg">Calculating…</div>
+              <div style="font-size:11px; color:var(--foam-dim);" id="groupCountMsg">0 recipients</div>
             </div>
-            <div style="font-size:24px; font-weight:700; color:var(--glow); line-height:1;" id="countN">–</div>
+            <div style="font-size:24px; font-weight:700; color:var(--glow); line-height:1;" id="countN">0</div>
           </div>
         </div>
 
@@ -453,7 +497,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 </div><!-- /panel compose -->
 
 <!-- ══════════════════════════════════════════════════════
-     SECTION 4 — TEMPLATE MANAGEMENT (two-column grid)
+     SECTION 4 — TEMPLATE MANAGEMENT
      ══════════════════════════════════════════════════════ -->
 <div class="section-head" id="template-management">
   <h2>Template Management</h2>
@@ -461,7 +505,6 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 </div>
 <div class="tmpl-mgmt-grid">
 
-  <!-- Templates list -->
   <div class="list-panel">
     <div class="list-panel-header">
       <h4>Email Templates</h4>
@@ -472,7 +515,6 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
     </div>
   </div>
 
-  <!-- Signatures list -->
   <div class="list-panel">
     <div class="list-panel-header">
       <h4>Signatures</h4>
@@ -483,7 +525,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
     </div>
   </div>
 
-</div><!-- /tmpl-mgmt-grid -->
+</div>
 
 <!-- AUDIT LOG -->
 <div id="auditLog-placeholder"></div>
@@ -494,7 +536,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 </main>
 
 <!-- ══════════════════════════════════════════════════════
-     RECORD DETAIL MODAL (tracking records)
+     RECORD DETAIL MODAL
      ══════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="recordModal">
   <div class="modal">
@@ -552,7 +594,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 </div>
 
 <!-- ══════════════════════════════════════════════════════
-     TEMPLATE MODAL (add / edit / view)
+     TEMPLATE MODAL
      ══════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="tmplModal">
   <div class="modal large-modal">
@@ -605,7 +647,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
       <div class="form-group"><label>Default BCC</label><input type="text" id="tDefaultBCC" placeholder="bcc@example.com"></div>
     </div>
     <div class="form-group" id="tGroupKeyRow" style="display:none;">
-      <label>Default Group</label>
+      <label>Default Group (Legacy mapped on template selection)</label>
       <select id="tGroupKey">
         <option value="">— None —</option>
         <option value="all_active">All Active Members</option>
@@ -641,7 +683,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 </div>
 
 <!-- ══════════════════════════════════════════════════════
-     SIGNATURE MODAL (add / edit / view)
+     SIGNATURE MODAL
      ══════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="sigModal">
   <div class="modal" style="max-width:560px;">
@@ -683,17 +725,16 @@ const TRACKING_DOMAIN = DOMAIN.tracking;
 const TEMPLATE_SS_ID  = "1M0_jDbN35e6eX96SNylY-J887Ks48Y9dNudOYMgKkjE";
 
 async function tFetch(sheet) {
-  if (!TEMPLATE_GW_URL) return [];   // graceful — lists will be empty until configured
+  if (!TEMPLATE_GW_URL) return [];
   const r = await fetch(`${TEMPLATE_GW_URL}?action=fetch&sheet=${encodeURIComponent(sheet)}`);
   const d = await r.json(); if (d.error) throw new Error(d.error); return d.values || [];
 }
 async function tPost(payload) {
-  if (!TEMPLATE_GW_URL) throw new Error("TEMPLATE_GW_URL not configured — see TemplateGateway.gs.");
+  if (!TEMPLATE_GW_URL) throw new Error("TEMPLATE_GW_URL not configured.");
   const r = await fetch(TEMPLATE_GW_URL, {method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
   const d = await r.json(); if (d.error) throw new Error(d.error); return d;
 }
 
-/* ── Misc helpers ── */
 function uid() { return "T"+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,6).toUpperCase(); }
 function fmtDate(v) { if(!v) return "—"; const d=new Date(v); return isNaN(d)?v:d.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"}); }
 function pct(n,d) { return d?Math.round((n/d)*100)+"%":"—"; }
@@ -704,14 +745,11 @@ function statusBadge(s) {
 }
 
 /* ================================================================
-   DATA CACHE
+   DATA CACHE & QUILL
    ================================================================ */
-let dashRows   = [], trackRows  = [], templates = [], signatures = [], members = [];
+let dashRows = [], trackRows = [], templates = [], signatures = [], members = [];
 let editingKey = null, editTmplId = null, editSigId = null, selectedTmplId = null;
 
-/* ================================================================
-   QUILL INSTANCES
-   ================================================================ */
 const QUILL_TOOLBAR = [
   [{font:[]},{size:["small",false,"large","huge"]}],
   ["bold","italic","underline","strike"],
@@ -721,7 +759,6 @@ const QUILL_TOOLBAR = [
 ];
 
 let quillBody, quillTmpl, quillSig;
-
 function initQuills() {
   quillBody = new Quill("#bodyEditor",{theme:"snow",placeholder:"Write your email message here…",modules:{toolbar:QUILL_TOOLBAR}});
   quillTmpl = new Quill("#tmplBodyEditor",{theme:"snow",placeholder:"Template default body (optional)…",modules:{toolbar:QUILL_TOOLBAR}});
@@ -761,17 +798,21 @@ function initEmoji() {
 }
 
 /* ================================================================
-   MEMBER AUTOCOMPLETE & CHIPS
+   MEMBER AC & CHIPS
    ================================================================ */
-async function loadMembers(){try{members=await fetchSheet(DOMAIN.members,"Members");}catch(e){members=[];}}
+async function loadMembers(){
+  try{ members = await fetchSheet(DOMAIN.members,"Members"); } catch(e){ members = []; }
+  populateMemberFilters();
+  renderMembersList();
+}
 function memberSuggestions(q){
   if(!q||q.length<2)return[];
   const lq=q.toLowerCase();
   return members.filter(m=>{
-    const name=((m["First Name"]||"")+" "+(m["Last Name"]||"")).toLowerCase();
-    const email=(m["Email"]||m["Email Address"]||"").toLowerCase();
+    const name=getMemberName(m).toLowerCase();
+    const email=getMemberEmail(m).toLowerCase();
     return name.includes(lq)||email.includes(lq);
-  }).slice(0,8).map(m=>({name:((m["First Name"]||"")+" "+(m["Last Name"]||"")).trim(),email:m["Email"]||m["Email Address"]||""}));
+  }).slice(0,8).map(m=>({name:getMemberName(m),email:getMemberEmail(m)}));
 }
 
 function setupChipInput(inputId,chipsId,acId, onChangeCallback){
@@ -806,6 +847,133 @@ function setupChipInput(inputId,chipsId,acId, onChangeCallback){
   return{values,addValue,renderChips,clear(){values.length=0;renderChips();input.value="";}};
 }
 let recipientsTo,recipientsCC,recipientsBCC;
+
+/* ================================================================
+   MEMBER LIST DIRECTORY & FILTERS (TAB 1)
+   ================================================================ */
+let selectedMemberEmails = new Set();
+
+function getMemberEmail(m) { return (m["Email"]||m["Email Address"]||"").trim(); }
+function getMemberName(m) { return ((m["First Name"]||"")+" "+(m["Last Name"]||"")).trim(); }
+function getMemberClass(m) { return (m["Class"]||m["Class Name"]||m["Boat Class"]||"").trim(); }
+
+function populateMemberFilters() {
+  const types = new Set(), classes = new Set();
+  members.forEach(m => {
+    if(m["Membership Type"]) types.add(m["Membership Type"].trim());
+    const cls = getMemberClass(m);
+    if(cls) classes.add(cls);
+  });
+  const tSel = document.getElementById("fltType");
+  tSel.innerHTML = `<option value="">All Types</option>` + Array.from(types).sort().map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+  const cSel = document.getElementById("fltClass");
+  cSel.innerHTML = `<option value="">All Classes</option>` + Array.from(classes).sort().map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+}
+
+function getFilteredMembers() {
+  const s = document.getElementById("fltSearch").value.toLowerCase();
+  const t = document.getElementById("fltType").value;
+  const st = document.getElementById("fltStatus").value;
+  const fin = document.getElementById("fltFin").value;
+  const cls = document.getElementById("fltClass").value;
+  const miss = document.getElementById("fltMissing").value;
+
+  return members.filter(m => {
+    const email = getMemberEmail(m);
+    const name = getMemberName(m).toLowerCase();
+    
+    if(s && !name.includes(s) && !email.toLowerCase().includes(s)) return false;
+    if(t && m["Membership Type"] !== t) return false;
+    if(st) {
+       const isActive = (m["Active"]===true||m["Active"]==="true"||m["Active"]==="TRUE");
+       if(st==="active" && !isActive) return false;
+       if(st==="inactive" && isActive) return false;
+    }
+    if(fin) {
+       const isPaid = (m["Paid up"]===true||m["Paid up"]==="true"||m["Paid up"]==="TRUE");
+       if(fin==="paid" && !isPaid) return false;
+       if(fin==="unpaid" && isPaid) return false;
+    }
+    if(cls && getMemberClass(m) !== cls) return false;
+    if(miss) {
+       if(miss==="no-email" && email) return false;
+       if(miss==="no-phone" && !(m["Phone"]||m["Mobile"])) return false;
+    }
+    return true;
+  });
+}
+
+function renderMembersList() {
+  const listEl = document.getElementById("memberCheckList");
+  const filtered = getFilteredMembers();
+  
+  if(!filtered.length) {
+    listEl.innerHTML = `<div class="list-empty">No members match the current filters.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(m => {
+    const email = getMemberEmail(m);
+    const name = getMemberName(m) || "Unknown Name";
+    const type = m["Membership Type"] || "No Type";
+    const cls = getMemberClass(m);
+    const noEmail = !email;
+    const checked = !noEmail && selectedMemberEmails.has(email.toLowerCase()) ? "checked" : "";
+    
+    return `
+      <label class="member-row ${noEmail ? 'disabled' : ''}">
+        <input type="checkbox" value="${escapeHtml(email.toLowerCase())}" ${checked} ${noEmail ? 'disabled' : ''} onchange="toggleMember(this)">
+        <div style="flex:1; min-width:0;">
+          <div class="mr-name">${escapeHtml(name)}</div>
+          <div class="mr-meta">${escapeHtml(email||'No email')} · ${escapeHtml(type)}${cls ? ' · '+escapeHtml(cls) : ''}</div>
+        </div>
+        ${noEmail ? '<span class="mr-warn">Missing Email</span>' : ''}
+      </label>
+    `;
+  }).join("");
+  updateRecipientCount();
+}
+
+function toggleMember(checkbox) {
+  if(checkbox.checked) {
+    selectedMemberEmails.add(checkbox.value);
+  } else {
+    selectedMemberEmails.delete(checkbox.value);
+  }
+  updateRecipientCount();
+}
+
+document.getElementById("btnSelectAll").addEventListener("click", () => {
+  const fm = getFilteredMembers();
+  fm.forEach(m => {
+    const e = getMemberEmail(m);
+    if(e) selectedMemberEmails.add(e.toLowerCase());
+  });
+  renderMembersList();
+});
+
+document.getElementById("btnDeselectAll").addEventListener("click", () => {
+  const fm = getFilteredMembers();
+  fm.forEach(m => {
+    const e = getMemberEmail(m);
+    if(e) selectedMemberEmails.delete(e.toLowerCase());
+  });
+  renderMembersList();
+});
+
+["fltSearch","fltType","fltStatus","fltFin","fltClass","fltMissing"].forEach(id => {
+  document.getElementById(id).addEventListener("input", renderMembersList);
+});
+
+// Setup Compose Tabs
+document.querySelectorAll(".compose-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".compose-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".compose-tab-pane").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.tab).classList.add("active");
+  });
+});
 
 /* ================================================================
    TRACKING DATA
@@ -1146,10 +1314,9 @@ function renderTemplatePicker(){
   sel.value=cur;
 }
 
-function applyTemplateToCompose(id){
+// Maps legacy GroupKeys from templates to filter state where possible, or programmatically checks the list.
+async function applyTemplateToCompose(id){
   const t=templates.find(r=>r["TemplateID"]===id);if(!t)return;
-  if(t["GroupKey"])document.getElementById("groupSelect").value=t["GroupKey"];
-  else document.getElementById("groupSelect").value="";
   
   if(t["DefaultCC"])t["DefaultCC"].split(",").map(e=>e.trim()).filter(Boolean).forEach(e=>recipientsCC.addValue({email:e,name:""}));
   if(t["DefaultBCC"])t["DefaultBCC"].split(",").map(e=>e.trim()).filter(Boolean).forEach(e=>recipientsBCC.addValue({email:e,name:""}));
@@ -1163,30 +1330,38 @@ function applyTemplateToCompose(id){
   if(t["Body"])quillBody.root.innerHTML=t["Body"];
   else quillBody.root.innerHTML="";
 
+  // Map legacy template groups to the new system programmatically
+  selectedMemberEmails.clear();
+  if(t["GroupKey"]) {
+     const fm={
+       all_active: m => m["Active"]===true||m["Active"]==="true"||m["Active"]==="TRUE",
+       full: m => (m["Membership Type"]||"").toLowerCase()==="full",
+       affiliate: m => (m["Membership Type"]||"").toLowerCase()==="affiliate",
+       financial: m => m["Paid up"]===true||m["Paid up"]==="true",
+       committee: m => !!(m["Role"]||m["Committee Role"])
+     };
+     const filterFn = fm[t["GroupKey"]];
+     if(filterFn) {
+        members.filter(filterFn).forEach(m => {
+           const e = getMemberEmail(m);
+           if(e) selectedMemberEmails.add(e.toLowerCase());
+        });
+     }
+  }
+
+  renderMembersList();
   updateRecipientCount();
 }
 
-async function expandGroup(groupKey){
-  if(!groupKey)return[];
-  const fm={all_active:m=>m["Active"]===true||m["Active"]==="true"||m["Active"]==="TRUE",full:m=>(m["Membership Type"]||"").toLowerCase()==="full",affiliate:m=>(m["Membership Type"]||"").toLowerCase()==="affiliate",financial:m=>m["Paid up"]===true||m["Paid up"]==="true",committee:m=>!!(m["Role"]||m["Committee Role"])};
-  return(members.filter(fm[groupKey]||(() =>false))).map(m=>({name:((m["First Name"]||"")+" "+(m["Last Name"]||"")).trim(),email:m["Email"]||m["Email Address"]||""})).filter(m=>m.email);
-}
-
-async function updateRecipientCount() {
-  const groupKey = document.getElementById("groupSelect").value;
-  const groupMembers = await expandGroup(groupKey);
-  const groupEmails = new Set(groupMembers.map(m => m.email.toLowerCase()));
+function updateRecipientCount() {
+  const memberCount = selectedMemberEmails.size;
+  const extraCount = recipientsTo.values.length;
+  const total = memberCount + extraCount;
   
-  let extraCount = 0;
-  recipientsTo.values.forEach(v => {
-    if(!groupEmails.has(v.email.toLowerCase())) extraCount++;
-  });
-  
-  const total = groupMembers.length + extraCount;
   document.getElementById("countN").textContent = total;
   
   const parts = [];
-  if(groupMembers.length) parts.push(`${groupMembers.length} from group`);
+  if(memberCount) parts.push(`${memberCount} from list`);
   if(extraCount) parts.push(`${extraCount} added manually`);
   
   document.getElementById("groupCountMsg").textContent = parts.length ? parts.join(" · ") : "0 recipients";
@@ -1202,16 +1377,20 @@ function updateSigPreview(){
 function buildPreview(){
   const prefix=document.getElementById("subjectPrefix").value;
   const subject=document.getElementById("emailSubject").value.trim();
-  const toList=recipientsTo.values.map(v=>v.name?`${v.name} <${v.email}>`:v.email).join(", ");
+  const extraList=recipientsTo.values.map(v=>v.name?`${v.name} <${v.email}>`:v.email).join(", ");
   const ccList=recipientsCC.values.map(v=>v.email).join(", ");
   const bccList=recipientsBCC.values.map(v=>v.email).join(", ");
   const sig=signatures.find(s=>s["SignatureID"]===document.getElementById("sigSelect").value);
   const body=quillBody.root.innerHTML;
   const sched=document.getElementById("scheduleType").value==="scheduled"?`<br><strong>Scheduled:</strong> ${document.getElementById("scheduleDateTime").value}`:"";
   
+  let toDisplay = selectedMemberEmails.size ? `${selectedMemberEmails.size} list members` : "";
+  if(extraList) toDisplay += (toDisplay ? " + " : "") + extraList;
+  if(!toDisplay) toDisplay = "—";
+
   document.getElementById("emailPreview").innerHTML=`
     <div class="preview-meta">
-      <strong>To:</strong> ${escapeHtml(toList)||"Group selection + Extras"}<br>
+      <strong>To:</strong> ${escapeHtml(toDisplay)}<br>
       ${ccList?`<strong>CC:</strong> ${escapeHtml(ccList)}<br>`:""}
       ${bccList?`<strong>BCC:</strong> ${escapeHtml(bccList)}<br>`:""}${sched}
     </div>
@@ -1270,7 +1449,7 @@ async function saveDraft(){
     const t=templates.find(r=>r["TemplateID"]===selectedTmplId);
     const prefix=document.getElementById("subjectPrefix").value;
     const subject=(prefix+" "+document.getElementById("emailSubject").value).trim();
-    const toList=recipientsTo.values.map(v=>v.email).join(",");
+    const toList = Array.from(selectedMemberEmails).concat(recipientsTo.values.map(v=>v.email)).join(",");
     const ccList=recipientsCC.values.map(v=>v.email).join(",");
     const bccList=recipientsBCC.values.map(v=>v.email).join(",");
     const draftId=currentDraftId||uid();
@@ -1332,10 +1511,13 @@ async function sendEmail(){
     if(!subject){s.textContent="Please provide a subject.";s.className="status-msg visible error";return;}
 
     const sig=signatures.find(sig=>sig["SignatureID"]===document.getElementById("sigSelect").value);
-    const toAddrs=recipientsTo.values.map(v=>v.email);
-    const groupMembers=await expandGroup(document.getElementById("groupSelect").value);
-    const allTo=[...toAddrs,...groupMembers.map(m=>m.email)].filter(Boolean);
-    if(!allTo.length){s.textContent="At least one To: recipient or group is required.";s.className="status-msg visible error";return;}
+    
+    // Combine selected members + Custom extra 'To' emails
+    const toAddrs = recipientsTo.values.map(v=>v.email);
+    const listAddrs = Array.from(selectedMemberEmails);
+    const allTo = [...new Set([...toAddrs, ...listAddrs])].filter(Boolean);
+    
+    if(!allTo.length){s.textContent="At least one recipient is required.";s.className="status-msg visible error";return;}
 
     const isScheduled=document.getElementById("scheduleType").value==="scheduled";
     const schedTime=isScheduled?document.getElementById("scheduleDateTime").value:null;
@@ -1426,13 +1608,20 @@ async function sendEmail(){
 function resetCompose(){
   selectedTmplId=null;
   currentDraftId=null;
+  selectedMemberEmails.clear();
   recipientsTo?.clear();recipientsCC?.clear();recipientsBCC?.clear();
+  
+  // Clear filters
+  ["fltSearch","fltType","fltStatus","fltFin","fltClass","fltMissing"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  renderMembersList();
+
   document.getElementById("composeTemplate").value="";
   document.getElementById("subjectPrefix").value="";
   document.getElementById("emailSubject").value="";
   document.getElementById("scheduleType").value="now";
   document.getElementById("sigSelect").value="";
-  document.getElementById("groupSelect").value="";
   document.getElementById("scheduleDateRow").style.display="none";
   document.getElementById("sigPreviewWrap").style.display="none";
   document.getElementById("sendStatus").textContent="";
@@ -1484,7 +1673,6 @@ document.getElementById("composeTemplate").addEventListener("change", (e)=>{
   if(id) applyTemplateToCompose(id);
   else resetCompose();
 });
-document.getElementById("groupSelect").addEventListener("change", updateRecipientCount);
 document.getElementById("refreshVarsBtn").addEventListener("click",loadVarFields);
 document.getElementById("scheduleType").addEventListener("change",()=>{document.getElementById("scheduleDateRow").style.display=document.getElementById("scheduleType").value==="scheduled"?"":"none";});
 document.getElementById("sigSelect").addEventListener("change",updateSigPreview);
