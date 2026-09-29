@@ -1939,92 +1939,93 @@
         }
     }
     
+    const sheetListCache = {}; // classKey -> [{name, gid}, ...], fetched once per session
 
     // --- Membership Stats ---
     let selectedTopic = 'applications';
     const TOPIC_META = {
-    members: { breakdownTitle: 'Status Breakdown — Total Members' },
-    applications: { breakdownTitle: 'Status Breakdown — Online Applications' },
-    boats: { breakdownTitle: 'Status Breakdown — Registered Boats' },
-    financial: { breakdownTitle: 'Status Breakdown — Financial Status' }
+        members: { breakdownTitle: 'Status Breakdown — Total Members' },
+        applications: { breakdownTitle: 'Status Breakdown — Online Applications' },
+        boats: { breakdownTitle: 'Status Breakdown — Registered Boats' },
+        financial: { breakdownTitle: 'Status Breakdown — Financial Status' }
     };
     
     function setCard(topic, val, sub){
-    document.getElementById('stat-val-' + topic).textContent = val;
-    document.getElementById('stat-sub-' + topic).textContent = sub || '';
+        document.getElementById('stat-val-' + topic).textContent = val;
+        document.getElementById('stat-sub-' + topic).textContent = sub || '';
     }
 
     function renderMembershipStats(statsData) {
-    membershipData = statsData;
-    const t = membershipData.topics;
-    setCard('members', t.members.total, t.members.sub);
-    setCard('applications', t.applications.total, t.applications.sub);
-    setCard('boats', t.boats.total, t.boats.sub);
-    setCard('financial', t.financial.total, t.financial.sub);
-    
-    document.querySelectorAll('.stat-card[data-topic]').forEach(card => {
-        card.onclick = () => { selectedTopic = card.dataset.topic; renderBreakdown(); };
-    });
-    renderBreakdown();
+        membershipData = statsData;
+        const t = membershipData.topics;
+        setCard('members', t.members.total, t.members.sub);
+        setCard('applications', t.applications.total, t.applications.sub);
+        setCard('boats', t.boats.total, t.boats.sub);
+        setCard('financial', t.financial.total, t.financial.sub);
+        
+        document.querySelectorAll('.stat-card[data-topic]').forEach(card => {
+            card.onclick = () => { selectedTopic = card.dataset.topic; renderBreakdown(); };
+        });
+        renderBreakdown();
     }
 
     function renderBreakdown() {
-    if (!membershipData) return;
-    document.querySelectorAll('.stat-card[data-topic]').forEach(c => c.classList.toggle('selected', c.dataset.topic === selectedTopic));
-    const topic = membershipData.topics[selectedTopic];
-    const baseTitle = TOPIC_META[selectedTopic].breakdownTitle;
-    const colors = ['received', 'progress', 'awaiting', 'processed'];
-    
-    document.getElementById('statusBreakdown').innerHTML = 
-        `<div class="breakdown-title">${esc(baseTitle)} (${topic.total} total)</div>` +
-        topic.breakdown.map((b, i) =>
-        `<div class="status-item ${colors[i % colors.length]}">
-            <span class="s-name">${esc(b.name)}</span><span class="s-num">${b.count}</span>
-        </div>`).join('');
+        if (!membershipData) return;
+        document.querySelectorAll('.stat-card[data-topic]').forEach(c => c.classList.toggle('selected', c.dataset.topic === selectedTopic));
+        const topic = membershipData.topics[selectedTopic];
+        const baseTitle = TOPIC_META[selectedTopic].breakdownTitle;
+        const colors = ['received', 'progress', 'awaiting', 'processed'];
+        
+        document.getElementById('statusBreakdown').innerHTML = 
+            `<div class="breakdown-title">${esc(baseTitle)} (${topic.total} total)</div>` +
+            topic.breakdown.map((b, i) =>
+            `<div class="status-item ${colors[i % colors.length]}">
+                <span class="s-name">${esc(b.name)}</span><span class="s-num">${b.count}</span>
+            </div>`).join('');
     }
 
     // --- Annual Calendar ---
     function renderAnnualCalendarData(calData) {
-    if (!calData.months || calData.months.length === 0) {
-        document.querySelector('.calendar-grid').innerHTML = '<p class="cal-empty">No events scheduled.</p>';
-        return;
-    }
-    annualCalendarMonths = calData.months;
-    allEvents = calData.allEvents || [];
-    renderCalendarFilters();
-    renderCalendarGrid();
+        if (!calData.months || calData.months.length === 0) {
+            document.querySelector('.calendar-grid').innerHTML = '<p class="cal-empty">No events scheduled.</p>';
+            return;
+        }
+        annualCalendarMonths = calData.months;
+        allEvents = calData.allEvents || [];
+        renderCalendarFilters();
+        renderCalendarGrid();
     }
     
     function renderCalendarFilters() {
-    const wrap = document.getElementById('calendarFilters');
-    if (!wrap) return;
-    const classesPresent = Array.from(new Set(annualCalendarMonths.flatMap(m => (m.events || []).map(ev => ev.boatClass)).filter(Boolean)));
-    const orderedClasses = Object.keys(CLASS_IMAGE_MAP).filter(c => classesPresent.includes(c));
-    classesPresent.forEach(c => { if (!orderedClasses.includes(c)) orderedClasses.push(c); });
+        const wrap = document.getElementById('calendarFilters');
+        if (!wrap) return;
+        const classesPresent = Array.from(new Set(annualCalendarMonths.flatMap(m => (m.events || []).map(ev => ev.boatClass)).filter(Boolean)));
+        const orderedClasses = Object.keys(CLASS_IMAGE_MAP).filter(c => classesPresent.includes(c));
+        classesPresent.forEach(c => { if (!orderedClasses.includes(c)) orderedClasses.push(c); });
 
-    wrap.innerHTML = `
-        <button class="cal-filter-btn ${activeCalendarClass === 'all' ? 'active' : ''}" data-class="all"><span>All Classes</span></button>` +
-        orderedClasses.map(cls => `<button class="cal-filter-btn ${activeCalendarClass === cls ? 'active' : ''}" data-class="${esc(cls)}">
-            ${getClassImage(cls) ? `<img class="cal-filter-icon" src="${esc(getClassImage(cls))}">` : ''} <span>${esc(cls)}</span>
-        </button>`).join('');
+        wrap.innerHTML = `
+            <button class="cal-filter-btn ${activeCalendarClass === 'all' ? 'active' : ''}" data-class="all"><span>All Classes</span></button>` +
+            orderedClasses.map(cls => `<button class="cal-filter-btn ${activeCalendarClass === cls ? 'active' : ''}" data-class="${esc(cls)}">
+                ${getClassImage(cls) ? `<img class="cal-filter-icon" src="${esc(getClassImage(cls))}">` : ''} <span>${esc(cls)}</span>
+            </button>`).join('');
 
-    wrap.querySelectorAll('.cal-filter-btn').forEach(b => b.onclick = () => { activeCalendarClass = b.dataset.class; renderCalendarFilters(); renderCalendarGrid(); });
-    }
+        wrap.querySelectorAll('.cal-filter-btn').forEach(b => b.onclick = () => { activeCalendarClass = b.dataset.class; renderCalendarFilters(); renderCalendarGrid(); });
+        }
 
     function renderCalendarGrid() {
-    const grid = document.querySelector('.calendar-grid');
-    grid.innerHTML = annualCalendarMonths.map(month => {
-        const events = activeCalendarClass === 'all' ? month.events : (month.events || []).filter(ev => ev.boatClass === activeCalendarClass);
-        const evHtml = events.length ? events.map(ev => {
-            const img = getClassImage(ev.boatClass);
-            return `<div class="cal-event-item" style="display:flex;align-items:center;gap:12px;">
-                ${img ? `<img src="${esc(img)}" style="width:30px;height:30px;background:rgba(255,255,255,0.15);border-radius:6px;padding:3px;">` : `<div style="width:30px;height:30px;"></div>`}
-                <div style="display:flex;flex-direction:column;line-height:1.3;"><span class="date">${esc(ev.dateLabel)} • ${esc(ev.startTime)}</span><span class="name">${esc(ev.eventName)}</span></div>
-            </div>`;
-        }).join('') : `<div class="cal-event-item">No events</div>`;
-        return `<div class="cal-month"><h4>${esc(month.monthLabel)}</h4>${evHtml}</div>`;
-    }).join('');
-    }
+        const grid = document.querySelector('.calendar-grid');
+        grid.innerHTML = annualCalendarMonths.map(month => {
+            const events = activeCalendarClass === 'all' ? month.events : (month.events || []).filter(ev => ev.boatClass === activeCalendarClass);
+            const evHtml = events.length ? events.map(ev => {
+                const img = getClassImage(ev.boatClass);
+                return `<div class="cal-event-item" style="display:flex;align-items:center;gap:12px;">
+                    ${img ? `<img src="${esc(img)}" style="width:30px;height:30px;background:rgba(255,255,255,0.15);border-radius:6px;padding:3px;">` : `<div style="width:30px;height:30px;"></div>`}
+                    <div style="display:flex;flex-direction:column;line-height:1.3;"><span class="date">${esc(ev.dateLabel)} • ${esc(ev.startTime)}</span><span class="name">${esc(ev.eventName)}</span></div>
+                </div>`;
+            }).join('') : `<div class="cal-event-item">No events</div>`;
+            return `<div class="cal-month"><h4>${esc(month.monthLabel)}</h4>${evHtml}</div>`;
+        }).join('');
+        }
 
     // --- Standings Engine ---
     async function getSheetsForClass(classKey){
