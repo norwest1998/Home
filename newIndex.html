@@ -3328,7 +3328,7 @@
         const conflict = nearEvents.filter(e => {
           const evClass = (e.class ?? e.Class ?? e.className ?? "").toLowerCase();
           return evClass === className.toLowerCase();
-        });
+        }); 
 
         return conflict.length >= 1
           ? conflict[0].conflict

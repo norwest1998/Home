@@ -3570,7 +3570,7 @@
           const resp = await fetch(`${CALENDAR_URL}?action=listConflicts&date=${encodeURIComponent(date)}`);
           const data = await resp.json();
           events = data.events || [];
-          console.log("events: " + events[1].className + " events: " + events[1].className);
+          console.log(" raw events: " + events[0].className + " raw events: " + events[1].className);
         } catch (err) {
           return `Failed to load events: ${err.message}`;
         }
@@ -3585,12 +3585,12 @@
           const evDate = new Date(rawDate);
           return evDate >= fromDate && evDate <= toDate;
         });
-
+console.log(" near events: " + nearEvents[0].className + " near events: " + nearEvents[1].className);
         const conflict = nearEvents.filter(e => {
           const evClass = (e.class ?? e.Class ?? e.className ?? "").toLowerCase();
           return evClass === className.toLowerCase();
         });
-
+console.log("conflicts: " + conflicts[0].className + " conflicts: " + conflicts[1].className);
         return conflict.length >= 1
           ? conflict[0].conflict
           : `No conflicting event found for ${className} between ${fromDate.toDateString()} and ${toDate.toDateString()}`;
