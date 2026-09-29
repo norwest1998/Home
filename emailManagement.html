@@ -1,3 +1,4 @@
+--- START OF FILE emailManagement.html ---
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -107,25 +108,15 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 .detail-value.editable{background:rgba(255,255,255,0.06);transition:border-color .2s;}
 .detail-value.editable:focus{outline:none;border-color:var(--foam);}
 
-/* ── Wizard ── */
-.wizard-steps{display:flex;align-items:center;gap:4px;margin-bottom:24px;flex-wrap:wrap;}
-.wizard-step{display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:20px;font-size:12px;color:var(--foam-dim);border:1px solid transparent;transition:all .2s;white-space:nowrap;cursor:default;}
-.wizard-step.active{background:rgba(94,234,212,0.12);border-color:rgba(94,234,212,0.35);color:var(--glow);}
-.wizard-step.done{background:rgba(255,255,255,0.05);border-color:var(--glass-border);color:var(--foam);}
-.wizard-step .step-num{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:var(--glass-border);flex-shrink:0;}
-.wizard-step.active .step-num{background:var(--glow);color:#071b2c;}
-.wizard-step.done .step-num{background:rgba(94,234,212,0.3);color:var(--glow);}
-.wizard-connector{width:20px;height:1px;background:var(--glass-border);flex-shrink:0;}
-.wizard-panel{display:none;}
-.wizard-panel.active{display:block;}
-
-/* ── Template picker cards (step 1) ── */
-.template-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:14px;}
-.template-card{padding:12px 14px;border-radius:10px;cursor:pointer;border:1px solid var(--glass-border);background:var(--glass-fill);transition:all .2s;display:flex;flex-direction:column;gap:5px;}
-.template-card:hover{border-color:rgba(94,234,212,0.4);background:rgba(255,255,255,0.07);}
-.template-card.selected{border-color:var(--glow);background:rgba(94,234,212,0.08);}
-.template-card .tc-name{font-size:13px;font-weight:600;color:var(--foam);}
-.template-card .tc-meta{font-size:11px;color:var(--foam-dim);display:flex;flex-wrap:wrap;gap:4px;}
+/* ── Compose Grid & Cards ── */
+.compose-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:20px;align-items:start;}
+@media(max-width:850px){.compose-grid{grid-template-columns:1fr;}}
+.compose-col{display:flex;flex-direction:column;gap:20px;min-width:0;}
+.compose-col-right{position:sticky;top:20px;}
+.compose-card{background:var(--glass-fill);border:1px solid var(--glass-border);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:18px;}
+.compose-card-title{margin:0 0 4px;font-size:14px;font-weight:600;color:var(--foam);display:flex;align-items:center;text-transform:uppercase;letter-spacing:0.04em;}
+.step-badge{width:22px;height:22px;border-radius:50%;background:var(--glow);color:#071b2c;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-right:10px;flex-shrink:0;}
+.compose-lbl{font-family:var(--font-data);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--foam-dim);margin-bottom:6px;display:block;}
 
 /* ── Recipient chips ── */
 .chip-input-wrap{display:flex;flex-wrap:wrap;gap:5px;align-items:center;background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);border-radius:8px;padding:5px 10px;min-height:38px;cursor:text;transition:border-color .2s;position:relative;}
@@ -139,6 +130,9 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 .autocomplete-item:hover{background:rgba(255,255,255,0.06);}
 .autocomplete-item .ac-name{font-weight:500;}
 .autocomplete-item .ac-email{font-size:11px;color:var(--foam-dim);}
+
+/* ── Pill Count ── */
+.count-pill{margin-top:8px;padding:16px;border-radius:12px;background:rgba(94,234,212,0.06);border:1px solid rgba(94,234,212,0.25);display:flex;align-items:center;justify-content:space-between;gap:12px;}
 
 /* ── Quill ── */
 .ql-toolbar.ql-snow{background:rgba(255,255,255,0.06)!important;border:1px solid var(--glass-border)!important;border-bottom:none!important;border-radius:8px 8px 0 0;}
@@ -281,195 +275,180 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 </div>
 
 <!-- ══════════════════════════════════════════════════════
-     SECTION 3 — COMPOSE EMAIL
+     SECTION 3 — COMPOSE EMAIL (Grid Layout)
      ══════════════════════════════════════════════════════ -->
 <div class="section-head" id="compose-email">
   <h2>Compose Email</h2>
-  <p>Select a template, set recipients and subject, write your message, then preview and send.</p>
+  <p>Draft your message, specify recipients, and send your campaign.</p>
 </div>
 <div class="panel">
   <div class="panel-header">
     <div class="panel-title-left"><span class="dot"></span><h3>New Email</h3></div>
     <button class="btn btn-ghost" id="resetComposeBtn" style="padding:5px 12px;font-size:11px;">Reset</button>
   </div>
-  <div class="tab-content active">
+  <div class="tab-content active" style="background:none; border:none; padding:16px;">
 
-    <!-- Wizard steps -->
-    <div class="wizard-steps">
-      <div class="wizard-step active" id="wstep-1" data-step="1" style="cursor:pointer;"><span class="step-num">1</span> Template</div>
-      <div class="wizard-connector"></div>
-      <div class="wizard-step" id="wstep-2" data-step="2" style="cursor:pointer;"><span class="step-num">2</span> Recipients</div>
-      <div class="wizard-connector"></div>
-      <div class="wizard-step" id="wstep-3" data-step="3" style="cursor:pointer;"><span class="step-num">3</span> Subject</div>
-      <div class="wizard-connector"></div>
-      <div class="wizard-step" id="wstep-4" data-step="4" style="cursor:pointer;"><span class="step-num">4</span> Body</div>
-      <div class="wizard-connector"></div>
-      <div class="wizard-step" id="wstep-5" data-step="5" style="cursor:pointer;"><span class="step-num">5</span> Preview & Send</div>
-    </div>
+    <div class="compose-grid">
+      <!-- ── Left Column: Message ── -->
+      <div class="compose-col">
+        <div class="compose-card">
+          <h2 class="compose-card-title"><span class="step-badge">1</span> Message</h2>
+          
+          <div class="form-group">
+            <label class="compose-lbl">Template</label>
+            <div style="display:flex; gap:10px;">
+              <select class="glass-select" id="composeTemplate" style="flex:1;">
+                <option value="">— Select Template —</option>
+              </select>
+            </div>
+            <div style="font-size:11px;color:var(--foam-dim);margin-top:2px;">Applies default subject, body, and specific recipients.</div>
+          </div>
 
-    <!-- Step 1: Template picker -->
-    <div class="wizard-panel active" id="wpanel-1">
-      <div class="em-toolbar" style="margin-bottom:12px;">
-        <div class="search-wrap" style="margin-bottom:0;">
-          <i class="nav-icon search-icon" data-lucide="search"></i>
-          <input class="search-input" id="tmplPickSearch" placeholder="Filter templates…">
+          <div class="form-row" style="grid-template-columns: 150px 1fr;">
+            <div class="form-group">
+              <label class="compose-lbl">Subject Prefix</label>
+              <select id="subjectPrefix" class="glass-select">
+                <option value="">None</option>
+                <option value="Important:">Important:</option>
+                <option value="Urgent:">Urgent:</option>
+                <option value="For Your Attention:">For Your Attention:</option>
+                <option value="Action Required:">Action Required:</option>
+                <option value="FYI:">FYI:</option>
+                <option value="Reminder:">Reminder:</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="compose-lbl">Subject *</label>
+              <input type="text" id="emailSubject" placeholder="Email subject…">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:4px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:4px;">
+              <label class="compose-lbl" style="margin:0;">Message</label>
+              <div class="emoji-panel-wrap">
+                <button class="btn btn-ghost" id="emojiToggleBtn" style="padding:3px 8px;font-size:13px;" title="Insert emoji">😊</button>
+                <div class="emoji-panel" id="emojiPanel">
+                  <div class="emoji-cat-tabs" id="emojiCatTabs"></div>
+                  <div class="emoji-grid" id="emojiGrid"></div>
+                </div>
+              </div>
+            </div>
+            <div id="varPalette" style="margin-bottom:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+              <span style="font-size:9.5px;color:var(--foam-dim);letter-spacing:.06em;text-transform:uppercase;margin-right:4px;">Variables:</span>
+              <span id="varPaletteChips" style="display:flex;flex-wrap:wrap;gap:5px;"></span>
+              <button id="refreshVarsBtn" class="btn btn-ghost" style="padding:2px 8px;font-size:10px;" title="Reload available fields">↻</button>
+            </div>
+            <div id="bodyEditor"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label class="compose-lbl">Signature</label>
+              <div style="display:flex; gap:10px;">
+                <select id="sigSelect" class="glass-select" style="flex:1;">
+                  <option value="">— No Signature —</option>
+                </select>
+                <button class="btn btn-ghost" onclick="document.getElementById('template-management').scrollIntoView({behavior:'smooth'})" style="padding:4px 12px;font-size:11px;">+ New</button>
+              </div>
+            </div>
+          </div>
+          <div id="sigPreviewWrap" style="display:none; margin-top:-6px;">
+            <div style="font-size:10px;color:var(--foam-dim);letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px;">Signature Preview</div>
+            <div id="sigPreviewContent" style="background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.15);border-radius:8px;padding:10px;font-size:12px;color:var(--foam);"></div>
+          </div>
+
+          <div class="form-row" style="margin-top:6px;">
+            <div class="form-group">
+              <label class="compose-lbl">Schedule Send</label>
+              <select id="scheduleType" class="glass-select">
+                <option value="now">Send Now</option>
+                <option value="scheduled">Schedule for…</option>
+              </select>
+            </div>
+            <div class="form-group" id="scheduleDateRow" style="display:none;">
+              <label class="compose-lbl">Send Date / Time</label>
+              <input type="datetime-local" id="scheduleDateTime" style="color-scheme:dark;">
+            </div>
+          </div>
+
         </div>
-        <select class="glass-select" id="tmplPickTopic">
-          <option value="">All Topics</option>
-          <option value="general">General</option>
-          <option value="membership renewal">Membership Renewal</option>
-          <option value="update request">Update Request</option>
-        </select>
       </div>
-      <div class="template-picker-grid" id="tmplPickerGrid">
-        <div style="color:var(--foam-dim);font-size:12px;padding:12px;"><span class="spinner"></span> Loading templates…</div>
-      </div>
-      <div class="empty-state" id="tmplPickEmpty" style="display:none;">
-        No templates yet.
-        <button class="btn btn-ghost" onclick="document.getElementById('template-management').scrollIntoView({behavior:'smooth'})" style="margin-left:8px;padding:4px 12px;font-size:11px;">+ Add Template</button>
-      </div>
-      <div style="display:flex;justify-content:flex-end;margin-top:10px;">
-        <button class="btn btn-primary" id="nextStep1" disabled>Next — Recipients →</button>
-      </div>
-    </div>
 
-    <!-- Step 2: Recipients -->
-    <div class="wizard-panel" id="wpanel-2">
-      <div id="groupRecipientRow" style="display:none;margin-bottom:16px;">
-        <div class="form-group">
-          <label>Member Group</label>
-          <select id="groupSelect" class="glass-select" style="min-width:200px;width:auto;">
-            <option value="">— Select Group —</option>
-            <option value="all_active">All Active Members</option>
-            <option value="full">Full Members</option>
-            <option value="affiliate">Affiliate Members</option>
-            <option value="financial">Financial Members</option>
-            <option value="committee">Committee Members</option>
-          </select>
-        </div>
-        <div style="margin-top:6px;font-size:11px;color:var(--foam-dim);" id="groupCountMsg"></div>
-      </div>
-      <div class="form-row full" style="gap:12px;">
-        <div class="form-group">
-          <label>To *</label>
-          <div class="chip-input-wrap" id="toWrap">
-            <div id="toChips"></div>
-            <input class="chip-input" id="toInput" placeholder="name or email…" autocomplete="off">
-            <div class="autocomplete-list" id="toAC" style="display:none;"></div>
+      <!-- ── Right Column: Recipients & Send ── -->
+      <div class="compose-col compose-col-right">
+        
+        <div class="compose-card">
+          <h2 class="compose-card-title"><span class="step-badge">2</span> Recipients</h2>
+          
+          <div class="form-group">
+            <label class="compose-lbl">Member Group</label>
+            <select id="groupSelect" class="glass-select">
+              <option value="">— Select Group —</option>
+              <option value="all_active">All Active Members</option>
+              <option value="full">Full Members</option>
+              <option value="affiliate">Affiliate Members</option>
+              <option value="financial">Financial Members</option>
+              <option value="committee">Committee Members</option>
+            </select>
+            <div style="font-size:11px;color:var(--foam-dim);margin-top:2px;">Select an automatic group based on the Members list.</div>
+          </div>
+
+          <div class="form-group" style="margin-top:6px;">
+            <label class="compose-lbl">To <span style="text-transform:none;opacity:0.6;font-size:9.5px;margin-left:4px;">(Extra individual recipients)</span></label>
+            <div class="chip-input-wrap" id="toWrap">
+              <div id="toChips"></div>
+              <input class="chip-input" id="toInput" placeholder="name or email…" autocomplete="off">
+              <div class="autocomplete-list" id="toAC" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="compose-lbl">CC <span style="text-transform:none;opacity:0.6;font-size:9.5px;margin-left:4px;">(Copied on every email)</span></label>
+            <div class="chip-input-wrap" id="ccWrap">
+              <div id="ccChips"></div>
+              <input class="chip-input" id="ccInput" placeholder="name or email…" autocomplete="off">
+              <div class="autocomplete-list" id="ccAC" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="compose-lbl">BCC <span style="text-transform:none;opacity:0.6;font-size:9.5px;margin-left:4px;">(Hidden copy)</span></label>
+            <div class="chip-input-wrap" id="bccWrap">
+              <div id="bccChips"></div>
+              <input class="chip-input" id="bccInput" placeholder="name or email…" autocomplete="off">
+              <div class="autocomplete-list" id="bccAC" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div class="count-pill">
+            <div>
+              <div style="font-size:13px; font-weight:600; color:var(--foam);">Will receive this email</div>
+              <div style="font-size:11px; color:var(--foam-dim);" id="groupCountMsg">Calculating…</div>
+            </div>
+            <div style="font-size:24px; font-weight:700; color:var(--glow); line-height:1;" id="countN">–</div>
           </div>
         </div>
-        <div class="form-group">
-          <label>CC</label>
-          <div class="chip-input-wrap" id="ccWrap">
-            <div id="ccChips"></div>
-            <input class="chip-input" id="ccInput" placeholder="name or email…" autocomplete="off">
-            <div class="autocomplete-list" id="ccAC" style="display:none;"></div>
+
+        <div class="compose-card">
+          <h2 class="compose-card-title"><span class="step-badge">3</span> Send</h2>
+          <button class="btn btn-ghost" id="togglePreviewBtn" style="justify-content:center; width:100%; border-color:var(--glass-border);">Update & Review Preview</button>
+          
+          <div id="emailPreview" class="email-preview" style="display:none; margin-top:4px;"></div>
+
+          <div style="display:flex; gap:10px; margin-top:8px;">
+            <button class="btn btn-ghost" id="saveDraftBtn" style="flex:1;">
+              <i data-lucide="file-text" style="width:13px;height:13px;margin-right:4px;"></i> Save Draft
+            </button>
+            <button class="btn btn-primary" id="sendEmailBtn" style="flex:1.5; background:linear-gradient(135deg,rgba(94,234,212,.25),rgba(94,234,212,.12)); border-color:rgba(94,234,212,.4);">
+              <i data-lucide="send" style="width:13px;height:13px;margin-right:4px;"></i> Send Campaign
+            </button>
           </div>
+          <span class="status-msg" id="sendStatus" style="text-align:center; margin-top:4px;"></span>
         </div>
-        <div class="form-group">
-          <label>BCC</label>
-          <div class="chip-input-wrap" id="bccWrap">
-            <div id="bccChips"></div>
-            <input class="chip-input" id="bccInput" placeholder="name or email…" autocomplete="off">
-            <div class="autocomplete-list" id="bccAC" style="display:none;"></div>
-          </div>
-        </div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:16px;">
-        <button class="btn btn-ghost" id="backStep2">← Back</button>
-        <button class="btn btn-primary" id="nextStep2">Next — Subject →</button>
+
       </div>
     </div>
-
-    <!-- Step 3: Subject & schedule -->
-    <div class="wizard-panel" id="wpanel-3">
-      <div class="form-row triple">
-        <div class="form-group">
-          <label>Subject Prefix</label>
-          <select id="subjectPrefix">
-            <option value="">None</option>
-            <option value="Important:">Important:</option>
-            <option value="Urgent:">Urgent:</option>
-            <option value="For Your Attention:">For Your Attention:</option>
-            <option value="Action Required:">Action Required:</option>
-            <option value="FYI:">FYI:</option>
-            <option value="Reminder:">Reminder:</option>
-          </select>
-        </div>
-        <div class="form-group" style="grid-column:span 2;">
-          <label>Subject *</label>
-          <input type="text" id="emailSubject" placeholder="Email subject…">
-        </div>
-      </div>
-      <div class="form-row triple" style="margin-top:12px;">
-        <div class="form-group">
-          <label>Scheduled Send</label>
-          <select id="scheduleType">
-            <option value="now">Send Now</option>
-            <option value="scheduled">Schedule for…</option>
-          </select>
-        </div>
-        <div class="form-group" id="scheduleDateRow" style="display:none;grid-column:span 2;">
-          <label>Send Date / Time</label>
-          <input type="datetime-local" id="scheduleDateTime" style="color-scheme:dark;">
-        </div>
-      </div>
-      <div class="form-group" style="margin-top:12px;">
-        <label>Signature
-          <button class="btn btn-ghost" onclick="document.getElementById('template-management').scrollIntoView({behavior:'smooth'})" style="margin-left:8px;padding:2px 10px;font-size:11px;">+ Add Signature</button>
-        </label>
-        <select id="sigSelect"><option value="">— No Signature —</option></select>
-      </div>
-      <div id="sigPreviewWrap" style="margin-top:10px;display:none;">
-        <div style="font-size:10px;color:var(--foam-dim);letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px;">Signature Preview</div>
-        <div id="sigPreviewContent" style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:8px;padding:10px;font-size:12px;color:var(--foam);"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:16px;">
-        <button class="btn btn-ghost" id="backStep3">← Back</button>
-        <button class="btn btn-primary" id="nextStep3">Next — Body →</button>
-      </div>
-    </div>
-
-    <!-- Step 4: Body -->
-    <div class="wizard-panel" id="wpanel-4">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-        <span style="font-size:12px;color:var(--foam-dim);">Write your message. Click a variable to insert it at the cursor. The selected signature will be appended on send.</span>
-        <div class="emoji-panel-wrap">
-          <button class="btn btn-ghost" id="emojiToggleBtn" style="padding:5px 10px;font-size:13px;" title="Insert emoji">😊</button>
-          <div class="emoji-panel" id="emojiPanel">
-            <div class="emoji-cat-tabs" id="emojiCatTabs"></div>
-            <div class="emoji-grid" id="emojiGrid"></div>
-          </div>
-        </div>
-      </div>
-      <!-- Variable substitution palette -->
-      <div id="varPalette" style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-        <span style="font-size:10px;color:var(--foam-dim);letter-spacing:.06em;text-transform:uppercase;margin-right:4px;">Variables:</span>
-        <span id="varPaletteChips" style="display:flex;flex-wrap:wrap;gap:5px;"></span>
-        <button id="refreshVarsBtn" class="btn btn-ghost" style="padding:2px 8px;font-size:10px;" title="Reload available fields">↻</button>
-      </div>
-      <div id="bodyEditor"></div>
-      <div style="display:flex;justify-content:space-between;margin-top:16px;">
-        <button class="btn btn-ghost" id="backStep4">← Back</button>
-        <button class="btn btn-primary" id="nextStep4">Preview & Send →</button>
-      </div>
-    </div>
-
-    <!-- Step 5: Preview & send -->
-    <div class="wizard-panel" id="wpanel-5">
-      <div class="email-preview" id="emailPreview"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px;">
-        <button class="btn btn-ghost" id="backStep5">← Edit</button>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <span class="status-msg" id="sendStatus"></span>
-          <button class="btn btn-ghost" id="saveDraftBtn"><i data-lucide="file-text" style="width:12px;height:12px;margin-right:4px;vertical-align:middle;display:inline-block;"></i>Save Draft</button>
-          <button class="btn btn-primary" id="sendEmailBtn" style="background:linear-gradient(135deg,rgba(94,234,212,.25),rgba(94,234,212,.12));border-color:rgba(94,234,212,.4);">
-            <i data-lucide="send" style="width:13px;height:13px;margin-right:4px;display:inline-block;vertical-align:middle;"></i> Send Email
-          </button>
-        </div>
-      </div>
-    </div>
-
   </div><!-- /tab-content compose -->
 </div><!-- /panel compose -->
 
@@ -729,7 +708,6 @@ function statusBadge(s) {
    ================================================================ */
 let dashRows   = [], trackRows  = [], templates = [], signatures = [], members = [];
 let editingKey = null, editTmplId = null, editSigId = null, selectedTmplId = null;
-let currentStep = 1;
 
 /* ================================================================
    QUILL INSTANCES
@@ -783,7 +761,7 @@ function initEmoji() {
 }
 
 /* ================================================================
-   MEMBER AUTOCOMPLETE
+   MEMBER AUTOCOMPLETE & CHIPS
    ================================================================ */
 async function loadMembers(){try{members=await fetchSheet(DOMAIN.members,"Members");}catch(e){members=[];}}
 function memberSuggestions(q){
@@ -795,14 +773,23 @@ function memberSuggestions(q){
     return name.includes(lq)||email.includes(lq);
   }).slice(0,8).map(m=>({name:((m["First Name"]||"")+" "+(m["Last Name"]||"")).trim(),email:m["Email"]||m["Email Address"]||""}));
 }
-function setupChipInput(inputId,chipsId,acId){
+
+function setupChipInput(inputId,chipsId,acId, onChangeCallback){
   const input=document.getElementById(inputId),chips=document.getElementById(chipsId),ac=document.getElementById(acId);
   const values=[];
   function renderChips(){
     chips.innerHTML=values.map((v,i)=>`<span class="chip">${escapeHtml(v.name||v.email)}<button class="chip-remove" data-i="${i}">×</button></span>`).join("");
-    chips.querySelectorAll(".chip-remove").forEach(b=>b.addEventListener("click",()=>{values.splice(+b.dataset.i,1);renderChips();}));
+    chips.querySelectorAll(".chip-remove").forEach(b=>b.addEventListener("click",()=>{
+      values.splice(+b.dataset.i,1);
+      renderChips();
+    }));
+    if(typeof onChangeCallback === 'function') onChangeCallback();
   }
-  function addValue(v){if(!v.email)return;if(!values.find(x=>x.email===v.email))values.push(v);renderChips();input.value="";ac.style.display="none";}
+  function addValue(v){
+    if(!v.email)return;
+    if(!values.find(x=>x.email===v.email)) values.push(v);
+    renderChips(); input.value=""; ac.style.display="none";
+  }
   function showAC(items){
     if(!items.length){ac.style.display="none";return;}
     ac.style.display="block";
@@ -912,7 +899,6 @@ function renderTracking(){
 /* ── Record modal ── */
 function openRecordModal(key, isBatch) {
   if (isBatch) {
-    // Batch summary — read-only
     const dashRow=dashRows.find(r=>(r["Key"]||"")===key||(r["Key"]||"")===decodeURIComponent(key));
     if(!dashRow) return;
     editingKey=null;
@@ -1106,23 +1092,13 @@ function populateSigSelects(){
 function showModalStatus(id,msg,type){const el=document.getElementById(id);el.textContent=msg;el.className=`modal-status visible ${type}`;}
 
 /* ================================================================
-   COMPOSE WIZARD
+   COMPOSE FUNCTIONALITY & RECIPIENT COUNTING
    ================================================================ */
-function goStep(n){
-  for(let i=1;i<=5;i++){
-    document.getElementById(`wstep-${i}`).classList.toggle("active",i===n);
-    document.getElementById(`wstep-${i}`).classList.toggle("done",i<n);
-    document.getElementById(`wpanel-${i}`).classList.toggle("active",i===n);
-  }
-  if(n===5) buildPreview();
-}
-
 
 /* ── Variable substitution palette ────────────────────── */
 let availableVarFields = [];
 
 async function loadVarFields(){
-  // Pull schema from SchemaRegistry for the members sheet, fall back to common defaults
   const defaults = [
     {key:"member-name",      label:"Member Name"},
     {key:"first-name",       label:"First Name"},
@@ -1134,7 +1110,6 @@ async function loadVarFields(){
     {key:"expiry-date",      label:"Expiry Date"},
   ];
   try{
-    // Try to derive from actual member data columns if members are loaded
     if(members.length){
       const cols=Object.keys(members[0]);
       availableVarFields=cols.map(c=>({
@@ -1164,64 +1139,57 @@ function renderVarPalette(){
   });
 }
 
-function initWizardStepClicks(){
-  document.querySelectorAll(".wizard-step[data-step]").forEach(el=>{
-    el.addEventListener("click",()=>{
-      const n=parseInt(el.dataset.step);
-      // Apply template if jumping forward past step 1 and a template is selected
-      if(n>1 && selectedTmplId && currentStep===1) applyTemplateToCompose(selectedTmplId);
-      currentStep=n;
-      goStep(n);
-    });
-  });
-}
-
 function renderTemplatePicker(){
-  const q=document.getElementById("tmplPickSearch").value.trim().toLowerCase();
-  const topic=document.getElementById("tmplPickTopic").value;
-  let rows=templates;
-  if(topic)rows=rows.filter(r=>(r["Topic"]||"").toLowerCase()===topic);
-  if(q)rows=rows.filter(r=>String(r["Name"]||"").toLowerCase().includes(q));
-  document.getElementById("tmplPickEmpty").style.display=rows.length?"none":"block";
-  const grid=document.getElementById("tmplPickerGrid");
-  grid.innerHTML=rows.map(r=>`
-    <div class="template-card ${selectedTmplId===r["TemplateID"]?"selected":""}" data-tmpl-id="${escapeHtml(r["TemplateID"]||"")}">
-      <div class="tc-name">${escapeHtml(r["Name"]||"—")}</div>
-      <div class="tc-meta">
-        <span class="badge badge-default" style="font-size:10px;">${escapeHtml(r["RecipientType"]||"single")}</span>
-        <span class="badge badge-default" style="font-size:10px;">${escapeHtml(r["Topic"]||"general")}</span>
-        ${r["Visibility"]==="confidential"?`<span class="badge badge-expired" style="font-size:10px;">confidential</span>`:""}
-      </div>
-      ${r["DefaultSubject"]?`<div style="font-size:11px;color:var(--foam-dim);">Subject: ${escapeHtml(r["DefaultSubject"])}</div>`:""}
-    </div>`).join("")||"";
-  grid.querySelectorAll(".template-card").forEach(card=>{
-    card.addEventListener("click",()=>selectTemplate(card.dataset.tmplId));
-  });
-}
-
-function selectTemplate(id){
-  selectedTmplId=id;
-  document.getElementById("nextStep1").disabled=false;
-  renderTemplatePicker();
+  const sel=document.getElementById("composeTemplate");
+  const cur=sel.value;
+  sel.innerHTML=`<option value="">— Select Template —</option>` + templates.map(r=>`<option value="${escapeHtml(r["TemplateID"])}">${escapeHtml(r["Name"])}</option>`).join("");
+  sel.value=cur;
 }
 
 function applyTemplateToCompose(id){
   const t=templates.find(r=>r["TemplateID"]===id);if(!t)return;
-  document.getElementById("groupRecipientRow").style.display=t["RecipientType"]==="group"?"":"none";
   if(t["GroupKey"])document.getElementById("groupSelect").value=t["GroupKey"];
+  else document.getElementById("groupSelect").value="";
+  
   if(t["DefaultCC"])t["DefaultCC"].split(",").map(e=>e.trim()).filter(Boolean).forEach(e=>recipientsCC.addValue({email:e,name:""}));
   if(t["DefaultBCC"])t["DefaultBCC"].split(",").map(e=>e.trim()).filter(Boolean).forEach(e=>recipientsBCC.addValue({email:e,name:""}));
   if(t["SubjectPrefix"])document.getElementById("subjectPrefix").value=t["SubjectPrefix"];
   if(t["DefaultSubject"])document.getElementById("emailSubject").value=t["DefaultSubject"];
   if(t["ScheduledSend"])document.getElementById("scheduleType").value=t["ScheduledSend"];
+  
   if(t["Signature"]){document.getElementById("sigSelect").value=t["Signature"];updateSigPreview();}
+  else {document.getElementById("sigSelect").value="";updateSigPreview();}
+  
   if(t["Body"])quillBody.root.innerHTML=t["Body"];
+  else quillBody.root.innerHTML="";
+
+  updateRecipientCount();
 }
 
 async function expandGroup(groupKey){
   if(!groupKey)return[];
   const fm={all_active:m=>m["Active"]===true||m["Active"]==="true"||m["Active"]==="TRUE",full:m=>(m["Membership Type"]||"").toLowerCase()==="full",affiliate:m=>(m["Membership Type"]||"").toLowerCase()==="affiliate",financial:m=>m["Paid up"]===true||m["Paid up"]==="true",committee:m=>!!(m["Role"]||m["Committee Role"])};
   return(members.filter(fm[groupKey]||(() =>false))).map(m=>({name:((m["First Name"]||"")+" "+(m["Last Name"]||"")).trim(),email:m["Email"]||m["Email Address"]||""})).filter(m=>m.email);
+}
+
+async function updateRecipientCount() {
+  const groupKey = document.getElementById("groupSelect").value;
+  const groupMembers = await expandGroup(groupKey);
+  const groupEmails = new Set(groupMembers.map(m => m.email.toLowerCase()));
+  
+  let extraCount = 0;
+  recipientsTo.values.forEach(v => {
+    if(!groupEmails.has(v.email.toLowerCase())) extraCount++;
+  });
+  
+  const total = groupMembers.length + extraCount;
+  document.getElementById("countN").textContent = total;
+  
+  const parts = [];
+  if(groupMembers.length) parts.push(`${groupMembers.length} from group`);
+  if(extraCount) parts.push(`${extraCount} added manually`);
+  
+  document.getElementById("groupCountMsg").textContent = parts.length ? parts.join(" · ") : "0 recipients";
 }
 
 function updateSigPreview(){
@@ -1240,9 +1208,10 @@ function buildPreview(){
   const sig=signatures.find(s=>s["SignatureID"]===document.getElementById("sigSelect").value);
   const body=quillBody.root.innerHTML;
   const sched=document.getElementById("scheduleType").value==="scheduled"?`<br><strong>Scheduled:</strong> ${document.getElementById("scheduleDateTime").value}`:"";
+  
   document.getElementById("emailPreview").innerHTML=`
     <div class="preview-meta">
-      <strong>To:</strong> ${escapeHtml(toList)||"—"}<br>
+      <strong>To:</strong> ${escapeHtml(toList)||"Group selection + Extras"}<br>
       ${ccList?`<strong>CC:</strong> ${escapeHtml(ccList)}<br>`:""}
       ${bccList?`<strong>BCC:</strong> ${escapeHtml(bccList)}<br>`:""}${sched}
     </div>
@@ -1254,16 +1223,11 @@ function buildPreview(){
 /* ── Variable substitution ─────────────────────────────── */
 function resolveVariables(html, member){
   if(!member) return html;
-  // Replace ${field-name} with member field value (kebab → Title Case lookup)
   return html.replace(/\${([^}]+)}/g, (match, key)=>{
-    // Normalise key: "member-name" → try "Member Name", "First Name", etc.
     const cleaned = key.trim();
-    // Direct match first
     if(member[cleaned] !== undefined) return member[cleaned]||"";
-    // Try title-case conversion (kebab-case → space separated)
-    const spaced = cleaned.replace(/-/g," ").replace(/\w/g,c=>c.toUpperCase());
+    const spaced = cleaned.replace(/-/g," ").replace(/ \w/g,c=>c.toUpperCase());
     if(member[spaced] !== undefined) return member[spaced]||"";
-    // Common aliases
     const aliases = {
       "member-name":   ((member["First Name"]||"")+" "+(member["Last Name"]||"")).trim(),
       "first-name":    member["First Name"]||"",
@@ -1274,7 +1238,7 @@ function resolveVariables(html, member){
       "class-name":    member["Class"]||member["Class Name"]||"",
       "expiry-date":   member["Expiry Date"]||member["Renewal Date"]||"",
     };
-    return aliases[cleaned.toLowerCase()]||match; // leave unreplaced if no match
+    return aliases[cleaned.toLowerCase()]||match; 
   });
 }
 
@@ -1297,7 +1261,7 @@ async function recordSentEmail(batchKey, campaignKey, subject, bodyHtml, toList,
 }
 
 /* ── Draft management ──────────────────────────────────── */
-let currentDraftId = null;  // set when saving a draft, cleared on send
+let currentDraftId = null; 
 
 async function saveDraft(){
   const btn=document.getElementById("saveDraftBtn");
@@ -1325,7 +1289,6 @@ async function saveDraft(){
       "Status":       "Draft"
     };
     if(currentDraftId){
-      // Update existing draft row
       await updateSheet(TRACKING_DOMAIN,"Drafts",currentDraftId,draftRecord);
     } else {
       await appendSheet(TRACKING_DOMAIN,"Drafts",draftRecord);
@@ -1366,11 +1329,13 @@ async function sendEmail(){
     const t=templates.find(r=>r["TemplateID"]===selectedTmplId);
     const prefix=document.getElementById("subjectPrefix").value;
     const subject=(prefix+" "+document.getElementById("emailSubject").value).trim();
+    if(!subject){s.textContent="Please provide a subject.";s.className="status-msg visible error";return;}
+
     const sig=signatures.find(sig=>sig["SignatureID"]===document.getElementById("sigSelect").value);
     const toAddrs=recipientsTo.values.map(v=>v.email);
     const groupMembers=await expandGroup(document.getElementById("groupSelect").value);
     const allTo=[...toAddrs,...groupMembers.map(m=>m.email)].filter(Boolean);
-    if(!allTo.length){s.textContent="At least one To: recipient required.";s.className="status-msg visible error";return;}
+    if(!allTo.length){s.textContent="At least one To: recipient or group is required.";s.className="status-msg visible error";return;}
 
     const isScheduled=document.getElementById("scheduleType").value==="scheduled";
     const schedTime=isScheduled?document.getElementById("scheduleDateTime").value:null;
@@ -1381,7 +1346,6 @@ async function sendEmail(){
     const rawBody=quillBody.root.innerHTML;
     const sigHtml=sig?.["Body"]?`<br><hr style="border:none;border-top:1px solid #ddd;margin:16px 0;">${sig["Body"]}`:"";
 
-    // Build per-recipient resolved bodies (used by both paths)
     const recipientPayloads=allTo.map(email=>{
       const member=members.find(m=>(m["Email"]||m["Email Address"]||"")===email);
       const name=member?((member["First Name"]||"")+" "+(member["Last Name"]||"")).trim():email;
@@ -1390,8 +1354,6 @@ async function sendEmail(){
     });
 
     if(isScheduled){
-      // ── SCHEDULED PATH ──────────────────────────────────────
-      // POST to Apps Script to create a time-based trigger + store draft
       const res=await fetch(EMAIL_GATEWAY,{
         method:"POST",
         headers:{"Content-Type":"text/plain;charset=utf-8"},
@@ -1412,7 +1374,6 @@ async function sendEmail(){
       const result=await res.json();
       if(!result.success) throw new Error(result.error||"Failed to create trigger.");
 
-      // Record in Tracking sheet as Scheduled (for visibility)
       for(const r of recipientPayloads){
         await appendSheet(TRACKING_DOMAIN,"Tracking",{
           "Batch Key":     batchKey+"-"+r.email,
@@ -1424,20 +1385,14 @@ async function sendEmail(){
           "Thread ID":     batchKey
         });
       }
-
-      // Store draftId so user can cancel if needed
       currentDraftId=batchKey;
       showToast(`Scheduled for ${new Date(schedTime).toLocaleString()}. Trigger created.`,"success");
 
     } else {
-      // ── IMMEDIATE PATH ───────────────────────────────────────
-      // Record to Sent sheet (one batch row)
       const sentId=await recordSentEmail(
         batchKey,campaignKey,subject,rawBody+sigHtml,
         allTo.join(", "),ccList,null
       );
-
-      // Record per-recipient in Tracking
       for(const r of recipientPayloads){
         await appendSheet(TRACKING_DOMAIN,"Tracking",{
           "Batch Key":     batchKey+"-"+r.email,
@@ -1449,25 +1404,21 @@ async function sendEmail(){
           "Thread ID":     sentId
         });
       }
-
-      // If this was a saved draft, remove it
       if(currentDraftId){
         try{ await deleteRow(TRACKING_DOMAIN,"Drafts",currentDraftId); }catch(_){}
         currentDraftId=null;
       }
-
       showToast(`Sent to ${allTo.length} recipient${allTo.length>1?"s":""}!`,"success");
       await loadTracking(); AuditLog.load();
       setTimeout(()=>{ resetCompose(); },900);
     }
-
     s.className="status-msg"; s.textContent="";
 
   }catch(e){
     s.textContent="Error: "+e.message;s.className="status-msg visible error";
   }finally{
     btn.disabled=false;
-    btn.innerHTML=`<i data-lucide="send" style="width:13px;height:13px;margin-right:4px;display:inline-block;vertical-align:middle;"></i> Send Email`;
+    btn.innerHTML=`<i data-lucide="send" style="width:13px;height:13px;margin-right:4px;display:inline-block;vertical-align:middle;"></i> Send Campaign`;
     if(window.lucide)lucide.createIcons();
   }
 }
@@ -1476,20 +1427,22 @@ function resetCompose(){
   selectedTmplId=null;
   currentDraftId=null;
   recipientsTo?.clear();recipientsCC?.clear();recipientsBCC?.clear();
+  document.getElementById("composeTemplate").value="";
   document.getElementById("subjectPrefix").value="";
   document.getElementById("emailSubject").value="";
   document.getElementById("scheduleType").value="now";
   document.getElementById("sigSelect").value="";
   document.getElementById("groupSelect").value="";
-  document.getElementById("scheduleType").value="now";
   document.getElementById("scheduleDateRow").style.display="none";
   document.getElementById("sigPreviewWrap").style.display="none";
-  document.getElementById("groupRecipientRow").style.display="none";
-  document.getElementById("groupCountMsg").textContent="";
-  document.getElementById("nextStep1").disabled=true;
   document.getElementById("sendStatus").textContent="";
   quillBody.root.innerHTML="";
-  goStep(1);renderTemplatePicker();
+  
+  const pv = document.getElementById("emailPreview");
+  pv.style.display="none";
+  document.getElementById("togglePreviewBtn").textContent="Update & Review Preview";
+  
+  updateRecipientCount();
 }
 
 /* ================================================================
@@ -1509,7 +1462,7 @@ document.getElementById("recordModalCancel").addEventListener("click",closeRecor
 document.getElementById("recordModalSave").addEventListener("click",saveRecord);
 document.getElementById("recordModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeRecordModal();});
 
-// Template modal
+// Template & Signature modals
 document.getElementById("newTemplateBtn").addEventListener("click",()=>openTmplModal(null));
 document.getElementById("tmplModalClose").addEventListener("click",closeTmplModal);
 document.getElementById("tmplModalCancel").addEventListener("click",closeTmplModal);
@@ -1517,7 +1470,6 @@ document.getElementById("tmplSaveBtn").addEventListener("click",saveTmpl);
 document.getElementById("tmplDeleteBtn").addEventListener("click",deleteTmpl);
 document.getElementById("tmplModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeTmplModal();});
 
-// Signature modal
 document.getElementById("newSigBtn").addEventListener("click",()=>openSigModal(null));
 document.getElementById("sigModalClose").addEventListener("click",closeSigModal);
 document.getElementById("sigModalCancel").addEventListener("click",closeSigModal);
@@ -1525,42 +1477,43 @@ document.getElementById("sigSaveBtn").addEventListener("click",saveSig);
 document.getElementById("sigDeleteBtn").addEventListener("click",deleteSig);
 document.getElementById("sigModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeSigModal();});
 
-// Compose wizard
-document.getElementById("tmplPickSearch").addEventListener("input",renderTemplatePicker);
-document.getElementById("tmplPickTopic").addEventListener("change",renderTemplatePicker);
-document.getElementById("nextStep1").addEventListener("click",()=>{if(!selectedTmplId)return;applyTemplateToCompose(selectedTmplId);goStep(2);});
-document.getElementById("backStep2").addEventListener("click",()=>goStep(1));
-document.getElementById("nextStep2").addEventListener("click",()=>{if(!recipientsTo.values.length&&!document.getElementById("groupSelect").value){alert("Please add at least one To: recipient or select a group.");return;}goStep(3);});
-document.getElementById("backStep3").addEventListener("click",()=>goStep(2));
-document.getElementById("nextStep3").addEventListener("click",()=>{if(!document.getElementById("emailSubject").value.trim()){alert("Please enter a subject.");return;}goStep(4);});
-document.getElementById("backStep4").addEventListener("click",()=>goStep(3));
-document.getElementById("nextStep4").addEventListener("click",()=>{buildPreview();goStep(5);});
-document.getElementById("backStep5").addEventListener("click",()=>goStep(4));
-document.getElementById("sendEmailBtn").addEventListener("click",sendEmail);
-document.getElementById("saveDraftBtn").addEventListener("click",saveDraft);
-document.getElementById("resetComposeBtn").addEventListener("click",resetCompose);
+// Compose Controls
+document.getElementById("composeTemplate").addEventListener("change", (e)=>{
+  const id = e.target.value;
+  selectedTmplId = id;
+  if(id) applyTemplateToCompose(id);
+  else resetCompose();
+});
+document.getElementById("groupSelect").addEventListener("change", updateRecipientCount);
 document.getElementById("refreshVarsBtn").addEventListener("click",loadVarFields);
 document.getElementById("scheduleType").addEventListener("change",()=>{document.getElementById("scheduleDateRow").style.display=document.getElementById("scheduleType").value==="scheduled"?"":"none";});
 document.getElementById("sigSelect").addEventListener("change",updateSigPreview);
-document.getElementById("groupSelect").addEventListener("change",async()=>{
-  const key=document.getElementById("groupSelect").value;
-  if(!key){document.getElementById("groupCountMsg").textContent="";return;}
-  const m=await expandGroup(key);document.getElementById("groupCountMsg").textContent=`${m.length} member(s) will receive this email.`;
+
+document.getElementById("togglePreviewBtn").addEventListener("click", () => {
+  const pv = document.getElementById("emailPreview");
+  if(pv.style.display === "none") {
+    buildPreview();
+    pv.style.display = "block";
+    document.getElementById("togglePreviewBtn").textContent = "Hide Preview";
+  } else {
+    pv.style.display = "none";
+    document.getElementById("togglePreviewBtn").textContent = "Update & Review Preview";
+  }
 });
+document.getElementById("sendEmailBtn").addEventListener("click",sendEmail);
+document.getElementById("saveDraftBtn").addEventListener("click",saveDraft);
+document.getElementById("resetComposeBtn").addEventListener("click",resetCompose);
 
 
+// Initialization
+initQuills();
+initEmoji();
+recipientsTo  = setupChipInput("toInput","toChips","toAC", updateRecipientCount);
+recipientsCC  = setupChipInput("ccInput","ccChips","ccAC");
+recipientsBCC = setupChipInput("bccInput","bccChips","bccAC");
 
-    initQuills();
-    initEmoji();
-    initWizardStepClicks();
-    recipientsTo  = setupChipInput("toInput","toChips","toAC");
-    recipientsCC  = setupChipInput("ccInput","ccChips","ccAC");
-    recipientsBCC = setupChipInput("bccInput","bccChips","bccAC");
-
-    Promise.all([loadDashboard(),loadTracking(),loadTemplates(),loadSignatures(),loadMembers()])
-    .then(()=>{loadVarFields();if(window.lucide)lucide.createIcons();});
-
-
+Promise.all([loadDashboard(),loadTracking(),loadTemplates(),loadSignatures(),loadMembers()])
+.then(()=>{loadVarFields();if(window.lucide)lucide.createIcons();});
 
 </script>
 <script>
