@@ -1767,60 +1767,6 @@
       social: { label: 'Social Sailing',   className: 'Social',  spreadsheetId: '', insignia: '/Home/images/classes/SmileyFace.png' },
     };
 
-    const CACHE_KEY = "SMMC_APP_DATA";
-
-    async function initApp() {
-      // 1. Instantly load from local cache if it exists
-      const cachedData = localStorage.getItem(CACHE_KEY);
-      if (cachedData) {
-        const data = JSON.parse(cachedData);
-        renderTopDown(data); // Render immediately
-      } else {
-        showGlobalSpinner(); // Only shown on the very first visit
-      }
-
-      // 2. Fetch fresh data in the background
-      try {
-        const response = await fetch(`${DISCOVERY_URL}?action=bootstrap`);
-        const freshData = await response.json();
-        
-        // 3. Save to cache
-        localStorage.setItem(CACHE_KEY, JSON.stringify(freshData));
-        
-        // 4. Re-render UI with fresh data
-        renderTopDown(freshData);
-        hideGlobalSpinner();
-      } catch (error) {
-        console.error("Failed to fetch fresh data:", error);
-        // If offline, the user still sees the cached data!
-      }
-    }
-
-    function renderTopDown(data) {
-      // Priority 1: Above the Fold (Instantly visible)
-      renderWeather(data.weather);
-      renderNextEvent(data.calendar.nextEvent);
-      renderLatestResults(data.latestResults);
-
-      // Priority 2: Middle of page
-      renderChampionshipStandings(data.standings);
-      renderMembershipStats(data.stats);
-
-      // Priority 3: Below the fold / Annual Calendar
-      renderAnnualCalendar(data.calendar);
-
-      // Priority 4: Hidden in tabs/drawers (Store in memory for rapid searching)
-      window.allMembers = data.members;
-      window.allBoats = data.boats;
-      window.allApplications = data.applications;
-      window.allRequests = data.requests;
-      
-      // Render the default visible tabs
-      renderMembers();
-      renderBoats();
-      renderApplications();
-    }
-
     const CLASS_IMAGE_MAP = Object.values(RESULTS_CONFIG).reduce((map, cls) => {
       if (cls.className && cls.insignia && !map[cls.className]) {
         map[cls.className] = cls.insignia;
