@@ -1,0 +1,3670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Extra+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.383.0/umd/lucide.min.js"></script>
+<style>
+  /* Shared design tokens, glass/panel primitives, nav, buttons, badges,
+     tabs, search, filter buttons, member/app drawers & lists, tile-grid,
+     tag, footer — now in theme.css. Below is page-specific layout only. */
+
+
+  /* =========================================================
+     HERO & BINNACLE
+     ========================================================= */
+  main{ position:relative; z-index:1; }
+
+  .hero{
+    max-width:1180px; margin:0 auto;
+    padding:60px 28px 40px;
+    display:grid; grid-template-columns:1.1fr 0.9fr; gap:48px; align-items:center;
+  }
+  @media (max-width:900px){
+    .hero{ grid-template-columns:1fr; padding-top:40px; text-align:center; }
+    .hero .binnacle-wrap{ order:-1; margin:0 auto; }
+  }
+
+  .sailing-norwest {
+    font-family: 'Saira Extra Condensed', sans-serif;
+    font-weight: 300;
+    text-transform:uppercase; color:var(--glow);
+  }
+
+  .binnacle-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+ 
+  .binnacle-wrap img {
+    mix-blend-mode: multiply;
+  }
+
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'Saira Extra Condensed', sans-serif;
+    text-transform:uppercase; color:var(--glow);
+    padding:6px 12px; border-radius:100px;
+    background:var(--glass-fill); border:1px solid var(--glass-border);
+    margin-bottom:22px;
+  }
+  .eyebrow .dot{
+    width:6px; height:6px; border-radius:50%; background:var(--glow);
+    box-shadow:0 0 8px var(--glow);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+
+  h1{
+    font-family:var(--font-display); font-weight:700;
+    font-size:clamp(34px, 5vw, 56px); line-height:1.05; letter-spacing:-0.01em;
+    color:var(--foam); margin-bottom:18px;
+  }
+  h1 em{ font-style:normal; color:var(--glow); }
+
+  .subh{ font-size:12px; color:var(--glow); }
+
+  .lede{
+    font-size:16px; line-height:1.6; color:var(--foam-dim);
+    margin-bottom:28px;
+  }
+  @media (max-width:900px){ .lede{ margin-inline:auto; } }
+
+  .hero-actions{ display:flex; gap:12px; flex-wrap:wrap; }
+  @media (max-width:900px){ .hero-actions{ justify-content:center; } }
+
+
+  .conditions{
+    display:flex; gap:10px; margin-top:34px; flex-wrap:wrap;
+  }
+  @media (max-width:900px){ .conditions{ justify-content:center; } }
+  .cond-pill{
+    padding:9px 14px; border-radius:12px;
+    display:flex; flex-direction:column; gap:2px; min-width:88px;
+  }
+  .cond-pill .label{
+    font-family:var(--font-data); font-size:9.5px; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--foam-dim); text-align: center;
+  }
+  .cond-pill .value{
+    font-family:var(--font-data); font-size:15px; color:var(--foam); font-weight:500; text-align: center; 
+  }
+  .cond-pill .value.accent{ color:var(--signal); }
+
+
+  /* =========================================================
+     LATEST RESULTS RIBBON
+     ========================================================= */
+  .feed-card{ padding:24px; }
+  .feed-head{
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:10px; margin-bottom:18px;
+  }
+  .feed-title{ display:flex; align-items:center; gap:10px; }
+  .feed-title .dot{
+    width:7px; height:7px; border-radius:50%; background:var(--signal);
+    box-shadow:0 0 8px var(--signal);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  .feed-title h3{ font-family:var(--font-display); font-size:18px; font-weight:600; color:var(--foam); }
+  .feed-meta{
+    font-family:var(--font-data); font-size:11px; letter-spacing:0.08em;
+    color:var(--glow); text-transform:uppercase;
+  }
+
+  /* Insignia Badge for Standings */
+  .class-insignia {
+    height: 46px;           /* tall enough to be visible alongside h3 */
+    width: auto;
+    max-width: 100px;
+    object-fit: contain;
+    align-self: center;
+    background: rgba(255,255,255,0.85);
+    border-radius: 6px;
+    padding: 4px;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .class-insignia:hover {
+    transform: scale(1.05);
+  }
+
+  .ribbon{
+    display:flex; gap:12px; overflow-x:auto; padding:4px 2px 12px;
+    scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch;
+  }
+  .ribbon::-webkit-scrollbar{ height:6px; }
+  .ribbon::-webkit-scrollbar-thumb{ background:var(--glass-border); border-radius:10px; }
+
+  .finish-chip {
+    scroll-snap-align: start;
+    flex: none;
+    width: 165px;
+    padding: 8px 10px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 4px;
+    column-gap: 4px;
+    align-items: baseline;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
+  .finish-chip:hover { 
+    transform: translateY(-3px); 
+    border-color: rgba(94, 234, 212, 0.35); 
+  }
+
+  /* Top Left */
+  .finish-chip .pos {
+    grid-row: 1;
+    grid-column: 1;
+    font-family: var(--font-data); 
+    font-size: 22px; 
+    font-weight: 500; 
+    color: var(--foam);
+    display: flex; 
+    align-items: baseline; 
+    gap: 2px;
+  }
+
+  .finish-chip .pos small { 
+    font-size: 11px; 
+    color: var(--foam-dim); 
+    font-weight: 400; 
+  }
+
+  /* Top Right */
+  .finish-chip .points {
+    grid-row: 1;
+    grid-column: 2;
+    justify-self: end;
+    font-family: var(--font-data); 
+    font-size: 22px; 
+    font-weight: 500;
+    display: flex; 
+    align-items: baseline; 
+    gap: 2px;
+  }
+
+  .finish-chip .points::after {
+    content: "pts";
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--foam-dim);
+  }
+
+  /* Bottom Left */
+  .finish-chip .sail-no {
+    grid-row: 2;
+    grid-column: 1;
+    font-family: var(--font-data); 
+    font-size: 11px; 
+    color: var(--glow);
+  }
+
+  /* Bottom Right (Follows Sail No) */
+  .finish-chip .sailor {
+    grid-row: 3;
+    grid-column: 1;
+    font-family: var(--font-body); 
+    font-size: 13.5px; 
+    font-weight: 600; 
+    color: var(--foam);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Podium Styles */
+  .finish-chip.p1 { border-color: rgba(255, 209, 102, 0.55); }
+  .finish-chip.p1 .pos { color: #ffd166; }
+  .finish-chip.p2 { border-color: rgba(200, 214, 224, 0.5); }
+  .finish-chip.p2 .pos { color: #dbe6ea; }
+  .finish-chip.p3 { border-color: rgba(255, 140, 94, 0.5); }
+  .finish-chip.p3 .pos { color: var(--signal); }
+
+    /* ===== Results module-specific styles ===== */
+  .class-select-wrap {
+    display: inline-block;
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .class-select {
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 10px 40px 10px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--glow), #38bfa1);
+    color: var(--ocean-deep);
+    border: none;
+    outline: none;
+    box-shadow: 0 8px 24px rgba(94,234,212,0.25);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .class-select:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(94,234,212,0.35); }
+  .class-select-wrap::after {
+    content: "▾";
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ocean-deep);
+    pointer-events: none;
+    font-size: 16px;
+  }
+  .class-select option { background: var(--ocean-mid); color: #fff; }
+
+
+  .round-tabs{ display:flex; gap:6px; margin-bottom:16px; }
+  .round-tab{
+    font-family:var(--font-data); font-size:11.5px; letter-spacing:.04em;
+    padding:6px 12px; border-radius:8px; cursor:pointer;
+    background:transparent; border:1px solid var(--glass-border); color:var(--foam-dim);
+  }
+  .round-tab.active{ background:var(--glass-fill-hi); color:var(--glow); border-color:var(--glow); }
+
+  .sheet-meta{
+    font-family:var(--font-data); font-size:12px; color:var(--foam-dim);
+    margin-bottom:12px; padding:10px 14px;
+    background:var(--glass-fill); border:1px solid var(--glass-border); border-radius:10px;
+  }
+
+
+  .standings-status{ font-family:var(--font-data); font-size:11.5px; color:var(--foam-dim); margin-bottom:10px; min-height:16px; }
+
+  table.standings{ width:100%; border-collapse:collapse; font-size:13px; }
+  table.standings th{
+    font-family:var(--font-data); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--glow); text-align:left; padding:9px 4px; border-bottom:1px solid var(--glass-border);
+    position:sticky; top:0; background:rgba(15,53,80,0.85);
+  }
+  table.standings th.col-center, table.standings td.col-center{ text-align:center; }
+  table.standings td{ padding:9px 4px; border-bottom:1px solid rgba(255,255,255,0.06); color:var(--foam); }
+  table.standings th:first-child,
+  table.standings td:first-child { width:30px; min-width:30px; max-width:40px; text-align:center; padding-left:2px; padding-right:8px; }
+  table.standings th:nth-child(2),
+  table.standings td:nth-child(2) { width:40px; min-width:40px; max-width:50px; text-align:center; padding-left:6px; padding-right:8px; }
+  table.standings tbody tr:hover{ background:var(--glass-fill); }
+  table.standings tbody tr:nth-child(1) td:first-child{ color:#ffd166; font-weight:700; }
+  table.standings tbody tr:nth-child(2) td:first-child{ color:#dbe6ea; font-weight:700; }
+  table.standings tbody tr:nth-child(3) td:first-child{ color:var(--signal); font-weight:700; }
+  
+  .table-scroll{ 
+    overflow-x:auto; 
+    overflow-y:visible; 
+    border-radius:12px; 
+    -webkit-overflow-scrolling:touch;
+  }
+
+  @media (max-width:640px){
+    #race-results-hub.container{ padding:0 10px; }
+    #race-results-hub .feed-card{ padding:16px 8px; }
+    #race-results-hub .table-scroll{ margin:0 -8px; width:calc(100% + 16px); border-radius:0; }
+    table.standings th:first-child,
+    table.standings td:first-child{ padding-left:4px; padding-right:4px; }
+    table.standings th:nth-child(2),
+    table.standings td:nth-child(2){ padding-left:4px; padding-right:4px; }
+  }
+
+  /* =========================================================
+     MEMBERSHIP STATS GRID
+     ========================================================= */
+  .stats-grid{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:16px;
+  }
+  @media (max-width:900px){ .stats-grid{ grid-template-columns:repeat(2, 1fr); } }
+  @media (max-width:500px){ .stats-grid{ grid-template-columns:1fr; } }
+
+  .stat-card{
+    padding:20px; display:flex; flex-direction:column; gap:8px;
+  }
+  .stat-card .label{
+    font-family:var(--font-data); font-size:11px; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--foam-dim);
+  }
+  .stat-card .val{
+    font-family:var(--font-display); font-size:32px; font-weight:700; color:var(--foam);
+  }
+  .stat-card .sub{ font-size:12px; color:var(--glow); }
+
+  .status-breakdown{
+    padding:20px; display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;
+  }
+  @media (max-width:768px){ .status-breakdown{ grid-template-columns:repeat(2, 1fr); } }
+
+  .status-item{
+    background:var(--glass-fill); border:1px solid var(--glass-border);
+    padding:12px; border-radius:12px; display:flex; flex-direction:column; gap:4px;
+  }
+  .status-item .s-name{ font-family:var(--font-data); font-size:10.5px; text-transform:uppercase; color:var(--foam-dim); }
+  .status-item .s-num{ font-family:var(--font-data); font-size:18px; font-weight:600; color:var(--foam); }
+  .status-item.received{ border-left:3px solid #60a5fa; }
+  .status-item.progress{ border-left:3px solid #f59e0b; }
+  .status-item.awaiting{ border-left:3px solid var(--signal); }
+  .status-item.processed{ border-left:3px solid var(--glow); }
+
+  /* ===== Topic selection (Membership Statistics) ===== */
+  .stat-card{ cursor:pointer; transition:transform 0.15s ease, border-color 0.15s ease; }
+  .stat-card:hover{ transform:translateY(-2px); border-color:rgba(94,234,212,0.35); }
+  .stat-card.selected{ border-color:rgba(94,234,212,0.55); }
+  .stat-card:focus-visible{ outline:2px solid var(--glow); outline-offset:2px; }
+
+  .breakdown-title{
+    grid-column:1 / -1;
+    font-family:var(--font-data); font-size:10.5px; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--foam-dim);
+    padding-left:2px; margin-bottom:2px;
+  }
+
+  /* =========================================================
+     WEATHER & NEXT EVENT DUO
+     ========================================================= */
+  
+  .duo-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:20px;
+  }
+  
+  @media (max-width: 960px) { .duo-grid { grid-template-columns: 1fr; } }
+
+  .weather-card, .next-event-card{ padding:24px; }
+
+  .weather-week{
+    display:grid; 
+    grid-template-rows:repeat(7, 1fr); 
+    gap:8px; 
+    margin-top:16px;
+  }
+
+  /* weather rules for @media (max-width:600px)*/
+  @media (max-width: 600px) {
+
+    .weather-card,
+    .next-event-card {
+      padding: 16px;
+    }
+
+    /* Keep vertical stack on mobile, just tighten the pills */
+    .weather-week {
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .day-pill {
+      flex-direction: column;   /* day name, icon, temp, wind all in a row */
+      align-items: center;
+      padding: 10px 8px;
+      gap: 4px;
+    }
+
+    .race-card {
+      max-width: 100%;
+      height: 200px;
+    }
+  }
+
+  .day-pill {
+    position: relative;
+    color: white;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 70px;
+    background-size: cover;
+    background-position: center;
+    overflow: hidden; /* keeps the bg image inside the rounded corners */
+  }
+
+  .day-pill::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: inherit;
+    z-index: 0;
+  }
+
+  .day-pill > * {
+    position: relative;
+    z-index: 1;
+  }
+  .day-pill .d-desc{
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--foam);
+    min-width: 70px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .day-pill .d-name{ font-family:var(--font-data); font-size:11px; color:var(--glow); text-transform:uppercase; }
+  .day-pill .d-icon{ font-size:18px; margin:2px 0; }
+  .day-pill .d-temp{ font-family:var(--font-data); font-size:13px; font-weight:600; color:var(--glow); }
+  .day-pill .d-wind{ font-family:var(--font-data); font-size:10px; color:var(--glow); }
+  .day-pill .d-rain{ font-family:var(--font-data); font-size:10px; color:var(--glow); }
+  .day-pill .d-uv{ font-family:var(--font-data); font-size:10px; color:var(--glow); }
+
+  /* =========================================================
+    MOBILE — Weather & Next Event duo
+    ========================================================= */
+  @media (max-width: 600px) {
+
+    .weather-card,
+    .next-event-card {
+      padding: 16px;
+    }
+
+    /* weather-week stays as grid — no override needed, base style is correct */
+
+    .day-pill {
+      flex-direction: row;    /* keep horizontal bar layout within each pill */
+      align-items: center;
+      padding: 8px 10px;
+      gap: 6px;
+    }
+
+    .race-card {
+      max-width: 100%;
+      height: 200px;
+    }
+  }
+
+  .event-details{ display:flex; flex-direction:column; gap:14px; margin-top:16px; }
+  .event-badge{
+    display:inline-block; font-family:var(--font-data); font-size:10.5px; letter-spacing:0.1em;
+    text-transform:uppercase; padding:4px 10px; border-radius:6px;
+    background:rgba(255,106,61,0.2); border:1px solid var(--signal); color:var(--signal);
+    width:fit-content;
+  }
+  .event-title{ font-family:var(--font-display); font-size:20px; font-weight:600; color:var(--foam); }
+  .event-info-list{ list-style:none; display:flex; flex-direction:column; gap:8px; font-size:13.5px; color:var(--foam-dim); }
+  .event-info-list li{ display:flex; align-items:center; gap:8px; }
+
+  /* =========================================================
+     ANNUAL CALENDAR GRID
+     ========================================================= */
+  .calendar-card{ padding:24px; }
+  .calendar-grid{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-top:16px;
+  }
+  @media (max-width:840px){ .calendar-grid{ grid-template-columns:repeat(2, 1fr); } }
+  @media (max-width:540px){ .calendar-grid{ grid-template-columns:1fr; } }
+
+  .cal-month{
+    background:var(--glass-fill); border:1px solid var(--glass-border);
+    border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px;
+  }
+  .cal-month h4{
+    font-family:var(--font-display); font-size:15px; color:var(--glow); border-bottom:1px solid var(--glass-border); padding-bottom:6px;
+  }
+  .cal-event-item{ font-size:12.5px; display:flex; flex-direction:column; gap:2px; }
+  .cal-event-item .date{ font-family:var(--font-data); font-size:11px; color:var(--signal); }
+  .cal-event-item .name{ color:var(--foam); font-weight:500; }
+
+  /* Annual Calendar — class filter buttons (insignia) */
+  .calendar-filters{
+    display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px;
+  }
+  .cal-filter-btn{
+    display:flex; align-items:center; gap:7px;
+    font-family:var(--font-data); font-size:11.5px; letter-spacing:.02em;
+    padding:6px 12px 6px 6px; border-radius:10px; cursor:pointer;
+    background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam-dim);
+    transition:background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .cal-filter-btn:hover{ color:var(--foam); background:var(--glass-fill-hi); }
+  .cal-filter-btn.active{ background:var(--glass-fill-hi); border-color:var(--glow); color:var(--glow); }
+  .cal-filter-btn .cal-filter-icon{
+    width:22px; height:22px; object-fit:contain; border-radius:5px; flex-shrink:0;
+    background:rgba(255,255,255,0.85); padding:3px;
+  }
+.cal-filter-btn .cal-filter-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  border-radius: 5px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.15); /* Reduced from 0.85 */
+  padding: 3px;
+  backdrop-filter: blur(4px);
+}
+
+  /* =========================================================
+  APPS SCRIPT & SHEETS PLACEHOLDERS
+  ========================================================= */
+  .app-placeholder{
+    border:2px dashed var(--glass-border); border-radius:16px;
+    padding:32px 20px; text-align:center;
+    background:rgba(7,27,44,0.3);
+    display:flex; flex-direction:row; align-items:center; justify-content:center; gap:10px;
+    margin-top:16px;
+    gap:16px;
+  }
+  .app-placeholder code{
+    font-family:var(--font-data); font-size:12px; color:var(--glow);
+    background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:6px;
+  }
+  
+
+    /* Calendar event item — icon left, text right */
+  .cal-event-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .cal-class-img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 4px;
+  }
+
+  .cal-class-img--placeholder {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .cal-event-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+/* =========================================================
+      next event card 
+    ========================================================= */
+  /* Card Container */
+  .race-card {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 16px;
+    border-radius: 16px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    text-align: center;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .race-card img.race-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+
+  .race-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(160,160,160,0.15), rgba(160,160,160,0.45));
+    z-index: 1;
+  }
+
+  .race-card .card-content {
+    position: relative;
+    z-index: 2;
+    color: var(--foam);
+  }
+
+  .race-card .heading h2 {
+    margin: 0;
+    padding: 10px 0;
+    font-size: 1.3em;
+    color: var(--foam);
+  }
+
+  .race-card .race-time {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #ffd700;
+    margin-bottom: 15px;
+  }
+
+  .race-card .weather-panel--hourly{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+    width:100%;
+  }
+
+  .race-card .weather-cards-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  .race-card .weather-mini-card {
+    background: rgba(192,192,192,0.1);
+    backdrop-filter: blur(6px);
+    color: var(--foam);
+    border-radius: 5px;
+    padding: 8px;
+    flex: 0 0 80px;
+    max-width: 110px;
+    font-size: 14px;
+    display: flex; 
+    justify-content: space-evenly;  
+    align-items: center;               
+    width:auto;             
+    flex-direction:column;
+    margin-top:0;   
+  }
+  
+  .race-card .daily-desc {
+    flex: 1;
+  }
+
+  .race-card .weather-mini-card .time { font-size: 0.75em; opacity: 0.85; }
+  .race-card .weather-mini-card .temp { font-size: 1.4em; font-weight: 600; }
+  .race-card .weather-mini-card .wind,
+  .race-card .weather-mini-card .rain,
+  .race-card .weather-mini-card .uvRow { font-size: 1em; opacity: 0.85; }
+  .race-card .weather-mini-card .uvVal { font-size: 1em; font-weight: 600; }
+
+  .race-card .weather-panel--daily{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    width:100%;
+    text-align:left;
+    background:rgba(192,192,192,0.1);
+    backdrop-filter:blur(6px);
+    border-radius:8px;
+    padding:12px 14px;
+  }
+  .race-card .daily-row--summary{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+
+
+  .race-card.daily-desc {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--foam);
+    flex: 1;
+    text-align: center;
+    padding: 0 6px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .race-card .daily-icon{
+    font-size:1.6em; 
+    flex-shrink:0; 
+    line-height: 1;
+    flex: none;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+    }
+  .race-card .daily-temps{ 
+    font-size:1.3em; 
+    font-weight:600; 
+    white-space:nowrap; 
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    flex: none;
+  }
+  .race-card .daily-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:0.95em;
+    opacity:0.9;
+  }
+
+  .boat-panel-body { padding: 20px 24px 24px; }
+ 
+ 
+  /* ── Members table ── */
+  .members-table-wrap {
+    max-height: 420px;
+    overflow-y: auto;
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+  }
+ 
+  .members-table-wrap::-webkit-scrollbar { width: 6px; }
+  .members-table-wrap::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
+ 
+  table.members {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+ 
+  table.members th {
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--glow);
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--glass-border);
+    position: sticky; top: 0;
+    background: rgba(15,53,80,0.92);
+    white-space: nowrap;
+  }
+ 
+  table.members td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: var(--foam);
+    vertical-align: middle;
+  }
+ 
+  table.members tbody tr {
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  table.members th:not(:first-child),
+  table.members td:not(:first-child) {
+    text-align: center;
+  }
+ 
+  table.members tbody tr:hover { background: var(--glass-fill-hi); }
+  table.members tbody tr:last-child td { border-bottom: none; }
+ 
+  /* Name cell */
+  .member-name { font-weight: 600; color: var(--foam); }
+ 
+  /* Membership badge */
+
+  /* Committee indicator */
+  .whatsApp-yes {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--whatsapp);
+  }
+  /* Committee indicator */
+  .committee-yes {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--glow);
+  }
+
+    /* Committee indicator */
+  .inactive-yes {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--signal);
+  }
+ 
+  .committee-yes::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--glow);
+    box-shadow: 0 0 6px var(--glow);
+    display: inline-block;
+  }
+ 
+  /* WhatsApp link */
+  .wa-link {
+    color: #4ade80;
+    text-decoration: none;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+ 
+  .wa-link:hover { text-decoration: underline; }
+ 
+  /* Empty / loading state */
+  .state-row td {
+    text-align: center;
+    padding: 32px 12px;
+    color: var(--foam-dim);
+    font-size: 13px;
+    cursor: default;
+  }
+ 
+  .state-row:hover { background: transparent !important; }
+ 
+  /* ── Member count chip ── */
+  .count-chip {
+    font-family: var(--font-data);
+    font-size: 11px;
+    color: var(--foam-dim);
+    margin-bottom: 10px;
+  }
+ 
+  .count-chip strong { color: var(--foam); }
+ 
+
+  #boatClassFilters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .filter-row--classes,
+  .filter-row--subfilters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .latest-class-emblem {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 6px;
+    padding: 3px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+
+  .championship-selector-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:16px;
+  }
+
+  .championship-selector-row .class-select-wrap{
+    margin-bottom:0;
+  }
+
+  .class-insignia{
+    margin-left:auto;   /* pushes icon to the far right */
+  }
+
+  /* =========================================================
+     MOBILE NAV MENU (toggle fix)
+     ========================================================= */
+  @media (max-width:900px){
+    .nav-links{
+      display:none;
+      position:absolute;
+      top:100%; left:0; right:0;
+      flex-direction:column;
+      gap:0;
+      background:rgba(15,53,80,0.97);
+      border-top:1px solid var(--glass-border);
+      padding:8px 16px 16px;
+      z-index:50;
+    }
+    .nav-links.nav-open{ display:flex; }
+    .nav-links .nav-item{ width:100%; }
+    .nav-links .dropdown-menu{ position:static; display:block; box-shadow:none; background:transparent; border:none; padding-left:12px; }
+    .nav-toggle{ display:inline-flex; }
+  }
+
+  .app-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:10px 14px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      gap:12px;
+  }
+
+  .app-row-content{
+      flex:1;
+      margin-left:10px;
+  }
+
+  .app-row-right{
+      display:flex;
+      align-items:center;
+      gap:8px;
+  }
+
+  .app-detail-section {
+      background: var(--glass-fill);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 16px;
+  }
+
+  .boat-class-icon{
+      height:32px;
+      width:40px;
+      object-fit:contain;
+      /* opacity:.85;  */
+      background:rgba(228, 222, 222, 0.781);
+      border-radius:4px;
+      padding:3px;
+  }
+
+  #boatList {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .member-chevron,
+  .boat-chevron {
+      margin-left: auto;
+      margin-right: 4px;
+      width: 16px;
+      height: 16px;
+      color: var(--foam-dim);
+      opacity: .55;
+      flex-shrink: 0;
+      transition: opacity .15s ease, transform .15s ease;
+  }
+
+  .app-row:hover .member-chevron,
+  .app-row:hover .boat-chevron {
+      opacity: .9;
+      transform: translateX(2px);
+  }
+
+  .member-avatar,
+  .member-icon {
+      margin-left: 2px;
+  }
+
+  .sail-badge {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+
+  /* Boat Modal Styling */
+  .boat-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+
+  .boat-modal-card {
+    background: #3c759b;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    animation: boatModalFadeIn 0.2s ease-out;
+  }
+
+  @keyframes boatModalFadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .boat-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .boat-modal-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .boat-modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .boat-modal-subtitle {
+    margin: 2px 0 0 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
+  .boat-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+  }
+
+  .boat-modal-close:hover {
+    color: #111827;
+    background: #f3f4f6;
+  }
+
+  .boat-modal-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .boat-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .boat-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: #f9fafb;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #f3f4f6;
+  }
+
+  .boat-detail-item.full-width {
+    grid-column: span 2;
+  }
+
+  .boat-detail-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+  }
+
+  .boat-detail-value {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .boat-detail-notes {
+    margin: 4px 0 0 0;
+    font-size: 0.875rem;
+    color: #374151;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  .member-chevron{
+      margin-left:auto;
+      width:16px;
+      height:16px;
+      color:var(--foam-dim);
+      opacity:.55;
+      flex-shrink:0;
+      transition:opacity .15s ease, transform .15s ease;
+  }
+
+  .app-row:hover .member-chevron{
+      opacity:.9;
+      transform:translateX(2px);
+  }
+
+  /* Liquid Glass Select Controls */
+    #avg-score-requests select {
+      color-scheme: dark; /* Forces native OS dropdown popups into dark mode */
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: rgba(10, 20, 32, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+      color: var(--foam, #ffffff);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+
+    #avg-score-requests select:focus {
+      border-color: var(--glow, #257fb6);
+      box-shadow: 0 0 12px rgba(37, 127, 182, 0.35);
+    }
+
+    /* Option Items (Dropdown List) Liquid Glass Dark Theme Fix */
+    #avg-score-requests select option {
+      background-color: #0d1622; /* Liquid glass dark background */
+      color: #ffffff;
+      padding: 10px;
+    }
+
+    #avg-score-requests select option:disabled {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Inputs alignment */
+    #avg-score-requests input[type="text"],
+    #avg-score-requests input[type="date"] {
+      color-scheme: dark;
+      background: rgba(10, 20, 32, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+      color: var(--foam, #ffffff);
+    }
+</style>
+</head>
+<body>
+  <!-- =========================================================
+  NAVIGATION HEADER
+  ========================================================= -->
+  <header class="nav-glass">
+    <a href="#" class="brand">
+      <img class="logo" src="https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0" alt="Logo">
+      <div class="brand-text">
+        <strong>Sydney Maritime Modellers Club</strong>
+        <p class="sailing-norwest">SAILING@NORWEST</p>
+      </div>
+    </a>
+
+    <ul class="nav-links">
+      <li class="nav-item">
+        <span class="nav-link">Members ▾</span>
+        <ul class="dropdown-menu glass">
+          <li><a href="#members-list" onclick="return selectMemberTab('members', true)">Members List</a></li>
+          <li><a href="#members-list" onclick="return selectMemberTab('applications', true)">Applications</a></li>
+          <li><a href="#boat-register">Boat Register</a></li>
+        </ul>
+      </li>
+
+      <li class="nav-item">
+        <span class="nav-link">Calendar ▾</span>
+        <ul class="dropdown-menu glass">
+          <li><a href="#annual-calendar">Annual Calendar</a></li>
+          <li><a href="#next-event">Next Event</a></li>
+          <li><a href="#reschedule-event">Reschedule Event</a></li>
+        </ul>
+      </li>
+
+      <li class="nav-item">
+        <span class="nav-link">Race Results ▾</span>
+        <ul class="dropdown-menu glass">
+          <li><a href="https://norwest1998.github.io/Home/captureResults.html" target="_blank" rel="noopener noreferrer">Add Race Result</a></li>
+          <li><a href="#race-results-hub" onclick="return selectClass('iom')">IOM Standings</a></li>
+          <li><a href="#race-results-hub" onclick="return selectClass('df95')">DF95 S Standings</a></li>
+          <li><a href="#race-results-hub" onclick="return selectClass('df95h')">DF95 H Standings</a></li>
+          <li><a href="#race-results-hub" onclick="return selectClass('df65')">DF65 Standings</a></li>
+          <li><a href="#race-results-hub" onclick="return selectClass('soling')">Soling Standings</a></li>
+          <li><a href="#race-results-hub" onclick="return selectClass('gh')">GH Standings</a></li>
+        </ul>
+      </li>
+      
+      <li class="nav-item">
+        <a href="#apps-script-hub" class="btn btn-primary" style="padding:6px 14px; font-size:12.5px;">Portal Apps</a>
+      </li>
+    </ul>
+
+    <button class="nav-toggle" aria-label="Toggle Navigation" onclick="document.querySelector('.nav-links').classList.toggle('nav-open')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+  </header>
+
+  <main>
+    <!-- =========================================================
+         HERO SECTION
+         ========================================================= -->
+    <section class="hero">
+      <div class="hero-content">
+        <h1>Radio Controlled Sailing, <em>competitive yet social</em></h1>
+        <p class="lede">
+          Home of Australia's premier radio controlled yacht racing venue
+        </p>
+        <div class="hero-actions">
+          <a href="#next-event" class="btn btn-primary">Next Weekend Race</a>
+          <a href="#race-results" class="btn btn-ghost">View Latest Results</a>
+        </div>
+
+        <div class="conditions">
+          <div class="cond-pill glass">
+            <span class="label">Course Wind</span>
+            <span class="value accent" id="hero-wind">—</span>
+          </div>
+          <div class="cond-pill glass">
+            <span class="label">Ambient Temp</span>
+            <span class="value" id="hero-temp">—</span>
+          </div>
+          <div class="cond-pill glass">
+            <span class="label">UV Index</span>
+            <span class="value" id="hero-uv">—</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="binnacle-wrap">
+        <img 
+          src="/Home/images/logo/smmc-logo.png"
+          alt="Sydney Maritime Modellers Club"
+          style="width:100%;max-width:340px;height:auto;display:block;margin:0 auto;"
+        >
+      </div>
+    </section>
+
+    <!-- =========================================================
+          LATEST RACE RESULTS FEED
+         ========================================================= -->
+    <section id="race-results" class="container">
+      <div class="feed-card glass">
+        <div class="feed-head">
+          <div class="feed-title">
+            <span class="dot"></span>
+            <h3>Latest Race Results</h3>
+            <!-- Class Emblem Icon (38px x 38px) -->
+            <img id="latestClassEmblem" class="latest-class-emblem" src="" alt="Class Emblem" style="width: 38px; height: 38px; object-fit: contain; display: none;">
+          </div>
+          <span class="feed-meta" id="latestResultsMeta">Loading latest round…</span>
+        </div>
+
+        <!-- Populated by loadLatestResults() via the HomePage Data API -->
+        <div class="ribbon" id="resultsRibbon">
+          <div class="finish-chip glass">
+            <div class="pos">–</div>
+            <div class="sailor">Loading…</div>
+            <div class="sail-no">&nbsp;</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="race-results-hub" class="container" style="margin-top:24px;">
+      <div class="feed-card glass">
+        <div class="feed-head">
+          <div class="feed-title">
+            <span class="dot"></span>
+            <h3>Championship Standings</h3>
+          </div>
+
+        </div>
+        <div class="championship-selector-row">
+          <div id="classTabs"></div>
+          <!-- Class Insignia Image Display -->
+          <img id="classInsignia" class="class-insignia" src="" alt="Class Insignia" style="display:none;">
+        </div>
+        <div class="round-tabs" id="roundTabs"></div>
+        <div class="standings-status" id="statusLine"></div>
+        <div class="sheet-meta" id="sheetMeta"></div>
+        <div class="table-scroll">
+          <table class="standings">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         MEMBERSHIP STATS SECTION
+         ========================================================= -->
+    <section id="membership-stats" class="container">
+      <div class="section-head">
+        <h2>Membership Statistics</h2>
+        <p>Live stats integrated from Club Registry Sheets</p>
+      </div>
+
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card glass selected" data-topic="members" role="button" tabindex="0">
+          <span class="label">Total Members</span>
+          <span class="val" id="stat-val-members">—</span>
+          <span class="sub" id="stat-sub-members">Loading…</span>
+        </div>
+        <div class="stat-card glass" data-topic="applications" role="button" tabindex="0">
+          <span class="label">Online Applications</span>
+          <span class="val" id="stat-val-applications">—</span>
+          <span class="sub" id="stat-sub-applications">Loading…</span>
+        </div>
+        <div class="stat-card glass" data-topic="boats" role="button" tabindex="0">
+          <span class="label">Registered Boats</span>
+          <span class="val" id="stat-val-boats">—</span>
+          <span class="sub" id="stat-sub-boats">Loading…</span>
+        </div>
+        <div class="stat-card glass" data-topic="financial" role="button" tabindex="0">
+          <span class="label">Financial Status</span>
+          <span class="val" id="stat-val-financial">—</span>
+          <span class="sub" id="stat-sub-financial">Loading…</span>
+        </div>
+      </div>
+
+      <!-- Status Breakdown for the selected topic (rendered by renderBreakdown()) -->
+      <div class="status-breakdown glass" id="statusBreakdown"></div>
+    </section>
+
+    <!-- =========================================================
+         WEATHER & NEXT EVENT DUO
+         ========================================================= -->
+    <section class="container" style="margin-top:40px;">
+      <div class="duo-grid">
+        
+        <!-- Next Event Card -->
+        <div id="next-event" class="next-event-card glass">
+          <div class="feed-head">
+            <div class="feed-title">
+              <h3>Upcoming Weekend</h3>
+            </div>
+            <span class="feed-meta">Event Conditions</span>
+          </div>
+          <!-- Dynamic content from WebApp will load here -->
+          <div id="event-display-container">Loading event details...</div>
+        </div>
+
+        <!-- 7day-forecast Card -->
+        <div id="7day-forecast" class="weather-card glass">
+          <div class="feed-head">
+            <div class="feed-title">
+              <h3>Upcoming Week</h3>
+            </div>
+            <span class="feed-meta">Lakeside Conditions</span>
+          </div>
+          <div class="weather-week" id="weatherWeek">
+            Loading forecast...
+          </div>
+        </div>
+      </div>
+
+
+
+      </div>
+    </section>
+    <!-- =========================================================
+         ANNUAL CALENDAR
+         ========================================================= -->
+    <section id="annual-calendar" class="container">
+      <div class="section-head">
+        <h2>Annual Event Calendar</h2>
+        <p>2026 Regattas &amp; Championship Schedule</p>
+      </div>
+      <div class="calendar-card glass">
+        <div class="calendar-filters" id="calendarFilters"></div>  <!-- populated by renderCalendarFilters() -->
+        <div class="calendar-grid"></div>  <!-- populated by renderCalendarGrid() -->
+      </div>
+    </section>
+
+    <!-- =========================================================
+         APPS SCRIPT & GOOGLE SHEETS EMBED PLACEHOLDERS
+         ========================================================= -->
+    <section id="apps-script-hub" class="container">
+      <div class="section-head">
+        <h2>Club Apps & Sheets Integration Hub</h2>
+        <p>Dynamic AppSheet, Apps Script Web Apps & Google Sheets Placeholders</p>
+      </div>
+
+      <div class="tile-grid">
+        
+        <!-- Placeholder 1: Member Register App -->
+        <div id="members-list" class="tile glass">
+          <div class="tile-title">
+            <i class="tile-icon" data-lucide="users" color="#257fb6"></i>
+            <h3>Members Management</h3>
+          </div>
+          <p class="subh">Access member list, details, and membership applications processing.</p>
+            
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title-left">
+                <span class="dot"></span>
+                <h3>Members &amp; Applications</h3>
+              </div>
+              <div class="tab-row-wrap">
+                <div class="tab-row">
+                  <button class="tab active" data-tab="members">Members List</button>
+                  <button class="tab" data-tab="applications">Applications</button>
+                </div>
+                <button class="add-app-pill" id="addApplicationPill" type="button" title="Add Application">
+                  <span>+</span> Add Application
+                </button>
+              </div>
+            </div>
+          
+            <!-- Members tab -->
+            <div id="tab-members" class="tab-content active">
+              <div class="search-wrap">
+                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input class="search-input" type="text" id="memberSearch"
+                      placeholder="Search by name…" autocomplete="off">
+              </div>
+
+              <!-- Filters -->
+              <div class="app-filters" id="memberFilters">
+                <select class="member-filter-select" id="filterMembership">
+                  <option value="">All Types</option>
+                  <option value="full">Full</option>
+                  <option value="affiliate">Affiliate</option>
+                  <option value="expired">Expired</option>
+                </select>
+                <button class="member-filter-btn" data-filter="active">Active</button>
+                <button class="member-filter-btn" data-filter="whatsapp">WhatsApp</button>
+                <button class="member-filter-btn" data-filter="committee">Committee</button>
+              </div>
+
+              <div class="count-chip" id="memberCount"></div>
+              <div class="app-list" id="memberList">
+                <div class="empty-state"><div class="spinner"></div><div>Loading members…</div></div>
+              </div>
+            </div>
+          
+            <!-- Applications tab -->
+            <div id="tab-applications" class="tab-content">
+              <div class="app-filters" id="appFilters">
+                <button class="app-filter-btn active" data-status="all">All</button>
+                <button class="app-filter-btn" data-status="Received">Received</button>
+                <button class="app-filter-btn" data-status="In Progress">In Progress</button>
+                <button class="app-filter-btn" data-status="Awaiting Approval">Awaiting Approval</button>
+                <button class="app-filter-btn" data-status="Processed">Processed</button>
+              </div>
+              <div class="count-chip" id="appCount"></div>
+              <div class="app-list" id="appList">
+                <div class="empty-state">
+                  <div class="spinner"></div>
+                  <div>Loading applications…</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Member detail drawer -->
+          <div class="drawer-overlay" id="memberDrawer">
+            <div class="drawer">
+              <div class="drawer-header">
+                <div class="drawer-header-left">
+                  <h4>Member Details</h4>
+                </div>
+                <button class="drawer-close" id="closeMemDrawer">✕</button>
+              </div>
+              <div class="drawer-body" id="memberDrawerBody"></div>
+            </div>
+          </div>
+          
+          <!-- Application detail drawer -->
+          <div class="drawer-overlay" id="appDrawer">
+            <div class="drawer drawer-wide">
+              <div class="drawer-header">
+                <div class="drawer-header-left">
+                  <h4 id="appDrawerName">Application Details</h4>
+                  <span class="drawer-header-sub" id="appDrawerSub"></span>
+                </div>
+                <button class="drawer-close" id="closeAppDrawer">✕</button>
+              </div>
+              <div id="appDrawerContent">
+                <div class="drawer-loading">
+                  <div class="spinner"></div>
+                  <span>Loading application…</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <span class="tag">Members Module</span>
+        </div>
+
+        <!-- Placeholder 2: Boat Register App -->
+        <div id="boat-register" class="tile glass">
+          <div class="tile-title">
+            <i class="tile-icon" data-lucide="sailboat" color="#257fb6"></i>
+            <h3>Boat Register</h3>
+          </div>
+          <p class="subh">Class certificates, sail numbers, and club hull registrations.</p>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <div class="panel-title-left">
+                  <span class="dot"></span>
+                  <h3>Registered Boats</h3>
+                </div>
+              </div>
+            </div>
+            <div class="boat-panel-body">
+              <div class="search-wrap">
+                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input class="search-input" type="text" id="boatSearch" placeholder="Search by member, sail no, model…" autocomplete="off">
+              </div>
+              <div class="calendar-filters" id="boatClassFilters"></div>
+              <!-- <div class="app-filters">
+                <button class="member-filter-btn" data-boat-filter="active">Active</button>
+                <button class="member-filter-btn" data-boat-filter="gh">GH Eligible</button>
+              </div> -->
+              <div class="count-chip" id="boatCount"></div>
+              <div class="app-list" id="boatList">
+                <div class="empty-state"><div class="spinner"></div><div>Loading boats…</div></div>
+              </div>
+            </div>
+          </div>
+          <span class="tag">Registry Module</span>
+        </div>
+
+        <!-- Average Score Requests Module -->
+        <div id="avg-score-requests" class="tile glass">
+          <div class="tile-title">
+            <i class="tile-icon" data-lucide="calculator" color="#257fb6"></i>
+            <h3>Average Score Requests</h3>
+          </div>
+          <p class="subh">Request average scoring for a missed club regatta due to an ARYA Ranking event clash.</p>
+
+          <div class="panel">
+            <!-- Panel Header -->
+            <div class="panel-header">
+              <div class="panel-title-left">
+                <span class="dot"></span>
+                <h3>Requests &amp; Applications</h3>
+              </div>
+              <div class="tab-row-wrap">
+                <div class="tab-row" id="avgReqTabRow">
+                  <button class="tab active" data-avg-tab="req-list" type="button">Request List</button>
+                  <button class="tab" data-avg-tab="req-app" type="button">New Application</button>
+                </div>
+                <button class="add-app-pill" id="addAvgReqPill" type="button" title="New Request">
+                  <span>+</span> New Request
+                </button>
+              </div>
+            </div>
+
+            <!-- TAB 1: Request List -->
+            <div id="avg-tab-req-list" class="tab-content active">
+              <div class="search-wrap">
+                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input class="search-input" type="text" id="avgReqSearch"
+                      placeholder="Search requests by member name or event…" autocomplete="off">
+              </div>
+
+              <div class="app-filters" id="avgReqFilters">
+                <button class="app-filter-btn active" data-status="all" type="button">All</button>
+                <button class="app-filter-btn" data-status="Received" type="button">Received</button>
+                <button class="app-filter-btn" data-status="Pending" type="button">Pending</button>
+                <button class="app-filter-btn" data-status="Approved" type="button">Approved</button>
+                <button class="app-filter-btn" data-status="Rejected" type="button">Rejected</button>
+              </div>
+
+              <div class="count-chip" id="avgReqCount">0 Requests</div>
+
+              <div class="app-list" id="avgReqList">
+                <div class="empty-state">
+                  <div class="spinner"></div>
+                  <div>Loading requests…</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 2: Applications Form -->
+            <div id="avg-tab-req-app" class="tab-content">
+              <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
+
+                <!-- Missed Event Date -->
+                <div class="form-group">
+                  <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Missed Event Date</label>
+                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px;">
+                </div>
+
+                <!-- Event Class & Type -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                  <div class="form-group">
+                    <label for="reqBoatClass" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Class</label>
+                    <select id="reqBoatClass" name="boatClass" required>
+                      <option value="IOM">IOM</option>
+                      <option value="DF95">DF95</option>
+                      <option value="DF65">DF65</option>
+                      <option value="Soling">Soling</option>
+                      <option value="General Handicap">General Handicap</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Member Select -->
+                <div class="form-group">
+                  <label for="reqMemberName" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Member Name</label>
+                  <select id="reqMemberName" name="memberName" required>
+                    <option value="" disabled selected>Select active member…</option>
+                  </select>
+                  <input type="hidden" id="reqMemberEmail" name="memberEmail">
+                </div>                  
+
+
+                <!-- Conflicting Regatta -->
+                <div class="form-group">
+                  <label for="reqConflictingRegatta" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Conflicting ARYA Event Name</label>
+                  <input type="text" id="reqConflictingRegatta" name="conflictingRegatta" readonly
+                          value="Will load after Date and Class are entered"
+                          style="width:100%; padding:10px; border-radius:8px; opacity:0.7; cursor:default;">
+                </div>
+
+                <button type="submit" id="btnSubmitAvgReq" class="add-app-pill" style="margin-top:10px; height:40px; justify-content:center; width:100%; font-size:14px; font-weight:600; cursor:pointer;">
+                  Submit Application
+                </button>
+                <div id="avgReqFormStatus" style="font-size:12px; margin-top:4px; text-align:center;"></div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Detail Drawer -->
+          <div class="drawer-overlay" id="avgReqDrawer">
+            <div class="drawer drawer-wide">
+              <div class="drawer-header">
+                <div class="drawer-header-left">
+                  <h4 id="avgReqDrawerTitle">Request Details</h4>
+                  <span class="drawer-header-sub" id="avgReqDrawerSub"></span>
+                </div>
+                <button class="drawer-close" id="closeAvgReqDrawer" type="button">✕</button>
+              </div>
+              <div class="drawer-body" id="avgReqDrawerBody">
+                <div class="drawer-loading">
+                  <div class="spinner"></div>
+                  <span>Loading details…</span>
+                </div>
+              </div>
+            </div>
+          </div>     
+          <span class="tag">Average Points Request Module</span>
+        </div>
+
+        <!-- Placeholder 4: Reschedule Event App 
+        <div id="reschedule-event" class="tile glass">
+          <div class="tile-title">
+            <i class="tile-icon" data-lucide="calendar-days" color="#257fb6"></i>
+            <h3>Calendar & Reschedule</h3>
+          </div>
+          <p class="subh">Event management, weather delays, and date rescheduling portal.</p>
+          <div class="app-placeholder">
+            <code>Apps Script: Calendar Editor</code>
+            <!-- <span style="font-size:11px; color:var(--foam-dim);">[Embed Calendar Management Web App Here]</span> 
+          </div>
+          <span class="tag">Calendar Module</span>
+        </div> -->
+
+      </div> 
+    </section> 
+
+  </main>
+
+  <!-- =========================================================
+       FOOTER
+       ========================================================= -->
+  <footer>
+    <div>
+      © 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> All rights reserved.
+    </div>
+    <div style="display:flex; gap:16px;">
+      <a href="#members-list">Members Portal</a>
+      <a href="#annual-calendar">Annual Calendar</a>
+      <a href="#race-results">Results Hub</a>
+    </div>
+  </footer>
+
+  <script>
+    // Find Overall and Round sheets per Championship
+    // const DISCOVERY_URL = "https://script.google.com/macros/s/AKfycbxaLDa75WGJ8yqzEnAoLQbvfIyxT9ZDG-YJLP2qSQFtDTEvnbgbjZpsX_7aFcOu0sdl/exec"; 
+    const DISCOVERY_URL = "https://script.google.com/macros/s/AKfycbzGgNMh8KNWYquGuOoGvmrasDR5npiPoNXTouuzVeY9sRwrhDo29BVDbWGrh_FfgoieXQ/exec"; 
+    const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
+    // Updated RESULTS_CONFIG with insignia image URLs per class
+    const RESULTS_CONFIG = {
+      df95:   { label: 'DF95 Scratch',     className: 'DF95',    spreadsheetId: '1J8CUk1VCDeOYAXfI00acv9YBScgGvH_BrirOBOIfW90', insignia: '/Home/images/classes/DF95.png' },
+      df95h:  { label: 'DF95 Handicap',    className: 'DF95',    spreadsheetId: '1a2cU8sU0I7oTDjo8MTmQRlUxasG-5sjNFnTWpJcJsVg', insignia: '/Home/images/classes/DF95.png' },
+      iom:    { label: 'IOM Racing',       className: 'IOM',     spreadsheetId: '1k3Oe4SBZEMLlrSc1jRaPQkSN6R7RA4OHUtcDn4OZLeQ', insignia: '/Home/images/classes/IOM.png' },
+      soling: { label: 'Soling Scratch',   className: 'Soling',  spreadsheetId: '1WTLfz4EHShQ6G5VFZ8jJwDiTn-4oHK-pk-hYfBIMn38', insignia: '/Home/images/classes/Soling.png' },
+      gh:     { label: 'General Handicap', className: 'General', spreadsheetId: '1xMKT7HapmqEIuqhQQxH1pfPkRWam5x88Pxaah1xayog', insignia: '/Home/images/classes/smmc-logo.png' },
+      df65:   { label: 'DF65 Scratch',     className: 'DF65',    spreadsheetId: '1T5zgrZpJDmQKmkMlnOmnAb_ext18zx733mMuvh4akvg', insignia: '/Home/images/classes/DF65.png' },
+      social: { label: 'Social Sailing',   className: 'Social',  spreadsheetId: '', insignia: '/Home/images/classes/SmileyFace.png' },
+    };
+
+    const CLASS_IMAGE_MAP = Object.values(RESULTS_CONFIG).reduce((map, cls) => {
+      if (cls.className && cls.insignia && !map[cls.className]) {
+        map[cls.className] = cls.insignia;
+      }
+      return map;
+    }, {});
+
+    // Returns the insignia URL for a given class name string, or '' if not found.
+    function getClassImage(className) {
+      return CLASS_IMAGE_MAP[className] || CLASS_IMAGE_MAP['General'] || '';
+    }
+
+    const sheetListCache = {}; // classKey -> [{name, gid}, ...], fetched once per session
+
+    // ── Shared utilities ──────────────────────────────────────
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = (s === null || s === undefined) ? '' : String(s);
+      return d.innerHTML;
+    }
+
+    function showError(el, message) {
+      if (typeof el === 'string') el = document.getElementById(el);
+      if (!el) return;
+      el.innerHTML = `<div class="empty-state" style="color:var(--signal);">
+        ⚠️ ${esc(message)}
+      </div>`;
+    }
+
+    function showSpinner(el) {
+      if (typeof el === 'string') el = document.getElementById(el);
+      if (!el) return;
+      el.innerHTML = `<div class="empty-state"><div class="spinner"></div></div>`;
+    }
+    
+    async function getSheetsForClass(classKey){
+      if (sheetListCache[classKey]) return sheetListCache[classKey];
+ 
+      const cls = RESULTS_CONFIG[classKey];
+      if (!cls.spreadsheetId) {
+        throw new Error(`No scoresheets configured for ${cls.label}`);
+      }   
+      const res = await fetch(`${DISCOVERY_URL}?ss=${cls.spreadsheetId}`);
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+      sheetListCache[classKey] = data.sheets;
+      return sheetListCache[classKey];
+    }
+
+    /* Update dynamic class insignia image */
+    function updateClassInsignia(classKey) {
+      const imgEl = document.getElementById('classInsignia');
+      if (!imgEl) return;
+      
+        const cls = RESULTS_CONFIG[classKey];
+      if (cls && cls.insignia) {
+        imgEl.src = cls.insignia;
+        imgEl.alt = `${cls.label} Insignia`;
+        imgEl.style.display = 'block';
+      } else {
+        imgEl.style.display = 'none';
+        imgEl.src = '';
+      }
+    }
+
+    /* =========================================================================
+      Engine
+      ========================================================================= */
+    async function fetchSheet(spreadsheetId, sheetName){
+      const url = `${DISCOVERY_URL}?ss=${spreadsheetId}&sheet=${encodeURIComponent(sheetName)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      return { meta: data.meta, headers: data.headers, rows: data.rows };
+    }
+    
+    function renderTable(meta, headers, rows){
+      document.getElementById('sheetMeta').textContent = meta.join(' • ');
+    
+      const CENTER_HEADERS = /^(R\d+|Round\s*\d+|Pos|Result|Sail\s*#|Total|Drop|W|T3|T5|Rank|Discard)$/i;
+      const centerCols = headers.map(h => CENTER_HEADERS.test(String(h).trim()));
+      const sailorIdx = headers.findIndex(h =>String(h).trim().toLowerCase() === 'member name');
+
+      document.getElementById('tableHead').innerHTML =
+        '<tr>' + headers.map((h, i) => `<th class="${centerCols[i] ? 'col-center' : ''}">${h}</th>`).join('') + '</tr>';
+      const attIdx = headers.findIndex(h => String(h).trim().toUpperCase() === 'ATT');
+      const filteredRows = attIdx >= 0 ? rows.filter(r => Number(r[attIdx]) > 0) : rows;
+
+      document.getElementById('tableBody').innerHTML =
+        filteredRows.map(r =>
+          '<tr>' + r.map((c, i) =>
+            `<td class="${centerCols[i] ? 'col-center' : ''}"
+            onclick="showMemberStats('${esc(r[sailorIdx])}')">${c}</td>`
+          ).join('') + '</tr>'
+        ).join('');
+    }
+    
+    let activeClass = Object.keys(RESULTS_CONFIG)[0];
+    let activeSheetIndex = 0; // index into the discovered sheet list for the active class
+    
+    async function loadActiveSheet(){
+      const statusEl = document.getElementById('statusLine');
+      document.getElementById('tableHead').innerHTML = '';
+      document.getElementById('tableBody').innerHTML =
+        '<tr><td colspan="100%"><div class="empty-state"><div class="spinner"></div></div></td></tr>';
+      updateClassInsignia(activeClass);
+
+      const cls = RESULTS_CONFIG[activeClass];
+      const sheets = await getSheetsForClass(activeClass);
+      const sheet = sheets[activeSheetIndex];
+      if (!sheet){ statusEl.textContent = 'No sheets found.'; return; }
+
+      try{
+        const { meta, headers, rows } = await fetchSheet(cls.spreadsheetId, sheet.name);
+        renderTable(meta, headers, rows);
+        statusEl.textContent = `${cls.label} • ${sheet.name} • live from Results Sheets`;
+      }catch(err){
+        document.getElementById('tableHead').innerHTML = '';
+        document.getElementById('tableBody').innerHTML = '';
+        statusEl.textContent = `Couldn't load results: ${err.message}`;
+        showError('tableBody', `Error fetching sheet "${sheet.name}": ${err.message}`);
+      }
+    }
+    
+    async function renderRoundTabs(){
+      const sheets = await getSheetsForClass(activeClass);
+      document.getElementById('roundTabs').innerHTML = sheets.map((s, i) =>
+        `<button class="round-tab ${i===activeSheetIndex?'active':''}" data-index="${i}">${s.name}</button>`
+      ).join('');
+      document.querySelectorAll('.round-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeSheetIndex = parseInt(btn.dataset.index);
+          renderRoundTabs();
+          loadActiveSheet();
+        });
+      });
+    }
+    
+    function renderClassTabs(){
+      const container = document.getElementById('classTabs');
+      container.className = 'class-select-wrap';
+      container.innerHTML = `
+        <select class="class-select" id="classSelector">
+          ${Object.entries(RESULTS_CONFIG).map(([key, cls]) => 
+            `<option value="${key}" ${key === activeClass ? 'selected' : ''}>${cls.label}</option>`
+          ).join('')}
+        </select>
+      `;
+      
+      document.getElementById('classSelector').addEventListener('change', async (e) => {
+        activeClass = e.target.value;
+        activeSheetIndex = 0;
+        updateClassInsignia(activeClass);
+        await renderRoundTabs();
+        loadActiveSheet();
+      });
+    }
+
+    function selectClass(classKey) {
+      if (!RESULTS_CONFIG[classKey]) return true; // unknown key, let default nav happen
+      activeClass = classKey;
+      activeSheetIndex = 0;
+
+      const selectEl = document.getElementById('classSelector');
+      if (selectEl) selectEl.value = classKey; // keep dropdown UI in sync
+
+      updateClassInsignia(activeClass);
+      renderRoundTabs().then(loadActiveSheet);
+
+      document.getElementById('race-results-hub').scrollIntoView({ behavior: 'smooth' });
+      return false; // prevent default jump so smooth scroll isn't fought
+    }
+
+    (async function init(){
+      renderClassTabs();
+      updateClassInsignia(activeClass);
+      await renderRoundTabs();
+      loadActiveSheet();
+    })();
+
+    /* =========================================================================
+      LATEST RESULTS + MEMBERSHIP STATISTICS
+      ========================================================================= */
+    const HOME_DATA_API = "https://script.google.com/macros/s/AKfycbzGgNMh8KNWYquGuOoGvmrasDR5npiPoNXTouuzVeY9sRwrhDo29BVDbWGrh_FfgoieXQ/exec";
+    const APP_DETAIL_API = 'https://script.google.com/macros/s/AKfycbyWulPkIPBPaLA4f85ygVDpJUa-e3fWpY-XOYzTQ_2gF8h9EfuWinBdTiR1DtjYWSwl9g/exec';
+
+    function apiConfigured(){
+      return typeof HOME_DATA_API === 'string' && HOME_DATA_API.trim() !== '';
+    }
+
+    async function apiGet(params){
+      const qs = new URLSearchParams(params).toString();
+      const res = await fetch(`${HOME_DATA_API}?${qs}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      return data;
+    }
+
+    function ordinalSuffix(n){
+      n = Number(n);
+      if (!isFinite(n)) return 'th';
+      const s = ['th','st','nd','rd'], v = n % 100;
+      return s[(v - 20) % 10] || s[v] || s[0];
+    }
+    
+    function openMemberStats(memberName){
+      const w = 400, h = 560;
+      const left = (screen.width - w) / 2;
+      const top = (screen.height - h) / 2;
+      window.open(
+        `memberRaceStats.html?memberName=${encodeURIComponent(memberName)}`,
+        'memberStats',
+        `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+    }
+
+    function chipHTML(r, idx){
+      const placeClass = idx < 3 ? ` p${idx + 1}` : '';
+      const memberNameParam = encodeURIComponent(r.sailor);
+      return `<div class="finish-chip glass${placeClass}" onclick="showMemberStats('${esc(r.sailor)}')" style="cursor:pointer;">
+        <div class="pos">${esc(r.pos)}<small>${ordinalSuffix(r.pos)}</small></div>
+        <div class="points">${esc(r.points)}</div>
+        <div class="sailor">${esc(r.sailor)}</div>
+        <div class="sail-no">${esc(r.sailNo || '&nbsp;')}</div>
+      </div>`;
+    }
+
+    async function loadLatestResults(){
+      const metaEl = document.getElementById('latestResultsMeta');
+      const ribbonEl = document.getElementById('resultsRibbon');
+      const emblemEl = document.getElementById('latestClassEmblem');
+
+      if (!apiConfigured()) {
+        metaEl.textContent = 'Not configured';
+        ribbonEl.innerHTML =
+          '<div class="finish-chip glass"><div class="pos">–</div>' +
+          '<div class="sailor">Set HOME_DATA_API to the deployed "HomePage Data API" URL</div>' +
+          '<div class="sail-no">&nbsp;</div></div>';
+        return;
+      }      
+      showSpinner(metaEl);
+      try {
+        const data = await apiGet({ action: 'latestResults' });
+        metaEl.textContent =
+          `${data.event.roundLabel} • ${data.event.championship} (Raced ${data.event.racedOn})`;
+        
+        // Set and display class emblem icon
+        if (emblemEl && data.event) {
+          const clsName = data.event.className || data.event.boatClass;
+          const emblemUrl = getClassImage(clsName);
+          if (emblemUrl) {
+            emblemEl.src = emblemUrl;
+            emblemEl.alt = `${clsName} Emblem`;
+            emblemEl.style.display = 'inline-block';
+          }
+        }
+
+        ribbonEl.innerHTML = data.results.length
+          ? data.results.map(chipHTML).join('')
+          : `<div class="finish-chip glass"><div class="pos">–</div><div class="sailor">No results recorded</div><div class="sail-no">&nbsp;</div></div>`;
+      } catch (err) {
+        console.error('Latest results:', err);
+        showError(metaEl, 'Latest results unavailable');
+        ribbonEl.innerHTML =
+          `<div class="finish-chip glass"><div class="pos">–</div><div class="sailor">${esc(err.message)}</div><div class="sail-no">&nbsp;</div></div>`;
+      }
+    }
+
+    const TOPIC_META = {
+      members:      { breakdownTitle: 'Status Breakdown — Total Members by Member Type' },
+      applications: { breakdownTitle: 'Status Breakdown — Online Applications by Status' },
+      boats:        { breakdownTitle: 'Status Breakdown — Registered Boats by Class' },
+      financial:    { breakdownTitle: 'Status Breakdown — Financial Status by Paid Up' }
+    };
+    const BREAKDOWN_COLORS = ['received', 'progress', 'awaiting', 'processed'];
+    let membershipData = null;
+    let selectedTopic = 'applications';
+
+    function setCard(topic, val, sub){
+      document.getElementById('stat-val-' + topic).textContent = val;
+      document.getElementById('stat-sub-' + topic).textContent = sub || '';
+    }
+
+    function renderStatCards(){
+      const t = membershipData.topics;
+      setCard('members',      t.members.total,      t.members.sub);
+      setCard('applications', t.applications.total, t.applications.sub);
+      setCard('boats',        t.boats.total,        t.boats.sub);
+      setCard('financial',    t.financial.total,    t.financial.sub);
+    }
+
+    function renderBreakdown(){
+      document.querySelectorAll('.stat-card[data-topic]').forEach(card =>
+        card.classList.toggle('selected', card.dataset.topic === selectedTopic));
+
+      const topic = membershipData.topics[selectedTopic];
+      const el = document.getElementById('statusBreakdown');
+      const baseTitle = TOPIC_META[selectedTopic].breakdownTitle;
+      const titleWithTotal = selectedTopic === 'applications'
+        ? `${baseTitle} (${topic.total} total)`
+        : baseTitle;
+
+      el.innerHTML =
+        `<div class="breakdown-title">${esc(titleWithTotal)}</div>` +
+        topic.breakdown.map((b, i) =>
+          `<div class="status-item ${BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.length]}">
+            <span class="s-name">${esc(b.name)}</span>
+            <span class="s-num">${b.count}</span>
+          </div>`).join('');
+    }
+
+    function wireTopicSelection(){
+      document.querySelectorAll('.stat-card[data-topic]').forEach(card => {
+        const select = () => { selectedTopic = card.dataset.topic; renderBreakdown(); };
+        card.addEventListener('click', select);
+        card.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); }
+        });
+      });
+    }
+
+    async function loadMembershipStats(){
+      if (!apiConfigured()) {
+        ['members', 'applications', 'boats', 'financial'].forEach(t => setCard(t, '—', 'Not configured'));
+        showError('statusBreakdown', 'Set HOME_DATA_API to the deployed "HomePage Data API" URL');
+        return;
+      }
+      try {
+        membershipData = await apiGet({ action: 'membershipStats' });
+        renderStatCards();
+        wireTopicSelection();
+        renderBreakdown();
+      } catch (err) {
+        console.error('Membership stats:', err);
+        ['members', 'applications', 'boats', 'financial'].forEach(t => setCard(t, '—', 'Unavailable'));
+        showError('statusBreakdown', `Statistics unavailable — ${esc(err.message)}`);
+      }
+    }
+
+    /**
+     * Member Race Stats — Modal Portal
+     * Include this file on any page, then call: showMemberStats("place member name here");
+     */
+    (function () {
+      const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/edit?usp=sharing";
+
+      let raceRows = null; // cached after first load
+
+      function num(v) {
+        const n = parseFloat(v);
+        return isNaN(n) ? null : n;
+      }
+
+      function injectStyles() {
+        if (document.getElementById("mrs-styles")) return;
+        const style = document.createElement("style");
+        style.id = "mrs-styles";
+        style.textContent = `
+          .mrs-overlay{position:fixed;inset:0;background:rgba(13,27,42,0.55);display:flex;
+            align-items:center;justify-content:center;z-index:9999;font-family:Georgia,'Times New Roman',serif;}
+          .mrs-modal{background:#fff;width:400px;max-width:92vw;max-height:88vh;overflow-y:auto;
+            border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+          .mrs-head{background:#0d1b2a;color:#f4f9f9;padding:16px 18px;position:relative;}
+          .mrs-head h1{margin:0;font-size:20px;font-weight:400;}
+          .mrs-head .mrs-sub{font-size:12px;color:#a9c4d4;margin-top:3px;}
+          .mrs-x{position:absolute;top:12px;right:14px;background:none;border:none;color:#a9c4d4;
+            font-size:18px;cursor:pointer;line-height:1;}
+          .mrs-x:hover{color:#fff;}
+          .mrs-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #d8e2e2;}
+          .mrs-stat{padding:12px 6px;text-align:center;border-right:1px solid #d8e2e2;border-bottom:1px solid #d8e2e2;}
+          .mrs-stat:nth-child(3n){border-right:none;}
+          .mrs-stat .n{font-size:20px;color:#1b4965;line-height:1;}
+          .mrs-stat .n.accent{color:#c9922a;}
+          .mrs-stat .n.warn{color:#a4303f;}
+          .mrs-stat .l{margin-top:4px;font-size:9.5px;color:#5c6b73;font-family:Arial,sans-serif;}
+          .mrs-section{padding:12px 18px 16px;border-top:1px solid #d8e2e2;}
+          .mrs-section h2{font-size:11px;font-family:Arial,sans-serif;color:#5c6b73;margin:0 0 8px;font-weight:normal;}
+          .mrs-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dotted #d8e2e2;font-size:12.5px;}
+          .mrs-row:last-child{border-bottom:none;}
+          .mrs-row .v{color:#1b4965;}
+          .mrs-empty{padding:40px 24px;text-align:center;color:#5c6b73;font-size:13px;}
+          .mrs-close-row{padding:14px 18px;text-align:center;border-top:1px solid #d8e2e2;}
+          .mrs-close-row button{font-family:Arial,sans-serif;font-size:13px;padding:8px 22px;
+            border:1px solid #1b4965;background:#1b4965;color:#fff;border-radius:3px;cursor:pointer;}
+          .mrs-close-row button:hover{background:#0d1b2a;}
+        `;
+        document.head.appendChild(style);
+      }
+
+      function closeModal() {
+        const overlay = document.getElementById("mrs-overlay");
+        if (overlay) overlay.remove();
+        document.removeEventListener("keydown", onEsc);
+        
+        // Clear boat search filter and rerender boats list
+        clearBoatMemberFilter();
+      }
+
+      function onEsc(e) {
+        if (e.key === "Escape") closeModal();
+      }
+
+      function renderShell() {
+        injectStyles();
+        const overlay = document.createElement("div");
+        overlay.className = "mrs-overlay";
+        overlay.id = "mrs-overlay";
+        overlay.innerHTML = `<div class="mrs-modal" id="mrs-modal"><div class="mrs-empty">Loading…</div></div>`;
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) closeModal();
+        });
+        document.body.appendChild(overlay);
+        document.addEventListener("keydown", onEsc);
+        return document.getElementById("mrs-modal");
+      }
+
+      function renderEmpty(modal, message) {
+        modal.innerHTML = `
+          <div class="mrs-empty">${message}</div>
+          <div class="mrs-close-row"><button id="mrs-ok">OK</button></div>
+        `;
+        document.getElementById("mrs-ok").addEventListener("click", closeModal);
+      }
+
+      function renderMember(modal, name) {
+        const rows = raceRows.filter(r => r.MemberName.trim() === name);
+
+        const positions = rows.map(r => num(r.RacePos)).filter(v => v !== null);
+        const races = positions.length;
+        const wins = positions.filter(p => p === 1).length;
+        const podiums = positions.filter(p => p <= 3).length;
+        const best = races ? Math.min(...positions) : null;
+        const worst = races ? Math.max(...positions) : null;
+        const avgPlacing = races ? positions.reduce((a, b) => a + b, 0) / races : null;
+
+        const consistVals = rows.map(r => num(r.ConsistencyIndex)).filter(v => v !== null);
+        const consistency = consistVals.length ? consistVals.reduce((a, b) => a + b, 0) / consistVals.length : null;
+
+        const regattas = [...new Set(rows.map(r => r.RegattaName).filter(Boolean))];
+
+        const sortedByPos = rows.filter(r => num(r.RacePos) !== null)
+          .sort((a, b) => num(a.RacePos) - num(b.RacePos))
+          .slice(0, 5);
+        const bestHtml = sortedByPos.map(r =>
+          `<div class="mrs-row"><span>${r.RegattaName || "—"} · Race ${r.RaceNo || "—"}</span><span class="v">#${r.RacePos}</span></div>`
+        ).join("") || `<div class="mrs-row"><span>No results</span></div>`;
+
+        const byRegatta = {};
+        rows.forEach(r => {
+          const key = r.RegattaName || "Unknown";
+          const p = num(r.RacePos);
+          if (p !== null) (byRegatta[key] = byRegatta[key] || []).push(p);
+        });
+        const regattaHtml = Object.entries(byRegatta).map(([reg, pos]) => {
+          const avg = (pos.reduce((a, b) => a + b, 0) / pos.length).toFixed(1);
+          return `<div class="mrs-row"><span>${reg}</span><span class="v">${pos.length} races · avg #${avg}</span></div>`;
+        }).join("") || `<div class="mrs-row"><span>No regattas</span></div>`;
+
+        modal.innerHTML = `
+          <div class="mrs-head">
+            <button class="mrs-x" id="mrs-x">✕</button>
+            <h1>${name}</h1>
+            <div class="mrs-sub">${races} races across ${regattas.length} regatta${regattas.length === 1 ? "" : "s"}</div>
+          </div>
+          <div class="mrs-grid">
+            <div class="mrs-stat"><div class="n accent">${races ? Math.round(wins / races * 100) + "%" : "—"}</div><div class="l">Win Rate</div></div>
+            <div class="mrs-stat"><div class="n">${races ? Math.round(podiums / races * 100) + "%" : "—"}</div><div class="l">Top-3 Rate</div></div>
+            <div class="mrs-stat"><div class="n">${avgPlacing !== null ? avgPlacing.toFixed(1) : "—"}</div><div class="l">Avg Placing</div></div>
+            <div class="mrs-stat"><div class="n">${consistency !== null ? consistency.toFixed(2) : "—"}</div><div class="l">Consistency Index</div></div>
+            <div class="mrs-stat"><div class="n">${best !== null ? "#" + best : "—"}</div><div class="l">Best Finish</div></div>
+            <div class="mrs-stat"><div class="n warn">${worst !== null ? "#" + worst : "—"}</div><div class="l">Worst Finish</div></div>
+            <div class="mrs-stat"><div class="n">${races}</div><div class="l">Races Sailed</div></div>
+            <div class="mrs-stat"><div class="n">${regattas.length}</div><div class="l">Regattas</div></div>
+            <div class="mrs-stat"><div class="n">${podiums}</div><div class="l">Podium Finishes</div></div>
+          </div>
+          <div class="mrs-section"><h2>Best Results</h2>${bestHtml}</div>
+          <div class="mrs-section"><h2>By Regatta</h2>${regattaHtml}</div>
+          <div class="mrs-close-row"><button id="mrs-ok">OK</button></div>
+        `;
+        document.getElementById("mrs-x").addEventListener("click", closeModal);
+        document.getElementById("mrs-ok").addEventListener("click", closeModal);
+      }
+
+      function withData(callback) {
+        if (raceRows) return callback();
+        if (!CSV_URL || CSV_URL.indexOf("PASTE_") === 0) {
+          callback(new Error("CSV_URL not configured in memberStatsModal.js"));
+          return;
+        }
+        Papa.parse(CSV_URL, {
+          download: true,
+          header: true,
+          skipEmptyLines: true,
+          complete: function (results) {
+            raceRows = results.data.filter(r => r.MemberName && r.MemberName.trim());
+            callback();
+          },
+          error: function () {
+            callback(new Error("Could not load sheet — check CSV_URL and sharing settings."));
+          }
+        });
+      }
+
+      window.showMemberStats = function (memberName) {
+        const modal = renderShell();
+        withData((err) => {
+          if (err) {
+            renderEmpty(modal, err.message);
+            return;
+          }
+          const members = [...new Set(raceRows.map(r => r.MemberName.trim()))];
+          const match = members.find(m => m.toLowerCase() === memberName.trim().toLowerCase());
+          if (!match) {
+            renderEmpty(modal, `No race data found for "${memberName}".`);
+            console.warn("[memberStatsModal] Available names:", members);
+            return;
+          }
+          renderMember(modal, match);
+        });
+
+        // Filter Registered Boats by selected member
+        const boatSearch = document.getElementById('boatSearch');
+        if (boatSearch) {
+          boatSearch.value = memberName;
+          boatSearch.dispatchEvent(new Event('input'));
+        }
+      };
+    })();
+
+
+    /* =========================================================================
+      Weather Section
+      ========================================================================= */
+    function loadWeather() {
+      const script = document.createElement('script');
+      script.src = `https://script.google.com/macros/s/AKfycbworw_FnbKehShRIfhbXTuxlAa36jJt8d7MLCvjzAWUfp-_xXORa2ZzC_0m20msa1oj/exec?action=data&callback=renderWeather`;
+      script.onerror = () => {
+        showError('weather', 'Weather data temporarily unavailable');
+      };
+      document.body.appendChild(script);
+    }
+
+    window.renderWeather = function(data) {
+      const container = document.querySelector('.weather-week');
+      const forecast = data.forecast;
+
+      if (forecast && Array.isArray(forecast) && forecast.length > 0) {
+        const today = forecast[0];
+        document.getElementById('hero-wind').textContent = today.wind + (String(today.wind).match(/\d$/) ? ' kts' : '');
+        document.getElementById('hero-temp').textContent = today.max + '°C';
+        document.getElementById('hero-uv').textContent = String(today.uvIndex).replace('UV ', '');
+
+        container.innerHTML = forecast.map(day => `
+          <div class="day-pill" style="background-image:url('${esc(day.bg)}'); background-size:cover; background-position:center;">
+            <span class="d-day">${esc(day.day.substring(0, 3))}</span>
+            <span class="d-icon" style="font-size:20px; margin:2px 0;">${esc(day.icon)}</span>
+            <span class="d-desc">${esc(day.desc ||'')}</span>
+            <span class="d-temp">${esc(day.max)}°C</span>
+            <span class="d-wind" style="font-size:10px;">${esc(day.wind)} kts ${esc(day.windScale)}</span>
+            <span class="d-rain" style="font-size:10px;">${esc(day.rain)}</span>
+            <span class="d-uv" style="font-size:10px;">${esc(day.uvIndex)}</span>
+          </div>
+        `).join('');
+      }
+    };
+    /* =========================================================================
+      Next Event Section
+      ========================================================================= */
+    const CALENDAR_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec';
+    async function loadEventDisplay() {
+      try {
+        showSpinner('event-display-container');
+        const response = await fetch(`${CALENDAR_URL}?type=display&load=next`);
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+        const data = await response.json();
+
+        const container = document.getElementById('event-display-container');
+        container.innerHTML = data.html;
+
+        if (window.lucide) {
+          lucide.createIcons();
+        }
+      } catch (err) {
+        console.error('Failed to load event display:', err);
+        showError('event-display-container', 'Unable to load event details.');
+      }
+    }
+
+    /* =========================================================================
+      Annual Calendar Section
+      ========================================================================= */
+    let activeCalendarClass  = 'all'; // 'all' or a className, e.g. 'IOM'
+    let annualCalendarMonths = [];
+    allEvents = [];
+
+    async function loadAnnualCalendar() {
+      const grid = document.querySelector('#annual-calendar .calendar-grid');
+      if (!grid) return;
+
+      grid.innerHTML = '<p class="cal-loading">Loading calendar…</p>';
+
+      try {
+        const response = await fetch(`${CALENDAR_URL}?type=calendar`);
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const data = await response.json();
+
+        if (!data.months || data.months.length === 0) {
+          document.getElementById('calendarFilters').innerHTML = '';
+          grid.innerHTML = '<p class="cal-empty">No events scheduled for the next 3 months.</p>';
+          return;
+        }
+
+        allEvents = data.allEvents || [];
+        annualCalendarMonths = data.months;
+        renderCalendarFilters();
+        renderCalendarGrid();
+
+      } catch (err) {
+        console.error('Calendar fetch failed:', err);
+        grid.innerHTML = '<p class="cal-error">Unable to load calendar. Please try again later.</p>';
+      }
+    }
+
+    function renderCalendarFilters() {
+      const wrap = document.getElementById('calendarFilters');
+      if (!wrap) return;
+
+      const classesPresent = Array.from(new Set(
+        annualCalendarMonths.flatMap(m => (m.events || []).map(ev => ev.boatClass)).filter(Boolean)
+      ));
+
+      // Preserve RESULTS_CONFIG ordering where possible, then append any leftovers.
+      const orderedClasses = Object.keys(CLASS_IMAGE_MAP).filter(c => classesPresent.includes(c));
+      classesPresent.forEach(c => { if (!orderedClasses.includes(c)) orderedClasses.push(c); });
+
+      const allBtn = `
+        <button class="cal-filter-btn ${activeCalendarClass === 'all' ? 'active' : ''}" data-class="all">
+          <span class="cal-filter-icon--all">★</span>
+         <span>All Classes</span>
+        </button>`;
+
+      const classBtns = orderedClasses.map(cls => {
+        const imgUrl = getClassImage(cls);
+        return `
+          <button class="cal-filter-btn ${activeCalendarClass === cls ? 'active' : ''}" data-class="${esc(cls)}">
+            ${imgUrl ? `<img class="cal-filter-icon" src="${esc(imgUrl)}" alt="${esc(cls)}">` : ''}
+            <span>${esc(cls)}</span>
+          </button>`;
+      }).join('');
+
+      wrap.innerHTML = allBtn + classBtns;
+
+      wrap.querySelectorAll('.cal-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeCalendarClass = btn.dataset.class;
+          renderCalendarFilters();
+          renderCalendarGrid();
+        });
+      });
+    }
+
+    function renderCalendarGrid() {
+      const grid = document.querySelector('#annual-calendar .calendar-grid');
+      if (!grid) return;
+
+      const filteredMonths = annualCalendarMonths.map(month => ({
+        monthLabel: month.monthLabel,
+        events: activeCalendarClass === 'all'
+          ? month.events
+          : (month.events || []).filter(ev => ev.boatClass === activeCalendarClass)
+      }));
+
+      grid.innerHTML = filteredMonths.map(month => buildMonthHTML(month)).join('');
+    }
+
+    function buildMonthHTML(month) {
+      const eventsHTML = month.events && month.events.length
+        ? month.events.map(ev => {
+            const dateStr  = ev.dateLabel + ' • ' + ev.startTime;
+            const imgUrl   = getClassImage(ev.boatClass);
+            const imageHTML = imgUrl
+              ? `<img src="${esc(imgUrl)}" alt="${esc(ev.boatClass)}" title="${esc(ev.boatClass)}"
+                    style="width:30px;height:30px;object-fit:contain;flex-shrink:0;display:block;background:rgba(255,255,255,0.15);border-radius:6px;padding:3px;backdrop-filter:blur(4px);">`
+              : `<div style="width:30px;height:30px;flex-shrink:0;"></div>`;
+
+            return `
+              <div class="cal-event-item" style="display:flex;flex-direction:row;align-items:center;gap:12px;">
+                ${imageHTML}
+                <div style="display:flex;flex-direction:column;line-height:1.3;">
+                  <span class="date">${esc(dateStr)}</span>
+                  <span class="name">${esc(ev.eventName)}</span>
+                </div>
+              </div>`;
+          }).join('')
+        : `<div class="cal-event-item"><span class="name">${activeCalendarClass === 'all' ? 'No events scheduled' : 'No ' + esc(activeCalendarClass) + ' events this month'}</span></div>`;
+
+      return `<div class="cal-month"><h4>${esc(month.monthLabel)}</h4>${eventsHTML}</div>`;
+    }
+
+    /* ══════════════════════════════════════════════════
+      MEMBERS LIST — card layout with filters
+      ══════════════════════════════════════════════════ */
+    let allMembers = [];
+    let memberFilters = { membership: '', active: false, whatsapp: false, committee: false };
+
+    function membershipBadgeClass(type) {
+      const t = String(type).toLowerCase();
+      if (t.includes('full'))      return 'badge-full';
+      if (t.includes('expired'))   return 'badge-expired';
+      if (t.includes('affiliate')) return 'badge-affiliate';
+      return 'badge-default';
+    }
+
+    function initials(name) {
+      return String(name).split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    }
+
+    function applyMemberFilters() {
+      const q = (document.getElementById('memberSearch').value || '').trim().toLowerCase();
+      return allMembers.filter(m => {
+        if (q && !m.name.toLowerCase().includes(q)) return false;
+        if (memberFilters.membership && !String(m.membership).toLowerCase().includes(memberFilters.membership)) return false;
+        if (memberFilters.active    && !m.active)    return false;
+        if (memberFilters.whatsapp  && !m.whatsapp)  return false;
+        if (memberFilters.committee && !m.committee) return false;
+        return true;
+      });
+    }
+
+    function renderMembers() {
+      const list     = applyMemberFilters();
+      const container = document.getElementById('memberList');
+      const countEl  = document.getElementById('memberCount');
+
+      countEl.innerHTML = `Showing <strong>${list.length}</strong> of <strong>${allMembers.length}</strong> members`;
+
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state">No members match the current filters.</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map((m, idx) => {
+        const flags = [
+          m.active    ? `<span class="committee-yes">Active</span>`    : '',
+          m.whatsapp  ? `<span class="whatsApp-yes">WhatsApp</span>`  : '',
+          m.committee ? `<span class="committee-yes">Committee</span>` : '',
+        ].filter(Boolean).join(' ');
+
+        return `
+          <div class="app-row" data-idx="${idx}" style="cursor:pointer;">
+            <div>
+              <div class="app-name">${esc(m.name)}</div>
+              <div class="app-meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;">
+                <span class="badge ${membershipBadgeClass(m.membership)}">${esc(m.membership)}</span>
+                ${flags}
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="member-chevron"></i>
+          </div>`;
+      }).join('');
+
+      container.querySelectorAll('.app-row[data-idx]').forEach(row => {
+        row.addEventListener('click', () => openMemberDrawer(applyMemberFilters()[parseInt(row.dataset.idx)]));
+      });
+    }
+    
+    if (window.lucide) lucide.createIcons();
+    
+    function openMemberDrawer(m) {
+      if (!m) return;
+      const body = document.getElementById('memberDrawerBody');
+      body.innerHTML = `
+        <div class="drawer-name-row">
+          <div class="drawer-avatar">${esc(initials(m.name))}</div>
+          <div class="drawer-name-col">
+            <span class="drawer-name">${esc(m.name)}</span>
+            <span class="badge ${membershipBadgeClass(m.membership)}" style="width:fit-content">${esc(m.membership)}</span>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Active</span>
+            <span class="detail-value">${m.active    ? '<span class="committee-yes">Active</span>'  : '—'}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">WhatsApp</span>
+            <span class="detail-value">${m.whatsapp  ? '<span class="committee-yes">Active</span>'  : '—'}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Committee</span>
+            <span class="detail-value">${m.committee ? '<span class="committee-yes">Member</span>'  : '—'}</span>
+          </div>
+        </div>`;
+      document.getElementById('memberDrawer').classList.add('open');
+
+      // Filter Registered Boats by selected member
+      const boatSearch = document.getElementById('boatSearch');
+      if (boatSearch) {
+        boatSearch.value = m.name;
+        boatSearch.dispatchEvent(new Event('input'));
+      }
+    }
+    
+    // Filter wiring
+    document.getElementById('memberSearch').addEventListener('input', renderMembers);
+
+    document.getElementById('filterMembership').addEventListener('change', e => {
+      memberFilters.membership = e.target.value;
+      const hasValue = !!e.target.value;
+      e.target.classList.toggle('active', hasValue);
+      renderMembers();
+    });
+
+    document.querySelectorAll('#memberFilters .member-filter-btn[data-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.filter;
+        memberFilters[key] = !memberFilters[key];
+        btn.classList.toggle('active', memberFilters[key]);
+        renderMembers();
+      });
+    });
+
+    document.getElementById('closeMemDrawer').addEventListener('click', () => {
+      document.getElementById('memberDrawer').classList.remove('open');
+      clearBoatMemberFilter();
+    });
+
+    document.getElementById('memberDrawer').addEventListener('click', e => {
+      if (e.target === document.getElementById('memberDrawer')) {
+        document.getElementById('memberDrawer').classList.remove('open');
+        clearBoatMemberFilter();
+      }
+    });
+ 
+    /* ── Tab switching ── */
+    const ADD_APPLICATION_URL = 'https://script.google.com/macros/s/AKfycbxYlGnKzYSprv0xQWuE3jEVg8s_1HyEp3JWTWPq-I9Tm8k2S5hvk9_bX5DzFwBrCb57SA/exec';
+
+    function selectMemberTab(key, scroll) {
+      const tabBtn = document.querySelector('.tab[data-tab="' + key + '"]');
+      const tabContent = document.getElementById('tab-' + key);
+      if (!tabBtn || !tabContent) return true; // unknown key, let default nav happen
+
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('#members-list .tab-content').forEach(c => c.classList.remove('active'));
+      tabBtn.classList.add('active');
+      tabContent.classList.add('active');
+
+      const addAppPill = document.getElementById('addApplicationPill');
+      if (addAppPill) addAppPill.classList.toggle('visible', key === 'applications');
+
+      if (scroll) {
+        document.getElementById('members-list').scrollIntoView({ behavior: 'smooth' });
+      }
+      return false; // prevent default jump so smooth scroll isn't fought
+    }
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => selectMemberTab(tab.dataset.tab, false));
+    });
+
+    /* ── Add Application pill ── */
+    const addApplicationPill = document.getElementById('addApplicationPill');
+    if (addApplicationPill) {
+      addApplicationPill.addEventListener('click', () => {
+        // Build a return URL pointing back to this page's Applications tab,
+        // in case the destination form supports a redirect/return param.
+        const returnUrl = window.location.origin + window.location.pathname + '#applications';
+        const separator = ADD_APPLICATION_URL.includes('?') ? '&' : '?';
+        window.location.href = ADD_APPLICATION_URL + separator + 'returnUrl=' + encodeURIComponent(returnUrl);
+      });
+    }
+
+    // If we've arrived back with #applications (e.g. after submitting the
+    // Add Application form), open straight to the Applications tab.
+    if (window.location.hash === '#applications') {
+      selectMemberTab('applications', true);
+    }
+
+    async function loadMembers() {
+      showSpinner('memberList');
+      try {
+        const res  = await fetch(`${HOME_DATA_API}?action=membersList`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        allMembers = data.members;
+        renderMembers();
+      } catch (err) {
+        console.warn('Members API unavailable:', err.message);
+        showError('memberList', 'Members list temporarily unavailable');
+        allMembers = [];
+      }
+    }
+
+    /* ══════════════════════════════════════════════════
+      APPLICATIONS LIST
+      ══════════════════════════════════════════════════ */
+    let allApplications = [];
+    let activeAppStatus = 'all';
+
+    function appStatusCSSClass(status) {
+      const s = String(status).toLowerCase();
+      if (s.includes('received'))  return 'status-received';
+      if (s.includes('progress'))  return 'status-progress';
+      if (s.includes('awaiting'))  return 'status-awaiting';
+      if (s.includes('processed')) return 'status-processed';
+      if (s.includes('urgent'))    return 'status-urgent';
+      return 'status-received';
+    }
+
+    function renderApplications() {
+      const list = activeAppStatus === 'all'
+        ? allApplications
+        : allApplications.filter(a => a.status === activeAppStatus);
+
+      document.getElementById('appCount').innerHTML =
+        `Showing <strong>${list.length}</strong> of <strong>${allApplications.length}</strong> applications`;
+
+      const container = document.getElementById('appList');
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state">No applications with status "${activeAppStatus}".</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(a => `
+        <div class="app-row" data-rowid="${esc(a.rowId)}">
+          <div>
+            <div class="app-name">${esc(a.firstName)} ${esc(a.surname)}</div>
+            <div class="app-meta">${esc(a.membershipType)} · Nominated by ${esc(a.nominator)}· Seconded by ${esc(a.seconder)} · Updated ${esc(a.lastUpdated)}</div>
+          </div>
+          <span class="app-status ${appStatusCSSClass(a.status)}">${esc(a.status)}</span>
+          <span class="app-chevron">›</span>
+        </div>`).join('');
+
+      container.querySelectorAll('.app-row').forEach(row => {
+        row.addEventListener('click', () => openAppDrawer(row.dataset.rowid));
+      });
+    }
+
+    document.querySelectorAll('.app-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.app-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeAppStatus = btn.dataset.status;
+        renderApplications();
+      });
+    });
+
+    async function loadApplications() {
+      showSpinner('appList');
+      try {
+        const res  = await fetch(`${HOME_DATA_API}?action=applicationsList`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        allApplications = data.applications;
+        renderApplications();
+      } catch (err) {
+        console.warn('Applications API unavailable:', err.message);
+        showError('appList', 'Applications list temporarily unavailable');
+        allApplications = [];
+        renderApplications();
+      }
+    }
+
+    /* ══════════════════════════════════════════════════
+      APPLICATION DETAIL DRAWER
+      ══════════════════════════════════════════════════ */
+    async function openAppDrawer(rowId) {
+      const app  = allApplications.find(a => a.rowId === rowId);
+      const name = app ? `${app.firstName} ${app.surname}` : 'Application';
+
+      document.getElementById('appDrawerName').textContent = name;
+      document.getElementById('appDrawerSub').textContent  = `Row ID: ${rowId}`;
+
+      const content = document.getElementById('appDrawerContent');
+      content.innerHTML = `
+        <div class="drawer-loading">
+          <div class="spinner"></div>
+          <span>Loading application details…</span>
+        </div>`;
+      document.getElementById('appDrawer').classList.add('open');
+
+      try {
+        const res = await fetch(`${APP_DETAIL_API}?token=${encodeURIComponent(rowId)}&action=display`);
+        const d   = await res.json();
+        if (d.error) throw new Error(d.error);
+
+        document.getElementById('appDrawerName').textContent = d.fullName || name;
+
+        const sCls      = appStatusCSSClass(d.statusClass || d.status || '');
+        const urgentNote = d.statusClass === 'status-urgent'
+          ? `<span class="urgent-note">⚠️ Requires attention — last updated: ${esc(d.lastUpdatedStr)}</span>`
+          : '';
+
+        content.innerHTML = `
+          <div class="drawer-body">
+
+            <div class="app-status-badge ${sCls}">
+              ${esc(d.status)}${urgentNote}
+            </div>
+
+            <!-- Club Details -->
+            <div class="app-detail-section">
+              <div class="app-detail-section-title">Club Details</div>
+              <div class="app-detail-grid">
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Membership Type</span>
+                  <span class="app-detail-value">
+                    <span class="badge ${membershipBadgeClass(d.type)}">${esc(d.type) || '—'}</span>
+                  </span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Current Club</span>
+                  <span class="app-detail-value">${esc(d.currentClub) || '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Governance & Votes -->
+            <div class="app-detail-section">
+              <div class="app-detail-section-title">Governance &amp; Votes</div>
+              <div class="app-detail-grid">
+                <div class="app-detail-item full-width">
+                  <span class="app-detail-label">Disclaimer Signed</span>
+                  <span class="app-detail-value">${esc(d.disclaimer) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Nominator</span>
+                  <span class="app-detail-value">${esc(d.nominator) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Seconder</span>
+                  <span class="app-detail-value">${esc(d.seconder) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Nominator Comment</span>
+                  <span class="app-detail-value">${esc(d.nominatorComment) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Seconder Comment</span>
+                  <span class="app-detail-value">${esc(d.seconderComment) || '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Votes For</span>
+                  <span class="app-detail-value votes-for">${esc(d.votesFor) ?? '—'}</span>
+                </div>
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Votes Against</span>
+                  <span class="app-detail-value votes-against">${esc(d.votesAgainst) ?? '—'}</span>
+                </div>
+                ${d.rejectionReason ? `
+                <div class="app-detail-item full-width">
+                  <span class="app-detail-label">Rejection Reason</span>
+                  <span class="app-detail-value" style="color:var(--signal);">${esc(d.rejectionReason)}</span>
+                </div>` : ''}
+              </div>
+            </div>
+
+            <!-- Activity Log -->
+            ${d.log ? `
+            <div class="app-detail-section">
+              <div class="app-detail-section-title">Activity Log</div>
+              <div class="log-box">${esc(d.log)}</div>
+            </div>` : ''}
+
+          </div>`;
+
+      } catch (err) {
+        showError('appDrawerContent', `Could not load application details — ${err.message}`);
+      }
+    }
+
+    document.getElementById('closeAppDrawer').addEventListener('click', () =>
+      document.getElementById('appDrawer').classList.remove('open'));
+    document.getElementById('appDrawer').addEventListener('click', e => {
+      if (e.target === document.getElementById('appDrawer'))
+        document.getElementById('appDrawer').classList.remove('open');
+    });
+
+    /* ══════════════════════════════════════════════════
+      APPLICATION DETAIL DRAWER
+      ══════════════════════════════════════════════════ */
+    let allBoats = [];
+    let boatFilters = { class: 'all', active: false, gh: false };
+
+    function renderBoatFilters() {
+      const wrap = document.getElementById('boatClassFilters');
+      if (!wrap) return;
+      const classes = Object.keys(CLASS_IMAGE_MAP).filter(c => c !== 'Social' && c !== 'M');
+      wrap.innerHTML = `
+        <div class="filter-row--classes">
+          ${classes.map(c => `
+            <button class="cal-filter-btn ${boatFilters.class===c?'active':''}" data-class="${esc(c)}">
+              <img class="cal-filter-icon" src="${esc(CLASS_IMAGE_MAP[c])}" alt="${esc(c)}">
+              <span>${esc(c)}</span>
+            </button>`).join('')}
+        </div>
+        <div class="filter-row--subfilters">
+          <button class="cal-filter-btn ${boatFilters.class==='all'?'active':''}" data-class="all">
+            <span class="cal-filter-icon--all">★</span><span>All</span>
+          </button>
+          <button class="member-filter-btn ${boatFilters.active?'active':''}" data-toggle="active">
+            Active
+          </button>
+          <button class="member-filter-btn ${boatFilters.gh?'active':''}" data-toggle="gh">
+            GH
+          </button>
+        </div>`;
+        
+      wrap.querySelectorAll('.cal-filter-btn').forEach(btn => btn.addEventListener('click', () => {
+        boatFilters.class = btn.dataset.class;
+        renderBoatFilters();
+        renderBoats();
+      }));
+      
+      wrap.querySelectorAll('.member-filter-btn').forEach(btn => btn.addEventListener('click', () => {
+        const key = btn.dataset.toggle;
+        boatFilters[key] = !boatFilters[key];
+        renderBoatFilters();
+        renderBoats();
+      }));
+    }
+
+    function applyBoatFilters() {
+      const q = (document.getElementById('boatSearch').value || '').trim().toLowerCase();
+      return allBoats.filter(b => {
+        if (q && !`${b.member} ${b.sailNo} ${b.model}`.toLowerCase().includes(q)) return false;
+        if (boatFilters.class !== 'all' && b.class !== boatFilters.class) return false;
+        if (boatFilters.active && !b.active) return false;
+        if (boatFilters.gh && !b.gh) return false;
+        return true;
+      });
+    }
+
+    document.getElementById('boatSearch').addEventListener('input', renderBoats);
+
+    // Helper function to safely extract the member's name from any key variant
+    function getBoatOwner(boat) {
+      return boat.member || boat.memberName || boat.MemberName || boat.owner || boat.ownerName || boat.Helm || boat.Skipper || 'Unknown Member';
+    }
+
+    function renderBoats() {
+      const filtered = applyBoatFilters();   // ← use this instead of inline filter
+
+      const container = document.getElementById('boatList');
+      const countEl = document.getElementById('boatCount');
+      
+      if (countEl) {
+        countEl.innerHTML = `Showing <strong>${filtered.length}</strong> of <strong>${allBoats.length}</strong> boats`;
+      }
+
+      if (!filtered.length) {
+        const q = (document.getElementById('boatSearch')?.value || '').trim();
+        container.innerHTML = `<div class="empty-state">No registered boats found${q ? ` matching "${esc(q)}"` : ''}.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(b => {
+        const owner = getBoatOwner(b);
+        const sailNo = b.sailNo || b.SailNo || 'N/A';
+        const boatClass = b.class || b.Class || 'Unclassed';
+        const boatModel = b.model || b.Model || 'Standard';
+        const boatColour = b.colour || 'white';
+
+        const activePill = b.active
+        ? `<span class="committee-yes" style="margin-right: 8px;">Active</span>` 
+        : `<span class="inactive-yes" style="margin-right: 8px;">Inactive</span>`;
+
+        return `
+          <div class="app-row" onclick="openBoatModal('${esc(b.boatId)}')">
+            <div
+              class="sail-badge"
+              style="
+                background-color:${boatColour};
+                color:${isDarkColour(boatColour) ? '#fff' : '#000'};
+                border:1px solid rgba(255,255,255,0.35);
+                box-shadow:0 2px 8px rgba(0,0,0,0.25);
+              "
+            >
+              ${esc(sailNo)}
+            </div>
+
+            <div class="app-row-content">
+              <div class="app-name">${esc(owner)}</div>
+              <div class="app-meta">${esc(boatClass)} · ${esc(boatModel)}</div>
+            </div>
+
+            <div class="app-row-right">
+              ${activePill}
+
+              ${CLASS_IMAGE_MAP[boatClass] ? `
+                <img class="boat-class-icon"
+                    src="${esc(CLASS_IMAGE_MAP[boatClass])}"
+                    alt="${esc(boatClass)}">
+              ` : `
+                <img class="boat-class-icon"
+                    src="${esc(CLASS_IMAGE_MAP["General"])}"
+                    alt="${esc("General")}">
+              `}
+
+              <i data-lucide="chevron-right" class="boat-chevron"></i>
+            </div>
+          </div>
+        `;        
+      }).join('');
+    }
+
+    function isDarkColour(colour) {
+      if (!colour) return false;
+
+      const darkColours = [
+        'black',
+        'navy',
+        'darkblue',
+        'blue',
+        'midnightblue',
+        'darkgreen',
+        'green',
+        'forestgreen',
+        'darkred',
+        'red',
+        'maroon',
+        'purple',
+        'indigo',
+        'brown',
+        'grey',
+        'gray',
+        'darkgrey',
+        'darkgray'
+      ];
+
+      return darkColours.includes(colour.toLowerCase().trim());
+    }
+
+    function clearBoatMemberFilter() {
+      const boatSearch = document.getElementById('boatSearch');
+      if (boatSearch && boatSearch.value !== '') {
+        boatSearch.value = '';
+        boatSearch.dispatchEvent(new Event('input'));
+      }
+    }
+
+    async function loadBoats() {
+      showSpinner('boatList');
+      try {
+        const res = await fetch(`${HOME_DATA_API}?action=boatsList`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        allBoats = data.boats;
+        renderBoatFilters();
+        renderBoats();
+      } catch (err) {
+        console.warn('Boats API unavailable:', err.message);
+        showError('boatList', 'Boat register temporarily unavailable');
+        allBoats = [];
+      }
+    }
+
+    // Open Boat Modal Function
+    function openBoatModal(boatId) {
+      // Retrieve boat object (adjust dataset source variable as needed)
+      const source = Array.isArray(allBoats)
+          ? allBoats
+          : (Array.isArray(boats) ? boats : []);
+
+      const boat = source.find(
+          b => String(b.boatId) === String(boatId)
+      );
+
+      if (!boat) {
+          console.warn("Boat not found:", boatId);
+          return;
+      }
+
+      const classImg = getClassImage(boat.class);
+      const boatColour = boat.colour || '#ffffff';
+      const activeStatus = boat.active 
+        ? `<span class="committee-yes">Active</span>` 
+        : `<span class="committee-no">Inactive</span>`;
+
+      const modalHtml = `
+        <div id="boatDetailModalOverlay" class="boat-modal-overlay" onclick="onBoatModalOverlayClick(event)">
+          <div class="boat-modal-card glass">
+            <div class="drawer-header">
+                <div class="drawer-name-row">
+                    <div
+                      class="sail-badge"
+                      style="
+                        background-color:${boatColour};
+                        color:${isDarkColour(boatColour)?'#fff':'#000'};
+                      ">
+                      ${esc(boat.sailNo)}
+                    </div>
+
+                    <div class="drawer-name-col">
+                        <span class="drawer-name">${esc(boat.member)}</span>
+                        <span class="badge badge-default">${esc(boat.class)}</span>
+                    </div>
+                </div>
+
+                <button class="drawer-close" onclick="closeBoatModal()">✕</button>
+            </div>
+            <div class="app-detail-section">
+
+              <div class="app-detail-section-title">
+                Registration
+              </div>
+
+              <div class="app-detail-grid">
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Boat ID</span>
+                  <span class="app-detail-value">${esc(boat.boatId)}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Status</span>
+                  <span class="app-detail-value">
+                    ${boat.active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Class</span>
+                  <span class="app-detail-value">${esc(boat.class)}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Model</span>
+                  <span class="app-detail-value">${esc(boat.model)}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Sail Number</span>
+                  <span class="app-detail-value">${esc(boat.sailNo)}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Colour</span>
+                  <span class="app-detail-value">${esc(boat.colour || 'White')}</span>
+                </div>
+
+              </div>
+
+            </div>
+            <div class="app-detail-section">
+
+              <div class="app-detail-section-title">
+                Ownership
+              </div>
+
+              <div class="app-detail-grid">
+
+                <div class="app-detail-item full-width">
+                  <span class="app-detail-label">Member</span>
+                  <span class="app-detail-value">${esc(boat.memberName)}</span>
+                </div>
+
+              </div>
+
+            </div>
+            <div class="app-detail-section">
+
+              <div class="app-detail-section-title">
+                Racing Configuration
+              </div>
+
+              <div class="app-detail-grid">
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">Handicap</span>
+                  <span class="app-detail-value">${esc(boat.handicap || '-')}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">HRN</span>
+                  <span class="app-detail-value">${esc(boat.hrn || '-')}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">GH Eligible</span>
+                  <span class="app-detail-value">${esc(boat.gh || '-')}</span>
+                </div>
+
+                <div class="app-detail-item">
+                  <span class="app-detail-label">GH Handicap</span>
+                  <span class="app-detail-value">${esc(boat.ghHcap || '-')}</span>
+                </div>
+
+              </div>
+
+            </div>
+            <div class="app-detail-section">
+
+              <div class="app-detail-section-title">
+                Documentation
+              </div>
+
+              <div class="app-detail-grid">
+
+                  ...
+
+              </div>
+
+            </div>
+          </div>  
+        </div>
+        
+      `;
+
+      // Remove any existing instance before injecting
+      closeBoatModal();
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      document.addEventListener('keydown', onBoatModalEsc);
+    }
+
+    // Close Functions & Event Listeners
+    function closeBoatModal() {
+      const overlay = document.getElementById('boatDetailModalOverlay');
+      if (overlay) overlay.remove();
+      document.removeEventListener('keydown', onBoatModalEsc);
+    }
+
+    function onBoatModalOverlayClick(e) {
+      if (e.target.id === 'boatDetailModalOverlay') {
+        closeBoatModal();
+      }
+    }
+
+    function onBoatModalEsc(e) {
+      if (e.key === 'Escape') {
+        closeBoatModal();
+      }
+    }
+
+    document.getElementById('boatSearch').addEventListener('input', renderBoats);
+    document.querySelectorAll('#boat-register .member-filter-btn[data-boat-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.boatFilter;
+        boatFilters[key] = !boatFilters[key];
+        btn.classList.toggle('active', boatFilters[key]);
+        renderBoats();
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadLatestResults();
+      loadMembershipStats();
+      loadWeather();
+      loadEventDisplay();
+      loadAnnualCalendar();
+      loadMembers();    
+      loadApplications();
+      loadBoats();
+
+    });
+
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="memberStatsModal.js"></script>
+  <script>
+    (function() {
+      let rawRequestsData = [];
+      let currentFilterStatus = 'all';
+      let currentSearchTerm = '';
+
+      document.addEventListener("DOMContentLoaded", function() {
+        initTabNavigation();
+        initActiveMembersDropdown();
+        initFilterAndSearch();
+        initDrawerEvents();
+        loadRequestList();
+
+        // Retry mechanism if members load asynchronously
+        const memberInterval = setInterval(() => {
+          const select = document.getElementById("reqMemberName");
+          if (select && select.options.length <= 1 && typeof allMembers !== 'undefined' && Array.isArray(allMembers) && allMembers.length > 0) {
+            initActiveMembersDropdown();
+            clearInterval(memberInterval);
+          }
+        }, 800);
+        setTimeout(() => clearInterval(memberInterval), 10000);
+      });
+
+      function initTabNavigation() {
+        const root = document.getElementById("avg-score-requests");
+        if (!root) return;
+
+        const tabButtons = root.querySelectorAll("#avgReqTabRow .tab");
+        tabButtons.forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            switchTab(btn.getAttribute("data-avg-tab"));
+          });
+        });
+
+        const pillBtn = root.querySelector("#addAvgReqPill");
+        if (pillBtn) {
+          pillBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            switchTab("req-app");
+          });
+        }
+      }
+
+      function switchTab(tabKey) {
+        const root = document.getElementById("avg-score-requests");
+        if (!root) return;
+
+        const tabButtons = root.querySelectorAll("#avgReqTabRow .tab");
+        tabButtons.forEach(btn => {
+          btn.classList.toggle("active", btn.getAttribute("data-avg-tab") === tabKey);
+        });
+
+        const listTab = root.querySelector("#avg-tab-req-list");
+        const appTab = root.querySelector("#avg-tab-req-app");
+
+        if (tabKey === "req-list") {
+          if (listTab) listTab.classList.add("active");
+          if (appTab) appTab.classList.remove("active");
+        } else {
+          if (appTab) appTab.classList.add("active");
+          if (listTab) listTab.classList.remove("active");
+          initActiveMembersDropdown();
+        }
+      }
+
+      function initActiveMembersDropdown() {
+        const select = document.getElementById("reqMemberName");
+        if (!select) return;
+
+        const currentValue = select.value;
+        select.innerHTML = '<option value="" disabled selected>Select active member…</option>';
+
+        if (typeof allMembers !== 'undefined' && Array.isArray(allMembers) && allMembers.length > 0) {
+          const activeMembers = allMembers.filter(m => {
+            const isActiveVal = m.Active ?? m.active ?? m.IsActive ?? m.isActive;
+            const statusVal = m.Status ?? m.status ?? m.MembershipStatus ?? "";
+            return (
+              isActiveVal === true || 
+              String(isActiveVal).toLowerCase() === "true" ||
+              String(statusVal).toLowerCase() === "active"
+            );
+          });
+
+          activeMembers.forEach(m => {
+            const name = m.Name || m.name || m.memberName || m.memberNameFull || m["Member Name"] || "";
+            const email = m.Email || m.email || m.memberEmail || m["Member Email"] || "";
+            
+            if (name) {
+              const opt = document.createElement("option");
+              opt.value = name;
+              opt.textContent = name;
+              opt.dataset.email = email;
+              if (name === currentValue) opt.selected = true;
+              select.appendChild(opt);
+            }
+          });
+        }
+      }
+
+      document.getElementById("reqEventDate").addEventListener("change", function(e) {
+        const misDate = document.getElementById("reqEventDate").value;
+        const selectedOpt = document.getElementById("reqBoatClass").value;
+        if (!misDate)  {
+          if (!selectedOpt) {
+            document.getElementById("reqConflictingRegatta").value  = "Will load after Date and Class are selected";
+          } else {
+            document.getElementById("reqConflictingRegatta").value  = "Will load after Date is selected";
+          }
+        } else {
+          if (!selectedOpt) {
+            document.getElementById("reqConflictingRegatta").value  = "Will load after Class is selected";
+          } else {
+            const field = document.getElementById("reqConflictingRegatta");
+            field.value = `⏳ Searching for ${selectedOpt} event near ${misDate}…`;
+            getConflictingEvents(selectedOpt, misDate).then(result => { field.value = result; });
+          }
+        }
+      });
+      
+      document.getElementById("reqBoatClass").addEventListener("change", function(e) {
+        const selectedOpt = e.target.value;
+        const misDate = document.getElementById("reqEventDate").value;
+        if (!selectedOpt) {
+          if (!misDate)  {
+              document.getElementById("reqConflictingRegatta").value  = "Will load after Date and Class are selected";
+          } else {
+              document.getElementById("reqConflictingRegatta").value  = "Will load after Class is selected";
+          } 
+        } else {
+          if (!misDate)  {
+              document.getElementById("reqConflictingRegatta").value  = "Will load after Date is selected";
+          } else {
+            const field = document.getElementById("reqConflictingRegatta");
+            field.value = `⏳ Searching for ${selectedOpt} event near ${misDate}…`;
+            getConflictingEvents(selectedOpt, misDate).then(result => { field.value = result; });
+          }           
+        }
+      });
+
+      document.getElementById("reqMemberName").addEventListener("change", function(e) {
+        const selectedOpt = e.target.options[e.target.selectedIndex];
+        document.getElementById("reqMemberEmail").value = selectedOpt ? (selectedOpt.dataset.email || "") : "";
+      });
+
+
+      async function loadRequestList() {
+        const container = document.getElementById("avgReqList");
+        if (!container) return;
+
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <div>Loading requests…</div>
+          </div>`;
+
+        try {
+          rawRequestsData = await apiGet({ action: 'reqList' }).requests ?? [];
+          applyFiltersAndRender();
+        } catch (err) {
+          console.error("Error fetching AvgScrReq:", err);
+          container.innerHTML = `<div class="empty-state"><div style="color:var(--signal,#ef4444);">Failed to load: ${err.message}</div></div>`;
+        }
+      }
+
+      function initFilterAndSearch() {
+        const root = document.getElementById("avg-score-requests");
+        if (!root) return;
+
+        const filterBtns = root.querySelectorAll("#avgReqFilters .app-filter-btn");
+        filterBtns.forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            filterBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            currentFilterStatus = btn.getAttribute("data-status");
+            applyFiltersAndRender();
+          });
+        });
+
+        const searchInput = root.querySelector("#avgReqSearch");
+        if (searchInput) {
+          searchInput.addEventListener("input", (e) => {
+            currentSearchTerm = e.target.value.toLowerCase().trim();
+            applyFiltersAndRender();
+          });
+        }
+      }
+
+      function formatDate(dateInput) {
+        if (!dateInput) return '';
+
+        // If passed a string (e.g. "2026-09-26"), parse it into a Date object
+        let date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+
+        // Check if it's a valid date
+        if (isNaN(date.getTime())) {
+          return dateInput; // Fallback if invalid
+        }
+
+        // Now .getFullYear() works properly
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${day}/${month}/${year}`; // Adjust format as needed (e.g. DD/MM/YYYY)
+      }
+
+      function applyFiltersAndRender() {
+        let filtered = Array.isArray(rawRequestsData) ? [...rawRequestsData] : [];
+
+        if (currentFilterStatus !== 'all') {
+          filtered = filtered.filter(r => {
+            const st = (r.Status || r.status || 'Received').toString().toLowerCase();
+            return st === currentFilterStatus.toLowerCase();
+          });
+        }
+
+        if (currentSearchTerm) {
+          filtered = filtered.filter(r => {
+            const name = (r["Member Name"] || r.memberName || "").toLowerCase();
+            const event = (r["Event Name"] || r.eventName || "").toLowerCase();
+            const reqId = (r["Request ID"] || r.requestId || "").toLowerCase();
+            return name.includes(currentSearchTerm) || event.includes(currentSearchTerm) || reqId.includes(currentSearchTerm);
+          });
+        }
+
+        const countChip = document.getElementById("avgReqCount");
+        if (countChip) {
+          countChip.textContent = `${filtered.length} Request${filtered.length === 1 ? '' : 's'}`;
+        }
+
+        renderList(filtered);
+      }
+
+      function renderList(items) {
+        const container = document.getElementById("avgReqList");
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        if (!items || items.length === 0) {
+          container.innerHTML = `<div class="empty-state"><div>No matching requests found.</div></div>`;
+          return;
+        }
+
+        items.forEach((item, index) => {
+          const reqId = item["Request ID"] || item.requestId || `REQ-${index + 1}`;
+          const name = item["Member Name"] || item.memberName || "Unknown Member";
+          const eventName = item["Event Name"] || item.eventName || "Average Score Request";
+          const date = item["Event Date"] || item.eventDate || "-";
+          const status = item.Status || item.status || "Received";
+
+          const card = document.createElement("div");
+          card.className = "app-card";
+          card.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:12px; margin-bottom:8px; border-radius:8px; background:var(--glass-fill, rgba(255,255,255,0.03)); border:1px solid var(--glass-border, rgba(255,255,255,0.08)); cursor:pointer; transition:background 0.2s;";
+          
+          card.addEventListener("mouseover", () => card.style.background = "rgba(255,255,255,0.07)");
+          card.addEventListener("mouseout", () => card.style.background = "var(--glass-fill, rgba(255,255,255,0.03))");
+          card.addEventListener("click", () => openDrawer(item));
+
+          let statusStyle = "background:rgba(234, 179, 8, 0.15); color:#eab308;";
+          if (status.toLowerCase() === "approved") statusStyle = "background:rgba(74, 222, 128, 0.15); color:#4ade80;";
+          if (status.toLowerCase() === "rejected") statusStyle = "background:rgba(239, 68, 68, 0.15); color:#ef4444;";
+
+          card.innerHTML = `
+            <div>
+              <div style="font-weight:600; font-size:14px; color:var(--foam, #fff);">${name}</div>
+              <div style="font-size:12px; color:var(--glow, #257fb6); margin-top:2px;">${eventName} &bull; <span style="color:var(--foam-sub, #aaa);">${date}</span></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="padding:4px 10px; border-radius:12px; font-size:11px; font-weight:600; ${statusStyle}">
+                ${status}
+              </span>
+              <span style="font-size:12px; color:var(--foam-sub, #888);">${reqId}</span>
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+
+        if (window.lucide) lucide.createIcons();
+      }
+
+      function initDrawerEvents() {
+        const closeBtn = document.getElementById("closeAvgReqDrawer");
+        const overlay = document.getElementById("avgReqDrawer");
+
+        if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+        if (overlay) {
+          overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) closeDrawer();
+          });
+        }
+      }
+
+      function openDrawer(item) {
+        const overlay = document.getElementById("avgReqDrawer");
+        const title = document.getElementById("avgReqDrawerTitle");
+        const sub = document.getElementById("avgReqDrawerSub");
+        const body = document.getElementById("avgReqDrawerBody");
+
+        const reqId = item["Request ID"] || item.requestId || "Request Details";
+        title.textContent = reqId;
+        sub.textContent = item["Member Name"] || item.memberName || "";
+
+        body.innerHTML = `
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:13px; line-height:1.5;">
+            <div><strong style="color:var(--glow, #257fb6);">Member Name</strong><br>${item["Member Name"] || item.memberName || "-"}</div>
+            <div><strong style="color:var(--glow, #257fb6);">Member Email</strong><br>${item["Member Email"] || item.memberEmail || "-"}</div>
+            <div><strong style="color:var(--glow, #257fb6);">Missed Event Date</strong><br>${item["Event Date"] || item.eventDate || "-"}</div>
+            <div><strong style="color:var(--glow, #257fb6);">Missed Regatta</strong><br>${item["Event Name"] || item.eventName || "-"}</div>
+            <div style="grid-column: span 2;"><strong style="color:var(--glow, #257fb6);">Conflicting ARYA Regatta</strong><br>${item["Conflicting Regatta"] || item.conflictingRegatta || "-"}</div>
+            <div><strong style="color:var(--glow, #257fb6);">Status</strong><br>${item["Status"] || item.status || "Received"}</div>
+            <div><strong style="color:var(--glow, #257fb6);">Decision Date</strong><br>${item["Decision Date"] || item.decisionDate || "-"}</div>
+            <div><strong style="color:var(--glow, #257fb6);">Decision By</strong><br>${item["Decision By"] || item.decisionBy || "-"}</div>
+            <div style="grid-column: span 2;"><strong style="color:var(--glow, #257fb6);">Rejection Reason</strong><br>${item["Rejected Reason"] || item.rejectedReason || "N/A"}</div>
+          </div>
+        `;
+
+        overlay.classList.add("active");
+      }
+
+      function closeDrawer() {
+        const overlay = document.getElementById("avgReqDrawer");
+        if (overlay) overlay.classList.remove("active");
+      }
+
+      /* Find ranked events for date of missed event */
+      async function getConflictingEvents(className, date) {
+
+        let events = [];
+
+        const fromDate = new Date(date);
+        const toDate = new Date(date);
+        fromDate.setDate(fromDate.getDate() - 3);
+        toDate.setDate(toDate.getDate() + 3);
+
+        try {
+          const resp = await fetch(`${CALENDAR_URL}?action=listConflicts&date=${encodeURIComponent(date)}`);
+          const data = await resp.json();
+          events = data.events || [];
+          console.log("events: " + events[1].className + " events: " + events[1].className);
+        } catch (err) {
+          return `Failed to load events: ${err.message}`;
+        }
+
+        if (events.length === 0) {
+          return `No events found in calendar`;
+        }
+        
+        const nearEvents = events.filter(e => {
+          const rawDate = e?.Date ?? e?.date;
+          if (!e || !rawDate) return false;
+          const evDate = new Date(rawDate);
+          return evDate >= fromDate && evDate <= toDate;
+        });
+
+        const conflict = nearEvents.filter(e => {
+          const evClass = (e.class ?? e.Class ?? e.className ?? "").toLowerCase();
+          return evClass === className.toLowerCase();
+        });
+
+        return conflict.length >= 1
+          ? conflict[0].conflict
+          : `No conflicting event found for ${className} between ${fromDate.toDateString()} and ${toDate.toDateString()}`;
+      }
+
+      async function submitAverageScoreRequest(payload) {
+        if (typeof GATEWAY_URL === 'undefined' || !GATEWAY_URL) {
+          throw new Error("GATEWAY_URL is not defined.");
+        }
+
+        const response = await fetch(GATEWAY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "appendAvgScrReq", domain: "requests", sheet: "AvgScrReq", rowData: payload.rowData})
+          
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const result = await response.json();
+        if (result.error) throw new Error(result.error.message);
+
+        return result;
+      }
+
+      document.getElementById("avgScoreForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const statusDiv = document.getElementById("avgReqFormStatus");
+        const submitBtn = document.getElementById("btnSubmitAvgReq");
+        const requestor = document.getElementById("reqMemberName").value;
+
+        statusDiv.style.color = "var(--glow, #257fb6)";
+        statusDiv.innerHTML = "Submitting request…";
+        submitBtn.disabled = true;
+
+        const payload = {
+          rowData: {
+            requestId: "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
+            timestamp: new Date().toISOString(),
+            memberName: requestor,
+            memberEmail: document.getElementById("reqMemberEmail").value,
+            eventDate: document.getElementById("reqEventDate").value,
+            boatClass: document.getElementById("reqBoatClass").value,
+            regattaType: document.getElementById("reqRegattaType").value,
+            eventName: document.getElementById("reqBoatClass").value + " " + document.getElementById("reqRegattaType").value,
+            conflictingRegatta: document.getElementById("reqConflictingRegatta").value,
+            status: "Received"
+          }
+        };
+
+        try {
+          
+          await submitAverageScoreRequest(payload);
+          statusDiv.style.color = "#4ade80";
+          statusDiv.innerHTML = "Submitted successfully! Returning to list…";
+
+          setTimeout(() => {
+            document.getElementById("avgScoreForm").reset();
+            statusDiv.innerHTML = "";
+            submitBtn.disabled = false;
+
+            switchTab("req-list");
+            loadRequestList();
+          }, 1000);
+
+        } catch (err) {
+          console.error("Submission error:", err);
+          statusDiv.style.color = "var(--signal, #ef4444)";
+          statusDiv.innerHTML = "Error submitting: " + err.message;
+          submitBtn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
