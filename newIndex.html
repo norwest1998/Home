@@ -3042,7 +3042,6 @@
         
       `;
 
-      // Remove any existing instance before injecting
       closeBoatModal();
       document.body.insertAdjacentHTML('beforeend', modalHtml);
       document.addEventListener('keydown', onBoatModalEsc);
@@ -3066,6 +3065,9 @@
         closeBoatModal();
       }
     }
+//
+//  ======== AVERAGE SCORE REQUESTS ===========================
+//
 
     (function() {
       let currentFilterStatus = 'all';
