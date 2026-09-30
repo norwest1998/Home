@@ -1,0 +1,534 @@
+<!-- --- START OF FILE admin.html --- -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Head content remains the same -->
+</head>
+<body>
+<!-- Body layout remains the same until the script tags -->
+
+<script src="shared.js"></script>  
+<script src="nav.js"></script> 
+<script src="auditLog.js"></script>
+
+<script>
+window.SMMC_Sheets = { fetchSheet, batchFetchSheets, updateSheet, appendSheet, DOMAIN };
+
+function getRowVal(row, possibleKeys) {
+    if (!row) return "";
+    const rowKeys = Object.keys(row);
+    for (const targetKey of possibleKeys) {
+        const match = rowKeys.find(k => k.toLowerCase().trim() === targetKey.toLowerCase().trim());
+        if (match && row[match] !== undefined && row[match] !== null) {
+            return String(row[match]).trim();
+        }
+    }
+    return "";
+}
+
+// Staged Data & Caching
+const ADMIN_CACHE_KEY = "SMMC_ADMIN_DATA_v2";
+
+async function initAdmin() {
+    // 1. Instant Cache Load
+    const cachedRaw = localStorage.getItem(ADMIN_CACHE_KEY);
+    if (cachedRaw) {
+        try {
+            const cachedData = JSON.parse(cachedRaw);
+            renderAll(cachedData);
+        } catch (e) {
+            console.warn("Admin cache parse error", e);
+        }
+    }
+
+    // 2. Fetch all required tables in a single HTTP request
+    try {
+        const reqs = [
+            { domain: DOMAIN.members, sheet: "Members" },
+            { domain: DOMAIN.apps, sheet: "Membership Applications" },
+            { domain: DOMAIN.documents, sheet: "Documents" },
+            { domain: DOMAIN.notes, sheet: "Notes" },
+            { domain: DOMAIN.notes, sheet: "Actions" },
+            { domain: DOMAIN.calendar, sheet: "Event Data" },
+            { domain: DOMAIN.tracking, sheet: "Tracking" }
+        ];
+
+        const res = await batchFetchSheets(reqs);
+        const freshData = {
+            members: res[`${DOMAIN.members}|Members`],
+            apps: res[`${DOMAIN.apps}|Membership Applications`],
+            docs: res[`${DOMAIN.documents}|Documents`],
+            notes: res[`${DOMAIN.notes}|Notes`],
+            actions: res[`${DOMAIN.notes}|Actions`],
+            events: res[`${DOMAIN.calendar}|Event Data`],
+            tracking: res[`${DOMAIN.tracking}|Tracking`]
+        };
+
+        // Cache and re-render
+        localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(freshData));
+        renderAll(freshData);
+
+    } catch (err) {
+        console.error("Failed to bootstrap fresh admin data", err);
+        if (!cachedRaw) {
+            // Provide fallback error visual states if no cache exists
+            document.querySelectorAll('.spinner').forEach(s => {
+                s.parentElement.innerHTML = '<span class="badge badge-expired">Error loading</span>';
+            });
+        }
+    }
+}
+
+function renderAll(data) {
+    if (!data) return;
+    renderMemberHealth(data.members);
+    renderGrid(data);
+}
+
+/* ============================================================
+ADMIN FUNCTIONS GRID
+============================================================ */
+const FUNCTIONS = [
+    {
+        id: "Member-Applications",
+        icon: '<i data-lucide="user-plus" color="#257fb6"></i>',
+        title: "Online Membership Applications",
+        description: "Manage online applications through the process.",
+        href: "applications.html",
+        status: (data) => {
+            const apps = data.apps || [];
+            const getStatus = (r) => getRowVal(r, ["Status", "App Status", "Application Status"]);
+            const getApproved = (r) => getRowVal(r, ["Membership Approved", "Approved"]);
+
+            const received = apps.filter(a => getStatus(a).toLowerCase() === "received").length;
+            const inProgress = apps.filter(a => getStatus(a).toLowerCase() === "in progress").length;
+            const awaiting = apps.filter(a => ["awaiting approval", "pending"].includes(getStatus(a).toLowerCase())).length;
+
+            const approved = apps.filter(a => {
+                const st = getStatus(a).toLowerCase();
+                const appv = getApproved(a).toLowerCase();
+                return st === "processed" && (appv === "true" || appv === "yes" || appv === "approved");
+            }).length;
+
+            const rejected = apps.filter(a => {
+                const st = getStatus(a).toLowerCase();
+                const appv = getApproved(a).toLowerCase();
+                return st === "processed" && (appv === "false" || appv === "no" || appv === "rejected");
+            }).length;
+
+            return {
+                pills: [
+                    { label: "Received", value: received, className: "badge-affiliate" },
+                    { label: "In Progress", value: inProgress, className: "badge-default" },
+                    { label: "Awaiting Approval", value: awaiting, className: "badge-renewal" },
+                    { label: "Approved", value: approved, className: "badge-full" },
+                    { label: "Rejected", value: rejected, className: "badge-expired" }
+                ]
+            };
+        }
+    },
+    { 
+        id: "member-management", 
+        icon: '<i data-lucide="user-group" color="#257fb6"></i>', 
+        title: "Member Management", 
+        description: "Manage member details and communcation",
+        href: "memberManagement.html",
+        status: (data) => {
+            const members = data.members || [];
+            const getStatus = (r) => getRowVal(r, ["Active", "Membership Status"]).toLowerCase();
+            const getType = (r) => getRowVal(r, ["Membership Type", "Type", "Membership"]).toLowerCase();
+            const getPaid = (r) => getRowVal(r, ["Paid-up", "Paid Up", "PaidUp", "Paid"]).toLowerCase();
+
+            const isActive = (r) => ["true", "yes", "paid"].includes(getStatus(r));
+            const isPaid = (r) => ["true", "yes", "paid"].includes(getPaid(r));
+
+            const active = members.filter(isActive).length;
+            const full = members.filter(r => isActive(r) && getType(r) === "full").length;
+            const affiliate = members.filter(r => isActive(r) && getType(r) === "affiliate").length;
+            const expired = members.filter(r => !isActive(r) && getType(r) === "expired").length;
+            const paidUp = members.filter(r => isActive(r) && isPaid(r)).length;
+
+            return {
+                pills: [
+                    { label: "Active", value: active, className: "badge-full" },
+                    { label: "Full", value: full, className: "badge-affiliate" },
+                    { label: "Affiliate", value: affiliate, className: "badge-default" },
+                    { label: "Expired", value: expired, className: "badge-expired" },
+                    { label: "Paid-up", value: paidUp, className: "badge-renewal" }
+                ]
+            };
+        }
+    },
+    {
+        id: "documentRepository",
+        icon: '<i data-lucide="folder-open" color="#257fb6"></i>',
+        title: "Document Management",
+        description: "Library, search, versioning, review and sign-off.",
+        href: "documentManagement.html",
+        status: (data) => {
+            const docs = data.docs || [];
+            const count = (s) => docs.filter(d => getRowVal(d, ["Status"]) === s).length;
+            return {
+                pills: [
+                    { label: "Draft", value: count("Draft"), className: "badge-default" },
+                    { label: "In Review", value: count("In Review"), className: "badge-renewal" },
+                    { label: "Signed Off", value: count("Signed Off"), className: "badge-full" }
+                ]
+            };
+        }
+    },
+    {
+        id: "notes",
+        icon: '<i data-lucide="notebook-pen" color="#257fb6"></i>',
+        title: "Notes",
+        description: "Capture, manage and action meeting and topic notes.",
+        href: "notes.html",
+        status: (data) => {
+            const noteRows = data.notes || [];
+            const actionRows = data.actions || [];
+            const now = new Date();
+            
+            const open = actionRows.filter(a => getRowVal(a,["Status"]).toLowerCase() !== "done").length;
+            const overdue = actionRows.filter(a => {
+                const d = new Date(getRowVal(a,["By Date"]));
+                return getRowVal(a,["Status"]).toLowerCase() !== "done" && !isNaN(d) && d < now;
+            }).length;
+            
+            return {
+                pills: [
+                    { label: "Notes",           value: noteRows.length, className: "badge-full" },
+                    { label: "Open Actions",    value: open,            className: "badge-renewal" },
+                    { label: "Overdue",         value: overdue,         className: overdue > 0 ? "badge-expired" : "badge-default" }
+                ]
+            };
+        }
+    },
+    {
+        id: "calendar-management",
+        icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
+        title: "Calendar Management",
+        description: "Manage Calendar Events.",
+        href: "calendarManagement.html",
+        status: (data) => {
+            const events = data.events || [];
+
+            const getCompVal = (row) => getRowVal(row, ["Event Type", "competition"]).trim().toLowerCase();
+            const getReschedVal = (row) => getRowVal(row, ["Rescheduled Date", "RescheduledDate", "Reschedule Date"]).trim().toLowerCase();
+
+            const compCount = events.filter(e => getCompVal(e).includes("competition")).length;
+            const maintCount = events.filter(e => getCompVal(e).includes("maintenance")).length;
+            const pendingCount = events.filter(e => getReschedVal(e).includes("pending")).length;
+            const rescheduledCount = events.filter(e => {
+                const val = getReschedVal(e);
+                return val !== "" && !val.includes("pending");
+            }).length;
+
+            return {
+                pills: [
+                    { label: "Regattas", value: compCount, className: "badge-full" },
+                    { label: "Socials", value: events.length - compCount, className: "badge-full" },
+                    { label: "Maintenance", value: maintCount, className: "badge-full" },
+                    { label: "Rescheduled", value: rescheduledCount, className: "badge-full" },
+                    { label: "Pending", value: pendingCount, className: "badge-renewal" },
+                ]
+            };
+        }
+    },
+    {
+        id: "race-management",
+        icon: `<svg xmlns="http://w3.org" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#257fb6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v3" /><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6" /><rect x="8" y="2" width="8" height="4" rx="1" ry="1" /><line x1="8" y1="10" x2="14" y2="10" /><line x1="8" y1="14" x2="11" y2="14" /><line x1="8" y1="18" x2="11" y2="18" /><path d="M17 11v8h4c0 0-1-6-4-8z" /><path d="M15 14.5v4.5h1.5c0 0-.5-3.5-1.5-4.5z" /><path d="M18 22l1.5 1.5L23 20" /></svg>`,
+        title: "Results Management",
+        description: "Manage Regatta Results.",
+        href: "resultsManagement.html"
+    },
+    {
+        id: "email-management",
+        icon: '<i data-lucide="mail" color="#257fb6"></i>',
+        title: "Email Management",
+        description: "Track sent emails, responses, open rates and reminders across all communication campaigns.",
+        href: "emailManagement.html",
+        status: (data) => {
+            const rows = data.tracking || [];
+            const total = rows.length;
+            const responded = rows.filter(r => ["Responded","Updated"].includes(r["Email Status"])).length;
+            const pending = rows.filter(r => r["Email Status"] === "Sent").length;
+            const opened = rows.filter(r => Number(r["Open Count"] || 0) > 0).length;
+            const reminders = rows.filter(r => r["Reminder Sent"] === "Yes").length;
+        
+            return {
+                pills: [
+                    { label: "Sent", value: total, className: "badge-default" },
+                    { label: "Responded", value: responded, className: "badge-full" },
+                    { label: "Pending", value: pending, className: "badge-renewal" },
+                    { label: "Opened", value: opened, className: "badge-affiliate" },
+                    { label: "Reminders", value: reminders, className: "badge-expired" },
+                ]
+            };
+        }
+    },
+    { id: "add-new-function", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
+];
+
+const USAGE_KEY = "admin_fn_usage";
+const getUsage = () => { try { return JSON.parse(localStorage.getItem(USAGE_KEY)) || {}; } catch(e) { return {}; } };
+const bumpUsage = (id) => { const u = getUsage(); u[id] = (u[id]||0)+1; localStorage.setItem(USAGE_KEY, JSON.stringify(u)); };
+
+const grid = document.getElementById("fnGrid");
+
+function renderGrid(data) {
+    const usage = getUsage();
+    grid.innerHTML = "";
+    const sorted = [...FUNCTIONS].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
+
+    sorted.forEach((fn, idx) => {
+        const card = document.createElement("div");
+        card.className = "glass fn-card" + (fn.placeholder ? " placeholder" : "");
+        card.style.order = idx;
+
+        if (!fn.placeholder && fn.href) {
+            card.onclick = () => {
+                bumpUsage(fn.id);
+                location.href = fn.href;
+            };
+        }
+
+        card.innerHTML = `
+            <div class="tile-title">
+                <div class="tile-icon">${fn.icon}</div>
+                <div>
+                    <div style="font-weight:600;font-size:15px;">${fn.title}</div>
+                    <div class="fn-desc">${fn.description || ""}</div>
+                </div>
+            </div>
+            ${!fn.placeholder ? `
+                <div class="fn-status-row" id="status-row-${fn.id}" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:8px;">
+                    <span class="badge badge-default"><span class="spinner"></span></span>
+                </div>
+            ` : ""}
+        `;
+
+        grid.appendChild(card);
+
+        if (!fn.placeholder && fn.status && data) {
+            try {
+                const s = fn.status(data);
+                const row = card.querySelector(`#status-row-${fn.id}`);
+                if (row) {
+                    row.innerHTML = (s.pills || []).map(p => `
+                        <span class="badge ${p.className}">${p.value} ${p.label}</span>
+                    `).join("");
+                }
+            } catch (err) {
+                console.error(`Error loading status for ${fn.id}:`, err);
+                const row = card.querySelector(`#status-row-${fn.id}`);
+                if (row) {
+                    row.innerHTML = `<span class="badge badge-expired">Status unavailable</span>`;
+                }
+            }
+        }
+    });
+
+    if (window.lucide) lucide.createIcons();
+}
+
+/* ============================================================
+MEMBER HEALTH BOARD
+============================================================ */
+function pctClass(pct){
+    if (pct === 100) return "whatsapp";
+    if (pct >= 96)  return "glow";
+    if (pct >= 80)  return "amber";
+    return "signal";
+}
+
+function renderMemberHealth(membersData) {
+    if (!membersData || membersData.length === 0) {
+        ["health-phone", "health-email", "health-whatsapp"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.querySelector(".health-pct").textContent = "—";
+                el.querySelector(".health-pct").className = "health-pct bad";
+                el.querySelector(".health-sub").textContent = "Unavailable";
+            }
+        });
+        return;
+    }
+
+    const activeMembers = membersData.filter(m => String(m.Active).toLowerCase() === 'true');
+    const total = activeMembers.length;
+    const hasVal = (r, keys) => getRowVal(r, keys) !== "";
+
+    const withPhone = activeMembers.filter(m => hasVal(m, ["Telephone", "Phone", "Mobile", "Telephone Number", "Phone Number"])).length;
+    const withEmail = activeMembers.filter(m => hasVal(m, ["Email", "Email Address"])).length;
+    const withWhatsapp = activeMembers.filter(m => String(m.WhatsApp).toLowerCase() === 'true').length;
+    const withPaidUp   = activeMembers.filter(m => String(m["Paid up"]).toLowerCase() === 'true').length;
+    const withActive = total;
+    const withAddr = activeMembers.filter(m => hasVal(m, ["Address Line", "Post Code"])).length;
+    const withCont = activeMembers.filter(m => hasVal(m, ["Emergency Contact Name", "Emergency Contact"])).length;
+    const withMulti    = activeMembers.filter(m => !m["Home Club"] || m["Home Club"].trim() === '').length; 
+
+    const stats = [
+        { id: "health-phone", count: withPhone },
+        { id: "health-email", count: withEmail },
+        { id: "health-whatsapp", count: withWhatsapp },
+        { id: "health-financial", count: withPaidUp },
+        { id: "health-active", count: withActive },
+        { id: "health-address", count: withAddr },
+        { id: "health-contacts", count: withCont },
+        { id: "health-primary", count: withMulti }
+    ];
+
+    stats.forEach(s => {
+        const pct = total ? Math.round((s.count / total) * 100) : 0;
+        const el = document.getElementById(s.id);
+        if (el) {
+            el.querySelector(".health-pct").textContent = pct + "%";
+            el.querySelector(".health-pct").className = "health-pct " + pctClass(pct);
+            el.querySelector(".health-sub").textContent = `${s.count} of ${total} members`;
+        }
+    });
+}
+
+// ... SystemHealth integration remains unchanged ...
+// ... SystemHealth script definition block omitted for brevity, keep what's in admin.html ...
+const SystemHealth = {
+    entries: [],
+
+    init() {
+        const refreshBtn = document.getElementById('refreshHealthBtn');
+        if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => this.load());
+        }
+
+        // Only load data if the panel container exists in the HTML
+        if (document.getElementById('sysHealthBody')) {
+        this.load();
+        }
+    },
+
+    async load() {
+        document.getElementById('sysHealthBody').innerHTML =
+            `<tr><td colspan="6" style="text-align:center;padding:20px;"><span class="spinner"></span></td></tr>`;
+        document.getElementById('sysHealthDriftAlert').style.display = 'none';
+        document.getElementById('sysHealthSummary').textContent = '';
+
+        try {
+            const rows = await fetchSheet(DOMAIN.audit, "SchemaRegistry");
+            if (!Array.isArray(rows)) throw new Error("SchemaRegistry data invalid.");
+            this.entries = rows;
+            this.render();
+        } catch (err) {
+            document.getElementById('sysHealthBody').innerHTML =
+                `<tr><td colspan="6" style="color:var(--signal);padding:16px;">Error loading registry: ${escapeHtml(err.message)}</td></tr>`;
+            this._setDot('error');
+        }
+    },
+
+    render() {
+        const entries = this.entries;
+        if (!entries.length) {
+            document.getElementById('sysHealthBody').innerHTML =
+                `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--foam-dim);">No schema data recorded yet. Data populates automatically as sheets are accessed.</td></tr>`;
+            this._setDot('idle');
+            return;
+        }
+
+        let driftFound = false;
+        const okCount = entries.filter(e => (e['Status'] || 'OK') === 'OK').length;
+
+        document.getElementById('sysHealthBody').innerHTML = entries.map(e => {
+            const status    = e['Status']       || 'OK';
+            const domain    = e['Domain']       || '—';
+            const sheet     = e['Sheet']        || '—';
+            const cols      = e['Columns']      || '';
+            const rowCount  = e['Row Count']    || '—';
+            const checked   = e['Last Checked'] || '';
+            const baseline  = e['Baseline Columns'] || '';
+
+            const isDrift   = status === 'DRIFT';
+            const isError   = status === 'ERROR';
+            if (isDrift) driftFound = true;
+
+            // Parse column list for display
+            let colList = [];
+            try { colList = JSON.parse(cols); } catch { colList = cols ? cols.split(',') : []; }
+
+            // Diff against baseline if drift
+            let colDisplay = '';
+            if (isDrift && baseline) {
+                let baseList = [];
+                try { baseList = JSON.parse(baseline); } catch { baseList = baseline.split(','); }
+                const added   = colList.filter(c => !baseList.includes(c));
+                const removed = baseList.filter(c => !colList.includes(c));
+                colDisplay = [
+                    ...added.map(c => `<span style="color:var(--glow)">+${escapeHtml(c)}</span>`),
+                    ...removed.map(c => `<span style="color:var(--signal)">-${escapeHtml(c)}</span>`)
+                ].join(', ') || escapeHtml(colList.join(', '));
+            } else {
+                colDisplay = `<span style="color:var(--foam-dim);font-size:11px;">${escapeHtml(colList.join(', '))}</span>`;
+            }
+
+            const checkedFmt = checked
+                ? new Date(checked).toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })
+                : '—';
+
+            const badgeClass = isError ? 'badge-expired' : isDrift ? 'badge-renewal' : 'badge-full';
+            const badgeText  = isError ? 'Error' : isDrift ? 'Drift' : 'OK';
+
+            return `
+            <tr class="${isError || isDrift ? 'audit-error' : ''}">
+                <td style="font-size:11px;text-transform:capitalize;">${escapeHtml(domain)}</td>
+                <td style="font-weight:500;">${escapeHtml(sheet)}</td>
+                <td style="font-size:11px;max-width:320px;word-break:break-word;">${colDisplay}</td>
+                <td style="text-align:center;">${escapeHtml(String(rowCount))}</td>
+                <td style="white-space:nowrap;font-size:11px;color:var(--foam-dim);">${checkedFmt}</td>
+                <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+            </tr>`;
+        }).join('');
+
+        if (driftFound) {
+            document.getElementById('sysHealthDriftAlert').style.display = 'block';
+        }
+
+        document.getElementById('sysHealthSummary').textContent =
+            `${okCount} of ${entries.length} sheets OK`;
+
+        const allOk = okCount === entries.length;
+        this._setDot(driftFound ? 'warn' : allOk ? 'ok' : 'error');
+    },
+
+    _setDot(state) {
+        const dot = document.getElementById('sysHealthDot');
+        if (!dot) return;
+        // Reuse signal/glow colours from theme
+        const colours = { ok: 'var(--glow)', warn: 'var(--folder)', error: 'var(--signal)', idle: 'var(--foam-dim)' };
+        dot.style.background   = colours[state] || colours.idle;
+        dot.style.boxShadow    = `0 0 8px ${colours[state] || colours.idle}`;
+    },
+
+
+};
+
+// Replaced sequential fetch triggers with initAdmin bootstrap loader
+initAdmin();
+</script>
+
+<script>
+    Promise.all([
+        fetch('nav.html').then(r => r.text()),
+        fetch('auditLog.html').then(r => r.text()),
+        fetch('systemHealth.html').then(r => r.text()),
+    ]).then(([navHtml, auditHtml, healthHtml]) => {
+        document.getElementById('nav-placeholder').innerHTML = navHtml;
+        document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
+        document.getElementById('systemHealth-placeholder').innerHTML = healthHtml;
+
+        AuditLog.init();
+        SystemHealth.init();
+        Nav.init();
+
+        if (window.lucide) lucide.createIcons();
+    });
+</script>
+</body>
+</html>

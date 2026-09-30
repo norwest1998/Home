@@ -45,6 +45,24 @@ async function searchSheet(domain, sheetName, filtersArray) {
     return rows;
 }
 
+async function batchFetchSheets(requestsArray) {
+    const action = "batchFetch";
+    const url = `${GATEWAY_URL}?action=${action}&requests=${encodeURIComponent(JSON.stringify(requestsArray))}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    // Fire-and-forget schema registration for all fetched sheets
+    if (data.results) {
+        Object.keys(data.results).forEach(key => {
+            const [domain, sheetName] = key.split("|");
+            const rows = data.results[key];
+            registerSchema(domain, sheetName, rows);
+        });
+    }
+    return data.results;
+}
+
 async function registerSchema(domain, sheetName, rows) {
     if (!Array.isArray(rows) || rows.length === 0) return;
     const columns = Object.keys(rows[0]);
