@@ -2214,7 +2214,7 @@
     });
 
     (function () {
-      const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/edit?usp=sharing";
+      const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/gviz/tq?tqx=out:csv&sheet=RaceResultsArchive";
 
       let raceRows = null; // cached after first load
 
@@ -2288,7 +2288,7 @@
 
       function renderEmpty(modal, message) {
         modal.innerHTML = `
-          <div class="mrs-empty">${message}</div>
+          <div class="mrs-empty">${esc(message)}</div>
           <div class="mrs-close-row"><button id="mrs-ok">OK</button></div>
         `;
         document.getElementById("mrs-ok").addEventListener("click", closeModal);
@@ -2364,7 +2364,13 @@
           header: true,
           skipEmptyLines: true,
           complete: function (results) {
-            raceRows = results.data.filter(r => r.MemberName && r.MemberName.trim());
+            const rows = (results.data || []).filter(r => r.MemberName && r.MemberName.trim());
+            if (!rows.length) {   // e.g. an HTML login/preview page parsed as CSV; don't cache the empty result
+              const cols = ((results.meta && results.meta.fields) || []).slice(0, 6).join(', ');
+              callback(new Error('No race rows found (columns seen: ' + cols + '). CSV_URL must be an export?format=csv link shared as "Anyone with the link".'));
+              return;
+            }
+            raceRows = rows;
             callback();
           },
           error: function () {
@@ -3042,6 +3048,7 @@
         
       `;
 
+      // Remove any existing instance before injecting
       closeBoatModal();
       document.body.insertAdjacentHTML('beforeend', modalHtml);
       document.addEventListener('keydown', onBoatModalEsc);
@@ -3065,9 +3072,6 @@
         closeBoatModal();
       }
     }
-//
-//  ======== AVERAGE SCORE REQUESTS ===========================
-//
 
     (function() {
       let currentFilterStatus = 'all';
