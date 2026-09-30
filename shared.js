@@ -4,7 +4,6 @@ const RESULTS_GATEWAY_URL = "https://script.google.com/macros/s/AKfycbwHYDa3Jg-4
 const TEMPLATE_GW_URL = "https://script.google.com/macros/s/AKfycbzXAuRrP7wCHWqaDJ5m-gh0V9MOxOKMFEuKUMGvf5NAh0tgLhtyHDeX8J9CQ-5PSOE2Ng/exec";
 const EMAIL_GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzrdcwjXHalBizwnRw62jKiY34saRkHewG5ueuO3wr3XsjcEtK2yCfX_LvzdOUrlV3g/exec";
 
-// domain keys must match REGISTRY keys in Gateway.gs
 const DOMAIN = {
     members:   "members",
     documents: "documents",
@@ -14,14 +13,17 @@ const DOMAIN = {
     audit:     "audit",
     tracking:  "tracking",
     results:   "results",
-    requests:  "requests"  // ← add this
+    requests:  "requests"  
 };
 
 async function fetchSheet(domain, sheetName, hexKey = null) {
     const action = hexKey ? "display" : "fetch";
-    const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}`
-                 + (hexKey ? `&hexKey=${encodeURIComponent(hexKey)}` : "");
-    const res  = await fetch(url);
+    // Switched to POST to eliminate URL length limits and redirect caching bugs 
+    const res  = await fetch(GATEWAY_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body:    JSON.stringify({ action, domain, sheet: sheetName, hexKey })
+    });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
  
@@ -33,9 +35,12 @@ async function fetchSheet(domain, sheetName, hexKey = null) {
 }
 
 async function searchSheet(domain, sheetName, filtersArray) {
-    const action = "search"
-    const url    = `${GATEWAY_URL}?action=${action}&domain=${domain}&sheet=${encodeURIComponent(sheetName)}&filter=${encodeURIComponent(filtersArray)}`;
-    const res  = await fetch(url);
+    const action = "search";
+    const res  = await fetch(GATEWAY_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body:    JSON.stringify({ action, domain, sheet: sheetName, filtersArray })
+    });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
  
@@ -47,8 +52,11 @@ async function searchSheet(domain, sheetName, filtersArray) {
 
 async function batchFetchSheets(requestsArray) {
     const action = "batchFetch";
-    const url = `${GATEWAY_URL}?action=${action}&requests=${encodeURIComponent(JSON.stringify(requestsArray))}`;
-    const res = await fetch(url);
+    const res = await fetch(GATEWAY_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body:    JSON.stringify({ action, requests: requestsArray })
+    });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
@@ -57,7 +65,9 @@ async function batchFetchSheets(requestsArray) {
         Object.keys(data.results).forEach(key => {
             const [domain, sheetName] = key.split("|");
             const rows = data.results[key];
-            registerSchema(domain, sheetName, rows);
+            if (Array.isArray(rows) && rows.length > 0) {
+               registerSchema(domain, sheetName, rows);
+            }
         });
     }
     return data.results;
@@ -152,11 +162,7 @@ async function triggerResultsProcessing() {
     return data.message;
 }
 
-
-/* Fetches sheet layout and displays a formatted drawer modal for JSON rowData
-*/
 async function viewRecordModal(domain, sheetName, encodedRowData) {
-    // 1. Parse the JSON rowData 
     let record;
     try {
         record = JSON.parse(decodeURIComponent(encodedRowData));
@@ -166,7 +172,6 @@ async function viewRecordModal(domain, sheetName, encodedRowData) {
         return;
     }
 
-    // 2. Create the drawer overlay if it doesn't exist
     let overlay = document.getElementById("recordViewerModal");
     if (!overlay) {
         overlay = document.createElement("div");
@@ -185,13 +190,11 @@ async function viewRecordModal(domain, sheetName, encodedRowData) {
         `;
         document.body.appendChild(overlay);
         
-        // Close on background click
         overlay.addEventListener("click", e => {
             if (e.target === overlay) overlay.classList.remove("open");
         });
     }
 
-    // 3. Set loading state and open drawer
     document.getElementById("rvm-title").textContent = `${sheetName} Record`;
     document.getElementById("rvm-content").innerHTML = `
         <div style="grid-column: 1/-1; text-align:center; padding: 20px;">
@@ -200,18 +203,12 @@ async function viewRecordModal(domain, sheetName, encodedRowData) {
     
     overlay.classList.add("open");
 
-    // 4. Fetch the layout from Gateway
     try {
-        //const url = `${GATEWAY_URL}?action=layout&domain=${encodeURIComponent(domain)}&sheetName=${encodeURIComponent(sheetName)}`;
-        //const res = await fetch(url);
-        //const data = await res.json();
         const data = record;
         if (data.error) throw new Error(data.error);
         
-        // Fallback to the object's raw keys if the layout isn't configured in the Gateway yet
         const layoutKeys = data.layout || Object.keys(record);
 
-        // 5. Build the UI grid mapping layout keys to record values
         const html = layoutKeys.map(key => {
             const val = record[key];
             const displayVal = (val !== undefined && val !== null && val !== "") ? val : "—";
@@ -231,4 +228,3 @@ async function viewRecordModal(domain, sheetName, encodedRowData) {
             </div>`;
     }
 }
-
