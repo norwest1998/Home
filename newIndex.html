@@ -2214,7 +2214,7 @@
     });
 
     (function () {
-      const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/gviz/tq?tqx=out:csv&sheet=RaceResultsArchive";
+      const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/gviz/tq?tqx=out:csv&headers=1&sheet=RaceResultsArchive";
 
       let raceRows = null; // cached after first load
 
@@ -2361,13 +2361,38 @@
         }
         Papa.parse(CSV_URL, {
           download: true,
-          header: true,
+          header: false,          // arrays, so a header row that is out of step with the data can be realigned
           skipEmptyLines: true,
           complete: function (results) {
-            const rows = (results.data || []).filter(r => r.MemberName && r.MemberName.trim());
+            const all = results.data || [];
+            const headers = (all[0] || []).map(h => String(h == null ? '' : h).trim());
+            const body = all.slice(1);
+            const hi = headers.indexOf('MemberName');
+            const sample = body.slice(0, 200);
+            const nameLike = idx => {
+              if (idx < 0) return false;
+              const vals = sample.map(r => String(r[idx] == null ? '' : r[idx]).trim()).filter(Boolean);
+              return vals.length > 0 && vals.every(v => /[A-Za-z]/.test(v)) && vals.some(v => /\s/.test(v));
+            };
+            // The header row can lag the data (e.g. BoatID added to the data but not the header, so the
+            // "MemberName" header sits over SailNo). Find how far the name values are from their header.
+            const d = hi < 0 ? 0 : ([0, 1, -1].find(o => nameLike(hi + o)) || 0);
+            // Columns from the insertion point onward are shifted by d; earlier ones line up.
+            const sailIdx = headers.indexOf('SailNo');
+            const start = d === 0 ? headers.length : (sailIdx >= 0 ? Math.min(sailIdx, hi) : hi);
+            console.info('[memberStatsModal] columns:', headers.map((f, i) => String.fromCharCode(65 + i) + '=' + f).join(', '),
+              '| name offset:', d, '| first row:', JSON.stringify(body[0]));
+
+            const rows = body.map(arr => {
+              const o = {};
+              headers.forEach((h, i) => {
+                if (h && !(h in o)) o[h] = arr[i >= start ? i + d : i];   // first duplicate header wins
+              });
+              return o;
+            }).filter(r => r.MemberName && String(r.MemberName).trim());
+
             if (!rows.length) {   // e.g. an HTML login/preview page parsed as CSV; don't cache the empty result
-              const cols = ((results.meta && results.meta.fields) || []).slice(0, 6).join(', ');
-              callback(new Error('No race rows found (columns seen: ' + cols + '). CSV_URL must be an export?format=csv link shared as "Anyone with the link".'));
+              callback(new Error('No race rows found (columns seen: ' + headers.slice(0, 6).join(', ') + '). Check CSV_URL and that the sheet is shared as "Anyone with the link".'));
               return;
             }
             raceRows = rows;
@@ -2393,7 +2418,6 @@
             console.warn("[memberStatsModal] Available names:", members);
             return;
           }
-          console.log("MemberName: " + memberName + " match fullName: " + match.fullName + " name: " + match.name + " memberNameFull: " + match.memberNameFull);
           renderMember(modal, match);
         });
 

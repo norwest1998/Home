@@ -16,14 +16,13 @@ const DOMAIN = {
     requests:  "requests"  
 };
 
+// READ OPERATIONS -> Using GET to avoid Google Apps Script POST 404 payload drops
 async function fetchSheet(domain, sheetName, hexKey = null) {
     const action = hexKey ? "display" : "fetch";
-    // Switched to POST to eliminate URL length limits and redirect caching bugs 
-    const res  = await fetch(GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action, domain, sheet: sheetName, hexKey })
-    });
+    let url = `${GATEWAY_URL}?action=${action}&domain=${encodeURIComponent(domain)}&sheet=${encodeURIComponent(sheetName)}`;
+    if (hexKey) url += `&hexKey=${encodeURIComponent(hexKey)}`;
+
+    const res  = await fetch(url);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
  
@@ -36,27 +35,21 @@ async function fetchSheet(domain, sheetName, hexKey = null) {
 
 async function searchSheet(domain, sheetName, filtersArray) {
     const action = "search";
-    const res  = await fetch(GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action, domain, sheet: sheetName, filtersArray })
-    });
+    const url = `${GATEWAY_URL}?action=${action}&domain=${encodeURIComponent(domain)}&sheet=${encodeURIComponent(sheetName)}&filtersArray=${encodeURIComponent(JSON.stringify(filtersArray))}`;
+    
+    const res  = await fetch(url);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
  
-    if (data.record) return data.record; // single-record display
- 
-    const rows = data.values ?? [];
-    return rows;
+    if (data.record) return data.record; 
+    return data.values ?? [];
 }
 
 async function batchFetchSheets(requestsArray) {
     const action = "batchFetch";
-    const res = await fetch(GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action, requests: requestsArray })
-    });
+    const url = `${GATEWAY_URL}?action=${action}&requests=${encodeURIComponent(JSON.stringify(requestsArray))}`;
+    
+    const res = await fetch(url);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
@@ -71,95 +64,6 @@ async function batchFetchSheets(requestsArray) {
         });
     }
     return data.results;
-}
-
-async function registerSchema(domain, sheetName, rows) {
-    if (!Array.isArray(rows) || rows.length === 0) return;
-    const columns = Object.keys(rows[0]);
-    try {
-        await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({
-                action:   "registerSchema",
-                domain:   domain,
-                sheet:    sheetName,
-                columns:  columns,
-                rowCount: rows.length
-            })
-        });
-    } catch (e) {
-        // Silent — schema registration must never break the calling page
-        console.warn("SchemaRegistry update failed:", e);
-    }
-}
-
-async function updateSheet(domain, sheetName, hexKey, updates) {
-    const res  = await fetch(GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "update", domain: domain, sheet: sheetName, hexKey: hexKey, update: updates })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return true;
-}
-
-async function appendSheet(domain, sheetName, rowData) {
-    const res  = await fetch(GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "append", domain: domain, sheet: sheetName, rowData: rowData })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return true;
-}
-
-async function deleteRow(domain, sheetName, hexKey) {
-    const res  = await fetch(GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "delete", domain: domain, sheet: sheetName, hexKey: hexKey })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return true;
-}
-
-function fmtTime(iso){
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
-}
-
-function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
-}
-
-async function fetchDriveFolder(folderKey) {
-    const res  = await fetch(`${RESULTS_GATEWAY_URL}?action=listFolder&folder=${folderKey}`);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return data.files || [];
-}
-
-async function fetchDriveFile(fileId) {
-    const res  = await fetch(`${RESULTS_GATEWAY_URL}?action=readFile&fileId=${encodeURIComponent(fileId)}`);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return data.content;
-}
-
-async function triggerResultsProcessing() {
-    const res  = await fetch(RESULTS_GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "triggerProcessing" })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return data.message;
 }
 
 async function viewRecordModal(domain, sheetName, encodedRowData) {
@@ -227,4 +131,97 @@ async function viewRecordModal(domain, sheetName, encodedRowData) {
                 Failed to load layout: ${escapeHtml(err.message)}
             </div>`;
     }
+}
+
+
+// WRITE OPERATIONS -> Staying as POST because they send payloads and return tiny JSON
+async function registerSchema(domain, sheetName, rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return;
+    const columns = Object.keys(rows[0]);
+    try {
+        await fetch(GATEWAY_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body:    JSON.stringify({
+                action:   "registerSchema",
+                domain:   domain,
+                sheet:    sheetName,
+                columns:  columns,
+                rowCount: rows.length
+            })
+        });
+    } catch (e) {
+        // Silent — schema registration must never break the calling page
+        console.warn("SchemaRegistry update failed:", e);
+    }
+}
+
+async function updateSheet(domain, sheetName, hexKey, updates) {
+    const res  = await fetch(GATEWAY_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body:    JSON.stringify({ action: "update", domain: domain, sheet: sheetName, hexKey: hexKey, update: updates })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return true;
+}
+
+async function appendSheet(domain, sheetName, rowData) {
+    const res  = await fetch(GATEWAY_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body:    JSON.stringify({ action: "append", domain: domain, sheet: sheetName, rowData: rowData })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return true;
+}
+
+async function deleteRow(domain, sheetName, hexKey) {
+    const res  = await fetch(GATEWAY_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body:    JSON.stringify({ action: "delete", domain: domain, sheet: sheetName, hexKey: hexKey })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return true;
+}
+
+// Drive Operations
+async function fetchDriveFolder(folderKey) {
+    const res  = await fetch(`${RESULTS_GATEWAY_URL}?action=listFolder&folder=${folderKey}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data.files || [];
+}
+
+async function fetchDriveFile(fileId) {
+    const res  = await fetch(`${RESULTS_GATEWAY_URL}?action=readFile&fileId=${encodeURIComponent(fileId)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data.content;
+}
+
+async function triggerResultsProcessing() {
+    const res  = await fetch(RESULTS_GATEWAY_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body:    JSON.stringify({ action: "triggerProcessing" })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data.message;
+}
+
+// Utilities
+function fmtTime(iso){
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+}
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
