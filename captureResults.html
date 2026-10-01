@@ -1114,6 +1114,7 @@ async function getEvents() {
       .map(e => {
         const [, dd, mon] = String(e.dateLabel).split(' ');   // "SAT 03 OCT"
         const mm = MON.findIndex(m => m.toUpperCase() === mon) + 1;
+      
         return {
           id: e.hexKey,
           date: `${dd}/${String(mm).padStart(2, '0')}/${year}`,
@@ -1124,8 +1125,10 @@ async function getEvents() {
           round: String(e.roundNum ?? ''),
           season: e.season,
           status: e.results === 'Not Started' ? 'Not Started' : 'Processed'
+          
         };
       });
+      console.log('raw', data.events?.length, 'mapped', EVENTS.length, EVENTS[0]);
   } catch (error) {
     console.error("Failed to load events:", error);
     EVENTS = [];
