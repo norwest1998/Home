@@ -1054,6 +1054,7 @@ textarea.report-box::placeholder{ color: var(--foam-dim); }
 </style>
 </head>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.446.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
 <body>  
 <div id="app-header"></div>
 <div id="app-subheader"></div>
@@ -1065,6 +1066,7 @@ const LOGO_DATA_URI = "/Home/images/logo/smmc-logo.png";
 const EMBLEM_IMAGE_URI = "/Home/images/classes/";
 const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
 const CAL_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
+const GUEST_URL = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
 
 
 
@@ -1090,7 +1092,8 @@ async function getMembers(className) {
 
 async function getGuests(eventId) {
   try {
-    // TODO: fetch guest registrations for eventId
+    const data = fetchSheet("results", "GuestRegistrations", eventId);
+    console.log(data);
     GUESTS = []; // .map(g => ({ ...g, className: g.class ?? g.className, isGuest: true }))
   } catch (e) {
     console.error("Failed to load guests:", e);
