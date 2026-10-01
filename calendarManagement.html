@@ -1558,7 +1558,8 @@ modalDate.addEventListener("change", () => {
 // --- 4. Class -> Emblem Update ---
 modalClass.addEventListener("change", () => {
   const selectedClass = modalClass.value;
-  const imageUrl = classInsignia(className) || classInsignia("General") || "";
+  // Fixed: `className` replaced with `selectedClass` 
+  const imageUrl = classInsignia(selectedClass) || classInsignia("General") || "";
 
   if (imageUrl) {
     modalEmblemImg.src = imageUrl;
@@ -1674,8 +1675,8 @@ document.getElementById("closeModalBtn")?.addEventListener("click", () => eventM
 document.getElementById("cancelModalBtn")?.addEventListener("click", () => eventModal.classList.add("hidden"));
 
 function closeAddEventModal() {
-  EventModal.classList.remove("active");
-  EventModal.classList.add("hidden");
+  eventModal.classList.remove("active");
+  eventModal.classList.add("hidden");
 }
 
 function generateUnique8DigitHex() {
@@ -1695,7 +1696,7 @@ eventForm.addEventListener("submit", async (e) => {
   
   const isAdd = modalMode.value === "add";
   const rowData = {
-    "HexCode": generateUnique8DigitHex(),
+    "HexKey": isAdd ? generateUnique8DigitHex() : modalHexKey.value, // Fixed: HexCode -> HexKey
     "Event Type": modalEventType.value,
     "Date": modalDate.value,
     "Start": modalStart.value,
@@ -1713,7 +1714,6 @@ eventForm.addEventListener("submit", async (e) => {
       "Round no": modalRoundNo.value,
       "Results": modalResults.value
     });
-    
   }
 
   try {
@@ -1838,7 +1838,8 @@ approveBtn.addEventListener("click", async () => {
     });
 
     await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, {
-      "Rescheduled Date": '${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}',
+      // Fixed: Converted trailing single quotes to backticks for expression evaluation
+      "Rescheduled Date": `${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`,
       Results: "Rescheduled" 
     });
     logAction(`Reschedule approved: ${event.Class} → ${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`);
@@ -2002,8 +2003,8 @@ function inferSeason(dateStr) {
 async function loadData() {
   // Show loading state in all relevant sections
   eventsBody.innerHTML = `<tr class="table-loading-row"><td colspan="7"><div class="section-loading"><span class="spinner"></span> Loading events…</div></td></tr>`;
-
   const classEventsContainer = document.getElementById("classEventsPills");
+
   if (classEventsContainer) classEventsContainer.innerHTML = `<div class="section-loading"><span class="spinner"></span> Loading class data…</div>`;
 
   const healthText = document.getElementById("healthText");
@@ -2019,7 +2020,7 @@ async function loadData() {
     eventData = await fetchSheet(DOMAIN.calendar, "Event Data");
     eventData.forEach(e => {
       if (!e.HexKey) e.HexKey = `${e.Date}|${e.Start || ""}|${e.Class || ""}`;
-      if (!e.Season) e.Season = inferSeason(eventData.Date);
+      if (!e.Season) e.Season = inferSeason(e.Date); // Fixed: Replaced `eventData.Date` array call with element call `e.Date`
       console.log("synched to calendar: " + e['Calendar Synced']);
     });
     

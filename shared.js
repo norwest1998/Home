@@ -16,16 +16,24 @@ const DOMAIN = {
     requests:  "requests"  
 };
 
-// READ OPERATIONS -> Using GET to avoid Google Apps Script POST 404 payload drops
+// READ OPERATIONS -> Switched to POST to avoid Google Apps Script redirecting GETs to HTML Auth Pages
 async function fetchSheet(domain, sheetName, hexKey = null) {
     const action = hexKey ? "display" : "fetch";
-    let url = `${GATEWAY_URL}?action=${action}&domain=${encodeURIComponent(domain)}&sheet=${encodeURIComponent(sheetName)}`;
-    if (hexKey) url += `&hexKey=${encodeURIComponent(hexKey)}`;
+    const payload = { action, domain, sheet: sheetName };
+    if (hexKey) payload.hexKey = hexKey;
 
-    const res  = await fetch(url);
-    const data = await res.json();
+    const res = await fetch(GATEWAY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+    });
+    
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } 
+    catch(e) { throw new Error("Invalid Server Response: " + text.substring(0, 60) + "..."); }
+
     if (data.error) throw new Error(data.error);
- 
     if (data.record) return data.record;                // single-record display
  
     const rows = data.values ?? [];
@@ -34,23 +42,36 @@ async function fetchSheet(domain, sheetName, hexKey = null) {
 }
 
 async function searchSheet(domain, sheetName, filtersArray) {
-    const action = "search";
-    const url = `${GATEWAY_URL}?action=${action}&domain=${encodeURIComponent(domain)}&sheet=${encodeURIComponent(sheetName)}&filtersArray=${encodeURIComponent(JSON.stringify(filtersArray))}`;
+    const payload = { action: "search", domain, sheet: sheetName, filtersArray };
+    const res = await fetch(GATEWAY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+    });
     
-    const res  = await fetch(url);
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } 
+    catch(e) { throw new Error("Invalid Server Response: " + text.substring(0, 60) + "..."); }
+    
     if (data.error) throw new Error(data.error);
- 
     if (data.record) return data.record; 
     return data.values ?? [];
 }
 
 async function batchFetchSheets(requestsArray) {
-    const action = "batchFetch";
-    const url = `${GATEWAY_URL}?action=${action}&requests=${encodeURIComponent(JSON.stringify(requestsArray))}`;
+    const payload = { action: "batchFetch", requests: requestsArray };
+    const res = await fetch(GATEWAY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+    });
     
-    const res = await fetch(url);
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } 
+    catch(e) { throw new Error("Invalid Server Response: " + text.substring(0, 60) + "..."); }
+    
     if (data.error) throw new Error(data.error);
 
     // Fire-and-forget schema registration for all fetched sheets
