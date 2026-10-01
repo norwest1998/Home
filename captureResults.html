@@ -1089,7 +1089,7 @@ async function getMembers(className) {
 
 async function getGuests(eventId) {
   try {
-    const data = fetchSheet("results", "GuestRegistrations", eventId);
+    const data = fetchSheet("results", "GuestRegistrations", "", eventId);
     console.log(data);
     GUESTS = []; // .map(g => ({ ...g, className: g.class ?? g.className, isGuest: true }))
   } catch (e) {
