@@ -1119,7 +1119,7 @@ async function apiGet(action, className) {
   console.log("in apiGet action: " + action);
   const url = action === "members"
       ? `${CLB_WEBAPP_URL}?action=ClassMembers` + (className ? `&className=${encodeURIComponent(className)}` : "")
-      : `${CAL_WEBAPP_URL}?action=Calendar`;
+      : `${CAL_WEBAPP_URL}?action=calendar`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Server error (${res.status})`);
   const data = await res.json();
