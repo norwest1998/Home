@@ -1066,9 +1066,6 @@ const LOGO_DATA_URI = "/Home/images/logo/smmc-logo.png";
 const EMBLEM_IMAGE_URI = "/Home/images/classes/";
 const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
 const CAL_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
-const GUEST_URL = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
-
-
 
 let EVENTS = [];
 let MEMBERS = [];
@@ -1122,7 +1119,7 @@ async function apiGet(action, className) {
   console.log("in apiGet action: " + action);
   const url = action === "members"
       ? `${CLB_WEBAPP_URL}?action=ClassMembers` + (className ? `&className=${encodeURIComponent(className)}` : "")
-      : `${CAL_WEBAPP_URL}?action=RegattaEvents`;
+      : `${CAL_WEBAPP_URL}?action=Calendar`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Server error (${res.status})`);
   const data = await res.json();
