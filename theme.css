@@ -223,6 +223,7 @@
 
 
   /* ── Panel shell ── */
+/* ── Panel shell ── */
   .panel {
     background: linear-gradient(155deg, var(--glass-fill-hi), var(--glass-fill));
     border: 1px solid var(--glass-border);
@@ -230,6 +231,12 @@
     backdrop-filter: blur(18px) saturate(140%);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
     box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 18px 40px rgba(2,10,18,0.35); 
+  }
+
+  .panel > *:last-child {
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    overflow: hidden;
   }
 
   /* Standard Panel Header (Title left, controls right) */
@@ -245,6 +252,7 @@
       flex-wrap: wrap;                 /* Graceful wrapping on small screens */
   }
 
+  /* ── Tabbed Panel Header Override ── */
   .panel-header--tabbed {
       padding-bottom: 0 !important;
       flex-direction: column; 
@@ -253,7 +261,6 @@
       gap: 0; /* Remove general header gap to prevent floating */
   }
 
-  /* Add spacing specifically under the title */
   .panel-header--tabbed .panel-title,
   .panel-header--tabbed .panel-title-left {
       width: 100%;
@@ -264,17 +271,32 @@
   .panel-header .tab-row-wrap {
       width: 100%;
       display: flex;
-      align-items: flex-end; /* Changed from center to flex-end */
+      align-items: flex-end; /* center to flex-end */
       justify-content: space-between;
       gap: 12px;
   }
 
-  /* Make sure the active tab border perfectly overlaps the panel line */
-  .tab {
-      position: relative;
-      bottom: -1px;
+  /* ── Panel Titles ── */
+  .panel-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
   }
-  
+
+  .panel-title-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--foam);
+    margin: 0;
+  }
+
   .panel-title .dot, .panel-title-left .dot {
     display: inline-block;
     width: 7px;
@@ -285,22 +307,10 @@
     animation: pulse 2.4s ease-in-out infinite;
     flex-shrink: 0;
   }
-
-  .panel > *:last-child {
-    border-bottom-left-radius: 20px;
-    border-bottom-right-radius: 20px;
-    overflow: hidden;
-  }
   
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.35; }
-  }
-  .panel-title h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--foam);
-    margin: 0;
   }
  
   /* ── Tabs ── */
@@ -322,10 +332,13 @@
     color: var(--foam-dim);
     transition: background 0.15s, color 0.15s;
     position: relative;
-    bottom: -1px;
+    bottom: -1px; /* active tab border perfectly overlaps the panel line */
   }
  
-  .tab:hover { color: var(--foam); background: var(--glass-fill); }
+  .tab:hover { 
+    color: var(--foam); 
+    background: var(--glass-fill); 
+  }
  
   .tab.active {
     background: var(--glass-fill-hi);
