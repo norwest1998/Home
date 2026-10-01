@@ -245,27 +245,34 @@
       flex-wrap: wrap;                 /* Graceful wrapping on small screens */
   }
 
-  /* Tabbed Panel Header (Stacks title row and tabs vertically) */
   .panel-header--tabbed {
-      padding-bottom: 0;
+      padding-bottom: 0 !important;
       flex-direction: column; 
       align-items: stretch;
+      justify-content: flex-end;
+      gap: 0; /* Remove general header gap to prevent floating */
   }
 
-  /* Ensure the title row within a tabbed header still spreads left/right */
-  .panel-header--tabbed .panel-title {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+  /* Add spacing specifically under the title */
+  .panel-header--tabbed .panel-title,
+  .panel-header--tabbed .panel-title-left {
       width: 100%;
       margin-bottom: 12px;
   }
 
-  .panel-title-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  /* CRITICAL: Force items to the bottom so tabs touch the line */
+  .panel-header .tab-row-wrap {
+      width: 100%;
+      display: flex;
+      align-items: flex-end; /* Changed from center to flex-end */
+      justify-content: space-between;
+      gap: 12px;
+  }
 
+  /* Make sure the active tab border perfectly overlaps the panel line */
+  .tab {
+      position: relative;
+      bottom: -1px;
   }
   
   .panel-title .dot, .panel-title-left .dot {
@@ -283,7 +290,7 @@
     border-bottom-left-radius: 20px;
     border-bottom-right-radius: 20px;
     overflow: hidden;
-}
+  }
   
   @keyframes pulse {
     0%, 100% { opacity: 1; }
@@ -325,14 +332,6 @@
     border-color: var(--glass-border);
     border-bottom-color: transparent;
     color: var(--glow);
-  }
-
-  .tab-row-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    align-items: flex-end;
   }
 
   .add-app-pill {
