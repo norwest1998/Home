@@ -221,6 +221,7 @@
   }
   .section-head p{ font-size:13.5px; color:var(--foam-dim); }
 
+
   /* ── Panel shell ── */
   .panel {
     background: linear-gradient(155deg, var(--glass-fill-hi), var(--glass-fill));
@@ -231,47 +232,35 @@
     box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 18px 40px rgba(2,10,18,0.35); 
   }
 
-  /* .panel-header {
-      padding: 16px 24px;
+  /* Standard Panel Header (Title left, controls right) */
+  .panel-header {
+      padding: 16px 24px; /* Uniform padding all around */
       border-bottom: 1px solid var(--glass-border);
       min-height: 56px;
+      display: flex;
+      flex-direction: row;             /* Align children horizontally */
+      align-items: center;             /* Vertically center everything */
+      justify-content: space-between;  /* Push title to left, controls to right */
+      gap: 12px;
+      flex-wrap: wrap;                 /* Graceful wrapping on small screens */
+  }
+
+  /* Tabbed Panel Header (Stacks title row and tabs vertically) */
+  .panel-header--tabbed {
+      padding-bottom: 0;
+      flex-direction: column; 
+      align-items: stretch;
+  }
+
+  /* Ensure the title row within a tabbed header still spreads left/right */
+  .panel-header--tabbed .panel-title {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-direction: column;
-      align-items: flex-end;;
-      gap: 10px;
-  } */
-  .panel-header {
-      padding: 16px 24px 0;
-      border-bottom: 1px solid var(--glass-border);
-      min-height: 56px;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 10px;
+      width: 100%;
+      margin-bottom: 12px;
   }
 
-  .panel-header--tabbed {
-      padding-bottom: 0;
-      align-items: flex-end;
-      min-height: unset;
-  }
-
-  .panel-header .tab-row-wrap {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  
-  .panel-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    margin-Bottom: 6px;
-  }
   .panel-title-left {
     display: flex;
     align-items: center;
