@@ -1108,10 +1108,11 @@ function getRoster() {
 async function getEvents() {
   try {
     const data = await apiGet("events");
-    const year = (String(data.monthLabel || '').match(/\d{4}/) || [new Date().getFullYear()])[0];
-    EVENTS = (Array.isArray(data.events) ? data.events : [])
-      .filter(e => e.boatClass)                       // drops meetings (no class)
-      .map(e => {
+    EVENTS = (data.months || []).flatMap(mo => {
+      const year = (String(mo.monthLabel).match(/\d{4}/) || [new Date().getFullYear()])[0];
+      return (mo.events || [])
+        .filter(e => e.boatClass)
+        .map(e => {
         const [, dd, mon] = String(e.dateLabel).split(' ');   // "SAT 03 OCT"
         const mm = MON.findIndex(m => m.toUpperCase() === mon) + 1;
       
@@ -1125,10 +1126,11 @@ async function getEvents() {
           round: String(e.roundNum ?? ''),
           season: e.season,
           status: e.results === 'Not Started' ? 'Not Started' : 'Processed'
-          
+        
         };
       });
-      console.log('raw', data.events?.length, 'mapped', EVENTS.length, EVENTS[0]);
+    });
+    console.log('raw', data.events?.length, 'mapped', EVENTS.length, EVENTS[0]);
   } catch (error) {
     console.error("Failed to load events:", error);
     EVENTS = [];
