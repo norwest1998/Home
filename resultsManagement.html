@@ -371,6 +371,69 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
         </div>
     </div>
 
+    <!-- Guest Registration Section -->
+    <div class="section-head" id="guest-registration">
+        <div>
+            <h2>Guest Registration</h2>
+            <p>Manage external sailors from other clubs participating in SMMC events.</p>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div class="panel-title-left"><span class="dot"></span><h3>Guest Sailor Roster</h3></div>
+            <button type="button" class="btn btn-primary" style="padding:6px 14px;font-size:12px;" onclick="openAddGuestModal()">
+                <i class="inline-icon" data-lucide="user-plus"></i> Add Guest Sailor
+            </button>
+        </div>
+        <div class="tab-content active">
+            <!-- Event Selector Toolbar -->
+            <div class="panel-toolbar" style="gap:10px;align-items:center;">
+                <select id="guestClassFilter" class="mm-select" onchange="filterGuestEvents()">
+                    <option value="all">All Classes</option>
+                    <option value="DF95">DF95</option>
+                    <option value="DF65">DF65</option>
+                    <option value="IOM">IOM</option>
+                    <option value="Soling">Soling</option>
+                </select>
+                
+                <select id="guestEventSelect" class="mm-select" style="flex:1;" onchange="onGuestEventChange()">
+                    <option value="">— Select an Event —</option>
+                </select>
+
+                <button type="button" class="btn btn-ghost" onclick="loadGuestData()" title="Refresh Guests">
+                    <i class="inline-icon" data-lucide="refresh-cw" color="#257fb6"></i> Refresh
+                </button>
+                <button type="button" class="btn btn-ghost" id="copyGuestListBtn" style="display:none;" onclick="copyGuestRoster()" title="Copy Roster">
+                    <i class="inline-icon" data-lucide="copy"></i> Copy Roster
+                </button>
+            </div>
+
+            <!-- Event Meta Banner -->
+            <div id="guestEventMeta" class="sheet-meta" style="display:none;margin-bottom:12px;"></div>
+
+            <!-- Guest Sailor List Table -->
+            <div class="table-scroll" id="guestTableWrap">
+                <table class="standings">
+                    <thead>
+                        <tr>
+                            <th class="col-center">Sail #</th>
+                            <th>Competitor Name</th>
+                            <th>Home Club</th>
+                            <th>Contact Email</th>
+                            <th class="col-center">Status</th>
+                            <th class="col-center" style="width:90px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="guestTableBody">
+                        <tr><td colspan="6" class="empty-state">Select an event above to view registered guests.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="fn-message" id="guestMsg"></div>
+        </div>
+    </div>
+
     <!-- Average Score Requests -->
     <div class="section-head" id="avg-score-requests">
         <div>
@@ -406,6 +469,80 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
     <div id="auditLog-placeholder"></div>
 
 </main>
+
+<!-- ================================================================
+     GUEST SAILOR MODAL (ADD / EDIT)
+     ================================================================ -->
+<div class="modal-overlay" id="guestModal" onclick="if(event.target===this)closeGuestModal()">
+    <div class="modal-box" style="max-width:500px;">
+        <div class="modal-header">
+            <div>
+                <h3 id="guestModalTitle">Add Guest Sailor</h3>
+                <div class="modal-header-meta" id="guestModalSubtitle">Register sailor from visiting club</div>
+            </div>
+            <button class="icon-btn" onclick="closeGuestModal()" title="Close">
+                <i class="inline-icon" data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="guestForm" onsubmit="saveGuestSailor(event)" style="display:flex;flex-direction:column;gap:12px;">
+                <input type="hidden" id="guestHexKey" value="">
+                
+                <div>
+                    <label class="modal-meta-label">Target Event</label>
+                    <select id="modalGuestEvent" class="mm-select" style="width:100%;margin-top:4px;" required>
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;">
+                    <div>
+                        <label class="modal-meta-label">Sail Number *</label>
+                        <input type="text" id="guestSailNo" class="search-input" 
+                               style="border:1px solid var(--glass-border);padding:8px;border-radius:8px;width:100%;margin-top:4px;" 
+                               placeholder="e.g. 42" required>
+                    </div>
+                    <div>
+                        <label class="modal-meta-label">Competitor Name *</label>
+                        <input type="text" id="guestName" class="search-input" 
+                               style="border:1px solid var(--glass-border);padding:8px;border-radius:8px;width:100%;margin-top:4px;" 
+                               placeholder="e.g. Mark Taylor" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="modal-meta-label">Home Club *</label>
+                    <input type="text" id="guestHomeClub" class="search-input" 
+                           style="border:1px solid var(--glass-border);padding:8px;border-radius:8px;width:100%;margin-top:4px;" 
+                           placeholder="e.g. Dobroyd Aquatic Club" required>
+                </div>
+
+                <div>
+                    <label class="modal-meta-label">Contact Email</label>
+                    <input type="email" id="guestEmail" class="search-input" 
+                           style="border:1px solid var(--glass-border);padding:8px;border-radius:8px;width:100%;margin-top:4px;" 
+                           placeholder="sailor@example.com">
+                </div>
+
+                <div>
+                    <label class="modal-meta-label">Status</label>
+                    <select id="guestStatus" class="mm-select" style="width:100%;margin-top:4px;">
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Withdrawn">Withdrawn</option>
+                    </select>
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                    <button type="button" class="btn btn-ghost" onclick="closeGuestModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="guestSaveBtn">
+                        <i class="inline-icon" data-lucide="check"></i> Save Guest
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <!-- ================================================================
      SCORESHEET MODAL
@@ -893,6 +1030,235 @@ function openSelectedSheetDrive() {
     if (!activeOverallSheet?.id) return;
     window.open(`https://docs.google.com/spreadsheets/d/${activeOverallSheet.id}`, '_blank');
 }
+
+// ----------------------------------------------------------------
+// GUEST REGISTRATION CONTROLLER
+// ----------------------------------------------------------------
+let allGuestRegistrations = [];
+let allUpcomingEvents     = [];
+let activeGuestEventId    = null;
+
+async function loadGuestData() {
+    try {
+        // Fetch guest registrations sheet
+        allGuestRegistrations = await fetchSheet(DOMAIN.results, "GuestRegistrations");
+        
+        // Fetch upcoming events from calendar domain or synthesize from overall sheets
+        if (typeof fetchSheet === 'function') {
+            try {
+                allUpcomingEvents = await fetchSheet(DOMAIN.calendar, "Events");
+            } catch (e) {
+                console.warn("Calendar events sheet not reachable, using fallback events list.");
+                allUpcomingEvents = buildEventListFromRegistrations();
+            }
+        }
+        
+        populateGuestEventSelect();
+        renderGuestTable();
+    } catch (err) {
+        showMsg('guestMsg', 'Error loading guest registrations: ' + err.message, true);
+    }
+}
+
+function buildEventListFromRegistrations() {
+    const map = new Map();
+    allGuestRegistrations.forEach(r => {
+        if (r.EventID && !map.has(r.EventID)) {
+            map.set(r.EventID, {
+                EventID: r.EventID,
+                Title: r.EventTitle || r.EventID,
+                RaceClass: r.RaceClass || 'General',
+                EventDate: r.EventDate || ''
+            });
+        }
+    });
+    return Array.from(map.values());
+}
+
+function filterGuestEvents() {
+    populateGuestEventSelect();
+}
+
+function populateGuestEventSelect() {
+    const clsFilter = document.getElementById('guestClassFilter').value;
+    const selectEl  = document.getElementById('guestEventSelect');
+    const modalSel  = document.getElementById('modalGuestEvent');
+
+    let events = allUpcomingEvents;
+    if (clsFilter !== 'all') {
+        events = events.filter(e => String(e.RaceClass || e.Class || '').toLowerCase() === clsFilter.toLowerCase());
+    }
+
+    const optionsHtml = '<option value="">— Select an Event —</option>' +
+        events.map(e => `<option value="${escHtml(e.EventID || e.HexKey)}">${escHtml(e.RaceClass || '')} — ${escHtml(e.Title || e.EventTitle)} (${escHtml(e.EventDate || 'TBD')})</option>`).join('');
+
+    selectEl.innerHTML = optionsHtml;
+    if (modalSel) modalSel.innerHTML = optionsHtml;
+
+    if (activeGuestEventId) selectEl.value = activeGuestEventId;
+}
+
+function onGuestEventChange() {
+    activeGuestEventId = document.getElementById('guestEventSelect').value;
+    renderGuestTable();
+}
+
+function renderGuestTable() {
+    const bodyEl   = document.getElementById('guestTableBody');
+    const metaEl   = document.getElementById('guestEventMeta');
+    const copyBtn  = document.getElementById('copyGuestListBtn');
+
+    if (!activeGuestEventId) {
+        bodyEl.innerHTML = '<tr><td colspan="6" class="empty-state">Select an event from the dropdown above to view registered guest sailors.</td></tr>';
+        metaEl.style.display = 'none';
+        copyBtn.style.display = 'none';
+        return;
+    }
+
+    const selectedEvt = allUpcomingEvents.find(e => (e.EventID || e.HexKey) === activeGuestEventId);
+    const guests = allGuestRegistrations.filter(r => r.EventID === activeGuestEventId);
+
+    if (selectedEvt) {
+        metaEl.style.display = 'block';
+        metaEl.textContent = `${selectedEvt.RaceClass || ''} • ${selectedEvt.Title || selectedEvt.EventTitle} • ${selectedEvt.EventDate || ''} • Registered Guests: ${guests.length}`;
+    }
+
+    copyBtn.style.display = guests.length ? 'inline-flex' : 'none';
+
+    if (!guests.length) {
+        bodyEl.innerHTML = '<tr><td colspan="6" class="empty-state">No guest sailors registered for this event yet. Click "Add Guest Sailor" to add one.</td></tr>';
+        return;
+    }
+
+    bodyEl.innerHTML = guests.map(g => `
+        <tr>
+            <td class="col-center" style="font-weight:700;color:var(--glow);">${escHtml(g.SailNo)}</td>
+            <td style="font-weight:600;">${escHtml(g.CompetitorName)}</td>
+            <td>${escHtml(g.HomeClub)}</td>
+            <td style="font-size:11.5px;color:var(--foam-dim);">${escHtml(g.ContactEmail || '—')}</td>
+            <td class="col-center">
+                <span class="badge ${g.Status === 'Confirmed' ? 'badge-approved' : g.Status === 'Pending' ? 'badge-pending' : 'badge-declined'}">
+                    ${escHtml(g.Status || 'Confirmed')}
+                </span>
+            </td>
+            <td class="col-center">
+                <div style="display:flex;gap:4px;justify-content:center;">
+                    <button class="icon-btn" title="Edit Guest" onclick="openEditGuestModal('${escHtml(g.HexKey)}')">
+                        <i class="inline-icon" data-lucide="pencil"></i>
+                    </button>
+                    <button class="icon-btn" title="Delete Guest" onclick="deleteGuestSailor('${escHtml(g.HexKey)}')">
+                        <i class="inline-icon" data-lucide="trash-2" color="#ff6a3d"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+
+    if (window.lucide) lucide.createIcons();
+}
+
+function openAddGuestModal() {
+    document.getElementById('guestModalTitle').textContent = 'Add Guest Sailor';
+    document.getElementById('guestHexKey').value = '';
+    document.getElementById('guestSailNo').value = '';
+    document.getElementById('guestName').value = '';
+    document.getElementById('guestHomeClub').value = '';
+    document.getElementById('guestEmail').value = '';
+    document.getElementById('guestStatus').value = 'Confirmed';
+
+    if (activeGuestEventId) {
+        document.getElementById('modalGuestEvent').value = activeGuestEventId;
+    }
+
+    document.getElementById('guestModal').classList.add('open');
+}
+
+function openEditGuestModal(hexKey) {
+    const g = allGuestRegistrations.find(r => r.HexKey === hexKey);
+    if (!g) return;
+
+    document.getElementById('guestModalTitle').textContent = 'Edit Guest Sailor';
+    document.getElementById('guestHexKey').value = g.HexKey;
+    document.getElementById('modalGuestEvent').value = g.EventID || '';
+    document.getElementById('guestSailNo').value = g.SailNo || '';
+    document.getElementById('guestName').value = g.CompetitorName || '';
+    document.getElementById('guestHomeClub').value = g.HomeClub || '';
+    document.getElementById('guestEmail').value = g.ContactEmail || '';
+    document.getElementById('guestStatus').value = g.Status || 'Confirmed';
+
+    document.getElementById('guestModal').classList.add('open');
+}
+
+function closeGuestModal() {
+    document.getElementById('guestModal').classList.remove('open');
+}
+
+async function saveGuestSailor(event) {
+    event.preventDefault();
+    const hexKey  = document.getElementById('guestHexKey').value;
+    const eventId = document.getElementById('modalGuestEvent').value;
+    const evt     = allUpcomingEvents.find(e => (e.EventID || e.HexKey) === eventId);
+
+    const record = {
+        EventID:        eventId,
+        EventTitle:     evt ? (evt.Title || evt.EventTitle) : '',
+        EventDate:      evt ? (evt.EventDate || '') : '',
+        RaceClass:      evt ? (evt.RaceClass || '') : '',
+        SailNo:         document.getElementById('guestSailNo').value.trim(),
+        CompetitorName: document.getElementById('guestName').value.trim(),
+        HomeClub:       document.getElementById('guestHomeClub').value.trim(),
+        ContactEmail:   document.getElementById('guestEmail').value.trim(),
+        Status:         document.getElementById('guestStatus').value,
+        RegisteredAt:   new Date().toISOString()
+    };
+
+    try {
+        if (hexKey) {
+            await updateSheet(DOMAIN.results, "GuestRegistrations", hexKey, record);
+            showMsg('guestMsg', 'Guest sailor details updated.', false);
+        } else {
+            record.HexKey = 'GR' + Date.now().toString().slice(-6);
+            await appendSheet(DOMAIN.results, "GuestRegistrations", record);
+            showMsg('guestMsg', 'Guest sailor registered successfully.', false);
+        }
+        closeGuestModal();
+        await loadGuestData();
+    } catch (err) {
+        showMsg('guestMsg', 'Failed to save guest: ' + err.message, true);
+    }
+}
+
+async function deleteGuestSailor(hexKey) {
+    if (!confirm("Are you sure you want to remove this guest sailor?")) return;
+    try {
+        await deleteRow(DOMAIN.results, "GuestRegistrations", hexKey);
+        showMsg('guestMsg', 'Guest sailor removed.', false);
+        await loadGuestData();
+    } catch (err) {
+        showMsg('guestMsg', 'Error deleting guest: ' + err.message, true);
+    }
+}
+
+function copyGuestRoster() {
+    const guests = allGuestRegistrations.filter(r => r.EventID === activeGuestEventId);
+    if (!guests.length) return;
+
+    const lines = guests.map(g => `${g.SailNo}\t${g.CompetitorName}\t${g.HomeClub}`);
+    const text = `Sail No\tCompetitor Name\tHome Club\n` + lines.join('\n');
+
+    navigator.clipboard.writeText(text).then(() => {
+        showMsg('guestMsg', 'Guest roster copied to clipboard (ready to paste into scoring software).', false);
+    }).catch(err => {
+        showMsg('guestMsg', 'Copy failed: ' + err.message, true);
+    });
+}
+
+// Automatically invoke guest data load in loadAll()
+const origLoadAll = window.loadAll;
+window.loadAll = function() {
+    if (typeof origLoadAll === 'function') origLoadAll();
+    loadGuestData();
+};
 
 // ----------------------------------------------------------------
 // RENDER — Avg Score Requests
