@@ -277,6 +277,7 @@
   }
 
   /* ── Panel Titles ── */
+/* ── Panel Titles ── */
   .panel-title {
     display: flex;
     align-items: center;
@@ -285,9 +286,10 @@
   }
 
   .panel-title-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
   }
 
   .panel-title h3 {
@@ -295,6 +297,24 @@
     font-weight: 600;
     color: var(--foam);
     margin: 0;
+    line-height: 1; /* Prevents text line-height from pushing the dot around */
+  }
+
+  .panel-header--tabbed,
+  .panel-header:has(.tab-row) {
+      padding-bottom: 0 !important;
+      flex-direction: column !important; 
+      align-items: stretch !important;
+      justify-content: flex-end !important;
+      gap: 0 !important;
+  }
+
+  .panel-header--tabbed .panel-title,
+  .panel-header:has(.tab-row) .panel-title,
+  .panel-header--tabbed .panel-title-left,
+  .panel-header:has(.tab-row) .panel-title-left {
+      width: 100%;
+      margin-bottom: 12px;
   }
 
   .panel-title .dot, .panel-title-left .dot {
@@ -307,6 +327,15 @@
     animation: pulse 2.4s ease-in-out infinite;
     flex-shrink: 0;
   }
+
+  .panel-header .tab-row-wrap {
+      width: 100%;
+      display: flex !important;
+      align-items: flex-end !important; 
+      justify-content: space-between;
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+  }
   
   @keyframes pulse {
     0%, 100% { opacity: 1; }
@@ -316,7 +345,9 @@
   /* ── Tabs ── */
   .tab-row {
     display: flex;
+    align-items: flex-end; /* Ensures tabs rest on the absolute bottom edge */
     gap: 4px;
+    margin-bottom: 0 !important;
   }
  
   .tab {
