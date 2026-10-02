@@ -422,7 +422,7 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
 
     function getMemberClasses(name) {
         const n = String(name || '').trim().toLowerCase();
-        const classes = allBoats
+        const classes = (allBoats || [])
             .filter(b => String(b.member || '').trim().toLowerCase() === n && b.active)
             .map(b => b.class).filter(Boolean);
         return classes.length ? classes.join(', ') : '—';
@@ -1060,8 +1060,8 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
 
     const cached = readAdminCache("members");
     if (cached?.members) {
-        allMembers = cached.members;
-        allBoats = cached.boats;
+        allMembers = cached.members || [];
+        allBoats = cached.boats || [];
         renderMemberStats();
         populateMembershipFilterOptions();
         filterMemberDirectory();
