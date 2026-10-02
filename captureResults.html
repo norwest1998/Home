@@ -1230,10 +1230,6 @@ function loadState(eventId){
   }catch(e){ return null; }
 }
 
-function hasSavedProgress(eventId){
-  try{ return !!localStorage.getItem(storageKey(eventId)); }catch(e){ return false; }
-}
-
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -1444,17 +1440,17 @@ function renderEventSelect(){
 
   const rows = list.map(e => {
     const regattaName = `${e.class} ${e.regattaType}`;
-    const saved = hasSavedProgress(e.id);
+    const st = loadState(e.id);
+    const saved = !!st && ((st.entries?.length || 0) > 0 || (st.races?.length || 0) > 0);
     const selectable = e.status !== 'Processing';
     let pill = '';  
     if(!selectable){
       const cls = e.status === 'Processed' ? 'pill-sent' : 'pill-inprogress';
       pill = `<span class="event-status-pill ${cls}">${e.status}</span>`;
     } else if(saved){
-      const st = loadState(e.id);
-      if(st?.sent)       pill = `<span class="event-status-pill pill-sent">Processing</span>`;
-      else if(st?.entriesLocked) pill = `<span class="event-status-pill pill-inprogress">In progress</span>`;
-      else               pill = `<span class="event-status-pill pill-inprogress">Entries set</span>`;
+      if(st.sent)                    pill = `<span class="event-status-pill pill-sent">Processing</span>`;
+      else if(st.races?.length > 0)  pill = `<span class="event-status-pill pill-inprogress">In progress</span>`;
+      else                           pill = `<span class="event-status-pill pill-inprogress">Entries set</span>`;
     }
     return `<div class="event-item ${selectable ? '' : 'event-disabled'}" ${selectable ? `data-select-event="${e.id}"` : ''}>
       <div class="event-date-block">
