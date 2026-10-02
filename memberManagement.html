@@ -364,15 +364,6 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
     let allMembers = [];
     let allBoats = [];
 
-    // Staged Data & Caching
-    const cached = readAdminCache("members");
-    if (cached?.members) {
-        allMembers = cached.members;
-        renderMemberStats();
-        populateMembershipFilterOptions();
-        filterMemberDirectory();
-    }
-
     async function apiPost(action, payload) {
         // Route Gateway write actions through updateSheet/appendSheet/deleteRow
         if (action === "update") {
@@ -562,7 +553,7 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
     }
 
     function renderMemberStats() {
-        console.log("allmembers: " + allmembers);
+        console.log("allmembers: " + allMembers);
         const REQUIRED_FIELDS = ['name','email','phone','membershipType','startDate','endDate','addressLine','suburb','postcode','emergencyContactName','emergencyContactNumber'];
         const active = allMembers.filter(m => isActiveStatus(m.status));
         const paid = allMembers.filter(m => m.isPaid);
@@ -1064,6 +1055,14 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
         const all = readAdminCache() || {};
         all[key] = value;
         localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(all));
+    }
+
+    const cached = readAdminCache("members");
+    if (cached?.members) {
+        allMembers = cached.members;
+        renderMemberStats();
+        populateMembershipFilterOptions();
+        filterMemberDirectory();
     }
 
     loadMembers();
