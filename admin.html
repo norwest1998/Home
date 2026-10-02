@@ -182,9 +182,6 @@ function getRowVal(row, possibleKeys) {
     return "";
 }
 
-// Staged Data & Caching
-const ADMIN_CACHE_KEY = "SMMC_ADMIN_DATA_v2";
-
 async function initAdmin() {
     // 1. Instant Cache Load
     const cachedRaw = localStorage.getItem(ADMIN_CACHE_KEY);
