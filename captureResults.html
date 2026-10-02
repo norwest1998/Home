@@ -1512,9 +1512,12 @@ function renderCompetitorSelect(){
       ${rows || `<div class="empty-note">No active members found for this class.</div>`}
       <div class="count-banner">${state.pendingSelection.size} competitor${state.pendingSelection.size===1?'':'s'} selected</div>
     </div>
-    <button class="btn btn-primary btn-block" ${state.pendingSelection.size < 2 ? 'disabled' : ''} data-confirm-entries="1">
-      ${editing ? 'Save entries' : 'Confirm entries'}
+    <button class="btn btn-primary btn-block"
+      ${(state.pendingSelection.size < 2 && !(editing && state.pendingSelection.size === 0)) ? 'disabled' : ''}
+      data-confirm-entries="1">
+      ${editing ? (state.pendingSelection.size === 0 ? 'Clear entries' : 'Save entries') : 'Confirm entries'}
     </button>
+    ${state.pendingSelection.size === 1 ? `<div class="section-hint" style="text-align:center">Select at least 2 competitors to race.</div>` : ''}
     ${editing ? `<button class="btn btn-ghost btn-block" style="margin-top:10px" data-cancel-edit-entries="1">Cancel</button>` : ''}
   `;
 }
@@ -1873,6 +1876,12 @@ function confirmEntries(){
   const isFirstTime = state.entries.length === 0;
   state.entries = roster.filter(m => state.pendingSelection.has(String(m.sailNo)))
                          .map(m => ({ sailNo: String(m.sailNo), member: m.member }));
+  if (state.entries.length === 0) {
+    saveState();
+    showToast('Entries cleared');
+    render();           // stay on the selection screen
+    return;
+  }
   state.screen = 'race-capture';
   saveState();
   showToast(isFirstTime ? 'Entries saved' : 'Entries updated');
