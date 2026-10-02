@@ -797,6 +797,7 @@ async function loadProcessedFiles() {
             const parsed = parseFileName(f.name || '');
             return { ...f, ...parsed };
         }).sort((a, b) => (b.date || 0) - (a.date || 0));
+        assignRoundNumbers(allProcessedFiles);
 
         populateFilters();
         filterResults();
@@ -884,6 +885,7 @@ function renderResultPage() {
 
     container.innerHTML = list.map(f => {
         const imgSrc = getClassImage(f.raceClass);
+        const label = `${f.raceClass} ${f.raceType}${f.round ? ' Rd ' + f.round : ''}`;
         const imgEl  = imgSrc
             ? `<img class="row-insignia" src="${escHtml(imgSrc)}" alt="${escHtml(f.raceClass)}">`
             : `<div class="row-insignia-placeholder"></div>`;
@@ -891,8 +893,8 @@ function renderResultPage() {
         <div class="result-row" onclick="openScoresheet('${escHtml(f.id)}', '${escHtml(f.name)}')">
             ${imgEl}
             <div>
-                <div class="r-name">${escHtml(f.raceClass)} ${escHtml(f.raceType)}</div>
-                <div class="r-meta">${escHtml(f.raw)}</div>
+                <div class="r-name">${escHtml(label)}</div>
+                <div class="r-meta">${escHtml(label)} - ${escHtml(f.dateStr || '')}</div>>
             </div>
             <div class="r-date">${escHtml(f.dateStr || '—')}</div>
             <span class="badge badge-approved">Processed</span>
@@ -1075,7 +1077,8 @@ let allGuestRegistrations = [];
 let allUpcomingEvents     = [];
 let activeGuestEventId    = null;
 let activeGuestClassFilter = 'all';
-
+const CAL_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
+const MON_ABBR = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 /**
  * Helper to format date strings consistently as YYYY/MM/DD
  */
@@ -1096,37 +1099,34 @@ function formatDateYYYYMMDD(dateVal) {
     return `${yyyy}/${mm}/${dd}`;
 }
 
+async function fetchFutureEvents() {
+  const res  = await fetch(`${CAL_WEBAPP_URL}?type=calendar`);
+  const data = await res.json();
+  return (data.months || []).flatMap(mo => {
+    const year = (String(mo.monthLabel).match(/\d{4}/) || [new Date().getFullYear()])[0];
+    return (mo.events || [])
+      .filter(e => e.boatClass)                            // skip meetings
+      .map(e => {
+        const [, dd, mon] = String(e.dateLabel).split(' ');  // "SAT 03 OCT"
+        const mm = String(MON_ABBR.indexOf(mon) + 1).padStart(2, '0');
+        return {
+          EventID:   e.hexKey,
+          Title:     e.eventName,
+          RaceClass: e.boatClass,
+          EventDate: `${year}/${mm}/${dd}`
+        };
+      });
+  });
+}
+
 async function loadGuestData() {
     try {
         allGuestRegistrations = await fetchSheet(DOMAIN.results, "GuestRegistrations");
-        
-        if (typeof fetchSheet === 'function') {
-            try {
-                allUpcomingEvents = await fetchSheet(DOMAIN.calendar, "Events");
-            } catch (e) {
-                console.warn("Calendar events sheet not reachable, synthesizing event list.");
-                allUpcomingEvents = buildEventListFromRegistrations();
-            }
-        }
+        allUpcomingEvents = await fetchFutureEvents();
         renderGuestEventsList();
     } catch (err) {
         showMsg('guestMsg', 'Error loading guest registrations: ' + err.message, true);
     }
-}
-
-function buildEventListFromRegistrations() {
-    const map = new Map();
-    allGuestRegistrations.forEach(r => {
-        if (r.EventID && !map.has(r.EventID)) {
-            map.set(r.EventID, {
-                EventID: r.EventID,
-                Title: r.EventTitle || r.EventID,
-                RaceClass: r.RaceClass || 'General',
-                EventDate: r.EventDate || ''
-            });
-        }
-    });
-    return Array.from(map.values());
 }
 
 function setGuestClassFilter(cls, btnEl) {
@@ -1150,7 +1150,10 @@ function renderGuestEventsList() {
     const container = document.getElementById('guestEventRows');
     const dateQuery = document.getElementById('guestDateFilter').value; // YYYY-MM-DD
 
-    let events = [...allUpcomingEvents];
+    const todayStr = formatDateYYYYMMDD(new Date());
+    let events = allUpcomingEvents
+    .filter(e => formatDateYYYYMMDD(e.EventDate) >= todayStr)
+    .sort((a, b) => formatDateYYYYMMDD(a.EventDate).localeCompare(formatDateYYYYMMDD(b.EventDate)));
 
     // Filter by class
     if (activeGuestClassFilter !== 'all') {
@@ -1175,6 +1178,8 @@ function renderGuestEventsList() {
         const evtId = evt.EventID || evt.HexKey;
         const formattedDate = formatDateYYYYMMDD(evt.EventDate || evt.Date);
         const raceClass = evt.RaceClass || evt.Class || 'General';
+        const [yy, mm, dd] = formatDateYYYYMMDD(evt.EventDate || evt.Date).split('/');
+        const dmy = dd ? `${dd}/${mm}/${yy}` : '—';
         const imgSrc = getClassImage(raceClass);
         const imgEl = imgSrc
             ? `<img class="row-insignia" src="${escHtml(imgSrc)}" alt="${escHtml(raceClass)}">`
@@ -1185,21 +1190,21 @@ function renderGuestEventsList() {
 
         return `
             <div class="result-row" onclick="openRegisteredGuestsModal('${escHtml(evtId)}')">
-                <div class="r-date">${escHtml(formattedDate)}</div>
                 ${imgEl}
                 <div>
                     <div class="r-name">${escHtml(evt.Title || evt.EventTitle || 'Untitled Event')}</div>
-                    <div class="r-meta">${escHtml(raceClass)}</div>
+                    <div class="r-meta">${escHtml(evt.Title || evt.EventTitle || '')} - ${dmy}</div>
                 </div>
-                
+                <div class="r-date">${escHtml(dmy)}</div>
+                    
                 <div class="guest-entries-pill" onclick="event.stopPropagation(); openRegisteredGuestsModal('${escHtml(evtId)}')">
                     <i class="inline-icon" data-lucide="user-plus"></i>
                     <span>${count} ${count === 1 ? 'Guest' : 'Guests'}</span>
                 </div>
 
                 <div class="row-actions">
-                    <button type="button" class="btn btn-ghost" style="padding: 5px 12px; font-size: 12px;" onclick="event.stopPropagation(); openRegisteredGuestsModal('${escHtml(evtId)}')">
-                        Select
+                    <button type="button" class="icon-btn" title="Manage Guests" onclick="event.stopPropagation(); openRegisteredGuestsModal('${escHtml(evtId)}')">
+                        <i class="inline-icon" data-lucide="user-plus"></i>
                     </button>
                 </div>
             </div>
@@ -1398,6 +1403,19 @@ async function openScoresheet(fileId, fileName) {
         document.getElementById('scoresheetBody').innerHTML =
             `<tr><td colspan="99" style="color:var(--signal);padding:16px;">${escHtml(err.message)}</td></tr>`;
     }
+}
+
+function assignRoundNumbers(files) {
+    const seasonOf = d => (d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1);
+    const groups = {};
+    files.filter(f => f.date).forEach(f => {
+        const key = `${seasonOf(f.date)}|${f.raceClass}|${f.raceType}`;
+        (groups[key] = groups[key] || []).push(f);
+    });
+    Object.values(groups).forEach(g =>
+        g.sort((a, b) => a.date - b.date || String(a.name).localeCompare(String(b.name)))
+         .forEach((f, i) => { f.round = i + 1; })
+    );
 }
 
 function renderScoresheetModal(json, parsed) {
