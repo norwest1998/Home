@@ -1,3 +1,4 @@
+<!-- --- START OF FILE admin.html --- -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,9 +13,7 @@
 <!-- Link Shared Theme -->
 <link rel="stylesheet" href="theme.css">
 <style>
-/* Member Health stat board 
-
-*/
+/* Member Health stat board */
 .health-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -85,7 +84,6 @@
 .fn-message.visible { display: block; }
 .fn-message.success { color: var(--glow); }
 .fn-message.error { color: #ff6b6b; }
-
 </style>
 </head>
 <body>
@@ -93,8 +91,7 @@
 <!-- Shared Navigation Header -->
 <div id="nav-placeholder"></div>
 
-<main class="container"></main>
-
+<main class="container">
     <div class="section-head">
         <h2>Member Health</h2>
         <p>Contactability of the current membership list.</p>
@@ -161,15 +158,18 @@
     </footer>
 </main>
 
-<!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
-
 <script src="shared.js"></script>  
 <script src="nav.js"></script> 
 <script src="auditLog.js"></script>
 
-
 <script>
-// Case-insensitive cell value retriever across header variations
+window.SMMC_Sheets = { fetchSheet, batchFetchSheets, updateSheet, appendSheet, DOMAIN };
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
 function getRowVal(row, possibleKeys) {
     if (!row) return "";
     const rowKeys = Object.keys(row);
@@ -182,25 +182,77 @@ function getRowVal(row, possibleKeys) {
     return "";
 }
 
+// Staged Data & Caching
+const ADMIN_CACHE_KEY = "SMMC_ADMIN_DATA_v2";
+
+async function initAdmin() {
+    // 1. Instant Cache Load
+    const cachedRaw = localStorage.getItem(ADMIN_CACHE_KEY);
+    if (cachedRaw) {
+        try {
+            const cachedData = JSON.parse(cachedRaw);
+            renderAll(cachedData);
+        } catch (e) {
+            console.warn("Admin cache parse error", e);
+        }
+    }
+
+    // 2. Fetch all required tables in a single HTTP request
+    try {
+        const reqs = [
+            { domain: DOMAIN.members, sheet: "Members" },
+            { domain: DOMAIN.apps, sheet: "Membership Applications" },
+            { domain: DOMAIN.documents, sheet: "Documents" },
+            { domain: DOMAIN.notes, sheet: "Notes" },
+            { domain: DOMAIN.notes, sheet: "Actions" },
+            { domain: DOMAIN.calendar, sheet: "Event Data" },
+            { domain: DOMAIN.tracking, sheet: "Tracking" }
+        ];
+
+        const res = await batchFetchSheets(reqs);
+        const freshData = {
+            members: res[`${DOMAIN.members}|Members`],
+            apps: res[`${DOMAIN.apps}|Membership Applications`],
+            docs: res[`${DOMAIN.documents}|Documents`],
+            notes: res[`${DOMAIN.notes}|Notes`],
+            actions: res[`${DOMAIN.notes}|Actions`],
+            events: res[`${DOMAIN.calendar}|Event Data`],
+            tracking: res[`${DOMAIN.tracking}|Tracking`]
+        };
+
+        // Cache and re-render
+        localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(freshData));
+        renderAll(freshData);
+
+    } catch (err) {
+        console.error("Failed to bootstrap fresh admin data", err);
+        if (!cachedRaw) {
+            // Provide fallback error visual states if no cache exists
+            document.querySelectorAll('.spinner').forEach(s => {
+                s.parentElement.innerHTML = '<span class="badge badge-expired">Error loading</span>';
+            });
+        }
+    }
+}
+
+function renderAll(data) {
+    if (!data) return;
+    renderMemberHealth(data.members);
+    renderGrid(data);
+}
 
 /* ============================================================
-GOOGLE SHEETS MODULE — SMMC ADMIN PANEL
+ADMIN FUNCTIONS GRID
 ============================================================ */
-
-window.SMMC_Sheets = { fetchSheet, updateSheet, appendSheet, DOMAIN };
-
-
 const FUNCTIONS = [
-    // Membership Applications
     {
         id: "Member-Applications",
         icon: '<i data-lucide="user-plus" color="#257fb6"></i>',
         title: "Online Membership Applications",
         description: "Manage online applications through the process.",
         href: "applications.html",
-        status: async () => {
-            const apps = await fetchSheet(DOMAIN.apps, "Membership Applications");
-
+        status: (data) => {
+            const apps = data.apps || [];
             const getStatus = (r) => getRowVal(r, ["Status", "App Status", "Application Status"]);
             const getApproved = (r) => getRowVal(r, ["Membership Approved", "Approved"]);
 
@@ -231,16 +283,14 @@ const FUNCTIONS = [
             };
         }
     },
-    // Member Management 
     { 
         id: "member-management", 
         icon: '<i data-lucide="user-group" color="#257fb6"></i>', 
         title: "Member Management", 
         description: "Manage member details and communcation",
         href: "memberManagement.html",
-        status: async () => {
-            const members = await fetchSheet(DOMAIN.members, "Members");
-
+        status: (data) => {
+            const members = data.members || [];
             const getStatus = (r) => getRowVal(r, ["Active", "Membership Status"]).toLowerCase();
             const getType = (r) => getRowVal(r, ["Membership Type", "Type", "Membership"]).toLowerCase();
             const getPaid = (r) => getRowVal(r, ["Paid-up", "Paid Up", "PaidUp", "Paid"]).toLowerCase();
@@ -265,15 +315,14 @@ const FUNCTIONS = [
             };
         }
     },
-    // Document Management
     {
         id: "documentRepository",
         icon: '<i data-lucide="folder-open" color="#257fb6"></i>',
         title: "Document Management",
         description: "Library, search, versioning, review and sign-off.",
         href: "documentManagement.html",
-        status: async () => {
-            const docs = await fetchSheet(DOMAIN.documents, "Documents");
+        status: (data) => {
+            const docs = data.docs || [];
             const count = (s) => docs.filter(d => getRowVal(d, ["Status"]) === s).length;
             return {
                 pills: [
@@ -284,24 +333,23 @@ const FUNCTIONS = [
             };
         }
     },
-    // Notes Management
     {
         id: "notes",
         icon: '<i data-lucide="notebook-pen" color="#257fb6"></i>',
         title: "Notes",
         description: "Capture, manage and action meeting and topic notes.",
         href: "notes.html",
-        status: async () => {
-            const [noteRows, actionRows] = await Promise.all([
-                fetchSheet(DOMAIN.notes, "Notes"),
-                fetchSheet(DOMAIN.notes, "Actions")
-            ]);
+        status: (data) => {
+            const noteRows = data.notes || [];
+            const actionRows = data.actions || [];
             const now = new Date();
+            
             const open = actionRows.filter(a => getRowVal(a,["Status"]).toLowerCase() !== "done").length;
             const overdue = actionRows.filter(a => {
                 const d = new Date(getRowVal(a,["By Date"]));
                 return getRowVal(a,["Status"]).toLowerCase() !== "done" && !isNaN(d) && d < now;
             }).length;
+            
             return {
                 pills: [
                     { label: "Notes",           value: noteRows.length, className: "badge-full" },
@@ -311,48 +359,21 @@ const FUNCTIONS = [
             };
         }
     },
-    // Calendar management
     {
         id: "calendar-management",
         icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
         title: "Calendar Management",
         description: "Manage Calendar Events.",
         href: "calendarManagement.html",
-        status: async () => {
-            const events = await fetchSheet(DOMAIN.calendar, "Event Data");
+        status: (data) => {
+            const events = data.events || [];
 
-            // helper to pull Competition regattas
-            const getCompVal = (row) => getRowVal(row, [
-                "Event Type", 
-                "competition"
-            ]).trim().toLowerCase();
+            const getCompVal = (row) => getRowVal(row, ["Event Type", "competition"]).trim().toLowerCase();
+            const getReschedVal = (row) => getRowVal(row, ["Rescheduled Date", "RescheduledDate", "Reschedule Date"]).trim().toLowerCase();
 
-            // Helper to pull the Rescheduled Date field across header variations
-            const getReschedVal = (row) => getRowVal(row, [
-                "Rescheduled Date", 
-                "RescheduledDate", 
-                "Reschedule Date"
-            ]).trim().toLowerCase();
-
-            // count competitions
-            const compCount = events.filter(e => {
-                const val = getCompVal(e);
-                return val.includes("competition");
-            }).length;
-
-            // count maintenance days
-            const maintCount = events.filter(e => {
-                const val = getCompVal(e);
-                return val.includes("maintenance");
-            }).length;
-
-            // 1. Pending: Column contains "pending" (e.g., "Pending 15/10/2026")
-            const pendingCount = events.filter(e => {
-                const val = getReschedVal(e);
-                return val.includes("pending");
-            }).length;
-
-            // 2. Rescheduled: Column is populated with a date string and is no longer pending
+            const compCount = events.filter(e => getCompVal(e).includes("competition")).length;
+            const maintCount = events.filter(e => getCompVal(e).includes("maintenance")).length;
+            const pendingCount = events.filter(e => getReschedVal(e).includes("pending")).length;
             const rescheduledCount = events.filter(e => {
                 const val = getReschedVal(e);
                 return val !== "" && !val.includes("pending");
@@ -360,98 +381,58 @@ const FUNCTIONS = [
 
             return {
                 pills: [
-                    {
-                        label: "Regattas",
-                        value: compCount,
-                        className: "badge-full"
-                    },{
-                        label: "Socials",
-                        value: events.length - compCount,
-                        className: "badge-full"
-                    },{
-                        label: "Maintenance",
-                        value: maintCount,
-                        className: "badge-full"
-                    },{
-                        label: "Rescheduled",
-                        value: rescheduledCount,
-                        className: "badge-full"
-                    },{
-                        label: "Pending",
-                        value: pendingCount,
-                        className: "badge-renewal"
-                    },
+                    { label: "Regattas", value: compCount, className: "badge-full" },
+                    { label: "Socials", value: events.length - compCount, className: "badge-full" },
+                    { label: "Maintenance", value: maintCount, className: "badge-full" },
+                    { label: "Rescheduled", value: rescheduledCount, className: "badge-full" },
+                    { label: "Pending", value: pendingCount, className: "badge-renewal" },
                 ]
             };
         }
     },
-    // Regatta Result management
     {
         id: "race-management",
-        icon: `<svg xmlns="http://w3.org" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#257fb6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 4h2a2 2 0 0 1 2 2v3" />
-                <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6" />
-                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-
-                <line x1="8" y1="10" x2="14" y2="10" />
-                <line x1="8" y1="14" x2="11" y2="14" />
-                <line x1="8" y1="18" x2="11" y2="18" />
-
-                <path d="M17 11v8h4c0 0-1-6-4-8z" />
-                <path d="M15 14.5v4.5h1.5c0 0-.5-3.5-1.5-4.5z" />
-
-                <path d="M18 22l1.5 1.5L23 20" />
-                </svg>`,
+        icon: `<svg xmlns="http://w3.org" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#257fb6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v3" /><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6" /><rect x="8" y="2" width="8" height="4" rx="1" ry="1" /><line x1="8" y1="10" x2="14" y2="10" /><line x1="8" y1="14" x2="11" y2="14" /><line x1="8" y1="18" x2="11" y2="18" /><path d="M17 11v8h4c0 0-1-6-4-8z" /><path d="M15 14.5v4.5h1.5c0 0-.5-3.5-1.5-4.5z" /><path d="M18 22l1.5 1.5L23 20" /></svg>`,
         title: "Results Management",
         description: "Manage Regatta Results.",
         href: "resultsManagement.html"
-        },
-    // Email management
+    },
     {
         id: "email-management",
         icon: '<i data-lucide="mail" color="#257fb6"></i>',
         title: "Email Management",
         description: "Track sent emails, responses, open rates and reminders across all communication campaigns.",
         href: "emailManagement.html",
-        status: async () => {
-            const rows = await fetchSheet(DOMAIN.tracking, "Tracking");
-        
-            const total     = rows.length;
+        status: (data) => {
+            const rows = data.tracking || [];
+            const total = rows.length;
             const responded = rows.filter(r => ["Responded","Updated"].includes(r["Email Status"])).length;
-            const pending   = rows.filter(r => r["Email Status"] === "Sent").length;
-            const opened    = rows.filter(r => Number(r["Open Count"] || 0) > 0).length;
+            const pending = rows.filter(r => r["Email Status"] === "Sent").length;
+            const opened = rows.filter(r => Number(r["Open Count"] || 0) > 0).length;
             const reminders = rows.filter(r => r["Reminder Sent"] === "Yes").length;
         
             return {
                 pills: [
-                { label: "Sent",      value: total,     className: "badge-default"  },
-                { label: "Responded", value: responded,  className: "badge-full"     },
-                { label: "Pending",   value: pending,    className: "badge-renewal"  },
-                { label: "Opened",    value: opened,     className: "badge-affiliate"},
-                { label: "Reminders", value: reminders,  className: "badge-expired"  },
+                    { label: "Sent", value: total, className: "badge-default" },
+                    { label: "Responded", value: responded, className: "badge-full" },
+                    { label: "Pending", value: pending, className: "badge-renewal" },
+                    { label: "Opened", value: opened, className: "badge-affiliate" },
+                    { label: "Reminders", value: reminders, className: "badge-expired" },
                 ]
             };
         }
     },
-    // Next placeholder
-    
     { id: "add-new-function", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
 ];
-
-// Case-insensitive field reader
-function getVal(rowObj, fieldName) {
-    const targetKey = fieldName.toLowerCase().trim();
-    const foundKey = Object.keys(rowObj).find(k => k.toLowerCase().trim() === targetKey);
-    return foundKey ? rowObj[foundKey] : "";
-}
 
 const USAGE_KEY = "admin_fn_usage";
 const getUsage = () => { try { return JSON.parse(localStorage.getItem(USAGE_KEY)) || {}; } catch(e) { return {}; } };
 const bumpUsage = (id) => { const u = getUsage(); u[id] = (u[id]||0)+1; localStorage.setItem(USAGE_KEY, JSON.stringify(u)); };
 
-const grid = document.getElementById("fnGrid");
-
-function renderGrid(){
+function renderGrid(data) {
+    const grid = document.getElementById("fnGrid");
+    if (!grid) return; // Prevent innerHTML error if element goes missing
+    
     const usage = getUsage();
     grid.innerHTML = "";
     const sorted = [...FUNCTIONS].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
@@ -478,32 +459,33 @@ function renderGrid(){
             </div>
             ${!fn.placeholder ? `
                 <div class="fn-status-row" id="status-row-${fn.id}" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:8px;">
-                    <span class="badge badge-default"><span class="spinner"></span>
+                    <span class="badge badge-default"><span class="spinner"></span></span>
                 </div>
             ` : ""}
         `;
 
         grid.appendChild(card);
 
-        if (!fn.placeholder && fn.status) {
-            fn.status().then(s => {
+        if (!fn.placeholder && fn.status && data) {
+            try {
+                const s = fn.status(data);
                 const row = card.querySelector(`#status-row-${fn.id}`);
                 if (row) {
                     row.innerHTML = (s.pills || []).map(p => `
                         <span class="badge ${p.className}">${p.value} ${p.label}</span>
                     `).join("");
                 }
-            }).catch(err => {
+            } catch (err) {
                 console.error(`Error loading status for ${fn.id}:`, err);
                 const row = card.querySelector(`#status-row-${fn.id}`);
                 if (row) {
                     row.innerHTML = `<span class="badge badge-expired">Status unavailable</span>`;
                 }
-            });
+            }
         }
     });
 
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 }
 
 /* ============================================================
@@ -516,74 +498,70 @@ function pctClass(pct){
     return "signal";
 }
 
-async function loadMemberHealth(){
-    try {
-        const members = await fetchSheet(DOMAIN.members, "Members");
-        const activeMembers = members.filter(m => String(m.Active).toLowerCase() === 'true');
-        const total = activeMembers.length;
-        const hasVal = (r, keys) => getRowVal(r, keys) !== "";
+function renderMemberHealth(membersData) {
+    if (!membersData || membersData.length === 0) {
+        ["health-phone", "health-email", "health-whatsapp"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.querySelector(".health-pct").textContent = "—";
+                el.querySelector(".health-pct").className = "health-pct bad";
+                el.querySelector(".health-sub").textContent = "Unavailable";
+            }
+        });
+        return;
+    }
 
-        const withPhone = activeMembers.filter(m => hasVal(m, ["Telephone", "Phone", "Mobile", "Telephone Number", "Phone Number"])).length;
-        const withEmail = activeMembers.filter(m => hasVal(m, ["Email", "Email Address"])).length;
-        const withWhatsapp = activeMembers.filter(m => String(m.WhatsApp).toLowerCase() === 'true').length;
-        const withPaidUp   = activeMembers.filter(m => String(m["Paid up"]).toLowerCase() === 'true').length;
-        const withActive = total;
-        const withAddr = activeMembers.filter(m => hasVal(m, ["Address Line", "Post Code"])).length;
-        const withCont = activeMembers.filter(m => hasVal(m, ["Emergency Contact Name", "Emergency Contact"])).length;
-        const withMulti    = activeMembers.filter(m => !m["Home Club"] || m["Home Club"].trim() === '').length; 
+    const activeMembers = membersData.filter(m => String(m.Active).toLowerCase() === 'true');
+    const total = activeMembers.length;
+    const hasVal = (r, keys) => getRowVal(r, keys) !== "";
 
-        const stats = [
-            { id: "health-phone", count: withPhone },
-            { id: "health-email", count: withEmail },
-            { id: "health-whatsapp", count: withWhatsapp },
-            { id: "health-financial", count: withPaidUp },
-            { id: "health-active", count: withActive },
-            { id: "health-address", count: withAddr },
-            { id: "health-contacts", count: withCont },
-            { id: "health-primary", count: withMulti }
-        ];
+    const withPhone = activeMembers.filter(m => hasVal(m, ["Telephone", "Phone", "Mobile", "Telephone Number", "Phone Number"])).length;
+    const withEmail = activeMembers.filter(m => hasVal(m, ["Email", "Email Address"])).length;
+    const withWhatsapp = activeMembers.filter(m => String(m.WhatsApp).toLowerCase() === 'true').length;
+    const withPaidUp   = activeMembers.filter(m => String(m["Paid up"]).toLowerCase() === 'true').length;
+    const withActive = total;
+    const withAddr = activeMembers.filter(m => hasVal(m, ["Address Line", "Post Code"])).length;
+    const withCont = activeMembers.filter(m => hasVal(m, ["Emergency Contact Name", "Emergency Contact"])).length;
+    const withMulti    = activeMembers.filter(m => !m["Home Club"] || m["Home Club"].trim() === '').length; 
 
-        stats.forEach(s => {
-            const pct = total ? Math.round((s.count / total) * 100) : 0;
-            const el = document.getElementById(s.id);
+    const stats = [
+        { id: "health-phone", count: withPhone },
+        { id: "health-email", count: withEmail },
+        { id: "health-whatsapp", count: withWhatsapp },
+        { id: "health-financial", count: withPaidUp },
+        { id: "health-active", count: withActive },
+        { id: "health-address", count: withAddr },
+        { id: "health-contacts", count: withCont },
+        { id: "health-primary", count: withMulti }
+    ];
+
+    stats.forEach(s => {
+        const pct = total ? Math.round((s.count / total) * 100) : 0;
+        const el = document.getElementById(s.id);
+        if (el) {
             el.querySelector(".health-pct").textContent = pct + "%";
             el.querySelector(".health-pct").className = "health-pct " + pctClass(pct);
             el.querySelector(".health-sub").textContent = `${s.count} of ${total} members`;
-        });
-    } catch (err) {
-        console.error("Error loading member health:", err);
-        ["health-phone", "health-email", "health-whatsapp"].forEach(id => {
-            const el = document.getElementById(id);
-            el.querySelector(".health-pct").textContent = "—";
-            el.querySelector(".health-pct").className = "health-pct bad";
-            el.querySelector(".health-sub").textContent = "Unavailable";
-        });
-    }
+        }
+    });
 }
 
-// systemHealth.js — Schema Registry health panel module
-// Requires: GATEWAY_URL, DOMAIN, fetchSheet, escapeHtml to be defined in host page
-
+// SystemHealth Panel Module
 const SystemHealth = {
     entries: [],
-
     init() {
         const refreshBtn = document.getElementById('refreshHealthBtn');
-        if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => this.load());
-        }
-
-        // Only load data if the panel container exists in the HTML
-        if (document.getElementById('sysHealthBody')) {
-        this.load();
-        }
+        if (refreshBtn) refreshBtn.addEventListener('click', () => this.load());
+        if (document.getElementById('sysHealthBody')) this.load();
     },
-
     async load() {
-        document.getElementById('sysHealthBody').innerHTML =
-            `<tr><td colspan="6" style="text-align:center;padding:20px;"><span class="spinner"></span></td></tr>`;
-        document.getElementById('sysHealthDriftAlert').style.display = 'none';
-        document.getElementById('sysHealthSummary').textContent = '';
+        const sysHealthBody = document.getElementById('sysHealthBody');
+        const sysHealthDriftAlert = document.getElementById('sysHealthDriftAlert');
+        const sysHealthSummary = document.getElementById('sysHealthSummary');
+        
+        if (sysHealthBody) sysHealthBody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;"><span class="spinner"></span></td></tr>`;
+        if (sysHealthDriftAlert) sysHealthDriftAlert.style.display = 'none';
+        if (sysHealthSummary) sysHealthSummary.textContent = '';
 
         try {
             const rows = await fetchSheet(DOMAIN.audit, "SchemaRegistry");
@@ -591,17 +569,19 @@ const SystemHealth = {
             this.entries = rows;
             this.render();
         } catch (err) {
-            document.getElementById('sysHealthBody').innerHTML =
-                `<tr><td colspan="6" style="color:var(--signal);padding:16px;">Error loading registry: ${escapeHtml(err.message)}</td></tr>`;
+            if (sysHealthBody) sysHealthBody.innerHTML = `<tr><td colspan="6" style="color:var(--signal);padding:16px;">Error loading registry: ${escapeHtml(err.message)}</td></tr>`;
             this._setDot('error');
         }
     },
-
     render() {
+        const sysHealthBody = document.getElementById('sysHealthBody');
+        const sysHealthDriftAlert = document.getElementById('sysHealthDriftAlert');
+        const sysHealthSummary = document.getElementById('sysHealthSummary');
+        
+        if (!sysHealthBody) return;
         const entries = this.entries;
         if (!entries.length) {
-            document.getElementById('sysHealthBody').innerHTML =
-                `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--foam-dim);">No schema data recorded yet. Data populates automatically as sheets are accessed.</td></tr>`;
+            sysHealthBody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--foam-dim);">No schema data recorded yet. Data populates automatically as sheets are accessed.</td></tr>`;
             this._setDot('idle');
             return;
         }
@@ -609,7 +589,7 @@ const SystemHealth = {
         let driftFound = false;
         const okCount = entries.filter(e => (e['Status'] || 'OK') === 'OK').length;
 
-        document.getElementById('sysHealthBody').innerHTML = entries.map(e => {
+        sysHealthBody.innerHTML = entries.map(e => {
             const status    = e['Status']       || 'OK';
             const domain    = e['Domain']       || '—';
             const sheet     = e['Sheet']        || '—';
@@ -622,11 +602,9 @@ const SystemHealth = {
             const isError   = status === 'ERROR';
             if (isDrift) driftFound = true;
 
-            // Parse column list for display
             let colList = [];
             try { colList = JSON.parse(cols); } catch { colList = cols ? cols.split(',') : []; }
 
-            // Diff against baseline if drift
             let colDisplay = '';
             if (isDrift && baseline) {
                 let baseList = [];
@@ -659,53 +637,49 @@ const SystemHealth = {
             </tr>`;
         }).join('');
 
-        if (driftFound) {
-            document.getElementById('sysHealthDriftAlert').style.display = 'block';
-        }
-
-        document.getElementById('sysHealthSummary').textContent =
-            `${okCount} of ${entries.length} sheets OK`;
+        if (driftFound && sysHealthDriftAlert) sysHealthDriftAlert.style.display = 'block';
+        if (sysHealthSummary) sysHealthSummary.textContent = `${okCount} of ${entries.length} sheets OK`;
 
         const allOk = okCount === entries.length;
         this._setDot(driftFound ? 'warn' : allOk ? 'ok' : 'error');
     },
-
     _setDot(state) {
         const dot = document.getElementById('sysHealthDot');
         if (!dot) return;
-        // Reuse signal/glow colours from theme
         const colours = { ok: 'var(--glow)', warn: 'var(--folder)', error: 'var(--signal)', idle: 'var(--foam-dim)' };
         dot.style.background   = colours[state] || colours.idle;
         dot.style.boxShadow    = `0 0 8px ${colours[state] || colours.idle}`;
-    },
-
-
+    }
 };
 
 window.SystemHealth = SystemHealth;
-  
-renderGrid();
-loadMemberHealth();
-if (window.lucide) lucide.createIcons();
 
-
+// Wait for DOM to exist before triggering bootstrapper (in case script runs slightly early)
+document.addEventListener('DOMContentLoaded', initAdmin);
 </script>
+
 <script>
     Promise.all([
         fetch('nav.html').then(r => r.text()),
         fetch('auditLog.html').then(r => r.text()),
         fetch('systemHealth.html').then(r => r.text()),
     ]).then(([navHtml, auditHtml, healthHtml]) => {
-        document.getElementById('nav-placeholder').innerHTML = navHtml;
-        document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
-        document.getElementById('systemHealth-placeholder').innerHTML = healthHtml;
+        const navP = document.getElementById('nav-placeholder');
+        const auditP = document.getElementById('auditLog-placeholder');
+        const sysHealthP = document.getElementById('systemHealth-placeholder');
 
-        AuditLog.init();
-        SystemHealth.init();
-        Nav.init();  // scans after all panels are in the DOM
+        if (navP) navP.innerHTML = navHtml;
+        if (auditP) auditP.innerHTML = auditHtml;
+        if (sysHealthP) sysHealthP.innerHTML = healthHtml;
+
+        if (window.AuditLog && typeof AuditLog.init === 'function') AuditLog.init();
+        if (window.SystemHealth && typeof SystemHealth.init === 'function') SystemHealth.init();
+        if (window.Nav && typeof Nav.init === 'function') Nav.init();
 
         if (window.lucide) lucide.createIcons();
+    }).catch(err => {
+        console.error("Failed to load layout partials:", err);
     });
 </script>
 </body>
-</html> 
+</html>
