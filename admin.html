@@ -201,6 +201,7 @@ async function initAdmin() {
     try {
         const reqs = [
             { domain: DOMAIN.members, sheet: "Members" },
+            { domain: DOMAIN.members, sheet: "ClassMembers" },
             { domain: DOMAIN.apps, sheet: "Membership Applications" },
             { domain: DOMAIN.documents, sheet: "Documents" },
             { domain: DOMAIN.notes, sheet: "Notes" },
@@ -212,6 +213,7 @@ async function initAdmin() {
         const res = await batchFetchSheets(reqs);
         const freshData = {
             members: res[`${DOMAIN.members}|Members`],
+            boats: res[`${DOMAIN.members}|ClassMembers`],
             apps: res[`${DOMAIN.apps}|Membership Applications`],
             docs: res[`${DOMAIN.documents}|Documents`],
             notes: res[`${DOMAIN.notes}|Notes`],
