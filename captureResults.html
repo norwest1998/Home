@@ -1834,8 +1834,17 @@ async function selectEvent(id){
   const regattaName = `${ev.class} ${ev.regattaType}`;
   const full = { id: ev.id, regattaDate: fmtDate(ev.date), date: ev.date, startTime: ev.start, endTime: ev.end,
                  regattaName, className: ev.class, class: ev.class, round: ev.round };
-  await getMembers(full.className);
-  await getGuests(full.id, full.className);
+  // show spinner while members/guests load
+  document.getElementById('app-body').innerHTML =
+    `<div style="padding:60px 20px;text-align:center;color:var(--foam-dim)">
+       <span class="spinner spinner-lg"></span>
+       <div style="margin-top:12px">Loading ${escapeHTML(ev.class)} entries…</div>
+     </div>`;
+
+  try {
+    await Promise.all([getMembers(full.className), getGuests(full.id, full.className)]);
+  } catch (e) { console.error(e); }
+
   const saved = loadState(id);
   state.event = full;
   if(saved){
