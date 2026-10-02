@@ -281,20 +281,16 @@
 
   <!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
   
-  <script src="shared.js"></script>
-  <script src="nav.js"></script>  
-  <script src="auditLog.js"></script>
+<script src="shared.js"></script>
+<script src="nav.js"></script>  
+<script src="auditLog.js"></script>
 
-  <script>
+<script>
 /* =========================================================
     APPLICATIONS DATA MODULE
     ========================================================= */
-    const HOME_DATA_API = "https://script.google.com/macros/s/AKfycbzGgNMh8KNWYquGuOoGvmrasDR5npiPoNXTouuzVeY9sRwrhDo29BVDbWGrh_FfgoieXQ/exec";
-    const APP_DETAIL_API = 'https://script.google.com/macros/s/AKfycbyWulPkIPBPaLA4f85ygVDpJUa-e3fWpY-XOYzTQ_2gF8h9EfuWinBdTiR1DtjYWSwl9g/exec';
-
     let selectedRowId = null;
     let allApplications = [];
-
 
     function esc(s) {
       const d = document.createElement('div');
@@ -318,7 +314,6 @@
       const lines = String(log).split('\n').map(l => l.trim()).filter(Boolean);
       const isRequestLine = l => /Approval (re-)?vote request sent/.test(l);
 
-      // find the last contiguous block of request lines
       let end = -1;
       for (let i = lines.length - 1; i >= 0; i--) {
         if (isRequestLine(lines[i])) { end = i; break; }
@@ -344,21 +339,12 @@
 
     function processedOutcome(a) {
       const approved = a.approved;
-
-      if (
-        approved === false ||
-        String(approved).trim().toUpperCase() === 'FALSE'
-      ) {
+      if (approved === false || String(approved).trim().toUpperCase() === 'FALSE') {
         return 'Rejected';
       }
-
-      if (
-        approved === true ||
-        String(approved).trim().toUpperCase() === 'TRUE'
-      ) {
+      if (approved === true || String(approved).trim().toUpperCase() === 'TRUE') {
         return 'Approved';
       }
-
       return 'Processed';
     }
 
@@ -378,7 +364,7 @@
       if (age !== null && age > 3) {
         return { label: 'Urgent, Attention required', cls: 'status-urgent' };
       }
-      return { label: a.status, cls: appStatusCSSClass(a.status) };
+      return { label: a.status || 'Received', cls: appStatusCSSClass(a.status) };
     }
 
     function updateStats(apps) {
@@ -404,6 +390,36 @@
         : null;
       document.getElementById('statAvgTurnaround').textContent =
         avgTurnaround === null ? '—' : `${avgTurnaround.toFixed(1)}d`;
+    }
+
+    function normaliseApp(r) {
+      return {
+        rowId:          r.RowID,
+        firstName:      r["First name"],
+        surname:        r.Surname,
+        membershipType: r["Membership Type"],
+        classOrBoat:    r["Name of Current Club"] || '',
+        lastUpdated:    r.LastStatusUpdated,
+        lastUpdatedStr: r.LastStatusUpdated ? new Date(r.LastStatusUpdated).toISOString().slice(0,10).replace(/-/g,'/') : '—',
+        status:         r.Status,
+        votesFor:       r["Votes For"],
+        votesAgainst:   r["Votes Against"],
+        approved:       r["Membership Approved"],
+        turnAround:     r["Turnaround \nTime"],
+        fullName:       `${r["First name"]} ${r.Surname}`,
+        email:          r["Email address"],
+        phone:          r["Phone number"],
+        address:        r["Address Line"],
+        emergency:      `${r["Emergency Contact"] || '—'} — ${r["Emergency Contact Number"] || '—'}`,
+        nominator:      r["Nominating member name"],
+        seconder:       r["Seconders member name"],
+        nominatorComment: '',
+        seconderComment:  '',
+        disclaimer:     r.Disclaimer,
+        rejectionReason: r["Rejection Reason"],
+        log:            r["Processed Notes"],
+        boats:          r.Boats || r["Boats Owned"] || r.boats || []
+      };
     }
 
     function renderTable() {
@@ -432,12 +448,13 @@
           <td class="member-name">${esc(a.firstName)} ${esc(a.surname)}</td>
           <td>${esc(a.membershipType)}</td>
           <td>${esc(a.classOrBoat || '—')}</td>
-          <td>${a.lastUpdated ? new Date(a.lastUpdated).toISOString().slice(0,10).replace(/-/g,'/') : '—'}</td>
+          <td>${esc(a.lastUpdatedStr)}</td>
           <td><span class="app-status-badge ${badge.cls}">${esc(badge.label)}</span></td>
           <td><span class="votes-for">${esc(voteCount(a.votesFor))}</span> / <span class="votes-against">${esc(voteCount(a.votesAgainst))}</span></td>
           <td><button class="btn btn-ghost review-btn" style="padding:4px 10px; font-size:11px;">${String(a.status||'').toLowerCase().includes('processed') ? 'View' : 'Review'}</button></td>
         </tr>`;
       }).join('');
+
       body.querySelectorAll('tr[data-rowid]').forEach(row => {
         row.addEventListener('click', () => openReview(row.dataset.rowid));
       });
@@ -445,43 +462,14 @@
 
     async function loadApplications() {
       try {
-        data = await fetchSheet(DOMAIN.apps, "Membership Applications");
-        allApplications = data.map(normaliseApp);
+        const data = await fetchSheet(DOMAIN.apps, "Membership Applications");
+        allApplications = (data || []).map(normaliseApp);
         renderTable();
       } catch (err) {
         console.warn('Applications API unavailable:', err.message);
         document.getElementById('appsTableBody').innerHTML =
-          `<tr><td colspan="7"><div class="empty-state" style="color:var(--signal);"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"></i> Applications list unavailable/nError: ${err.message}</div></td></tr>`;
+          `<tr><td colspan="7"><div class="empty-state" style="color:var(--signal);"><i class="nav-icon" data-lucide="triangle-alert"></i> Applications list unavailable<br>Error: ${esc(err.message)}</div></td></tr>`;
       }
-    }
-
-    function normaliseApp(r) {
-      return {
-        rowId:          r.RowID,
-        firstName:      r["First name"],
-        surname:        r.Surname,
-        membershipType: r["Membership Type"],
-        classOrBoat:    r["Name of Current Club"] || '',
-        lastUpdated:    r.LastStatusUpdated,
-        status:         r.Status,
-        votesFor:       r["Votes For"],
-        votesAgainst:   r["Votes Against"],
-        approved:       r["Membership Approved"],
-        turnAround:     r["Turnaround \nTime"],
-        // for openReview detail view:
-        fullName:       `${r["First name"]} ${r.Surname}`,
-        email:          r["Email address"],
-        phone:          r["Phone number"],
-        address:        r["Address Line"],
-        emergency:      `${r["Emergency Contact"]} — ${r["Emergency Contact Number"]}`,
-        nominator:      r["Nominating member name"],
-        seconder:       r["Seconders member name"],
-        nominatorComment: '',
-        seconderComment:  '',
-        disclaimer:     r.Disclaimer,
-        rejectionReason: r["Rejection Reason"],
-        log:            r["Processed Notes"],
-      };
     }
 
     function renderBoatDetails(boatsData) {
@@ -489,64 +477,49 @@
       if (!container) return;
 
       let boats = [];
-
-      // Parse JSON string or accept raw array
       if (typeof boatsData === 'string' && boatsData.trim().length > 0) {
-        try {
-          boats = JSON.parse(boatsData);
-        } catch (e) {
-          console.error('Failed to parse boat JSON:', e);
-          boats = [];
-        }
+        try { boats = JSON.parse(boatsData); } catch (e) { boats = []; }
       } else if (Array.isArray(boatsData)) {
         boats = boatsData;
       }
 
-      // Empty state
       if (!boats || boats.length === 0) {
         container.innerHTML = '<p class="empty-boats-msg">No boat records registered for this applicant.</p>';
         return;
       }
 
-      // Render grid of boat cards
       let html = '<div class="boat-grid">';
       boats.forEach(boat => {
         html += `
           <div class="boat-card-view">
             <div class="boat-card-title">${esc(boat.boatClass || boat.class || 'Unspecified Class')}</div>
-            
             <div class="boat-field-row">
               <span class="boat-field-label">Model</span>
               <span class="boat-field-value">${esc(boat.model || '—')}</span>
             </div>
-            
             <div class="boat-field-row">
               <span class="boat-field-label">Sail No.</span>
               <span class="boat-field-value">${esc(boat.sailNumber || boat.sailNo || '—')}</span>
             </div>
-
             <div class="boat-field-row">
               <span class="boat-field-label">HRN</span>
               <span class="boat-field-value">${esc(boat.hrn || '—')}</span>
             </div>
-          </div>
-        `;
+          </div>`;
       });
       html += '</div>';
-
       container.innerHTML = html;
     }
 
-async function openReview(rowId) {
+    async function openReview(rowId) {
       selectedRowId = rowId;
-      const app  = allApplications.find(a => a.rowId === rowId);
-      const name = app ? `${app.firstName} ${app.surname}` : 'Application';
+      const app = allApplications.find(a => a.rowId === rowId);
+      if (!app) return;
 
-      document.getElementById('reviewTitle').textContent = `Application Review: ${name}`;
+      document.getElementById('reviewTitle').textContent = `Application Review: ${app.fullName}`;
       document.getElementById('reviewContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
       document.getElementById('auditContent').innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading…</div>`;
 
-      // Smooth scroll to the review panel and shift focus for accessibility
       const reviewSection = document.getElementById('reviews');
       if (reviewSection) {
         reviewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -555,14 +528,11 @@ async function openReview(rowId) {
       }
 
       try {
-        document.getElementById('reviewTitle').textContent = `Application Review: ${app.fullName || name}`;
-
         const badge = statusBadge(app);
-        if (badge === 'processed') console.log('raw record:', d, ' badge:', badge);
         document.getElementById('reviewContent').innerHTML = `
           <div class="app-status-badge ${badge.cls}">
             ${esc(badge.label) || '—'}
-            ${app.statusClass === 'status-urgent' ? `<span class="urgent-note"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"</i> Requires attention — last updated: ${esc(app.lastUpdatedStr)}</span>` : ''}
+            ${badge.cls === 'status-urgent' ? `<span class="urgent-note"><i class="nav-icon" data-lucide="triangle-alert"></i> Requires attention — last updated: ${esc(app.lastUpdatedStr)}</span>` : ''}
           </div>
 
           <div class="app-detail-section">
@@ -570,7 +540,7 @@ async function openReview(rowId) {
             <div class="app-detail-grid">
               <div class="app-detail-item">
                 <span class="app-detail-label">Name</span>
-                <span class="app-detail-value">${name|| '—'}</span>
+                <span class="app-detail-value">${esc(app.fullName) || '—'}</span>
               </div>
               <div class="app-detail-item">
                 <span class="app-detail-label">Email</span>
@@ -605,12 +575,9 @@ async function openReview(rowId) {
             </div>
           </div>
 
-          <!-- Boats Owned Section -->
           <div class="app-detail-section">
             <span class="app-detail-section-title">Boats Owned</span>
-            <div id="boatsContainer">
-              <!-- Dynamically populated by renderBoatDetails -->
-            </div>
+            <div id="boatsContainer"></div>
           </div>
 
           <div class="app-detail-section">
@@ -652,7 +619,6 @@ async function openReview(rowId) {
             </div>
           </div>`;
 
-        // Render Boat Details into #boatsContainer
         renderBoatDetails(app.boats);
 
         const votesForCount     = voteCount(app.votesFor);
@@ -665,7 +631,7 @@ async function openReview(rowId) {
             <span class="app-detail-label">
               Votes Received: ${esc(votesReceived)}${votesRequired !== null ? ` of ${esc(votesRequired)}` : ''}
             </span>
-            <span class="votes-for">${esc(app.votesFor)}</span>${votesAgainstCount > 0 ? ` / <span class="votes-against">${esc(d.votesAgainst)}</span>` : ''}
+            <span class="votes-for">${esc(app.votesFor ?? 0)}</span>${votesAgainstCount > 0 ? ` / <span class="votes-against">${esc(app.votesAgainst)}</span>` : ''}
           </div>
           <div style="margin-top:14px;">
             <span class="app-detail-label">Decision Audit Trail</span>
@@ -675,7 +641,7 @@ async function openReview(rowId) {
         if (window.lucide) lucide.createIcons();
       } catch (err) {
         document.getElementById('reviewContent').innerHTML =
-          `<div class="empty-state" style="color:var(--signal);"><i class="nav-icon" data-lucide="triangle-alert" size="8" color="Amber"></i> Could not load application — ${esc(err.message)}</div>`;
+          `<div class="empty-state" style="color:var(--signal);"><i class="nav-icon" data-lucide="triangle-alert"></i> Could not load application — ${esc(err.message)}</div>`;
         document.getElementById('auditContent').innerHTML = '';
       }
     }
@@ -685,7 +651,6 @@ async function openReview(rowId) {
     const appToggleBtns = document.querySelectorAll('#approvals .audit-toggle button');
     appToggleBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        // Only remove 'active' from the app buttons
         appToggleBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         activeStatusFilter = btn.dataset.status;
@@ -695,25 +660,20 @@ async function openReview(rowId) {
 
     document.getElementById('appsSearch').addEventListener('input', renderTable);
 
+    loadApplications();
+    if (window.lucide) lucide.createIcons();
+</script>
 
-        loadApplications();
-        if(window.lucide)lucide.createIcons();
-  
-
-
-  
-  </script>
 <script>
     Promise.all([
         fetch('nav.html').then(r => r.text()),
-        fetch('auditLog.html').then(r => r.text()),
-
-    ]).then(([navHtml, auditHtml, healthHtml]) => {
+        fetch('auditLog.html').then(r => r.text())
+    ]).then(([navHtml, auditHtml]) => {
         document.getElementById('nav-placeholder').innerHTML = navHtml;
         document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
 
         AuditLog.init();
-        Nav.init();  // scans after all panels are in the DOM
+        Nav.init();
 
         if (window.lucide) lucide.createIcons();
     });
