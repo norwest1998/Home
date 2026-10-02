@@ -1268,9 +1268,7 @@ function renderModalGuestTable() {
                 <input type="text" id="newGuestHomeClub" class="guest-inline-input" placeholder="Home Club *" required onkeydown="if(event.key==='Enter') quickAddGuest()">
             </td>
             <td class="col-center">
-                <button type="button" class="icon-btn" style="background: var(--glow); color: var(--ocean-deep);" title="Add Guest" onclick="quickAddGuest()">
-                    <i class="inline-icon" data-lucide="plus"></i>
-                </button>
+                <button type="button" id="addGuestBtn" class="icon-btn" style="background: var(--glow); color: var(--ocean-deep);" title="Add Guest" onclick="quickAddGuest()">
             </td>
         </tr>
     `;
@@ -1279,7 +1277,22 @@ function renderModalGuestTable() {
     if (window.lucide) lucide.createIcons();
 }
 
+function setGuestAdding(on) {
+    const btn = document.getElementById('addGuestBtn');
+    if (btn) {
+        btn.disabled = on;
+        btn.innerHTML = on ? '<span class="spinner"></span>' : '<i class="inline-icon" data-lucide="plus"></i>';
+        if (!on && window.lucide) lucide.createIcons();
+    }
+    ['newGuestSailNo', 'newGuestName', 'newGuestHomeClub'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = on;
+    });
+    if (on) showMsg('modalGuestMsg', 'Adding guest…', false);
+}
+
 async function quickAddGuest() {
+    if (document.getElementById('addGuestBtn')?.disabled) return;
     const sailNo   = document.getElementById('newGuestSailNo').value.trim();
     const name     = document.getElementById('newGuestName').value.trim();
     const homeClub = document.getElementById('newGuestHomeClub').value.trim();
@@ -1305,6 +1318,7 @@ async function quickAddGuest() {
     };
 
     try {
+        setGuestAdding(true); 
         await appendSheet(DOMAIN.results, "GuestRegistrations", record);
         showMsg('modalGuestMsg', 'Guest added successfully.', false);
 
@@ -1316,6 +1330,7 @@ async function quickAddGuest() {
         // Focus sail number ready for the next guest entry
         document.getElementById('newGuestSailNo').focus();
     } catch (err) {
+        setGuestAdding(false);
         showMsg('modalGuestMsg', 'Failed to add guest: ' + err.message, true);
     }
 }
