@@ -188,7 +188,7 @@ async function initAdmin() {
     if (cachedRaw) {
         try {
             const cachedData = JSON.parse(cachedRaw);
-            renderAll(cachedData);
+            if (cachedData) renderAll(cachedData);
         } catch (e) {
             console.warn("Admin cache parse error", e);
         }
