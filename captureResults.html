@@ -1361,7 +1361,8 @@ function headerHTML(){
     </a>
     <div class="nav-spacer"></div>
     ${state.overlay === 'results'
-      ? `<button class="btn btn-primary btn-sm" onclick="openOverlay('export')" style="margin-right:8px">${svgSave()} Save Results</button>`
+      ? `<button class="icon-btn" onclick="closeOverlay()" title="Back to racing" style="margin-right:8px">${svgBack()}</button>
+        <button class="btn btn-primary btn-sm" onclick="openOverlay('export')" style="margin-right:8px">${svgSave()} Save Results</button>`
       : state.overlay
         ? `<button class="icon-btn" onclick="closeOverlay()" title="Back">${svgBack()}</button>`
         : (showMenu ? `<button class="icon-btn" onclick="openMenu()">${svgMenu()}</button>` : '')}
@@ -1719,22 +1720,27 @@ function overlaysHTML(){
 function renderScoresheet(){
   if(state.races.length === 0) return `<div class="empty-note">No races captured yet.</div>`;
   const n = state.entries.length;
-  const rows = state.races.map(r => {
-    const cells = [];
-    for(let i=0;i<n;i++){
-      cells.push(`<td>${r.positions[i] ? '#'+r.positions[i] : ''}</td>`);
-    }
-    const flags = [
-      ...r.dns.map(sn=>`DNS #${sn}`),
-      ...r.dnf.map(sn=>`DNF #${sn}`),
-      r.raceRO ? `RO #${r.raceRO}` : ''
-    ].filter(Boolean).join(' · ');
-    return `<tr><td class="name-cell">Race ${r.raceNumber}</td>${cells}<td class="dnf-cell" style="text-align:left">${flags}</td></tr>`;
-  }).join('');
-  let head = '<th class="name-cell">Race</th>';
-  for(let i=1;i<=n;i++) head += `<th>${i}${i===1?'st':i===2?'nd':i===3?'rd':'th'}</th>`;
-  head += '<th style="text-align:left">Notes</th>';
-  return `<div class="table-scroll"><table class="data-table"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+  const ord = i => `${i}${i===1?'st':i===2?'nd':i===3?'rd':'th'}`;
+  const head = `<th class="name-cell">Place</th>` +
+    state.races.map(r => `<th>R${r.raceNumber}</th>`).join('');
+
+  const rows = [];
+  for(let i=0;i<n;i++){
+    rows.push(`<tr><td class="name-cell">${ord(i+1)}</td>` +
+      state.races.map(r => `<td>${r.positions[i] ? '#'+r.positions[i] : ''}</td>`).join('') + `</tr>`);
+  }
+  const codeRow = (label, fn) => {
+    const cells = state.races.map(fn);
+    if(cells.every(c => !c)) return '';
+    return `<tr class="dnf-cell"><td class="name-cell">${label}</td>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`;
+  };
+  rows.push(
+    codeRow('DNS', r => r.dns.map(s=>'#'+s).join(', ')),
+    codeRow('DNF', r => r.dnf.map(s=>'#'+s).join(', ')),
+    codeRow('RO',  r => r.raceRO ? '#'+r.raceRO : '')
+  );
+
+  return `<div class="table-scroll"><table class="data-table"><thead><tr>${head}</tr></thead><tbody>${rows.join('')}</tbody></table></div>
   <div class="helper-note">Raw finishing order captured per race. See Race Results for computed standings.</div>`;
 }
 
