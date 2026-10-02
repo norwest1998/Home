@@ -852,6 +852,12 @@ function setupChipInput(inputId,chipsId,acId, onChangeCallback){
     if((e.key==="Enter"||e.key===",")&&input.value.trim()){e.preventDefault();addValue({email:input.value.trim().replace(/,$/,""),name:""});}
     if(e.key==="Backspace"&&!input.value&&values.length){values.pop();renderChips();}
   });
+  input.addEventListener("paste",e=>{
+    const text=(e.clipboardData||window.clipboardData).getData("text");
+    if(!/[;,\s]/.test(text.trim()))return;   // single address: default behaviour
+    e.preventDefault();
+    (text.match(/[^\s;,<>"]+@[^\s;,<>"]+/g)||[]).forEach(email=>addValue({email,name:""}));
+  });
   input.addEventListener("blur",()=>setTimeout(()=>{ac.style.display="none";},200));
   document.getElementById(inputId.replace("Input","Wrap")).addEventListener("click",()=>input.focus());
   return{values,addValue,renderChips,clear(){values.length=0;renderChips();input.value="";}};

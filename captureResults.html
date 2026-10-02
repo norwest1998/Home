@@ -1087,11 +1087,18 @@ async function getMembers(className) {
   }
 }
 
-async function getGuests(eventId) {
+async function getGuests(eventId, className) {
   try {
-    const data = fetchSheet("results", "GuestRegistrations", "", eventId);
-    console.log(data);
-    GUESTS = []; // .map(g => ({ ...g, className: g.class ?? g.className, isGuest: true }))
+    const rows = await fetchSheet("results", "GuestRegistrations");
+    GUESTS = rows
+      .filter(g => String(g.EventID) === String(eventId))
+      .map(g => ({
+        member:    g.CompetitorName,
+        sailNo:    String(g.SailNo),
+        className: className,          // guest rows may have no RaceClass; use the event's class
+        homeClub:  g.HomeClub,
+        isGuest:   true
+      }));
   } catch (e) {
     console.error("Failed to load guests:", e);
     GUESTS = [];
@@ -1825,7 +1832,7 @@ async function selectEvent(id){
   const full = { id: ev.id, regattaDate: fmtDate(ev.date), date: ev.date, startTime: ev.start, endTime: ev.end,
                  regattaName, className: ev.class, class: ev.class, round: ev.round };
   await getMembers(full.className);
-  await getGuests(full.id);
+  await getGuests(full.id, full.className);
   const saved = loadState(id);
   state.event = full;
   if(saved){
