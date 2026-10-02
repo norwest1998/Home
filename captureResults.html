@@ -1881,16 +1881,10 @@ function selectAllToggle(){
 }
 
 function confirmEntries(){
-  const roster = MEMBERS.filter(m => m.className === state.event.class);
+  const roster = getRoster();   // members AND guests
   const isFirstTime = state.entries.length === 0;
   state.entries = roster.filter(m => state.pendingSelection.has(String(m.sailNo)))
-                         .map(m => ({ sailNo: String(m.sailNo), member: m.member }));
-  if (state.entries.length === 0) {
-    saveState();
-    showToast('Entries cleared');
-    render();           // stay on the selection screen
-    return;
-  }
+                        .map(m => ({ sailNo: String(m.sailNo), member: m.member }));
   state.screen = 'race-capture';
   saveState();
   showToast(isFirstTime ? 'Entries saved' : 'Entries updated');
