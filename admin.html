@@ -234,12 +234,6 @@ async function initAdmin() {
     }
 }
 
-function renderAll(data) {
-    if (!data) return;
-    renderMemberHealth(data.members);
-    renderGrid(data);
-}
-
 /* ============================================================
 ADMIN FUNCTIONS GRID
 ============================================================ */
@@ -650,6 +644,12 @@ const SystemHealth = {
         dot.style.boxShadow    = `0 0 8px ${colours[state] || colours.idle}`;
     }
 };
+
+function renderAll(data) {
+    if (!data) return;
+    renderMemberHealth(data.members);
+    renderGrid(data);
+}
 
 window.SystemHealth = SystemHealth;
 
