@@ -250,7 +250,7 @@ async function triggerResultsProcessing() {
         body:    JSON.stringify({ action: "triggerResults" })
     });
     const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    if (data.error) throw new Error(data.error + "(Check the Upload folder for files to process.)");
     return data.message;
 }
 
