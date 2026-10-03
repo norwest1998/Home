@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1115,15 +1114,53 @@ async function getEvents() {
       return (mo.events || [])
         .filter(e => e.boatClass)
         .map(e => {
-        // Robust split: handle format "SAT 03 OCT" or fallback format "03 OCT" and case insensitivity
-        const parts = String(e.dateLabel).trim().split(/\s+/);
-        const dd = parts.length >= 3 ? parts[1] : parts[0];
-        const mon = parts.length >= 3 ? parts[2] : parts[1];
-        const mm = MON.findIndex(m => m.toUpperCase() === String(mon).toUpperCase()) + 1;
+        
+        // --- Robust Date Extraction ---
+        let formattedDate;
+        
+        // If API happens to provide standard Date already
+        if (e.date && String(e.date).includes('/')) {
+            formattedDate = e.date;
+        } else {
+            // Split incoming textual dateLabel by any space or comma
+            const parts = String(e.dateLabel || '').trim().split(/[\s,]+/);
+            let dd = "01";
+            let monStr = "";
+            
+            for (const p of parts) {
+                // Find a day matching e.g. "03", "3", "3rd"
+                if (/^\d{1,2}(st|nd|rd|th)?$/.test(p)) {
+                    dd = p.replace(/\D/g, '').padStart(2, '0');
+                } 
+                // Find a month name string
+                else if (/^[A-Za-z]{3,}$/.test(p)) {
+                    const up = p.toUpperCase();
+                    if (MON.some(m => up.startsWith(m.toUpperCase()))) {
+                        monStr = up;
+                    }
+                }
+            }
+            
+            let mm = 1;
+            const mmIndex = MON.findIndex(m => monStr.startsWith(m.toUpperCase()));
+            
+            if (mmIndex >= 0) {
+                mm = mmIndex + 1;
+            } else {
+                // Failsafe: extract month from the outer grouping's "monthLabel" ("October 2026")
+                const moMatch = String(mo.monthLabel).match(/[A-Za-z]+/);
+                if (moMatch) {
+                   const moIdx = MON.findIndex(m => moMatch[0].toUpperCase().startsWith(m.toUpperCase()));
+                   if (moIdx >= 0) mm = moIdx + 1;
+                }
+            }
+            
+            formattedDate = `${dd}/${String(mm).padStart(2, '0')}/${year}`;
+        }
       
         return {
           id: e.hexKey,
-          date: `${dd}/${String(mm).padStart(2, '0')}/${year}`,
+          date: formattedDate,
           start: e.startTime,
           end: e.finishTime,
           class: e.boatClass,
