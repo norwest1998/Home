@@ -392,20 +392,30 @@ const FUNCTIONS = [
         status: (data) => {
             const events = data.events || [];
             const now = new Date();
+            const year = now.getFullYear();
+
+            // Current season window (1 July to 30 June)
+            const seasonStart = new Date(now.getMonth() >= 6 ? year : year - 1, 6, 1);
+            const seasonEnd   = new Date(now.getMonth() >= 6 ? year + 1 : year, 5, 30, 23, 59, 59);
 
             const isComp = (r) => {
                 const val = getRowVal(r, ["Event Type", "Type", "competition"]).toLowerCase();
                 return val.includes("competition") || val.includes("regatta") || val.includes("race");
             };
 
-            const regattas = events.filter(isComp);
-            
-            const completed = regattas.filter(e => {
+            // Filter regattas falling within the current season
+            const seasonRegattas = events.filter(e => {
+                if (!isComp(e)) return false;
                 const d = new Date(getRowVal(e, ["Date", "Event Date", "Start Date"]));
-                return !isNaN(d) && d <= now;
+                return !isNaN(d) && d >= seasonStart && d <= seasonEnd;
             });
 
-            const published = regattas.filter(e => {
+            const completed = seasonRegattas.filter(e => {
+                const d = new Date(getRowVal(e, ["Date", "Event Date", "Start Date"]));
+                return d <= now;
+            });
+
+            const published = seasonRegattas.filter(e => {
                 const st = getRowVal(e, ["Results", "Result Status", "Status"]).toLowerCase();
                 return st.includes("published") || st.includes("yes") || st.includes("complete") || st.includes("done");
             });
@@ -415,11 +425,11 @@ const FUNCTIONS = [
                 return !(st.includes("published") || st.includes("yes") || st.includes("complete") || st.includes("done"));
             });
 
-            const upcoming = regattas.length - completed.length;
+            const upcoming = seasonRegattas.length - completed.length;
 
             return {
                 pills: [
-                    { label: "Regattas", value: regattas.length, className: "badge-full" },
+                    { label: "Season Regattas", value: seasonRegattas.length, className: "badge-full" },
                     { label: "Completed", value: completed.length, className: "badge-affiliate" },
                     { label: "Published", value: published.length, className: "badge-full" },
                     { label: "Pending Entry", value: pending.length, className: pending.length > 0 ? "badge-renewal" : "badge-default" },
