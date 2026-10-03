@@ -785,6 +785,7 @@ function renderStats() {
 // LOAD  (calls the CLB webapp for Drive folder listings)
 // ----------------------------------------------------------------
 async function loadAll() {
+    loadUploadFiles();
     loadProcessedFiles();
     loadOverallSheets();
     loadGuestData();
@@ -1795,7 +1796,6 @@ function openCaptureModal() {
 
 
 loadAll();
-loadUploadFiles();
 if (window.lucide) lucide.createIcons();
 
 
