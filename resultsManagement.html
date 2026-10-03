@@ -824,9 +824,24 @@ async function loadOverallSheets() {
 }
 
 async function loadAvgRequests() {
-    // Placeholder — replace with real fetch when the sheet exists
-    // e.g. fetchSheet(DOMAIN.results, "AvgScoreRequests")
-    allAvgRequests = [];
+    try {
+        const rows = await fetchSheet(DOMAIN.requests, "AvgScrReq");
+        allAvgRequests = rows.map(r => ({
+            hexKey:     r["Request ID"],
+            memberName: r["Member Name"],
+            memberEmail:r["Member Email"],
+            eventId:    r["EventID"],
+            raceClass:  r["Class"],
+            raceType:   r["Regatta Type"],
+            raceDate:   r["Date"],
+            conflict:   r["Conflicting Regatta"],
+            submitted:  r["Timestamp"],
+            status:     String(r["Status"] || "pending").toLowerCase()
+        }));
+    } catch (err) {
+        allAvgRequests = [];
+        showMsg('avgReqMsg', 'Error loading requests: ' + err.message, true);
+    }
     renderAvgRequests();
     renderStats();
 }
@@ -1704,6 +1719,8 @@ function closeAvgReqModal() {
 
 async function decideAvgReq(decision) {
     if (!activeAvgReq) return;
+    await updateSheet(DOMAIN.requests, "AvgScrReq", activeAvgReq.hexKey,
+    { "Status": decision, "Decision Date": new Date().toISOString() });
     // TODO: updateSheet(DOMAIN.results, "AvgScoreRequests", activeAvgReq.hexKey, { Status: decision, ... })
     // TODO: sendAvgScoreApproval via email handler when approved
     showMsg('avgReqMsg', `Request ${decision}. Email notification will be sent on approval.`, false);
