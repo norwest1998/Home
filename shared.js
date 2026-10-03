@@ -170,8 +170,11 @@ async function viewRecordModal(domain, sheetName, encodedRowData) {
 }
 
 
-// WRITE OPERATIONS -> Staying as POST because they send payloads and return tiny JSON
+const _schemaSent = new Set();
 async function registerSchema(domain, sheetName, rows) {
+    const k = domain + "|" + sheetName;
+    if (_schemaSent.has(k)) return;
+    _schemaSent.add(k);
     if (!Array.isArray(rows) || rows.length === 0) return;
     const columns = Object.keys(rows[0]);
     try {

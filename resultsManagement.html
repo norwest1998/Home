@@ -432,6 +432,7 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
                     <p>Only use this if the Results Scheduler trigger failed. Check the Upload folder first — processing will only run if a file is present. The scheduler will be re-armed for the next regatta after processing completes.</p>
                 </div>
             </div>
+            <div id="uploadFileList" class="result-rows" style="margin-top:10px;"></div>
             <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                 <button type="button" class="btn btn-ghost" onclick="initiateProcessing()">
                     <i class="inline-icon" data-lucide="play-circle" color="#5eead4"></i> Initiate Processing
@@ -690,6 +691,7 @@ let allOverallSheets  = [];
 let allAvgRequests    = [];   // placeholder for Avg Score Request rows
 let activeAvgReq      = null;
 let filteredResultsList = [];
+let uploadFiles = [];
 let resultRowOffset = 0;
 const RESULT_PAGE_SIZE = 10;
 // ----------------------------------------------------------------
@@ -1084,6 +1086,27 @@ function openSelectedSheetDrive() {
     if (!activeOverallSheet?.id) return;
     window.open(`https://docs.google.com/spreadsheets/d/${activeOverallSheet.id}`, '_blank');
 }
+
+// ----------------------------------------------------------------
+// Results Processing CONTROLLER
+// ----------------------------------------------------------------
+async function loadUploadFiles() {
+    try {
+        uploadFiles = await fetchDriveFolder("upload");
+    } catch (err) {
+        uploadFiles = [];
+        showMsg('processingMsg', 'Error: ' + err.message, true);
+    }
+    document.getElementById('uploadFileList').innerHTML = uploadFiles.length
+        ? uploadFiles.map(f => `<div class="result-row"><span>${escHtml(f.name)}</span>
+            <small>${new Date(f.createdTime).toLocaleString()}</small></div>`).join('')
+        : '<div class="empty-state">Upload folder is empty</div>';
+    renderStats();
+}
+
+// renderStats(): replace the '—' line
+document.getElementById('statOutstanding').textContent = uploadFiles.length;
+
 
 // ----------------------------------------------------------------
 // GUEST REGISTRATION CONTROLLER
@@ -1747,11 +1770,9 @@ async function initiateProcessing() {
 async function checkUploadFolder() {
     showMsg('processingMsg', 'Checking upload folder…', false);
     try {
-        const files = await fetchDriveFolder("upload");
-        const count = files.length;
-        showMsg('processingMsg', count
-            ? `${count} file(s) found in upload folder. Ready to process.`
-            : 'Upload folder is empty — no file to process.', !count);
+        await loadUploadFiles();
+        const count = uploadFiles.length;
+        showMsg('processingMsg', count ? `${count} file(s) found. Ready to process.` : 'Upload folder is empty — no file to process.', !count);
         document.getElementById('statOutstanding').textContent = count;
     } catch (err) {
         showMsg('processingMsg', 'Error: ' + err.message, true);
@@ -1772,8 +1793,9 @@ function openCaptureModal() {
 }
 
 
-    loadAll();
-    if (window.lucide) lucide.createIcons();
+loadAll();
+loadUploadFiles();
+if (window.lucide) lucide.createIcons();
 
 
 </script>
