@@ -775,7 +775,7 @@ function renderStats() {
 
     const seasonFiles = allProcessedFiles.filter(f => f.date && f.date >= seasonStart);
     document.getElementById('statProcessed').textContent   = seasonFiles.length;
-    document.getElementById('statOutstanding').textContent = '—'; // requires Drive list of upload folder
+    document.getElementById('statOutstanding').textContent = uploadFiles.length; // requires Drive list of upload folder
     document.getElementById('statAvgReqTotal').textContent    = allAvgRequests.length;
     document.getElementById('statAvgReqPending').textContent  = allAvgRequests.filter(r => r.status === 'pending').length;
     document.getElementById('statAvgReqApproved').textContent = allAvgRequests.filter(r => r.status === 'approved').length;
