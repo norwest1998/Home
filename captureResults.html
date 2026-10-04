@@ -1066,6 +1066,7 @@ const LOGO_DATA_URI = "/Home/images/logo/smmc-logo.png";
 const EMBLEM_IMAGE_URI = "/Home/images/classes/";
 const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
 const CAL_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
+const RESULTS_GATEWAY_URL = "https://script.google.com/macros/s/AKfycbwHYDa3Jg-4pojZ6zCeU_fT6Xc17Rwz_B3aFl7UbafDnb61UzuzI-uY3kagrSOo77L3/exec";
 
 let EVENTS = [];
 let MEMBERS = [];
@@ -1822,7 +1823,7 @@ function renderExportPanel(){
   <button class="btn btn-primary btn-block" data-save-report="1">Save report text</button>
   <div class="panel glass panel-pad" style="margin-top:16px">
     <div class="field-label">Send for race processing</div>
-    <div class="section-hint">Downloads the full regatta record — event details, entries and every race — in the standard SMMC results format, ready to hand off for processing.</div>
+    <div class="section-hint">Saves the full regatta record — event details, entries and every race — securely to the SMMC drive, ready for scoring and processing.</div>
     <button class="btn btn-primary btn-block" data-download-json="1">${svgSend()} Send for Race Processing</button>
   </div>
   `;
@@ -1869,7 +1870,7 @@ async function selectEvent(id){
   if(!ev) return;
   const regattaName = `${ev.class} ${ev.regattaType}`;
   const full = { id: ev.id, regattaDate: fmtDate(ev.date), date: ev.date, startTime: ev.start, endTime: ev.end,
-                 regattaName, className: ev.class, class: ev.class, round: ev.round };
+                 regattaName, className: ev.class, class: ev.class, round: ev.round, regattaType: ev.regattaType };
   // show spinner while members/guests load
   document.getElementById('app-body').innerHTML =
     `<div style="padding:60px 20px;text-align:center;color:var(--foam-dim)">
@@ -2105,16 +2106,23 @@ function buildExportObject(){
 }
 
 async function saveAndSend(){
-  await downloadJSON();
-  state.sent = true;
-  saveState();
-  setTimeout(() => changeEvent(), 800);
+  const success = await uploadResults();
+  if (success) {
+    state.sent = true;
+    saveState();
+    setTimeout(() => changeEvent(), 800);
+  }
 }
 
-async function downloadJSON(){
+async function downloadJSON(filenameOverride, jsonOverride){
   const data = buildExportObject();
-  const json = JSON.stringify(data, null, 2);
-  const filename = `${state.event.id}-${state.event.regattaDate.replace(/\//g,'-')}.json`;
+  const json = jsonOverride || JSON.stringify(data, null, 2);
+
+  const ev = state.event;
+  const parts = ev.regattaDate.split('/');
+  const dateStr = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : ev.regattaDate;
+  const filename = filenameOverride || `${ev.className} ${ev.regattaType || ''} - ${dateStr}.json`.replace(/\s+/g, ' ');
+
   try{
     const downloads = window.claude && await window.claude.use ? await window.claude.use('downloads') : null;
     if(downloads){
@@ -2134,6 +2142,43 @@ async function downloadJSON(){
   }catch(e){
     showToast('Could not download — copy from console');
     console.log(json);
+  }
+}
+
+async function uploadResults() {
+  const data = buildExportObject();
+  const json = JSON.stringify(data, null, 2);
+  const ev = state.event;
+  
+  // Format Date to requested pattern (YYYY/MM/DD)
+  const parts = ev.regattaDate.split('/');
+  const dateStr = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : ev.regattaDate;
+  const filename = `${ev.className} ${ev.regattaType || ''} - ${dateStr}.json`.replace(/\s+/g, ' ');
+
+  showToast('Saving to Google Drive...');
+  
+  try {
+    const res = await fetch(RESULTS_GATEWAY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "uploadFile",
+        folder: "upload",
+        filename: filename,
+        content: json
+      })
+    });
+    
+    const result = await res.json();
+    if (result.error) throw new Error(result.error);
+    
+    showToast('Saved to Drive successfully');
+    return true;
+  } catch (e) {
+    console.error("Upload failed:", e);
+    showToast('Drive save failed — downloading local copy');
+    await downloadJSON(filename, json);
+    return true; // Still return true so App resets properly
   }
 }
 
