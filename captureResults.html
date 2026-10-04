@@ -1222,7 +1222,7 @@ function classEmblemFallback(img){
   span.className = 'class-roundel';
   span.style.width = img.style.width;
   span.style.height = img.style.height;
-  span.textContent = CLASS_ABBR[cls] || cls.slice(0,3);
+  span.textContent = (cls || '?').charAt(0).toUpperCase();
   img.replaceWith(span);
 }
 
@@ -1742,7 +1742,9 @@ function overlaysHTML(){
   if(state.overlay === 'entries'){
     title = 'Regatta Entries';
     body = `<div class="panel glass panel-pad">
-      ${state.entries.map((e,i)=>`<div class="member-row"><div style="width:22px;color:var(--ink-soft);font-weight:700;font-size:12px">${i+1}</div><div class="member-name">${escapeHTML(e.member)}</div><div class="sail-tag">#${e.sailNo}</div></div>`).join('')}
+      ${state.entries.map((e,i)=>`<div class="member-row"><div style="width:22px;color:var(--ink-soft);font-weight:700;font-size:12px">${i+1}</div>
+      <div style="margin-right:8px;display:flex">${classEmblem(e.className, 22)}</div><div class="member-name">${escapeHTML(e.member)}</div>
+      <div class="sail-tag">#${e.sailNo}</div></div>`).join('')}
     </div>
     <div class="helper-note">Entries are locked once the regatta has started and cannot be removed.</div>`;
   } else if(state.overlay === 'scoresheet'){
