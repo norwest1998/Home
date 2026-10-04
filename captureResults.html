@@ -1381,9 +1381,12 @@ function headerHTML(){
   if(ev){
     const dt = parseDMY(ev.date);
     const dateStr = `${DOW[dt.getDay()]} ${dt.getDate()} ${MON[dt.getMonth()]} ${dt.getFullYear()}`;
+    const c = String(ev.class).trim();
+    const emblem = (c === 'General' || c === 'Twilight') ? 'smmc-logo' : c;
+    
     sub = `<div class="subheader">
       <img class="cal-filter-icon" style="width:22px;height:22px;padding:2px;border-radius:5px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);flex-shrink:0;" 
-          src="${EMBLEM_IMAGE_URI}${encodeURIComponent(ev.class === 'General' ? 'smmc-logo' : ev.class)}.png" 
+          src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" 
           alt="${escapeHTML(ev.class)}">
       <span class="badge badge-default">${escapeHTML(ev.regattaName)}</span>
       <span class="badge badge-default">${dateStr}</span>
@@ -1445,10 +1448,12 @@ function renderClassFilterBar(classes){
   return `<div class="class-filter-bar">
     ${options.map(cls => {
       const active = state.selectedClass === cls;
-      // Assign an empty string for 'ALL', otherwise render the class emblem
+      const c = String(cls).trim();
+      const emblem = (c === 'General' || c === 'Twilight') ? 'smmc-logo' : c;
+      
       const icon = cls === 'ALL'
         ? ''
-        : `<img class="cal-filter-icon" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(cls === 'General' ? 'smmc-logo' : cls)}.png" alt="${escapeHTML(cls)}">`;
+        : `<img class="cal-filter-icon" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${escapeHTML(cls)}">`;
 
       return `<button type="button" class="class-filter-btn ${active ? 'active' : ''}" data-filter-class="${escapeHTML(cls)}"
           title="${cls === 'ALL' ? 'All Classes' : escapeHTML(cls)}" aria-label="${cls === 'ALL' ? 'All Classes' : escapeHTML(cls)}">
