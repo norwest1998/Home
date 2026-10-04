@@ -94,7 +94,7 @@
     document.getElementById("mrs-x").addEventListener("click", closeModal);
   }
 
-  function buildWinRateLeaderboard(minRaces) {
+  function buildWinRateLeaderboard(minRaces, kind) {
     const byMember = {};
     raceRows.forEach(r => {
       if (kind && raceKind(r) !== kind) return;
