@@ -1913,6 +1913,7 @@ VIGATION HEADER
     metaEl.textContent = `${data.event.roundLabel} • ${data.event.championship} (Raced ${data.event.racedOn})`;
     const clsName = data.event.className || data.event.boatClass;
     const emblemUrl = getClassImage(clsName);
+    defaultStandingsToLatest(data.event);
     if (emblemUrl && emblemEl) {
         emblemEl.src = emblemUrl; emblemEl.alt = `${clsName} Emblem`; emblemEl.style.display = 'inline-block';
     }
@@ -2189,6 +2190,7 @@ VIGATION HEADER
       `;
       
       document.getElementById('classSelector').addEventListener('change', async (e) => {
+        standingsLocked = true;
         activeClass = e.target.value;
         activeSheetIndex = 0;
         updateClassInsignia(activeClass);
@@ -2197,7 +2199,32 @@ VIGATION HEADER
       });
     }
 
+    let standingsLocked = false; // true once the user picks a class manually
+
+    function defaultStandingsToLatest(ev) {
+      if (standingsLocked || !ev) return;
+      const cn  = String(ev.className || ev.boatClass || '').toLowerCase();
+      const txt = `${ev.championship || ''} ${cn}`.toLowerCase();
+      const entries = Object.entries(RESULTS_CONFIG).filter(([, c]) => c.spreadsheetId);
+      let hit = entries.find(([, c]) => txt.includes(c.label.toLowerCase()));
+      if (!hit) {
+        const m = entries.filter(([, c]) => c.className.toLowerCase() === cn);
+        const wantH = txt.includes('handicap');
+        hit = m.find(([, c]) => /handicap/i.test(c.label) === wantH) || m[0];
+      }
+      if (!hit || hit[0] === activeClass) return;
+      activeClass = hit[0];
+      activeSheetIndex = 0;
+      const sel = document.getElementById('classSelector');
+      if (sel) { // standings already rendered -> refresh
+        sel.value = activeClass;
+        updateClassInsignia(activeClass);
+        renderRoundTabs().then(loadActiveSheet);
+      }
+    }
+
     function selectClass(classKey) {
+      standingsLocked = true;
       if (!RESULTS_CONFIG[classKey]) return true; // unknown key, let default nav happen
       activeClass = classKey;
       activeSheetIndex = 0;
