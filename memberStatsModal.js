@@ -22,14 +22,18 @@
     return isNaN(n) ? null : n;
   }
 
+  function escapeHtml(s) {
+    return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
   function initials(name) {
     return name.split(/\s+/).filter(Boolean).map(p => p[0]).join("").slice(0, 2).toUpperCase();
   }
 
-  function raceKind(r) {
-    const t = (r[RACE_TYPE_COL] || "").toLowerCase();
-    return t.includes("scratch") ? "scratch" : t.includes("hand") ? "handicap" : null;
-  }
+function raceKind(r) {
+  const t = (r[RACE_TYPE_COL] || "").trim().toLowerCase();
+  return t === "scratch" ? "scratch" : t === "handicap" ? "handicap" : null;
+}
 
   function winRatePct(rs) {
     const p = rs.map(r => num(r.RacePos)).filter(v => v !== null);
@@ -162,7 +166,7 @@
   }
   window.showWinRateLeaderboard = showWinRateLeaderboard;
   
-  function raceKey(r) { return [r.RegattaName, r.Class, r.RaceNo].join("|"); }
+  function raceKey(r) { return [r.EventID, r.RegattaName, r.Class, r.RaceNo].join("|"); }
 
   function headToHead(a, b) {
     const map = {};
