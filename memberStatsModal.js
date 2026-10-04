@@ -97,6 +97,7 @@
   function buildWinRateLeaderboard(minRaces) {
     const byMember = {};
     raceRows.forEach(r => {
+      if (kind && raceKind(r) !== kind) return;
       const n = r.MemberName.trim();
       const p = num(r.RacePos);
       if (p === null) return;
@@ -114,15 +115,16 @@
       .sort((a, b) => b.winRate - a.winRate);
   }
 
-  function computeWinRateRank(name, minRaces) {
-    const ranked = buildWinRateLeaderboard(minRaces);
+  function computeWinRateRank(name, minRaces, kind) {
+    const ranked = buildWinRateLeaderboard(minRaces, kind);
     const idx = ranked.findIndex(m => m.name === name);
     if (idx === -1) return null; // not qualified (didn't meet minRaces)
     return { rank: idx + 1, of: ranked.length };
   }
 
-  function showWinRateLeaderboard() {
+  function showWinRateLeaderboard(kind) {
     const minRaces = 5;
+    const label = { scratch: "Scratch", handicap: "Handicap" }[kind] || "Both";
     const ranked = buildWinRateLeaderboard(minRaces).slice(0, 10);
 
     const rowsHtml = ranked.map((m, i) => {
@@ -140,7 +142,7 @@
     overlay.innerHTML = `
       <div class="drawer">
         <div class="drawer-header">
-          <h4>Top 10 · Win Rate</h4>
+          <h4>Top 10 · Win Rate (${label})</h4>
           <button class="drawer-close" id="mrs-lb-x">✕</button>
         </div>
         <div class="drawer-body">
@@ -176,7 +178,8 @@
     const consistency = consistVals.length ? consistVals.reduce((a, b) => a + b, 0) / consistVals.length : null;
 
     const regattas = [...new Set(rows.map(r => r.RegattaName).filter(Boolean))];
-    const winRateRank = computeWinRateRank(name, 5);
+    const rk = k => computeWinRateRank(name, 5, k);
+    const rankTile = k => { const r = rk(k); return r ? `<div class="l" style="margin-top:2px;color:var(--glow);">Rank #${r.rank} of ${r.of}</div>` : ""; };
     const wrScratch = winRatePct(rows.filter(r => raceKind(r) === "scratch"));
     const wrHcp     = winRatePct(rows.filter(r => raceKind(r) === "handicap"));
     const wrBoth    = winRatePct(rows);
@@ -214,9 +217,15 @@
           </div>
         </div>
         <div class="mrs-stat-grid" style="margin-bottom:8px;">
-          <div class="mrs-stat"><div class="n accent">${wrScratch}</div><div class="l">Win % Scratch</div></div>
-          <div class="mrs-stat"><div class="n accent">${wrHcp}</div><div class="l">Win % Handicap</div></div>
-          <div class="mrs-stat" onclick="showWinRateLeaderboard()" style="cursor:pointer;" title="See top 10">
+            <div class="mrs-stat" onclick="showWinRateLeaderboard('scratch')" style="cursor:pointer;" title="See top 10">
+              <div class="n accent">${wrScratch}</div><div class="l">Win % Scratch</div>${rankTile("scratch")}
+            </div>
+            <div class="mrs-stat" onclick="showWinRateLeaderboard('handicap')" style="cursor:pointer;" title="See top 10">
+              <div class="n accent">${wrHcp}</div><div class="l">Win % Handicap</div>${rankTile("handicap")}
+            </div>
+            <div class="mrs-stat" onclick="showWinRateLeaderboard()" style="cursor:pointer;" title="See top 10">
+              <div class="n accent">${wrBoth}</div><div class="l">Win % Both</div>${rankTile()}
+            </div>
             <div class="n accent">${wrBoth}</div><div class="l">Win % Both</div>
             ${winRateRank ? `<div class="l" style="margin-top:2px;color:var(--glow);">Rank #${winRateRank.rank} of ${winRateRank.of}</div>` : ""}
           </div>
