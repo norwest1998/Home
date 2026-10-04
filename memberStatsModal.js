@@ -217,17 +217,14 @@
           </div>
         </div>
         <div class="mrs-stat-grid" style="margin-bottom:8px;">
-            <div class="mrs-stat" onclick="showWinRateLeaderboard('scratch')" style="cursor:pointer;" title="See top 10">
-              <div class="n accent">${wrScratch}</div><div class="l">Win % Scratch</div>${rankTile("scratch")}
-            </div>
-            <div class="mrs-stat" onclick="showWinRateLeaderboard('handicap')" style="cursor:pointer;" title="See top 10">
-              <div class="n accent">${wrHcp}</div><div class="l">Win % Handicap</div>${rankTile("handicap")}
-            </div>
-            <div class="mrs-stat" onclick="showWinRateLeaderboard()" style="cursor:pointer;" title="See top 10">
-              <div class="n accent">${wrBoth}</div><div class="l">Win % Both</div>${rankTile()}
-            </div>
-            <div class="n accent">${wrBoth}</div><div class="l">Win % Both</div>
-            ${winRateRank ? `<div class="l" style="margin-top:2px;color:var(--glow);">Rank #${winRateRank.rank} of ${winRateRank.of}</div>` : ""}
+          <div class="mrs-stat" onclick="showWinRateLeaderboard('scratch')" style="cursor:pointer;" title="See top 10">
+            <div class="n accent">${wrScratch}</div><div class="l">Win % Scratch</div>${rankTile("scratch")}
+          </div>
+          <div class="mrs-stat" onclick="showWinRateLeaderboard('handicap')" style="cursor:pointer;" title="See top 10">
+            <div class="n accent">${wrHcp}</div><div class="l">Win % Handicap</div>${rankTile("handicap")}
+          </div>
+          <div class="mrs-stat" onclick="showWinRateLeaderboard()" style="cursor:pointer;" title="See top 10">
+            <div class="n accent">${wrBoth}</div><div class="l">Win % Both</div>${rankTile()}
           </div>
         </div>
         <div class="mrs-stat"><div class="n">${races}</div><div class="l">Races</div></div>
