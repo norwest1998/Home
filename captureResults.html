@@ -1051,6 +1051,7 @@ textarea.report-box::placeholder{ color: var(--foam-dim); }
   flex-direction: column;
   gap: 4px;
 }
+
 </style>
 </head>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.446.0/dist/umd/lucide.min.js"></script>
@@ -1072,7 +1073,8 @@ let GUESTS = [];
 
 async function getMembers(className) {
   try {
-    const data = await apiGet("members", className);
+    const queryClass = className === 'Twilight' ? '' : className;
+    const data = await apiGet("members", queryClass);
     MEMBERS = Array.isArray(data.members)
       ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC" }))
       : [];
@@ -1102,6 +1104,9 @@ async function getGuests(eventId, className) {
 }
 
 function getRoster() {
+  if (state.event && state.event.class === 'Twilight') {
+      return [...MEMBERS, ...GUESTS];
+  }
   return [...MEMBERS, ...GUESTS].filter(m => m.className === state.event.class);
 }
 
@@ -1282,9 +1287,12 @@ function dropsForRaceCount(n){
 
 function computeStandings(entries, races){
   const n = entries.length;
+  const entrySails = new Set(entries.map(e => e.sailNo));
+
   const results = entries.map(e => {
     const raceScores = races.map(r => {
       if(r.raceRO && r.raceRO === e.sailNo) return { race: r.raceNumber, points: null, code: 'RO' };
+      const classPositions = r.positions.filter(sn => entrySails.has(sn));
       const posIdx = r.positions.indexOf(e.sailNo);
       if(posIdx >= 0) return { race: r.raceNumber, points: posIdx+1, code: null };
       if(r.dns.includes(e.sailNo)) return { race: r.raceNumber, points: n+1, code: 'DNS' };
@@ -1775,6 +1783,26 @@ function renderScoresheet(){
 
 function renderResultsTable(){
   if(state.races.length === 0) return `<div class="empty-note">No races captured yet.</div>`;
+  
+  let html = `<h4 style="margin-bottom:8px; font-size:14px; color:var(--foam); font-family:var(--font-display);">${state.event.class === 'Twilight' ? 'Overall Line Honours' : 'Overall Standings'}</h4>`;
+  html += buildStandingsTable(state.entries, state.races, state.event.class === 'Twilight' ? "Overall Line Honours" : null);
+    if (state.event.class === 'Twilight') {
+      const classes = [...new Set(state.entries.map(e => e.className))].filter(Boolean).sort();
+      if (classes.length > 1) {
+          classes.forEach(cls => {
+              const clsEntries = state.entries.filter(e => e.className === cls);
+              if (clsEntries.length > 0) {
+                  html += `<h4 style="margin-top:24px; margin-bottom:8px; font-size:14px; color:var(--glow); font-family:var(--font-display);">${escapeHTML(cls)} Podiums</h4>`;
+                  html += buildStandingsTable(clsEntries, state.races, cls);
+              }
+          });
+      }
+  }
+  return html + `<div class="helper-note">Low-point scoring: DNS/DNF score entries+1. RO (race officer) excludes a sailor from that race entirely. Drops: 1 after race 4, 2 after race 8, +1 every 8 races thereafter. Ties broken by countback (most bettered places, then most recent race).</div>`;
+}
+
+function buildStandingsTable(entries, races, title = null) {
+  if(entries.length === 0) return '';
   const standings = computeStandings(state.entries, state.races);
   const raceCount = state.races.length;
   let head = `<th>Pos</th><th class="name-cell">Sail</th><th class="name-cell">Name</th><th>Net</th>`;
@@ -1796,9 +1824,15 @@ function renderResultsTable(){
       }
       raceCells += `<td class="${cls}">${content}</td>`;
     });
+
+    const e = entries.find(x => x.sailNo === s.sailNo);
+    const classTag = (title === "Overall Line Honours" && e && e.className) 
+        ? ` <span style="font-size:9.5px;color:var(--foam-dim);margin-left:4px;">${escapeHTML(e.className)}</span>` 
+        : '';
+
     return `<tr>
       <td>${s.pos}</td>
-      <td class="name-cell">#${s.sailNo}</td>
+      <td class="name-cell">#${s.sailNo}${classTag}</td>
       <td class="name-cell">${escapeHTML(s.member)}</td>
       <td class="net-cell">${s.net}</td>
       ${raceCells}
@@ -1807,10 +1841,8 @@ function renderResultsTable(){
     </tr>`;
   }).join('');
 
-  return `<div class="table-scroll"><table class="data-table"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
-  <div class="helper-note">Low-point scoring: DNS/DNF score entries+1. RO (race officer) excludes a sailor from that race entirely. Drops: 1 after race 4, 2 after race 8, +1 every 8 races thereafter. Ties broken by countback (most bettered places, then most recent race).</div>`;
-}
-
+  return `<div class="table-scroll"><table class="data-table"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  
 function renderExportPanel(){
   return `
   <div class="panel glass panel-pad">
@@ -1916,10 +1948,10 @@ function selectAllToggle(){
 }
 
 function confirmEntries(){
-  const roster = getRoster();   // members AND guests
+  const roster = getRoster();
   const isFirstTime = state.entries.length === 0;
   state.entries = roster.filter(m => state.pendingSelection.has(String(m.sailNo)))
-                        .map(m => ({ sailNo: String(m.sailNo), member: m.member }));
+                        .map(m => ({ sailNo: String(m.sailNo), member: m.member, className: m.className }));
   state.screen = 'race-capture';
   saveState();
   showToast(isFirstTime ? 'Entries saved' : 'Entries updated');
@@ -2085,15 +2117,16 @@ function saveReportText(){
 function buildExportObject(){
   const ev = state.event;
   return {
-    eventID: ev.id,
-    regattaDate: ev.regattaDate,
-    startTime: ev.startTime,
-    endTime: ev.endTime,
-    regattaName: ev.regattaName,
-    className: ev.className,
-    competitorCount: state.entries.length,
-    raceReport: state.reportText || '',
-    races: state.races.map(r => ({
+      eventID: ev.id,
+      regattaDate: ev.regattaDate,
+      startTime: ev.startTime,
+      endTime: ev.endTime,
+      regattaName: ev.regattaName,
+      className: ev.className,
+      competitorCount: state.entries.length,
+      entries: state.entries, // <--- New: Include the rich entries list to pass classes to scoring
+      raceReport: state.reportText || '',
+      races: state.races.map(r => ({
       raceNumber: r.raceNumber,
       raceRO: r.raceRO || '',
       positions: r.positions.map(Number),

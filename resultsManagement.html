@@ -294,7 +294,18 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .guest-inline-input::placeholder {
     color: var(--foam-dim);
 }
-
+select.guest-inline-input {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(234,246,246,0.6)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 24px;
+}
+select.guest-inline-input option {
+    background: var(--ocean-deep);
+    color: var(--foam);
+}
 </style>
 </head>
 <body>
@@ -480,6 +491,9 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
                     <button type="button" class="class-filter-pill" onclick="setGuestClassFilter('Soling', this)" title="Soling">
                         <img src="/Home/images/classes/Soling.png" alt="Soling"> Soling
                     </button>
+                    <button type="button" class="class-filter-pill" onclick="setGuestClassFilter('Twilight', this)" title="Twilight">
+                        <img src="/Home/images/classes/smmc-logo.png" alt="Twilight"> Twilight
+                    </button>
                 </div>
 
                 <!-- Date Filter -->
@@ -522,16 +536,16 @@ table.scoresheet { width: 100%; border-collapse: collapse; font-size: 12.5px; }
                     <table class="standings" id="guestRosterTable">
                         <thead>
                             <tr>
-                                <th class="col-center" style="width:100px;">Sail #</th>
+                                <th class="col-center" style="width:70px;">Sail #</th>
                                 <th>Competitor Name</th>
                                 <th>Home Club</th>
+                                <th>Class</th>
+                                <th>Model</th>
                                 <th class="col-center" style="width:70px;">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="registeredGuestsTableBody">
-                            <!-- Populated dynamically + inline capture row -->
-                        </tbody>
-                    </table>
+                        <tbody id="registeredGuestsTableBody"></tbody>
+                    </table>>
                 </div>
                 <div class="fn-message" id="modalGuestMsg"></div>
             </div>
@@ -754,6 +768,7 @@ const CLASS_IMAGE_MAP = {
     'General': '/Home/images/classes/smmc-logo.png',
     'DF65':    '/Home/images/classes/DF65.png',
     'Social':  '/Home/images/classes/SmileyFace.png',
+    'Twilight':'/Home/images/classes/smmc-logo.png'
 };
 
 function getClassImage(raceClass) {
@@ -1173,6 +1188,7 @@ function setGuestClassFilter(cls, btnEl) {
     document.querySelectorAll('#guestClassFilterGroup .class-filter-pill').forEach(btn => {
         btn.classList.remove('active');
     });
+    
     if (btnEl) btnEl.classList.add('active');
     renderGuestEventsList();
 }
@@ -1280,12 +1296,13 @@ function renderModalGuestTable() {
     const bodyEl = document.getElementById('registeredGuestsTableBody');
     const guests = allGuestRegistrations.filter(g => g.EventID === activeGuestEventId);
 
-    // Render registered guest rows
     let rowsHtml = guests.map(g => `
         <tr>
             <td class="col-center" style="font-weight:700; color:var(--glow);">${escHtml(g.SailNo)}</td>
             <td style="font-weight:600;">${escHtml(g.CompetitorName)}</td>
             <td>${escHtml(g.HomeClub)}</td>
+            <td>${escHtml(g.RaceClass || '—')}</td>
+            <td>${escHtml(g.Model || '—')}</td>
             <td class="col-center">
                 <button type="button" class="icon-btn" title="Delete Guest" onclick="deleteGuestSailor('${escHtml(g.HexKey)}')">
                     <i class="inline-icon" data-lucide="trash-2" color="#ff6a3d"></i>
@@ -1294,24 +1311,27 @@ function renderModalGuestTable() {
         </tr>
     `).join('');
 
-    // Last row with entry fields to add a new guest
     const addRowHtml = `
         <tr style="background: rgba(94,234,212,0.05); border-top: 2px solid var(--glass-border);">
             <td class="col-center">
                 <input type="text" id="newGuestSailNo" class="guest-inline-input" placeholder="Sail #" style="text-align:center;" required onkeydown="if(event.key==='Enter') quickAddGuest()">
             </td>
+            <td><input type="text" id="newGuestName" class="guest-inline-input" placeholder="Name *" required onkeydown="if(event.key==='Enter') quickAddGuest()"></td>
+            <td><input type="text" id="newGuestHomeClub" class="guest-inline-input" placeholder="Club *" required onkeydown="if(event.key==='Enter') quickAddGuest()"></td>
             <td>
-                <input type="text" id="newGuestName" class="guest-inline-input" placeholder="Competitor Name *" required onkeydown="if(event.key==='Enter') quickAddGuest()">
+                <select id="newGuestClass" class="guest-inline-input" onkeydown="if(event.key==='Enter') quickAddGuest()">
+                    <option value="">Class...</option>
+                    <option value="DF95">DF95</option><option value="DF65">DF65</option>
+                    <option value="IOM">IOM</option><option value="Soling">Soling</option>
+                    <option value="Marblehead">Marblehead</option>
+                </select>
             </td>
-            <td>
-                <input type="text" id="newGuestHomeClub" class="guest-inline-input" placeholder="Home Club *" required onkeydown="if(event.key==='Enter') quickAddGuest()">
-            </td>
+            <td><input type="text" id="newGuestModel" class="guest-inline-input" placeholder="Model" onkeydown="if(event.key==='Enter') quickAddGuest()"></td>
             <td class="col-center">
                 <button type="button" id="addGuestBtn" class="icon-btn" style="background: var(--glow); color: var(--ocean-deep);" title="Add Guest" onclick="quickAddGuest()">
             </td>
         </tr>
     `;
-
     bodyEl.innerHTML = rowsHtml + addRowHtml;
     if (window.lucide) lucide.createIcons();
 }
@@ -1335,6 +1355,8 @@ async function quickAddGuest() {
     const sailNo   = document.getElementById('newGuestSailNo').value.trim();
     const name     = document.getElementById('newGuestName').value.trim();
     const homeClub = document.getElementById('newGuestHomeClub').value.trim();
+    const raceClass = document.getElementById('newGuestClass').value.trim();
+    const modelName = document.getElementById('newGuestModel').value.trim();
 
     if (!name || !homeClub) {
         showMsg('modalGuestMsg', 'Please enter competitor name and home club.', true);
@@ -1348,7 +1370,8 @@ async function quickAddGuest() {
         EventID:        activeGuestEventId,
         EventTitle:     evt ? (evt.Title || evt.EventTitle) : '',
         EventDate:      evt ? (evt.EventDate || '') : '',
-        RaceClass:      evt ? (evt.RaceClass || '') : '',
+        RaceClass:      raceClass || (evt ? (evt.RaceClass || '') : ''),
+        Model:          modelName,
         SailNo:         sailNo || '—',
         CompetitorName: name,
         HomeClub:       homeClub,
@@ -1394,8 +1417,8 @@ function copyGuestRoster() {
         return;
     }
 
-    const lines = guests.map(g => `${g.SailNo}\t${g.CompetitorName}\t${g.HomeClub}`);
-    const text  = `Sail No\tCompetitor Name\tHome Club\n` + lines.join('\n');
+    const lines = guests.map(g => `${g.SailNo}\t${g.CompetitorName}\t${g.HomeClub}\t${g.RaceClass || ''}\t${g.Model || ''}`);
+    const text  = `Sail No\tCompetitor Name\tHome Club\tClass\tModel\n` + lines.join('\n');
 
     navigator.clipboard.writeText(text).then(() => {
         showMsg('modalGuestMsg', 'Guest roster copied to clipboard!', false);
