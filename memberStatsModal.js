@@ -125,7 +125,7 @@
   function showWinRateLeaderboard(kind) {
     const minRaces = 5;
     const label = { scratch: "Scratch", handicap: "Handicap" }[kind] || "Both";
-    const ranked = buildWinRateLeaderboard(minRaces).slice(0, 10);
+    const ranked = buildWinRateLeaderboard(minRaces, kind).slice(0, 10);
 
     const rowsHtml = ranked.map((m, i) => {
       const isCurrent = m.name === currentMemberName;
