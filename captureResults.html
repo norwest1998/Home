@@ -874,6 +874,8 @@ button{ font-family: inherit; }
 .checkbox.checked svg{ display:block; }
 .member-name{ font-weight:600; font-size:14px; color: var(--foam); flex:1; }
 .sail-tag{ font-family: var(--font-data); font-weight:600; font-size:12.5px; background: var(--glass-fill); border:1px solid var(--glass-border); color: var(--glow); padding:4px 9px; border-radius:7px; }
+.sail-dot{ width:34px; height:34px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-family:var(--font-data); font-weight:700; font-size:11px; border:1px solid var(--glass-border); }
+.member-model{ font-size:12px; color:var(--foam-dim); white-space:nowrap; }
 .select-all-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
 .select-all-row button{ background:none; border:none; color: var(--glow); font-weight:600; font-size:12.5px; cursor:pointer; padding:4px; }
 .count-banner{ font-size:12.5px; color: var(--foam-dim); margin-top:10px; text-align:center; }
@@ -1080,7 +1082,7 @@ async function getMembers(className) {
     const data = await apiGet("members", queryClass);
     
     MEMBERS = Array.isArray(data.members)
-      ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC" }))
+      ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC"}))
       : [];
       
     console.log(`getMembers(${className}): received ${MEMBERS.length} members`, MEMBERS.slice(0,3));
@@ -1098,7 +1100,8 @@ async function getGuests(eventId, className) {
       .map(g => ({
         member:    g.CompetitorName,
         sailNo:    String(g.SailNo),
-        className: className,          // guest rows may have no RaceClass; use the event's class
+        className: g.className || className,
+        model: g.model,          // guest rows may have no RaceClass; use the event's class
         homeClub:  g.HomeClub,
         isGuest:   true
       }));
@@ -1224,6 +1227,20 @@ function classEmblemFallback(img){
   span.style.height = img.style.height;
   span.textContent = (cls || '?').charAt(0).toUpperCase();
   img.replaceWith(span);
+}
+
+function sailDot(sailNo, hull){
+  let bg = 'transparent', fg = 'var(--foam)';
+  if (hull) {
+    const c = document.createElement('canvas').getContext('2d');
+    c.fillStyle = '#000'; c.fillStyle = hull; const a = c.fillStyle;
+    c.fillStyle = '#fff'; c.fillStyle = hull; const b = c.fillStyle;
+    if (a === b) { // valid colour
+      const n = parseInt(a.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, bl = n & 255;
+      bg = a; fg = (0.299*r + 0.587*g + 0.114*bl) > 150 ? '#000' : '#fff';
+    }
+  }
+  return `<div class="sail-dot" style="background:${bg};color:${fg}">${escapeHTML(sailNo)}</div>`;
 }
 
 /* ============ STATE ============ */
@@ -1541,10 +1558,11 @@ function renderCompetitorSelect(){
   const rows = roster.map(m => {
     const checked = state.pendingSelection.has(String(m.sailNo));
     return `<div class="member-row" data-toggle-member="${m.sailNo}">
-      <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      ${classEmblem(m.className, 22)}
       <div class="member-name">${escapeHTML(m.member)}</div>
-      ${m.isGuest ? `<div class="sail-tag">${escapeHTML(m.homeClub || 'Guest')}</div>` : ''}
-      <div class="sail-tag">#${m.sailNo}</div>
+      <div class="member-model">${escapeHTML(m.model || '')}</div>
+      ${sailDot(m.sailNo, m.hull)}
+      <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
     </div>`;
   }).join('');
 
@@ -1743,8 +1761,8 @@ function overlaysHTML(){
     title = 'Regatta Entries';
     body = `<div class="panel glass panel-pad">
       ${state.entries.map((e,i)=>`<div class="member-row"><div style="width:22px;color:var(--ink-soft);font-weight:700;font-size:12px">${i+1}</div>
-      <div style="margin-right:8px;display:flex">${classEmblem(e.className, 22)}</div><div class="member-name">${escapeHTML(e.member)}</div>
-      <div class="sail-tag">#${e.sailNo}</div></div>`).join('')}
+      ${classEmblem(e.className, 22)}<div class="member-name">${escapeHTML(e.member)}</div><div class="member-model">${escapeHTML(e.model || '')}</div>${sailDot(e.sailNo, e.hull)}</div>`
+      ).join('')}
     </div>
     <div class="helper-note">Entries are locked once the regatta has started and cannot be removed.</div>`;
   } else if(state.overlay === 'scoresheet'){
@@ -1964,7 +1982,7 @@ function confirmEntries(){
   const roster = getRoster();
   const isFirstTime = state.entries.length === 0;
   state.entries = roster.filter(m => state.pendingSelection.has(String(m.sailNo)))
-                        .map(m => ({ sailNo: String(m.sailNo), member: m.member, className: m.className }));
+                        .map(m => ({ sailNo: String(m.sailNo), member: m.member, className: m.className, model: m.model, hull: m.hull }));
   state.screen = 'race-capture';
   saveState();
   showToast(isFirstTime ? 'Entries saved' : 'Entries updated');
