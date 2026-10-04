@@ -12,6 +12,7 @@
  */
 (function () {
   const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/export?format=csv&gid=0";
+  const RACE_TYPE_COL = "RaceType";
 
   let raceRows = null; // cached after first load
   let currentMemberName = null;
@@ -23,6 +24,16 @@
 
   function initials(name) {
     return name.split(/\s+/).filter(Boolean).map(p => p[0]).join("").slice(0, 2).toUpperCase();
+  }
+
+  function raceKind(r) {
+    const t = (r[RACE_TYPE_COL] || "").toLowerCase();
+    return t.includes("scratch") ? "scratch" : t.includes("hand") ? "handicap" : null;
+  }
+
+  function winRatePct(rs) {
+    const p = rs.map(r => num(r.RacePos)).filter(v => v !== null);
+    return p.length ? Math.round(p.filter(x => x === 1).length / p.length * 100) + "%" : "—";
   }
 
   // Small additions theme.css doesn't already define: a 3-col stat grid
@@ -166,6 +177,9 @@
 
     const regattas = [...new Set(rows.map(r => r.RegattaName).filter(Boolean))];
     const winRateRank = computeWinRateRank(name, 5);
+    const wrScratch = winRatePct(rows.filter(r => raceKind(r) === "scratch"));
+    const wrHcp     = winRatePct(rows.filter(r => raceKind(r) === "handicap"));
+    const wrBoth    = winRatePct(rows);
 
     const sortedByPos = rows.filter(r => num(r.RacePos) !== null)
       .sort((a, b) => num(a.RacePos) - num(b.RacePos))
@@ -199,18 +213,15 @@
             <span class="badge badge-default">${races} races · ${regattas.length} regatta${regattas.length === 1 ? "" : "s"}</span>
           </div>
         </div>
-
-        <div class="mrs-stat-grid">
+        <div class="mrs-stat-grid" style="margin-bottom:8px;">
+          <div class="mrs-stat"><div class="n accent">${wrScratch}</div><div class="l">Win % Scratch</div></div>
+          <div class="mrs-stat"><div class="n accent">${wrHcp}</div><div class="l">Win % Handicap</div></div>
           <div class="mrs-stat" onclick="showWinRateLeaderboard()" style="cursor:pointer;" title="See top 10">
-            <div class="n accent">${races ? Math.round(wins / races * 100) + "%" : "—"}</div><div class="l">Win Rate</div>
+            <div class="n accent">${wrBoth}</div><div class="l">Win % Both</div>
             ${winRateRank ? `<div class="l" style="margin-top:2px;color:var(--glow);">Rank #${winRateRank.rank} of ${winRateRank.of}</div>` : ""}
           </div>
-          <div class="mrs-stat"><div class="n">${races ? Math.round(podiums / races * 100) + "%" : "—"}</div><div class="l">Top-3 Rate</div></div>
-          <div class="mrs-stat"><div class="n">${avgPlacing !== null ? avgPlacing.toFixed(1) : "—"}</div><div class="l">Avg Placing</div></div>
-          <div class="mrs-stat"><div class="n">${consistency !== null ? consistency.toFixed(2) : "—"}</div><div class="l">Consistency</div></div>
-          <div class="mrs-stat"><div class="n">${best !== null ? "#" + best : "—"}</div><div class="l">Best Finish</div></div>
-          <div class="mrs-stat"><div class="n warn">${worst !== null ? "#" + worst : "—"}</div><div class="l">Worst Finish</div></div>
         </div>
+        <div class="mrs-stat"><div class="n">${races}</div><div class="l">Races</div></div>
 
         <div class="detail-item full-width">
           <div class="detail-label">Best Results</div>
