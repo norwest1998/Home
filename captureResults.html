@@ -1558,7 +1558,7 @@ function renderCompetitorSelect(){
   const rows = roster.map(m => {
     const checked = state.pendingSelection.has(String(m.sailNo));
     return `<div class="member-row" data-toggle-member="${m.sailNo}">
-      ${classEmblem(m.className, 22)}
+      ${classEmblem(m.className, 32)}
       <div class="member-name">${escapeHTML(m.member)}</div>
       <div class="member-model">${escapeHTML(m.model || '')}</div>
       ${sailDot(m.sailNo, m.hull)}
@@ -1761,7 +1761,7 @@ function overlaysHTML(){
     title = 'Regatta Entries';
     body = `<div class="panel glass panel-pad">
       ${state.entries.map((e,i)=>`<div class="member-row"><div style="width:22px;color:var(--ink-soft);font-weight:700;font-size:12px">${i+1}</div>
-      ${classEmblem(e.className, 22)}<div class="member-name">${escapeHTML(e.member)}</div><div class="member-model">${escapeHTML(e.model || '')}</div>${sailDot(e.sailNo, e.hull)}</div>`
+      ${classEmblem(e.className, 32)}<div class="member-name">${escapeHTML(e.member)}</div><div class="member-model">${escapeHTML(e.model || '')}</div>${sailDot(e.sailNo, e.hull)}</div>`
       ).join('')}
     </div>
     <div class="helper-note">Entries are locked once the regatta has started and cannot be removed.</div>`;
