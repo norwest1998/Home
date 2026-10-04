@@ -1100,8 +1100,8 @@ async function getGuests(eventId, className) {
       .map(g => ({
         member:    g.CompetitorName,
         sailNo:    String(g.SailNo),
-        className: g.className || className,
-        model: g.model,          // guest rows may have no RaceClass; use the event's class
+        className: g.RaceClass || className,
+        model: g.Model,          // guest rows may have no RaceClass; use the event's class
         homeClub:  g.HomeClub,
         isGuest:   true
       }));
@@ -1982,7 +1982,8 @@ function confirmEntries(){
   const roster = getRoster();
   const isFirstTime = state.entries.length === 0;
   state.entries = roster.filter(m => state.pendingSelection.has(String(m.sailNo)))
-                        .map(m => ({ sailNo: String(m.sailNo), member: m.member, className: m.className, model: m.model, hull: m.hull }));
+                        .map(m => ({ sailNo: String(m.sailNo), member: m.member, className: m.className,
+             model: m.model, hull: m.hull, homeClub: m.homeClub, isGuest: !!m.isGuest }));
   state.screen = 'race-capture';
   saveState();
   showToast(isFirstTime ? 'Entries saved' : 'Entries updated');
