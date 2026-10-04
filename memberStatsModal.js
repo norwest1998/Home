@@ -354,4 +354,9 @@
       renderMember(drawer, match);
     });
   };
+  window._dbg = () => ({
+  total: raceRows.length,
+  kinds: raceRows.reduce((o, r) => { const k = raceKind(r) || "null"; o[k] = (o[k] || 0) + 1; return o; }, {}),
+  rawValues: [...new Set(raceRows.map(r => r[RACE_TYPE_COL]))]
+})
 })();
