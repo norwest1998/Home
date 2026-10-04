@@ -12,7 +12,7 @@
  */
 (function () {
   const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/export?format=csv&gid=0";
-  const RACE_TYPE_COL = "RaceType";
+  const RACE_TYPE_COL = "RegattaType";
 
   let raceRows = null; // cached after first load
   let currentMemberName = null;
