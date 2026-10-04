@@ -161,6 +161,75 @@
     document.getElementById("mrs-lb-ok").addEventListener("click", closeLb);
   }
   window.showWinRateLeaderboard = showWinRateLeaderboard;
+  
+  function raceKey(r) { return [r.RegattaName, r.Class, r.RaceNo].join("|"); }
+
+  function headToHead(a, b) {
+    const map = {};
+    raceRows.forEach(r => {
+      const n = r.MemberName.trim(), p = num(r.RacePos);
+      if (raceKind(r) !== "scratch" || p === null || (n !== a && n !== b)) return;
+      (map[raceKey(r)] = map[raceKey(r)] || {})[n] = p;
+    });
+    let together = 0, aWins = 0, bWins = 0;
+    Object.values(map).forEach(m => {
+      if (m[a] === undefined || m[b] === undefined) return;
+      together++;
+      if (m[a] < m[b]) aWins++; else if (m[b] < m[a]) bWins++;
+    });
+    return { together, aWins, bWins };
+  }
+
+  function showHeadToHead() {
+    const me = currentMemberName;
+    const valid = r => raceKind(r) === "scratch" && num(r.RacePos) !== null;
+    const myKeys = new Set(raceRows.filter(r => valid(r) && r.MemberName.trim() === me).map(raceKey));
+    const counts = {};
+    raceRows.forEach(r => {
+      const n = r.MemberName.trim();
+      if (n === me || !valid(r) || !myKeys.has(raceKey(r))) return;
+      counts[n] = (counts[n] || 0) + 1;
+    });
+    const opps = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+    injectExtraStyles();
+    const overlay = document.createElement("div");
+    overlay.className = "drawer-overlay open";
+    overlay.innerHTML = `
+      <div class="drawer">
+        <div class="drawer-header"><h4>Head to Head · Scratch</h4>
+          <button class="drawer-close" id="h2h-x">✕</button></div>
+        <div class="drawer-body">
+          <select id="h2h-sel" style="width:100%;padding:8px;">
+            <option value="">Choose opponent…</option>
+            ${opps.map(([n, c]) => `<option value="${escapeHtml(n)}">${escapeHtml(n)} (${c} races)</option>`).join("")}
+          </select>
+          <div id="h2h-out"></div>
+          <button class="btn btn-primary" id="h2h-ok" style="width:100%;justify-content:center;">Close</button>
+        </div>
+      </div>`;
+    const close = () => overlay.remove();
+    overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+    document.body.appendChild(overlay);
+    document.getElementById("h2h-x").onclick = close;
+    document.getElementById("h2h-ok").onclick = close;
+
+    document.getElementById("h2h-sel").onchange = e => {
+      const opp = e.target.value, out = document.getElementById("h2h-out");
+      if (!opp) { out.innerHTML = ""; return; }
+      const h = headToHead(me, opp);
+      const pct = h.together ? Math.round(h.aWins / h.together * 100) : 0;
+      out.innerHTML = `
+        <div class="mrs-stat-grid" style="margin:10px 0;">
+          <div class="mrs-stat"><div class="n">${h.together}</div><div class="l">Races Together</div></div>
+          <div class="mrs-stat"><div class="n accent">${h.aWins}</div><div class="l">${escapeHtml(me)} Won</div></div>
+          <div class="mrs-stat"><div class="n warn">${h.bWins}</div><div class="l">${escapeHtml(opp)} Won</div></div>
+        </div>
+        <div class="mrs-row"><span>${escapeHtml(me)} beat ${escapeHtml(opp)}</span><span class="v">${pct}%</span></div>`;
+    };
+  }
+  window.showHeadToHead = showHeadToHead;
+
 
   function renderMember(drawer, name) {
     currentMemberName = name;
@@ -238,12 +307,13 @@
           <div class="detail-label">By Regatta</div>
           ${regattaHtml}
         </div>
-
+        <button class="btn" id="mrs-h2h" style="width:100%;justify-content:center;margin-bottom:8px;">Head to Head (Scratch)</button>
         <button class="btn btn-primary" id="mrs-ok" style="width:100%;justify-content:center;">Close</button>
       </div>
     `;
     document.getElementById("mrs-x").addEventListener("click", closeModal);
     document.getElementById("mrs-ok").addEventListener("click", closeModal);
+    document.getElementById("mrs-h2h").addEventListener("click", showHeadToHead);
   }
 
   function withData(callback) {
