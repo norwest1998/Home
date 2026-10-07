@@ -1388,7 +1388,7 @@ function headerHTML(){
     const dateStr = `${DOW[dt.getDay()]} ${dt.getDate()} ${MON[dt.getMonth()]} ${dt.getFullYear()}`;
     sub = `<div class="subheader">
       <img class="cal-filter-icon" style="width:22px;height:22px;padding:2px;border-radius:5px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);flex-shrink:0;" 
-          src="${EMBLEM_IMAGE_URI}${encodeURIComponent(ev.class === 'General' ? 'smmc-logo' : ev.class)}.png" 
+          src="${EMBLEM_IMAGE_URI}${encodeURIComponent(ev.class === 'General' || ev.class === 'Twilight' ? 'smmc-logo' : ev.class)}.png" 
           alt="${escapeHTML(ev.class)}">
       <span class="badge badge-default">${escapeHTML(ev.regattaName)}</span>
       <span class="badge badge-default">${dateStr}</span>
