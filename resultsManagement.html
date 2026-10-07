@@ -1304,7 +1304,7 @@ function renderModalGuestTable() {
             <td>${escHtml(g.HomeClub)}</td>
             <td>${escHtml(g.RaceClass || '—')}</td>
             <td>${escHtml(g.Model || '—')}</td>
-            <td>${escHtml(g['Hull Colour'] || g.HullColour || '—')}</td>
+            <td>${escHtml(g[HullColour] || g.HullColour || '—')}</td>
             <td class="col-center">
                 <button type="button" class="icon-btn" title="Delete Guest" onclick="deleteGuestSailor('${escHtml(g.HexKey)}')">
                     <i class="inline-icon" data-lucide="trash-2" color="#ff6a3d"></i>
@@ -1378,7 +1378,7 @@ async function quickAddGuest() {
         EventDate:      evt ? (evt.EventDate || '') : '',
         RaceClass:      raceClass || (evt ? (evt.RaceClass || '') : ''),
         Model:          modelName,
-        "Hull Colour":  hullColour,
+        HullColour:     hullColour,
         SailNo:         sailNo || '—',
         CompetitorName: name,
         HomeClub:       homeClub,
@@ -1423,7 +1423,7 @@ function copyGuestRoster() {
     }
 
     const lines = guests.map(g => 
-        `${g.SailNo}\t${g.CompetitorName}\t${g.HomeClub}\t${g.RaceClass || ''}\t${g.Model || ''}\t${g['Hull Colour'] || g.HullColour || ''}`
+        `${g.SailNo}\t${g.CompetitorName}\t${g.HomeClub}\t${g.RaceClass || ''}\t${g.Model || ''}\t${g[HullColour] || g.HullColour || ''}`
     );
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
         showMsg('modalGuestMsg', 'Guest roster copied to clipboard!', false);

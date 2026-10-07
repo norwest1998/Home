@@ -1132,6 +1132,7 @@ async function getGuests(eventId, className) {
         sailNo:    String(g.SailNo),
         className: className,          // guest rows may have no RaceClass; use the event's class
         homeClub:  g.HomeClub,
+        hull:     g.HullColor || "white",
         isGuest:   true
       }));
   } catch (e) {
@@ -1538,6 +1539,7 @@ function renderEventSelect(){
 
 /* ---------------- Screen: Competitor Select ---------------- */
 function renderCompetitorSelect(){
+  console.log(getRoster().filter(m => typeof m.member !== 'string'));
   const ev = state.event;
   const roster = getRoster().sort((a,b) => a.member.localeCompare(b.member));
   const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(String(m.id)));
