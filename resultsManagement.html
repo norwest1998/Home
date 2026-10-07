@@ -1423,7 +1423,7 @@ function copyGuestRoster() {
     }
 
     const lines = guests.map(g => 
-        `${g.SailNo}\t${g.CompetitorName}\t${g.HomeClub}\t${g.RaceClass || ''}\t${g.Model || ''}\t${g[HullColour] || g.HullColour || ''}`
+        `${g.SailNo}\t${g.CompetitorName}\t${g.HomeClub}\t${g.RaceClass || ''}\t${g.Model || ''}\t${g.HullColour || ''}`
     );
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
         showMsg('modalGuestMsg', 'Guest roster copied to clipboard!', false);
