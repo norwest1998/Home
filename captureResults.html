@@ -1108,11 +1108,9 @@ async function getMembers(className) {
     if (className === "Twilight") className = "All";  // special case for Twilight events 
     const queryClass = className  
     const data = await apiGet("members", queryClass);
-    console.log(`getMembers(${className}): received data`, data);
     MEMBERS = Array.isArray(data.members)
       ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC", boat: m.id }))
       : [];
-    console.log(`getMembers(${className}): received ${MEMBERS.length} members`, MEMBERS.slice(0,3));
   } catch (error) {
     console.error("Failed to load member data:", error);
     MEMBERS = [];
@@ -1170,7 +1168,6 @@ async function getEvents() {
         };
       });
     });
-    console.log('raw', data.events?.length, 'mapped', EVENTS.length, EVENTS[0]);
   } catch (error) {
     console.error("Failed to load events:", error);
     EVENTS = [];
@@ -1178,7 +1175,6 @@ async function getEvents() {
 }
 
 async function apiGet(action, className) {
-  console.log("in apiGet action: " + action);
   const url = action === "members"
       ? `${CLB_WEBAPP_URL}?action=ClassMembers` + (className ? `&className=${encodeURIComponent(className)}` : "")
       : `${CAL_WEBAPP_URL}?type=calendar`;
