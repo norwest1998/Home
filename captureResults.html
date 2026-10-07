@@ -1095,7 +1095,7 @@ const PRACTICE_MEMBERS = [
   {id:'P8',member:'Hana Helm',     sailNo:'88', className:'DF95', homeClub:'SMMC', hull:'pink'}
 ];
 const PRACTICE_GUESTS = [
-  {member:'Visiting Sailor', sailNo:'99', className:'DF95', homeClub:'Guest Club', isGuest:true}
+  {id:'PG1',member:'Visiting Sailor', sailNo:'99', className:'DF95', homeClub:'Guest Club', isGuest:true}
 ];
 function practiceEvents(){
   const t = new Date();
@@ -1111,7 +1111,7 @@ async function getMembers(className) {
     const data = await apiGet("members", queryClass);
     console.log(`getMembers(${className}): received data`, data);
     MEMBERS = Array.isArray(data.members)
-      ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC", boat: m.id , hull: m['Hull Colour'] || "white" }))
+      ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC", boat: m.id }))
       : [];
     console.log(`getMembers(${className}): received ${MEMBERS.length} members`, MEMBERS.slice(0,3));
   } catch (error) {
@@ -1142,7 +1142,7 @@ async function getGuests(eventId, className) {
 }
 
 function getRoster() {
-  return [...MEMBERS, ...GUESTS];
+  return [...MEMBERS, ...GUESTS];   // server already filters members by class
 }
 
 /* ======== create function to fetch Events ============= */
@@ -1204,7 +1204,7 @@ function classEmblem(className, size){
   const s = size || 20;
   const safe = escapeHTML(className);
   var emblem = className;
-  if (emblem === "General" || emblem === "Twilight") emblem = "smmc-logo";
+  if (emblem === "General") emblem = "smmc-logo";
   if (emblem === "Social") emblem = "SmileyFace";
   return `<img class="class-emblem" style="width:${s}px;height:${s}px;padding:3px;border-radius:6px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);flex-shrink:0;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
 }
@@ -1219,8 +1219,13 @@ function classEmblemFallback(img){
   img.replaceWith(span);
 }
 
-function hullStyle(sn){
-  const e = state.entries.find(x => String(x.sailNo) === String(sn));
+function entryFor(boatId){ return state.entries.find(x => String(x.boatId) === String(boatId)); }
+function sailFor(boatId){ const e = entryFor(boatId); return e ? e.sailNo : '?'; }
+function sailChip(boatId, cls='p-sail'){
+  return `<span class="${cls}" style="${hullStyle(boatId)}border-radius:6px;padding:1px 6px;">#${escapeHTML(String(sailFor(boatId)))}</span>`;
+}
+function hullStyle(boatId){
+  const e = entryFor(boatId);
   const c = e && e.hull ? String(e.hull).trim() : '';
   return c ? `background:${c};color:${/yellow|white|lime|cyan|silver|pink/i.test(c) ? '#0b1f33' : '#fff'};` : '';
 }
@@ -1229,16 +1234,16 @@ function hullStyle(sn){
 let state = {
   screen: 'select-event',   // select-event | select-competitors | race-capture
   event: null,
-  entries: [],               // [{boatId, sailNo, member}]
-  races: [],                 // [{raceNumber, raceRO:'', positions:[], dnf:[], dns:[]}]
+  entries: [],               // [{boatId, sailNo, member, hull}]  boatId = key, sailNo = display only
+  races: [],                 // [{raceNumber, raceRO:'', positions:[], dnf:[], dns:[]}]  (all hold boatIds)
   draft: null,               // {raceNumber, positions:[], dnf:[], dns:[], ro:''}
   viewRaceIdx: null,         // index into races[] when reviewing a captured race
   reportText: '',
   menuOpen: false,
   overlay: null,             // 'entries' | 'scoresheet' | 'results' | 'export'
   eventSearch: '',
-  pendingSelection: new Set(), // sail numbers ticked during competitor selection
-  longPressTarget: null,      // {sailNo, mode:'draft'|'race', raceIdx} currently showing the code-change modal
+  pendingSelection: new Set(), // boatIds ticked during competitor selection
+  longPressTarget: null,      // {boatId, mode:'draft'|'race', raceIdx} currently showing the code-change modal
   drag: null,                  // active drag-to-reorder session, see bindDragHandle
   selectedClass: 'ALL',
   practice: false,             // true = practice mode: sample data, nothing saved to backend or sent
@@ -1295,11 +1300,11 @@ function computeStandings(entries, races){
   const n = entries.length;
   const results = entries.map(e => {
     const raceScores = races.map(r => {
-      if(r.raceRO && r.raceRO === e.sailNo) return { race: r.raceNumber, points: null, code: 'RO' };
-      const posIdx = r.positions.indexOf(e.sailNo);
+      if(r.raceRO && r.raceRO === e.boatId) return { race: r.raceNumber, points: null, code: 'RO' };
+      const posIdx = r.positions.indexOf(e.boatId);
       if(posIdx >= 0) return { race: r.raceNumber, points: posIdx+1, code: null };
-      if(r.dns.includes(e.sailNo)) return { race: r.raceNumber, points: n+1, code: 'DNS' };
-      if(r.dnf.includes(e.sailNo)) return { race: r.raceNumber, points: n+1, code: 'DNF' };
+      if(r.dns.includes(e.boatId)) return { race: r.raceNumber, points: n+1, code: 'DNS' };
+      if(r.dnf.includes(e.boatId)) return { race: r.raceNumber, points: n+1, code: 'DNF' };
       return { race: r.raceNumber, points: null, code: 'BYE' };
     });
     const counted = raceScores.filter(rs => rs.points !== null);
@@ -1310,7 +1315,7 @@ function computeStandings(entries, races){
     for(let i=0;i<drops && i<sortedDesc.length;i++) discardSet.add(sortedDesc[i]);
     const net = counted.reduce((sum, rs) => discardSet.has(rs) ? sum : sum + rs.points, 0);
     const total = counted.reduce((sum, rs) => sum + rs.points, 0);
-    return { sailNo: e.sailNo, member: e.member, raceScores, discardSet, net, total, drops };
+    return { boatId: e.boatId, sailNo: e.sailNo, member: e.member, raceScores, discardSet, net, total, drops };
   });
 
   function tieBreak(a, b){
@@ -1333,20 +1338,20 @@ function computeStandings(entries, races){
 }
 
 function currentStandingsOrder(){
-  // returns sail numbers ordered by current standing (best first); before any race, by sail number asc
+  // returns boatIds ordered by current standing (best first); before any race, by sail number asc
   if(state.races.length === 0){
-    return [...state.entries].sort((a,b)=> Number(a.sailNo)-Number(b.sailNo)).map(e=>e.sailNo);
+    return [...state.entries].sort((a,b)=> Number(a.sailNo)-Number(b.sailNo)).map(e=>e.boatId);
   }
   const standings = computeStandings(state.entries, state.races);
-  return standings.map(s=>s.sailNo);
+  return standings.map(s=>s.boatId);
 }
 
 
 /* ============ RENDERING ============ */
 const appEl = document.getElementById('app');
 
-function memberFor(sailNo){
-  const m = [...MEMBERS, ...GUESTS].find(x => String(x.sailNo) === String(sailNo));
+function memberFor(boatId){
+  const m = entryFor(boatId) || [...MEMBERS, ...GUESTS].find(x => String(x.id) === String(boatId));
   return m ? m.member : 'Unknown';
 }
 
@@ -1538,25 +1543,17 @@ function renderEventSelect(){
 
 /* ---------------- Screen: Competitor Select ---------------- */
 function renderCompetitorSelect(){
-  console.log(getRoster().filter(m => typeof m.member !== 'string'));
   const ev = state.event;
-  const roster = getRoster().sort((a,b) => a.member.localeCompare(b.member));
+  const roster = getRoster().sort((a,b) => String(a.member ?? '').localeCompare(String(b.member ?? '')));
   const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(String(m.id)));
 
   const rows = roster.map(m => {
     const checked = state.pendingSelection.has(String(m.id));
-    const homeClub = m.homeClub || 'SMMC';
-    
-    // Compute hull background & contrasting text colour
-    const c = m.hull ? String(m.hull).trim() : '';
-    const hStyle = c ? `background:${c};color:${/yellow|white|lime|cyan|silver|pink/i.test(c) ? '#0b1f33' : '#fff'};border-color:rgba(0,0,0,0.15);` : '';
-    
     return `<div class="member-row" data-toggle-member="${m.id}">
-      <div class="member-name">${escapeHTML(m.member)}</div>
-      <div style="font-size:11.5px;color:var(--foam-dim);">${escapeHTML(homeClub)}</div>
-      ${classEmblem(m.className || ev.class, 22)}
-      <div class="sail-tag" style="${hStyle}">#${m.sailNo}</div>
       <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="member-name">${escapeHTML(m.member)}</div>
+      ${m.isGuest ? `<div class="sail-tag">${escapeHTML(m.homeClub || 'Guest')}</div>` : ''}
+      <div class="sail-tag">#${m.sailNo}</div>
     </div>`;
   }).join('');
 
@@ -1637,11 +1634,11 @@ function renderDraftRace(){
 
   const posSlots = [];
   for(let i=0;i<n;i++){
-    const sailNo = d.positions[i];
-    if(sailNo){
+    const boatId = d.positions[i];
+    if(boatId){
       posSlots.push(`<div class="pos-slot filled" data-clear-position="${i}">
         <div class="pos-num">${i+1}</div>
-        <div class="pos-fill"><span class="p-sail">#${sailNo}</span><br><span class="p-name">${escapeHTML(memberFor(sailNo))}</span></div>
+        <div class="pos-fill">${sailChip(boatId)}<br><span class="p-name">${escapeHTML(memberFor(boatId))}</span></div>
       </div>`);
     } else {
       posSlots.push(`<div class="pos-slot"><div class="pos-num">${i+1}</div><div class="pos-fill" style="color:var(--ink-soft)">—</div></div>`);
@@ -1649,15 +1646,15 @@ function renderDraftRace(){
   }
   // DNS/DNF/RO rows appended below positions
   const codeRows = [];
-  d.dns.forEach(sn => codeRows.push(`<div class="pos-code-row" data-clear-code="dns:${sn}"><span class="code-badge">DNS</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(sn))}</span></div>`));
-  d.dnf.forEach(sn => codeRows.push(`<div class="pos-code-row" data-clear-code="dnf:${sn}"><span class="code-badge">DNF</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(sn))}</span></div>`));
-  if(d.ro) codeRows.push(`<div class="pos-code-row ro" data-clear-code="ro:${d.ro}"><span class="code-badge">RO</span><span class="p-sail">#${d.ro}</span><span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(d.ro))}</span></div>`);
+  d.dns.forEach(sn => codeRows.push(`<div class="pos-code-row" data-clear-code="dns:${sn}"><span class="code-badge">DNS</span>${sailChip(sn)}<span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(sn))}</span></div>`));
+  d.dnf.forEach(sn => codeRows.push(`<div class="pos-code-row" data-clear-code="dnf:${sn}"><span class="code-badge">DNF</span>${sailChip(sn)}<span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(sn))}</span></div>`));
+  if(d.ro) codeRows.push(`<div class="pos-code-row ro" data-clear-code="ro:${d.ro}"><span class="code-badge">RO</span>${sailChip(d.ro)}<span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(d.ro))}</span></div>`);
 
   const icons = available.map((sn, idx) => {
     const rank = state.races.length > 0 ? idx+1 : null;
-    return `<div class="sail-icon" data-sail-icon="${sn}" style="${hullStyle(sn)}">
+    return `<div class="sail-icon" data-boat-icon="${sn}" style="${hullStyle(sn)}">
       ${rank ? `<div class="pennant"></div>` : ''}
-      <div class="num">#${sn}</div>
+      <div class="num">#${sailFor(sn)}</div>
       ${rank ? `<div class="rank">#${rank} o/a</div>` : ''}
     </div>`;
   }).join('');
@@ -1696,11 +1693,11 @@ function renderCapturedRaceView(idx){
   r.positions.forEach((sn,i) => rows.push(`<div class="pos-slot filled" data-race-row="${sn}">
       <div class="drag-handle" data-drag-handle="${sn}">${svgDrag()}</div>
       <div class="pos-num">${i+1}</div>
-      <div class="pos-fill"><span class="p-sail">#${sn}</span><br><span class="p-name">${escapeHTML(memberFor(sn))}</span></div>
+      <div class="pos-fill">${sailChip(sn)}<br><span class="p-name">${escapeHTML(memberFor(sn))}</span></div>
     </div>`));
-  r.dns.forEach(sn => rows.push(`<div class="pos-code-row" data-race-row="${sn}"><span class="code-badge">DNS</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(sn))}</span></div>`));
-  r.dnf.forEach(sn => rows.push(`<div class="pos-code-row" data-race-row="${sn}"><span class="code-badge">DNF</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(sn))}</span></div>`));
-  if(r.raceRO) rows.push(`<div class="pos-code-row ro" data-race-row="${r.raceRO}"><span class="code-badge">RO</span><span class="p-sail">#${r.raceRO}</span><span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(r.raceRO))}</span></div>`);
+  r.dns.forEach(sn => rows.push(`<div class="pos-code-row" data-race-row="${sn}"><span class="code-badge">DNS</span>${sailChip(sn)}<span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(sn))}</span></div>`));
+  r.dnf.forEach(sn => rows.push(`<div class="pos-code-row" data-race-row="${sn}"><span class="code-badge">DNF</span>${sailChip(sn)}<span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(sn))}</span></div>`));
+  if(r.raceRO) rows.push(`<div class="pos-code-row ro" data-race-row="${r.raceRO}"><span class="code-badge">RO</span>${sailChip(r.raceRO)}<span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(r.raceRO))}</span></div>`);
 
   const canPrev = idx > 0;
   const canNext = idx < state.races.length - 1;
@@ -1788,7 +1785,7 @@ function renderScoresheet(){
   const rows = [];
   for(let i=0;i<n;i++){
     rows.push(`<tr><td class="name-cell">${ord(i+1)}</td>` +
-      state.races.map(r => `<td>${r.positions[i] ? '#'+r.positions[i] : ''}</td>`).join('') + `</tr>`);
+      state.races.map(r => `<td>${r.positions[i] ? '#'+sailFor(r.positions[i]) : ''}</td>`).join('') + `</tr>`);
   }
   const codeRow = (label, fn) => {
     const cells = state.races.map(fn);
@@ -1796,9 +1793,9 @@ function renderScoresheet(){
     return `<tr class="dnf-cell"><td class="name-cell">${label}</td>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`;
   };
   rows.push(
-    codeRow('DNS', r => r.dns.map(s=>'#'+s).join(', ')),
-    codeRow('DNF', r => r.dnf.map(s=>'#'+s).join(', ')),
-    codeRow('RO',  r => r.raceRO ? '#'+r.raceRO : '')
+    codeRow('DNS', r => r.dns.map(b=>'#'+sailFor(b)).join(', ')),
+    codeRow('DNF', r => r.dnf.map(b=>'#'+sailFor(b)).join(', ')),
+    codeRow('RO',  r => r.raceRO ? '#'+sailFor(r.raceRO) : '')
   );
 
   return `<div class="table-scroll"><table class="data-table"><thead><tr>${head}</tr></thead><tbody>${rows.join('')}</tbody></table></div>
@@ -1830,7 +1827,7 @@ function renderResultsTable(){
     });
     return `<tr>
       <td>${s.pos}</td>
-      <td class="name-cell">#${s.sailNo}</td>
+      <td class="name-cell">${sailChip(s.boatId, '')}</td>
       <td class="name-cell">${escapeHTML(s.member)}</td>
       <td class="net-cell">${s.net}</td>
       ${raceCells}
@@ -1863,7 +1860,7 @@ function renderExportPanel(){
 /* ---------------- Long-press modal (DNS/DNF/RO) ---------------- */
 function longPressModalHTML(){
   if(!state.longPressTarget) return '';
-  const { sailNo: sn, mode, raceIdx } = state.longPressTarget;
+  const { boatId: sn, mode, raceIdx } = state.longPressTarget;
   const name = memberFor(sn);
   const raceNumber = mode === 'draft' ? state.draft.raceNumber : state.races[raceIdx].raceNumber;
 
@@ -1933,10 +1930,10 @@ async function selectEvent(id){
   render();
 }
 
-function toggleMember(sailNo){      //sailNo = id
-  sailNo = String(sailNo); 
-  if(state.pendingSelection.has(sailNo)) state.pendingSelection.delete(sailNo);
-  else state.pendingSelection.add(sailNo);
+function toggleMember(boatId){
+  boatId = String(boatId);
+  if(state.pendingSelection.has(boatId)) state.pendingSelection.delete(boatId);
+  else state.pendingSelection.add(boatId);
   render();
 }
 
@@ -2004,11 +2001,11 @@ function cancelDraft(){
   render();
 }
 
-function placeSailNo(sailNo){
+function placeBoat(boatId){
   const d = state.draft;
   if(!d) return;
   if(d.positions.length >= state.entries.length) return;
-  d.positions.push(sailNo);
+  d.positions.push(String(boatId));
   render();
 }
 
@@ -2017,16 +2014,16 @@ function clearPosition(idx){
   render();
 }
 
-function clearCode(kind, sailNo){
+function clearCode(kind, boatId){
   const d = state.draft;
-  if(kind === 'dns') d.dns = d.dns.filter(x=>x!==sailNo);
-  else if(kind === 'dnf') d.dnf = d.dnf.filter(x=>x!==sailNo);
+  if(kind === 'dns') d.dns = d.dns.filter(x=>x!==boatId);
+  else if(kind === 'dnf') d.dnf = d.dnf.filter(x=>x!==boatId);
   else if(kind === 'ro') d.ro = '';
   render();
 }
 
 function setCode(kind){
-  const { sailNo: sn, mode, raceIdx } = state.longPressTarget;
+  const { boatId: sn, mode, raceIdx } = state.longPressTarget;
 
   if(mode === 'draft'){
     const d = state.draft;
@@ -2125,13 +2122,14 @@ function buildExportObject(){
     regattaName: ev.regattaName,
     className: ev.className,
     competitorCount: state.entries.length,
+    entries: state.entries.map(e => ({ boatId: e.boatId, sailNo: e.sailNo, member: e.member })),
     raceReport: state.reportText || '',
     races: state.races.map(r => ({
       raceNumber: r.raceNumber,
       raceRO: r.raceRO || '',
-      positions: r.positions.map(Number),
-      dnf: r.dnf.map(Number),
-      dns: r.dns.map(Number)
+      positions: r.positions.map(String),
+      dnf: r.dnf.map(String),
+      dns: r.dns.map(String)
     }))
   };
 }
@@ -2187,7 +2185,7 @@ let pressTimer = null;
 let pressFired = false;
 const LONG_PRESS_MS = 480;
 
-function bindLongPress(el, sailNo, onShortTap, mode, raceIdx){
+function bindLongPress(el, boatId, onShortTap, mode, raceIdx){
   let localPressTimer = null;
   let localFired = false;
   const start = (e) => {
@@ -2195,7 +2193,7 @@ function bindLongPress(el, sailNo, onShortTap, mode, raceIdx){
     localFired = false;
     localPressTimer = setTimeout(() => {
       localFired = true;
-      state.longPressTarget = { sailNo, mode, raceIdx };
+      state.longPressTarget = { boatId, mode, raceIdx };
       render();
     }, LONG_PRESS_MS);
   };
@@ -2203,7 +2201,7 @@ function bindLongPress(el, sailNo, onShortTap, mode, raceIdx){
   const end = (e) => {
     clearTimeout(localPressTimer);
     if(!localFired && onShortTap){
-      onShortTap(sailNo);
+      onShortTap(boatId);
     }
   };
   el.addEventListener('touchstart', start, {passive:true});
@@ -2322,8 +2320,8 @@ function attachDynamicHandlers(){
       clearCode(kind, sn);
     });
   });
-  document.querySelectorAll('[data-sail-icon]').forEach(el=>{
-    bindLongPress(el, el.getAttribute('data-sail-icon'), placeSailNo, 'draft', null);
+  document.querySelectorAll('[data-boat-icon]').forEach(el=>{
+    bindLongPress(el, el.getAttribute('data-boat-icon'), placeBoat, 'draft', null);
   });
   document.querySelectorAll('[data-view-race]').forEach(el=>{
     el.addEventListener('click', ()=> viewRace(Number(el.getAttribute('data-view-race'))));
