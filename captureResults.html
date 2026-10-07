@@ -1111,7 +1111,7 @@ async function getMembers(className) {
     const data = await apiGet("members", queryClass);
     console.log(`getMembers(${className}): received data`, data);
     MEMBERS = Array.isArray(data.members)
-      ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC", boat: m.id }))
+      ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC", boat: m.id , hull: m['Hull Colour'] || "white" }))
       : [];
     console.log(`getMembers(${className}): received ${MEMBERS.length} members`, MEMBERS.slice(0,3));
   } catch (error) {
