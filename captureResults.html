@@ -1557,7 +1557,7 @@ function renderCompetitorSelect(){
       <div class="member-name" style="flex:1;min-width:0">${escapeHTML(m.member)}</div>
       <div class="sail-tag">${escapeHTML(m.homeClub || 'SMMC')}</div>
       ${m.className ? classEmblem(m.className, 26) : ''}
-      <div class="sail-tag sail-pill" style="${hullCss(m.hull)}">#${escapeHTML(String(m.sailNo))}</div>
+      <div class="sail-tag sail-pill" style="${hullCss(m.hull)}">${escapeHTML(String(m.sailNo))}</div>
       <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
     </div>`;
   }).join('');
@@ -1758,7 +1758,7 @@ function overlaysHTML(){
   if(state.overlay === 'entries'){
     title = 'Regatta Entries';
     body = `<div class="panel glass panel-pad">
-      ${state.entries.map((e,i)=>`<div class="member-row"><div style="width:22px;color:var(--ink-soft);font-weight:700;font-size:12px">${i+1}</div><div class="member-name">${escapeHTML(e.member)}</div><div class="sail-tag">#${e.sailNo}</div></div>`).join('')}
+      ${state.entries.map((e,i)=>`<div class="member-row"><div style="width:22px;color:var(--ink-soft);font-weight:700;font-size:12px">${i+1}</div><div class="member-name">${escapeHTML(e.member)}</div><div class="sail-tag">${e.sailNo}</div></div>`).join('')}
     </div>
     <div class="helper-note">Entries are locked once the regatta has started and cannot be removed.</div>`;
   } else if(state.overlay === 'scoresheet'){
@@ -1790,7 +1790,7 @@ function renderScoresheet(){
   const rows = [];
   for(let i=0;i<n;i++){
     rows.push(`<tr><td class="name-cell">${ord(i+1)}</td>` +
-      state.races.map(r => `<td>${r.positions[i] ? '#'+sailFor(r.positions[i]) : ''}</td>`).join('') + `</tr>`);
+      state.races.map(r => `<td>${r.positions[i] ? sailFor(r.positions[i]) : ''}</td>`).join('') + `</tr>`);
   }
   const codeRow = (label, fn) => {
     const cells = state.races.map(fn);
@@ -1798,9 +1798,9 @@ function renderScoresheet(){
     return `<tr class="dnf-cell"><td class="name-cell">${label}</td>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`;
   };
   rows.push(
-    codeRow('DNS', r => r.dns.map(b=>'#'+sailFor(b)).join(', ')),
-    codeRow('DNF', r => r.dnf.map(b=>'#'+sailFor(b)).join(', ')),
-    codeRow('RO',  r => r.raceRO ? '#'+sailFor(r.raceRO) : '')
+    codeRow('DNS', r => r.dns.map(b=>sailFor(b)).join(', ')),
+    codeRow('DNF', r => r.dnf.map(b=>sailFor(b)).join(', ')),
+    codeRow('RO',  r => r.raceRO ? sailFor(r.raceRO) : '')
   );
 
   return `<div class="table-scroll"><table class="data-table"><thead><tr>${head}</tr></thead><tbody>${rows.join('')}</tbody></table></div>
@@ -1885,7 +1885,7 @@ function longPressModalHTML(){
   return `<div class="modal-backdrop open" data-close-modal="1">
     <div class="modal-sheet" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
-      <div class="modal-title">#${sn} — ${escapeHTML(name)}</div>
+      <div class="modal-title">${sn} — ${escapeHTML(name)}</div>
       <div class="modal-sub">Change this boat's result for Race ${raceNumber}</div>
       ${options}
       <div class="modal-cancel" data-close-modal="1">Cancel</div>
