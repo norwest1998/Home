@@ -872,6 +872,7 @@ button{ font-family: inherit; }
 .checkbox svg{ width:13px; height:13px; display:none; stroke: var(--ocean-deep); stroke-width:3; }
 .checkbox.checked svg{ display:block; }
 .member-name{ font-weight:600; font-size:14px; color: var(--foam); flex:1; }
+.sail-pill{ display:inline-block; box-sizing:border-box; width:52px; text-align:center; white-space:nowrap; }
 .sail-tag{ font-family: var(--font-data); font-weight:600; font-size:12.5px; background: var(--glass-fill); border:1px solid var(--glass-border); color: var(--glow); padding:4px 9px; border-radius:7px; }
 .select-all-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
 .select-all-row button{ background:none; border:none; color: var(--glow); font-weight:600; font-size:12.5px; cursor:pointer; padding:4px; }
@@ -1222,7 +1223,7 @@ function classEmblemFallback(img){
 function entryFor(boatId){ return state.entries.find(x => String(x.boatId) === String(boatId)); }
 function sailFor(boatId){ const e = entryFor(boatId); return e ? e.sailNo : '?'; }
 function sailChip(boatId, cls='p-sail'){
-  return `<span class="${cls}" style="${hullStyle(boatId)}border-radius:6px;padding:1px 6px;">#${escapeHTML(String(sailFor(boatId)))}</span>`;
+  return `<span class="${cls} sail-pill" style="${hullStyle(boatId)}border-radius:6px;padding:1px 0;">#${escapeHTML(String(sailFor(boatId)))}</span>`;
 }
 function hullStyle(boatId){
   const e = entryFor(boatId);
@@ -1556,7 +1557,7 @@ function renderCompetitorSelect(){
       <div class="member-name" style="flex:1;min-width:0">${escapeHTML(m.member)}</div>
       <div class="sail-tag">${escapeHTML(m.homeClub || 'SMMC')}</div>
       ${m.className ? classEmblem(m.className, 26) : ''}
-      <div class="sail-tag" style="${hullCss(m.hull)}">#${escapeHTML(String(m.sailNo))}</div>
+      <div class="sail-tag sail-pill" style="${hullCss(m.hull)}">#${escapeHTML(String(m.sailNo))}</div>
       <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
     </div>`;
   }).join('');
