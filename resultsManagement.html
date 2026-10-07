@@ -1304,7 +1304,7 @@ function renderModalGuestTable() {
             <td>${escHtml(g.HomeClub)}</td>
             <td>${escHtml(g.RaceClass || '—')}</td>
             <td>${escHtml(g.Model || '—')}</td>
-            <td>${escHtml(g[HullColour] || g.HullColour || '—')}</td>
+            <td>${escHtml(g.HullColour || '—')}</td>
             <td class="col-center">
                 <button type="button" class="icon-btn" title="Delete Guest" onclick="deleteGuestSailor('${escHtml(g.HexKey)}')">
                     <i class="inline-icon" data-lucide="trash-2" color="#ff6a3d"></i>
