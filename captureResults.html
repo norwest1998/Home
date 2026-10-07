@@ -1204,7 +1204,7 @@ function classEmblem(className, size){
   const s = size || 20;
   const safe = escapeHTML(className);
   var emblem = className;
-  if (emblem === "General") emblem = "smmc-logo";
+  if (emblem === "General" || emblem === "Twilight") emblem = "smmc-logo";
   if (emblem === "Social") emblem = "SmileyFace";
   return `<img class="class-emblem" style="width:${s}px;height:${s}px;padding:3px;border-radius:6px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);flex-shrink:0;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
 }
@@ -1545,11 +1545,18 @@ function renderCompetitorSelect(){
 
   const rows = roster.map(m => {
     const checked = state.pendingSelection.has(String(m.id));
+    const homeClub = m.homeClub || 'SMMC';
+    
+    // Compute hull background & contrasting text colour
+    const c = m.hull ? String(m.hull).trim() : '';
+    const hStyle = c ? `background:${c};color:${/yellow|white|lime|cyan|silver|pink/i.test(c) ? '#0b1f33' : '#fff'};border-color:rgba(0,0,0,0.15);` : '';
+    
     return `<div class="member-row" data-toggle-member="${m.id}">
-      <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
       <div class="member-name">${escapeHTML(m.member)}</div>
-      ${m.isGuest ? `<div class="sail-tag">${escapeHTML(m.homeClub || 'Guest')}</div>` : ''}
-      <div class="sail-tag">#${m.sailNo}</div>
+      <div style="font-size:11.5px;color:var(--foam-dim);">${escapeHTML(homeClub)}</div>
+      ${classEmblem(m.className || ev.class, 22)}
+      <div class="sail-tag" style="${hStyle}">#${m.sailNo}</div>
+      <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
     </div>`;
   }).join('');
 
