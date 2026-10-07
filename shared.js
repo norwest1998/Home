@@ -18,7 +18,7 @@ const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKj
 const RESULTS_GATEWAY_URL = "https://script.google.com/macros/s/AKfycbwHYDa3Jg-4pojZ6zCeU_fT6Xc17Rwz_B3aFl7UbafDnb61UzuzI-uY3kagrSOo77L3/exec";
 const TEMPLATE_GW_URL = "https://script.google.com/macros/s/AKfycbzXAuRrP7wCHWqaDJ5m-gh0V9MOxOKMFEuKUMGvf5NAh0tgLhtyHDeX8J9CQ-5PSOE2Ng/exec";
 const EMAIL_GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzrdcwjXHalBizwnRw62jKiY34saRkHewG5ueuO3wr3XsjcEtK2yCfX_LvzdOUrlV3g/exec";
-
+const TRIGGERESULTS_URL = "https://script.google.com/macros/s/AKfycbxNvDM21y1L77uhmd0W5JyygwHke8FrbxM_B3EhcvTGCXzx_BDxFwK1OeuI6Zn-unta/exec";
 const DOMAIN = {
     members:   "members",
     documents: "documents",
@@ -170,8 +170,11 @@ async function viewRecordModal(domain, sheetName, encodedRowData) {
 }
 
 
-// WRITE OPERATIONS -> Staying as POST because they send payloads and return tiny JSON
+const _schemaSent = new Set();
 async function registerSchema(domain, sheetName, rows) {
+    const k = domain + "|" + sheetName;
+    if (_schemaSent.has(k)) return;
+    _schemaSent.add(k);
     if (!Array.isArray(rows) || rows.length === 0) return;
     const columns = Object.keys(rows[0]);
     try {
@@ -241,13 +244,13 @@ async function fetchDriveFile(fileId) {
 }
 
 async function triggerResultsProcessing() {
-    const res  = await fetch(RESULTS_GATEWAY_URL, {
+    const res  = await fetch(TRIGGERESULTS_URL, {
         method:  "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "triggerProcessing" })
+        body:    JSON.stringify({ action: "triggerResults" })
     });
     const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    if (data.error) throw new Error(data.error + "(Check the Upload folder for files to process.)");
     return data.message;
 }
 

@@ -12,6 +12,7 @@
  */
 (function () {
   const CSV_URL = "https://docs.google.com/spreadsheets/d/1UBF3UMzvRsQydwVMsQSl6GOMD00ALjlLmLwf6WPpYk4/export?format=csv&gid=0";
+  const RACE_TYPE_COL = "RegattaType";
 
   let raceRows = null; // cached after first load
   let currentMemberName = null;
@@ -21,8 +22,22 @@
     return isNaN(n) ? null : n;
   }
 
+  function escapeHtml(s) {
+    return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
   function initials(name) {
     return name.split(/\s+/).filter(Boolean).map(p => p[0]).join("").slice(0, 2).toUpperCase();
+  }
+
+function raceKind(r) {
+  const t = (r[RACE_TYPE_COL] || "").trim().toLowerCase();
+  return t === "scratch" ? "scratch" : t === "handicap" ? "handicap" : null;
+}
+
+  function winRatePct(rs) {
+    const p = rs.map(r => num(r.RacePos)).filter(v => v !== null);
+    return p.length ? Math.round(p.filter(x => x === 1).length / p.length * 100) + "%" : "—";
   }
 
   // Small additions theme.css doesn't already define: a 3-col stat grid
@@ -83,9 +98,10 @@
     document.getElementById("mrs-x").addEventListener("click", closeModal);
   }
 
-  function buildWinRateLeaderboard(minRaces) {
+  function buildWinRateLeaderboard(minRaces, kind) {
     const byMember = {};
     raceRows.forEach(r => {
+      if (kind && raceKind(r) !== kind) return;
       const n = r.MemberName.trim();
       const p = num(r.RacePos);
       if (p === null) return;
@@ -103,16 +119,17 @@
       .sort((a, b) => b.winRate - a.winRate);
   }
 
-  function computeWinRateRank(name, minRaces) {
-    const ranked = buildWinRateLeaderboard(minRaces);
+  function computeWinRateRank(name, minRaces, kind) {
+    const ranked = buildWinRateLeaderboard(minRaces, kind);
     const idx = ranked.findIndex(m => m.name === name);
     if (idx === -1) return null; // not qualified (didn't meet minRaces)
     return { rank: idx + 1, of: ranked.length };
   }
 
-  function showWinRateLeaderboard() {
+  function showWinRateLeaderboard(kind) {
     const minRaces = 5;
-    const ranked = buildWinRateLeaderboard(minRaces).slice(0, 10);
+    const label = { scratch: "Scratch", handicap: "Handicap" }[kind] || "Both";
+    const ranked = buildWinRateLeaderboard(minRaces, kind).slice(0, 10);
 
     const rowsHtml = ranked.map((m, i) => {
       const isCurrent = m.name === currentMemberName;
@@ -129,7 +146,7 @@
     overlay.innerHTML = `
       <div class="drawer">
         <div class="drawer-header">
-          <h4>Top 10 · Win Rate</h4>
+          <h4>Top 10 · Win Rate (${label})</h4>
           <button class="drawer-close" id="mrs-lb-x">✕</button>
         </div>
         <div class="drawer-body">
@@ -148,6 +165,75 @@
     document.getElementById("mrs-lb-ok").addEventListener("click", closeLb);
   }
   window.showWinRateLeaderboard = showWinRateLeaderboard;
+  
+  function raceKey(r) { return [r.EventID, r.RegattaName, r.Class, r.RaceNo].join("|"); }
+
+  function headToHead(a, b) {
+    const map = {};
+    raceRows.forEach(r => {
+      const n = r.MemberName.trim(), p = num(r.RacePos);
+      if (raceKind(r) !== "scratch" || p === null || (n !== a && n !== b)) return;
+      (map[raceKey(r)] = map[raceKey(r)] || {})[n] = p;
+    });
+    let together = 0, aWins = 0, bWins = 0;
+    Object.values(map).forEach(m => {
+      if (m[a] === undefined || m[b] === undefined) return;
+      together++;
+      if (m[a] < m[b]) aWins++; else if (m[b] < m[a]) bWins++;
+    });
+    return { together, aWins, bWins };
+  }
+
+  function showHeadToHead() {
+    const me = currentMemberName;
+    const valid = r => raceKind(r) === "scratch" && num(r.RacePos) !== null;
+    const myKeys = new Set(raceRows.filter(r => valid(r) && r.MemberName.trim() === me).map(raceKey));
+    const counts = {};
+    raceRows.forEach(r => {
+      const n = r.MemberName.trim();
+      if (n === me || !valid(r) || !myKeys.has(raceKey(r))) return;
+      counts[n] = (counts[n] || 0) + 1;
+    });
+    const opps = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+    injectExtraStyles();
+    const overlay = document.createElement("div");
+    overlay.className = "drawer-overlay open";
+    overlay.innerHTML = `
+      <div class="drawer">
+        <div class="drawer-header"><h4>Head to Head · Scratch</h4>
+          <button class="drawer-close" id="h2h-x">✕</button></div>
+        <div class="drawer-body">
+          <select id="h2h-sel" style="width:100%;padding:8px;">
+            <option value="">Choose opponent…</option>
+            ${opps.map(([n, c]) => `<option value="${escapeHtml(n)}">${escapeHtml(n)} (${c} races)</option>`).join("")}
+          </select>
+          <div id="h2h-out"></div>
+          <button class="btn btn-primary" id="h2h-ok" style="width:100%;justify-content:center;">Close</button>
+        </div>
+      </div>`;
+    const close = () => overlay.remove();
+    overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+    document.body.appendChild(overlay);
+    document.getElementById("h2h-x").onclick = close;
+    document.getElementById("h2h-ok").onclick = close;
+
+    document.getElementById("h2h-sel").onchange = e => {
+      const opp = e.target.value, out = document.getElementById("h2h-out");
+      if (!opp) { out.innerHTML = ""; return; }
+      const h = headToHead(me, opp);
+      const pct = h.together ? Math.round(h.aWins / h.together * 100) : 0;
+      out.innerHTML = `
+        <div class="mrs-stat-grid" style="margin:10px 0;">
+          <div class="mrs-stat"><div class="n">${h.together}</div><div class="l">Races Together</div></div>
+          <div class="mrs-stat"><div class="n accent">${h.aWins}</div><div class="l">${escapeHtml(me)} Won</div></div>
+          <div class="mrs-stat"><div class="n warn">${h.bWins}</div><div class="l">${escapeHtml(opp)} Won</div></div>
+        </div>
+        <div class="mrs-row"><span>${escapeHtml(me)} beat ${escapeHtml(opp)}</span><span class="v">${pct}%</span></div>`;
+    };
+  }
+  window.showHeadToHead = showHeadToHead;
+
 
   function renderMember(drawer, name) {
     currentMemberName = name;
@@ -165,7 +251,11 @@
     const consistency = consistVals.length ? consistVals.reduce((a, b) => a + b, 0) / consistVals.length : null;
 
     const regattas = [...new Set(rows.map(r => r.RegattaName).filter(Boolean))];
-    const winRateRank = computeWinRateRank(name, 5);
+    const rk = k => computeWinRateRank(name, 5, k);
+    const rankTile = k => { const r = rk(k); return r ? `<div class="l" style="margin-top:2px;color:var(--glow);">Rank #${r.rank} of ${r.of}</div>` : ""; };
+    const wrScratch = winRatePct(rows.filter(r => raceKind(r) === "scratch"));
+    const wrHcp     = winRatePct(rows.filter(r => raceKind(r) === "handicap"));
+    const wrBoth    = winRatePct(rows);
 
     const sortedByPos = rows.filter(r => num(r.RacePos) !== null)
       .sort((a, b) => num(a.RacePos) - num(b.RacePos))
@@ -199,18 +289,18 @@
             <span class="badge badge-default">${races} races · ${regattas.length} regatta${regattas.length === 1 ? "" : "s"}</span>
           </div>
         </div>
-
-        <div class="mrs-stat-grid">
-          <div class="mrs-stat" onclick="showWinRateLeaderboard()" style="cursor:pointer;" title="See top 10">
-            <div class="n accent">${races ? Math.round(wins / races * 100) + "%" : "—"}</div><div class="l">Win Rate</div>
-            ${winRateRank ? `<div class="l" style="margin-top:2px;color:var(--glow);">Rank #${winRateRank.rank} of ${winRateRank.of}</div>` : ""}
+        <div class="mrs-stat-grid" style="margin-bottom:8px;">
+          <div class="mrs-stat" onclick="showWinRateLeaderboard('scratch')" style="cursor:pointer;" title="See top 10">
+            <div class="n accent">${wrScratch}</div><div class="l">Win % Scratch</div>${rankTile("scratch")}
           </div>
-          <div class="mrs-stat"><div class="n">${races ? Math.round(podiums / races * 100) + "%" : "—"}</div><div class="l">Top-3 Rate</div></div>
-          <div class="mrs-stat"><div class="n">${avgPlacing !== null ? avgPlacing.toFixed(1) : "—"}</div><div class="l">Avg Placing</div></div>
-          <div class="mrs-stat"><div class="n">${consistency !== null ? consistency.toFixed(2) : "—"}</div><div class="l">Consistency</div></div>
-          <div class="mrs-stat"><div class="n">${best !== null ? "#" + best : "—"}</div><div class="l">Best Finish</div></div>
-          <div class="mrs-stat"><div class="n warn">${worst !== null ? "#" + worst : "—"}</div><div class="l">Worst Finish</div></div>
+          <div class="mrs-stat" onclick="showWinRateLeaderboard('handicap')" style="cursor:pointer;" title="See top 10">
+            <div class="n accent">${wrHcp}</div><div class="l">Win % Handicap</div>${rankTile("handicap")}
+          </div>
+          <div class="mrs-stat" onclick="showWinRateLeaderboard()" style="cursor:pointer;" title="See top 10">
+            <div class="n accent">${wrBoth}</div><div class="l">Win % Both</div>${rankTile()}
+          </div>
         </div>
+        <div class="mrs-stat"><div class="n">${races}</div><div class="l">Races</div></div>
 
         <div class="detail-item full-width">
           <div class="detail-label">Best Results</div>
@@ -221,12 +311,13 @@
           <div class="detail-label">By Regatta</div>
           ${regattaHtml}
         </div>
-
+        <button class="btn" id="mrs-h2h" style="width:100%;justify-content:center;margin-bottom:8px;">Head to Head (Scratch)</button>
         <button class="btn btn-primary" id="mrs-ok" style="width:100%;justify-content:center;">Close</button>
       </div>
     `;
     document.getElementById("mrs-x").addEventListener("click", closeModal);
     document.getElementById("mrs-ok").addEventListener("click", closeModal);
+    document.getElementById("mrs-h2h").addEventListener("click", showHeadToHead);
   }
 
   function withData(callback) {
@@ -267,4 +358,9 @@
       renderMember(drawer, match);
     });
   };
+  window._dbg = () => ({
+  total: raceRows.length,
+  kinds: raceRows.reduce((o, r) => { const k = raceKind(r) || "null"; o[k] = (o[k] || 0) + 1; return o; }, {}),
+  rawValues: [...new Set(raceRows.map(r => r[RACE_TYPE_COL]))]
+})
 })();
