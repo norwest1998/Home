@@ -1085,14 +1085,14 @@ let GUESTS = [];
 /* ============ PRACTICE MODE DATA (no network, no sheets) ============ */
 let LIVE_EVENTS = [];
 const PRACTICE_MEMBERS = [
-  {member:'Alex Anchor',   sailNo:'11', className:'DF95', homeClub:'SMMC'},
-  {member:'Bella Bowline', sailNo:'22', className:'DF95', homeClub:'SMMC'},
-  {member:'Charlie Cleat', sailNo:'33', className:'DF95', homeClub:'SMMC'},
-  {member:'Dana Deck',     sailNo:'44', className:'DF95', homeClub:'SMMC'},
-  {member:'Eddie Ebb',     sailNo:'55', className:'DF95', homeClub:'SMMC'},
-  {member:'Fiona Flood',   sailNo:'66', className:'DF95', homeClub:'SMMC'},
-  {member:'Gus Gybe',      sailNo:'77', className:'DF95', homeClub:'SMMC'},
-  {member:'Hana Helm',     sailNo:'88', className:'DF95', homeClub:'SMMC'}
+  {id:'P1',member:'Alex Anchor',   sailNo:'11', className:'DF95', homeClub:'SMMC', hull:'white'},
+  {id:'P2',member:'Bella Bowline', sailNo:'22', className:'DF95', homeClub:'SMMC', hull:'blue'},
+  {id:'P3',member:'Charlie Cleat', sailNo:'33', className:'DF95', homeClub:'SMMC', hull:'red'},
+  {id:'P4',member:'Dana Deck',     sailNo:'44', className:'DF95', homeClub:'SMMC', hull:'green'},
+  {id:'P5',member:'Eddie Ebb',     sailNo:'55', className:'DF95', homeClub:'SMMC', hull:'yellow'},
+  {id:'P6',member:'Fiona Flood',   sailNo:'66', className:'DF95', homeClub:'SMMC', hull:'purple'},
+  {id:'P7',member:'Gus Gybe',      sailNo:'77', className:'DF95', homeClub:'SMMC', hull:'orange'},
+  {id:'P8',member:'Hana Helm',     sailNo:'88', className:'DF95', homeClub:'SMMC', hull:'pink'}
 ];
 const PRACTICE_GUESTS = [
   {member:'Visiting Sailor', sailNo:'99', className:'DF95', homeClub:'Guest Club', isGuest:true}
@@ -1111,7 +1111,7 @@ async function getMembers(className) {
     const data = await apiGet("members", queryClass);
     console.log(`getMembers(${className}): received data`, data);
     MEMBERS = Array.isArray(data.members)
-      ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC" }))
+      ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC", boat: m.id }))
       : [];
     console.log(`getMembers(${className}): received ${MEMBERS.length} members`, MEMBERS.slice(0,3));
   } catch (error) {
@@ -1127,6 +1127,7 @@ async function getGuests(eventId, className) {
     GUESTS = rows
       .filter(g => String(g.EventID) === String(eventId))
       .map(g => ({
+        id:        'G-' + (g.GuestID ?? g.SailNo),   // use your guest row ID if the sheet has one
         member:    g.CompetitorName,
         sailNo:    String(g.SailNo),
         className: className,          // guest rows may have no RaceClass; use the event's class
@@ -1218,11 +1219,17 @@ function classEmblemFallback(img){
   img.replaceWith(span);
 }
 
+function hullStyle(sn){
+  const e = state.entries.find(x => String(x.sailNo) === String(sn));
+  const c = e && e.hull ? String(e.hull).trim() : '';
+  return c ? `background:${c};color:${/yellow|white|lime|cyan|silver|pink/i.test(c) ? '#0b1f33' : '#fff'};` : '';
+}
+
 /* ============ STATE ============ */
 let state = {
   screen: 'select-event',   // select-event | select-competitors | race-capture
   event: null,
-  entries: [],               // [{sailNo, member}]
+  entries: [],               // [{boatId, sailNo, member}]
   races: [],                 // [{raceNumber, raceRO:'', positions:[], dnf:[], dns:[]}]
   draft: null,               // {raceNumber, positions:[], dnf:[], dns:[], ro:''}
   viewRaceIdx: null,         // index into races[] when reviewing a captured race
@@ -1338,8 +1345,8 @@ function currentStandingsOrder(){
 /* ============ RENDERING ============ */
 const appEl = document.getElementById('app');
 
-function memberFor(sailNo, cls){
-  const m = [...MEMBERS, ...GUESTS].find(x => String(x.sailNo) === String(sailNo) && (x.className ?? x.class) === cls);
+function memberFor(sailNo){
+  const m = [...MEMBERS, ...GUESTS].find(x => String(x.sailNo) === String(sailNo));
   return m ? m.member : 'Unknown';
 }
 
@@ -1533,11 +1540,11 @@ function renderEventSelect(){
 function renderCompetitorSelect(){
   const ev = state.event;
   const roster = getRoster().sort((a,b) => a.member.localeCompare(b.member));
-  const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(String(m.sailNo)));
+  const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(String(m.id)));
 
   const rows = roster.map(m => {
-    const checked = state.pendingSelection.has(String(m.sailNo));
-    return `<div class="member-row" data-toggle-member="${m.sailNo}">
+    const checked = state.pendingSelection.has(String(m.id));
+    return `<div class="member-row" data-toggle-member="${m.id}">
       <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
       <div class="member-name">${escapeHTML(m.member)}</div>
       ${m.isGuest ? `<div class="sail-tag">${escapeHTML(m.homeClub || 'Guest')}</div>` : ''}
@@ -1626,7 +1633,7 @@ function renderDraftRace(){
     if(sailNo){
       posSlots.push(`<div class="pos-slot filled" data-clear-position="${i}">
         <div class="pos-num">${i+1}</div>
-        <div class="pos-fill"><span class="p-sail">#${sailNo}</span><br><span class="p-name">${escapeHTML(memberFor(sailNo, state.event.class))}</span></div>
+        <div class="pos-fill"><span class="p-sail">#${sailNo}</span><br><span class="p-name">${escapeHTML(memberFor(sailNo))}</span></div>
       </div>`);
     } else {
       posSlots.push(`<div class="pos-slot"><div class="pos-num">${i+1}</div><div class="pos-fill" style="color:var(--ink-soft)">—</div></div>`);
@@ -1634,13 +1641,13 @@ function renderDraftRace(){
   }
   // DNS/DNF/RO rows appended below positions
   const codeRows = [];
-  d.dns.forEach(sn => codeRows.push(`<div class="pos-code-row" data-clear-code="dns:${sn}"><span class="code-badge">DNS</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(sn,state.event.class))}</span></div>`));
-  d.dnf.forEach(sn => codeRows.push(`<div class="pos-code-row" data-clear-code="dnf:${sn}"><span class="code-badge">DNF</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(sn,state.event.class))}</span></div>`));
-  if(d.ro) codeRows.push(`<div class="pos-code-row ro" data-clear-code="ro:${d.ro}"><span class="code-badge">RO</span><span class="p-sail">#${d.ro}</span><span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(d.ro,state.event.class))}</span></div>`);
+  d.dns.forEach(sn => codeRows.push(`<div class="pos-code-row" data-clear-code="dns:${sn}"><span class="code-badge">DNS</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(sn))}</span></div>`));
+  d.dnf.forEach(sn => codeRows.push(`<div class="pos-code-row" data-clear-code="dnf:${sn}"><span class="code-badge">DNF</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(sn))}</span></div>`));
+  if(d.ro) codeRows.push(`<div class="pos-code-row ro" data-clear-code="ro:${d.ro}"><span class="code-badge">RO</span><span class="p-sail">#${d.ro}</span><span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(d.ro))}</span></div>`);
 
   const icons = available.map((sn, idx) => {
     const rank = state.races.length > 0 ? idx+1 : null;
-    return `<div class="sail-icon" data-sail-icon="${sn}">
+    return `<div class="sail-icon" data-sail-icon="${sn}" style="${hullStyle(sn)}">
       ${rank ? `<div class="pennant"></div>` : ''}
       <div class="num">#${sn}</div>
       ${rank ? `<div class="rank">#${rank} o/a</div>` : ''}
@@ -1681,11 +1688,11 @@ function renderCapturedRaceView(idx){
   r.positions.forEach((sn,i) => rows.push(`<div class="pos-slot filled" data-race-row="${sn}">
       <div class="drag-handle" data-drag-handle="${sn}">${svgDrag()}</div>
       <div class="pos-num">${i+1}</div>
-      <div class="pos-fill"><span class="p-sail">#${sn}</span><br><span class="p-name">${escapeHTML(memberFor(sn,state.event.class))}</span></div>
+      <div class="pos-fill"><span class="p-sail">#${sn}</span><br><span class="p-name">${escapeHTML(memberFor(sn))}</span></div>
     </div>`));
-  r.dns.forEach(sn => rows.push(`<div class="pos-code-row" data-race-row="${sn}"><span class="code-badge">DNS</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(sn,state.event.class))}</span></div>`));
-  r.dnf.forEach(sn => rows.push(`<div class="pos-code-row" data-race-row="${sn}"><span class="code-badge">DNF</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(sn,state.event.class))}</span></div>`));
-  if(r.raceRO) rows.push(`<div class="pos-code-row ro" data-race-row="${r.raceRO}"><span class="code-badge">RO</span><span class="p-sail">#${r.raceRO}</span><span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(r.raceRO,state.event.class))}</span></div>`);
+  r.dns.forEach(sn => rows.push(`<div class="pos-code-row" data-race-row="${sn}"><span class="code-badge">DNS</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(sn))}</span></div>`));
+  r.dnf.forEach(sn => rows.push(`<div class="pos-code-row" data-race-row="${sn}"><span class="code-badge">DNF</span><span class="p-sail">#${sn}</span><span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(sn))}</span></div>`));
+  if(r.raceRO) rows.push(`<div class="pos-code-row ro" data-race-row="${r.raceRO}"><span class="code-badge">RO</span><span class="p-sail">#${r.raceRO}</span><span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(r.raceRO))}</span></div>`);
 
   const canPrev = idx > 0;
   const canNext = idx < state.races.length - 1;
@@ -1849,7 +1856,7 @@ function renderExportPanel(){
 function longPressModalHTML(){
   if(!state.longPressTarget) return '';
   const { sailNo: sn, mode, raceIdx } = state.longPressTarget;
-  const name = memberFor(sn, state.event.class);
+  const name = memberFor(sn);
   const raceNumber = mode === 'draft' ? state.draft.raceNumber : state.races[raceIdx].raceNumber;
 
   let options;
@@ -1904,7 +1911,7 @@ async function selectEvent(id){
     state.entries = saved.entries || [];
     state.races = saved.races || [];
     state.reportText = saved.reportText || '';
-    state.pendingSelection = new Set(state.entries.map(e=>e.sailNo));
+    state.pendingSelection = new Set(state.entries.map(e=>e.boatId));
     state.sent = saved.sent || false;
   } else {
     state.entries = [];
@@ -1918,7 +1925,7 @@ async function selectEvent(id){
   render();
 }
 
-function toggleMember(sailNo){
+function toggleMember(sailNo){      //sailNo = id
   sailNo = String(sailNo); 
   if(state.pendingSelection.has(sailNo)) state.pendingSelection.delete(sailNo);
   else state.pendingSelection.add(sailNo);
@@ -1927,17 +1934,17 @@ function toggleMember(sailNo){
 
 function selectAllToggle(){
   const roster = getRoster();
-  const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(String(m.sailNo)));
+  const allChecked = roster.length > 0 && roster.every(m => state.pendingSelection.has(String(m.id)));
   if(allChecked) state.pendingSelection.clear();
-  else roster.forEach(m => state.pendingSelection.add(String(m.sailNo)));
+  else roster.forEach(m => state.pendingSelection.add(String(m.id)));
   render();
 }
 
 function confirmEntries(){
   const roster = getRoster();   // members AND guests
   const isFirstTime = state.entries.length === 0;
-  state.entries = roster.filter(m => state.pendingSelection.has(String(m.sailNo)))
-                        .map(m => ({ sailNo: String(m.sailNo), member: m.member }));
+  state.entries = roster.filter(m => state.pendingSelection.has(String(m.id)))
+                        .map(m => ({  boatId: String(m.id), sailNo: String(m.sailNo), member: m.member, hull: m.hull || '' }));
   state.screen = 'race-capture';
   saveState();
   showToast(isFirstTime ? 'Entries saved' : 'Entries updated');
@@ -1947,7 +1954,7 @@ function confirmEntries(){
 function editEntries(){
   // Only permitted before the first race — entries lock automatically once racing starts.
   if(entriesLocked()) return;
-  state.pendingSelection = new Set(state.entries.map(e => e.sailNo));
+  state.pendingSelection = new Set(state.entries.map(e => e.boatId));
   state.screen = 'select-competitors';
   render();
 }
@@ -2084,7 +2091,7 @@ function openOverlay(name){
 }
 
 function cancelEditEntries(){
-  state.pendingSelection = new Set(state.entries.map(e=>e.sailNo));
+  state.pendingSelection = new Set(state.entries.map(e=>e.boatId));
   state.screen = 'race-capture';
   render();
 }
