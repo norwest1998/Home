@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMMC Race Results – Capture Results User Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ocean-deep:#071b2c; --ocean-mid:#0f3550; --sea-teal:#164a56;
+    --foam:#eaf6f6; --foam-dim:rgba(234,246,246,0.62);
+    --signal:#ff6a3d; --glow:#5eead4;
+    --glass-fill:rgba(255,255,255,0.06); --glass-fill-hi:rgba(255,255,255,0.11);
+    --glass-border:rgba(255,255,255,0.16); --glass-blur:18px;
+    --font-body:'Inter',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    font-family:var(--font-body); color:var(--foam); line-height:1.6; margin:0; min-height:100vh;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(94,234,212,0.10), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(255,106,61,0.08), transparent 55%),
+      linear-gradient(180deg, var(--ocean-deep) 0%, var(--ocean-mid) 55%, var(--sea-teal) 100%);
+    background-attachment:fixed; overflow-x:hidden; position:relative;
+  }
+  body::before{
+    content:""; position:fixed; inset:-20%; pointer-events:none; z-index:0;
+    background:repeating-linear-gradient(115deg, rgba(255,255,255,0.025) 0 2px, transparent 2px 140px);
+    animation:drift 22s linear infinite;
+  }
+  @keyframes drift{ to{ transform:translate(-140px,80px); } }
+  @media (prefers-reduced-motion:reduce){ body::before{ animation:none; } html{ scroll-behavior:auto; } }
+
+  /* ---- nav / header ---- */
+  .header{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; gap:14px; padding:12px 28px;
+    background:rgba(7,27,44,0.75); border-bottom:1px solid var(--glass-border);
+    backdrop-filter:blur(20px) saturate(150%); -webkit-backdrop-filter:blur(20px) saturate(150%);
+  }
+  .header img{ width:42px; height:42px; border-radius:50%; object-fit:cover; background:#fff; padding:2px; flex:none; }
+  .header-text{ flex:1; min-width:0; }
+  .header-text h1{ margin:0; font-size:17px; font-weight:700; color:var(--foam); line-height:1.1; }
+  .header-text p{ margin:3px 0 0; font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--glow); }
+  .logo-fallback{ width:42px; height:42px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:var(--ocean-deep); background:var(--glow); }
+  .close-btn{
+    flex:none; font:600 13px var(--font-body); color:var(--foam); cursor:pointer;
+    padding:9px 16px; border-radius:10px; background:var(--glass-fill); border:1px solid var(--glass-border);
+  }
+  .close-btn:hover{ background:var(--glass-fill-hi); }
+
+  /* ---- page body: one glass panel ---- */
+  .manual-container{ position:relative; z-index:1; max-width:860px; margin:28px auto 60px; padding:0 14px; }
+  .content{
+    padding:36px 40px;
+    background:linear-gradient(155deg, var(--glass-fill-hi), var(--glass-fill));
+    border:1px solid var(--glass-border); border-radius:20px;
+    backdrop-filter:blur(var(--glass-blur)) saturate(140%); -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(140%);
+    box-shadow:0 1px 0 rgba(255,255,255,0.25) inset, 0 18px 40px rgba(2,10,18,0.35);
+  }
+  @media (max-width:680px){ .content{ padding:22px 18px; } .header{ padding:10px 14px; } }
+
+  h2{
+    color:var(--foam); font-size:22px; font-weight:600; margin:44px 0 14px; padding-bottom:10px;
+    border-bottom:1px solid var(--glass-border); display:flex; align-items:center; gap:10px;
+  }
+  h2::before{ content:""; width:7px; height:7px; border-radius:50%; flex:none; background:var(--signal); box-shadow:0 0 8px var(--signal); }
+  h3{ color:var(--glow); font-size:13px; letter-spacing:0.08em; text-transform:uppercase; margin:28px 0 10px; }
+  p, li{ color:var(--foam); font-size:14.5px; }
+  li{ margin-bottom:6px; }
+  em{ color:var(--foam-dim); }
+  strong{ color:var(--foam); font-weight:700; }
+
+  .intro-box{
+    background:var(--glass-fill); border:1px solid var(--glass-border); border-radius:14px;
+    padding:22px 26px; margin-bottom:24px;
+  }
+  .intro-box h3{ margin-top:0; }
+  .intro-box ol{ margin:12px 0 0; padding-left:22px; }
+  .intro-box li::marker{ color:var(--glow); font-weight:700; }
+
+  .tip{
+    background:rgba(94,234,212,0.08); border:1px solid rgba(94,234,212,0.28);
+    border-left:4px solid var(--glow); border-radius:0 12px 12px 0; padding:14px 18px; margin:20px 0;
+  }
+  .tip strong:first-child{ color:var(--glow); }
+  .tip ul{ margin:8px 0 0; padding-left:20px; }
+
+  table{
+    width:100%; border-collapse:separate; border-spacing:0; margin:22px 0; overflow:hidden;
+    background:var(--glass-fill); border:1px solid var(--glass-border); border-radius:12px;
+  }
+  th,td{ padding:12px 16px; text-align:left; border-bottom:1px solid var(--glass-border); font-size:13.5px; color:var(--foam); }
+  th{ font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--glow); background:rgba(255,255,255,0.05); font-weight:700; }
+  tr:last-child td{ border-bottom:none; }
+  tr:nth-child(even) td{ background:rgba(255,255,255,0.03); }
+
+  .checklist{
+    background:rgba(255,106,61,0.10); border:1px solid rgba(255,106,61,0.32);
+    border-radius:14px; padding:24px 28px; margin-top:44px;
+  }
+  .checklist h3{ color:var(--signal); margin-top:0; display:flex; align-items:center; gap:10px; }
+  .checklist svg{ stroke:var(--signal); }
+  .checklist ol{ margin:0; padding-left:22px; }
+  .checklist li::marker{ color:var(--signal); font-weight:700; }
+
+  code{
+    background:var(--glass-fill-hi); border:1px solid var(--glass-border);
+    padding:2px 7px; border-radius:6px; color:var(--glow); font-weight:600; font-size:0.88em;
+  }
+  @media print{
+    body{ background:#fff; } body::before{ display:none; }
+    .header,.content{ background:#fff; backdrop-filter:none; box-shadow:none; }
+    *{ color:#000 !important; } .close-btn{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <!-- Club Logo positioned top-left -->
+    <img id="clubLogo" src="/Home/images/logo/smmc-logo.png" alt="SMMC Logo" onerror="logoFallback(this)">
+    
+    <div class="header-text">
+      <h1>SMMC Race Results</h1>
+      <p>User Manual – Capture Results on Race Day</p>
+    </div>
+    <button class="close-btn" onclick="window.close()">Close</button>
+  </div>
+
+<div class="manual-container">
+
+  <div class="content">
+    <div class="intro-box">
+      <h3>What this page does</h3>
+      <p>The Race Results page lets you record who finished where in each race, works out the standings for you, and produces a results file to hand over for processing. It works seamlessly on a phone, tablet, or PC.</p>
+      <p><strong>You only need to do five things:</strong></p>
+      <ol>
+        <li>Pick the regatta</li>
+        <li>Tick who is racing</li>
+        <li>Capture each race</li>
+        <li>Check the results</li>
+        <li>Send for processing</li>
+      </ol>
+    </div>
+
+    <div class="tip">
+      <strong>Tip:</strong> A phone or tablet at the water's edge works best. Hold it upright (portrait mode).
+    </div>
+
+    <h2>Practice Mode (try it first!)</h2>
+    <p>Practice mode lets you try the whole process with <strong>sample sailors</strong>. Nothing is saved to the club system and nothing is sent, so you can't break anything.</p>
+    <ol>
+      <li>On the regatta list, tap <strong>Practice mode</strong>.</li>
+      <li>An orange bar appears at the top saying <strong>PRACTICE</strong>. Tap the <strong>Practice</strong> regatta.</li>
+      <li>Follow sections 1 to 6 below as normal. Select the sailors, add races, tap the boats, check the results.</li>
+      <li>At the end, tap <strong>Send</strong>. It will tell you nothing was sent. This is correct.</li>
+      <li>Tap <strong>Exit practice</strong> in the orange bar to go back to the real regatta list.</li>
+    </ol>
+    <div class="tip">
+      <strong>Tips</strong>
+      <ul>
+        <li>Want a fresh start? Tap <strong>Reset</strong> in the orange bar to clear your practice races.</li>
+        <li>Try the tricky bits: <strong>hold</strong> a boat for DNS/DNF, delete a race, drag boats to reorder.</li>
+        <li>The list includes one <strong>guest</strong> sailor so you can see how guests appear.</li>
+        <li><strong>Suggestion:</strong> Do one practice run at home before your first real race day.</li>
+      </ul>
+    </div>
+    <div class="tip">
+      <strong>Need this manual again?</strong> Tap the <strong>?</strong> icon at the top of the page, or open the menu and choose <strong>Help / User Manual</strong>.
+    </div>
+
+    <h2>1. Select the Regatta</h2>
+    <p>When the page opens, you will see a list of upcoming races, with the soonest first.</p>
+    <ol>
+      <li>Look for your race by date, class emblem, and name (e.g. <em>DF95 Handicap</em>).</li>
+      <li>Tap the race to open it.</li>
+    </ol>
+    <div class="tip">
+      <strong>Tips:</strong>
+      <ul>
+        <li>Tap a class emblem at the top to show only that class. Tap <strong>All</strong> to see everything again.</li>
+        <li>Use the search box – typing a class, round, or date (e.g. <code>DF95</code> or <code>03/10</code>) shortens the list.</li>
+        <li>Races from the last 3 days are still shown, so you can finish yesterday's capture.</li>
+        <li>A small tag on the right shows your progress: <em>Entries set</em>, <em>In progress</em>, or <em>Processing</em> (already sent).</li>
+      </ul>
+    </div>
+
+    <h2>2. Select the Competitors</h2>
+    <p>The page shows every active member of that class, plus any registered guests (shown with their home club).</p>
+    <ol>
+      <li>Tap a name to tick it. Tick everyone who is racing today.</li>
+      <li>To tick everyone at once, tap <strong>Select all</strong>. Tap again to clear.</li>
+      <li>Check the counter at the bottom (e.g. <em>9 competitors selected</em>).</li>
+      <li>Tap <strong>Confirm entries</strong>.</li>
+    </ol>
+    <div class="tip">
+      <strong>Tips:</strong>
+      <ul>
+        <li><strong>Suggestion:</strong> Tap <em>Select all</em>, then un-tick the people who didn't turn up. It's much quicker!</li>
+        <li>You need at least 2 competitors before <em>Confirm entries</em> turns on.</li>
+        <li>Names are sorted A–Z. The <code>#number</code> is the sail number.</li>
+        <li>Entries can be changed any time until the first race is captured – tap the entries bar at the top of the race screen.</li>
+      </ul>
+    </div>
+
+    <h2>3. Capture a Race</h2>
+    
+    <h3>Starting a race</h3>
+    <p>Tap <strong>Add Race 1</strong> (the button is at the top right of the Races screen).</p>
+    <p>You will see two columns:</p>
+    <ul>
+      <li><strong>Left:</strong> Finish order (Empty slots numbered 1, 2, 3…)</li>
+      <li><strong>Right:</strong> Boats still to place (One tile per boat, showing its sail number)</li>
+    </ul>
+
+    <h3>Recording the finishing order</h3>
+    <ol>
+      <li>As each boat finishes, tap its sail number tile.</li>
+      <li>It automatically jumps into the next free slot on the left (1st, then 2nd, and so on).</li>
+      <li>Continue until every boat is placed.</li>
+    </ol>
+    <div class="tip">
+      <strong>Tips:</strong>
+      <ul>
+        <li><strong>Suggestion:</strong> Have a helper call out sail numbers while you tap – it helps keep up with fast finishes.</li>
+        <li>From Race 2 onward, each tile shows the boat's overall rank (e.g. <em>#3 o/a</em>) and tiles are ordered by current standings, helping you find a boat quickly.</li>
+        <li>Tapped the wrong boat? Simply tap its filled slot on the left and it goes back to the right.</li>
+      </ul>
+    </div>
+
+    <h3>Boats that didn't finish normally</h3>
+    <p>Press and hold (about half a second) on a boat's tile. A menu will appear:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Meaning</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>DNS</strong></td>
+          <td>Did not start</td>
+        </tr>
+        <tr>
+          <td><strong>DNF</strong></td>
+          <td>Did not finish</td>
+        </tr>
+        <tr>
+          <td><strong>RO</strong></td>
+          <td>Race Officer this race (not scored for this race)</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Tap the code you want. The boat moves to the left under the finish order.</p>
+    <div class="tip">
+      <strong>Tips:</strong>
+      <ul>
+        <li>Don't tap-and-release – you must <em>hold</em>. A quick tap places the boat as a standard finisher.</li>
+        <li>To undo a DNS/DNF/RO, tap its orange or green row once.</li>
+        <li><strong>Suggestion:</strong> Place the DNS/DNF/RO boats first, then the finishers. It makes it obvious when you're done.</li>
+      </ul>
+    </div>
+
+    <h3>Finishing the race</h3>
+    <ol>
+      <li>When all boats are placed, the header will say <em>"All boats placed – ready"</em>.</li>
+      <li>Tap the glowing <strong>+ button</strong> (top right). The race is saved and Race 2 starts straight away.</li>
+    </ol>
+    <div class="tip">
+      <strong>Tip:</strong> Changed your mind mid-race? Tap the <strong>X</strong> (top right) to cancel the race you are capturing. Nothing is lost from earlier races.
+    </div>
+
+    <h2>4. Fixing and Reviewing Races</h2>
+    <p>From the Races list, tap any captured race to open it.</p>
+    <ul>
+      <li><strong>Reorder boats:</strong> press and drag the <code>⋮⋮</code> handle on the left of a row up or down.</li>
+      <li><strong>Change a result:</strong> press and hold a row, then choose DNS, DNF or Finished.</li>
+      <li><strong>Move between races:</strong> use the left/right arrows at the top.</li>
+      <li><strong>Insert a missed race:</strong> on the Races list tap the <em>+ Insert race</em> line between two races. Race numbers update automatically.</li>
+      <li><strong>Delete a race:</strong> tap the bin icon next to it and confirm. Later races renumber automatically.</li>
+    </ul>
+    <div class="tip">
+      <strong>Tips:</strong> Entries lock once Race 1 exists. If you must change entries, delete all races first (only do this if nothing has been sent). Deleting cannot be undone.
+    </div>
+
+    <h2>5. Check the Results</h2>
+    <p>Tap the menu icon (top right, three lines). You can open:</p>
+    <ul>
+      <li><strong>Regatta Entries</strong> – who is entered</li>
+      <li><strong>Scoresheet</strong> – raw finishing order for each race</li>
+      <li><strong>Race Results</strong> – the calculated standings</li>
+      <li><strong>Send for Race Processing</strong> – see section 6</li>
+      <li><strong>Change regatta</strong> – go back to the race list</li>
+      <li><strong>Exit</strong> – close the page</li>
+    </ul>
+    <p>To end racing, tap <strong>Finish</strong> on the Races screen and confirm. The final standings table opens.</p>
+
+    <h3>How the scoring works</h3>
+    <ul>
+      <li>Position = points (1st = 1 point, 2nd = 2 points…). Lowest total wins.</li>
+      <li>DNS / DNF score the number of entries plus 1.</li>
+      <li>RO boats are left out of that race completely.</li>
+      <li>Drops (discards): 1 after 4 races, 2 after 8 races, then +1 every 8 races. Dropped scores appear struck through.</li>
+      <li>Ties are settled by countback (most better places, then most recent race).</li>
+    </ul>
+
+    <h2>6. Send for Race Processing</h2>
+    <ol>
+      <li>Open Race Results and tap <strong>Save Results</strong> (top right), or choose <strong>Send for Race Processing</strong> from the menu.</li>
+      <li>(Optional) Type or paste the race report into the box and tap <em>Save report text</em>.</li>
+      <li>Tap <strong>Send for Race Processing</strong>.</li>
+      <li>A file named like <code>370EF1BB-27-06-2026.json</code> is downloaded to your device.</li>
+      <li>Hand that file to whoever processes results. The page then returns to the race list and marks the regatta as <em>Processing</em>.</li>
+    </ol>
+    <div class="tip">
+      <strong>Tips:</strong> Check the results table carefully before sending. Fix any mistakes first. The race report is completely optional.
+    </div>
+
+    <h2>Good to Know</h2>
+    <ul>
+      <li><strong>Auto-save:</strong> Everything is saved on your device after each step. If you close the page or lose signal, reopen it, pick the same regatta and carry on.</li>
+      <li><strong>Same device only:</strong> Saved work lives in that device's browser. Capture and send from the same device and browser, and don't clear your browsing history mid-regatta.</li>
+      <li><strong>Internet needed:</strong> Internet is needed to load races and members. The capture itself keeps working once loaded.</li>
+    </ul>
+
+    <h2>Troubleshooting</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Problem</th>
+          <th>What to try</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Race list is empty</strong></td>
+          <td>Check your internet, then refresh the page. Check the class filter is on <em>All</em> and the search box is blank.</td>
+        </tr>
+        <tr>
+          <td><strong>Member list is empty</strong></td>
+          <td>Go back (menu → Change regatta), and open the regatta again.</td>
+        </tr>
+        <tr>
+          <td><strong>A sailor is missing</strong></td>
+          <td>Guests must be registered beforehand. Ask the club admin to add them.</td>
+        </tr>
+        <tr>
+          <td><strong>Wrong boat placed</strong></td>
+          <td>Tap its slot on the left to remove it, then place the correct boat.</td>
+        </tr>
+        <tr>
+          <td><strong>Tap placed a boat but I wanted DNF</strong></td>
+          <td>Tap the slot to remove, then hold the tile and choose DNF.</td>
+        </tr>
+        <tr>
+          <td><strong>Can't edit entries</strong></td>
+          <td>Entries lock after Race 1. Delete all races to unlock (before sending only).</td>
+        </tr>
+        <tr>
+          <td><strong>Page looks stuck</strong></td>
+          <td>Refresh. Your captured races are saved and will reappear.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="checklist">
+      <h3>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        Quick Race-Day Checklist
+      </h3>
+      <ol>
+        <li>Open page → tap your regatta</li>
+        <li>Select all → un-tick no-shows → Confirm entries</li>
+        <li>Add Race → tap boats as they finish → hold for DNS/DNF/RO → +</li>
+        <li>Repeat for each race</li>
+        <li>Finish → check results</li>
+        <li>Send for Race Processing → hand over the downloaded file</li>
+      </ol>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  var LOGO_PATHS=['/Home/images/logo/smmc-logo.png','../images/logo/smmc-logo.png','images/logo/smmc-logo.png','smmc-logo.png'];
+  function logoFallback(img){
+    var i=(+img.getAttribute('data-i')||0)+1;
+    if(i<LOGO_PATHS.length){ img.setAttribute('data-i',i); img.src=LOGO_PATHS[i]; return; }
+    var d=document.createElement('div'); d.className='logo-fallback'; d.textContent='SMMC';
+    img.replaceWith(d);
+  }
+</script>
+</body>
+</html>

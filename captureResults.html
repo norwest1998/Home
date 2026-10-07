@@ -1051,6 +1051,14 @@ textarea.report-box::placeholder{ color: var(--foam-dim); }
   flex-direction: column;
   gap: 4px;
 }
+
+/* ---------- practice mode ---------- */
+.practice-chip{ font-size:11px; font-weight:700; letter-spacing:.04em; color:var(--signal); background:rgba(255,106,61,0.16); border:1px solid rgba(255,106,61,0.35); padding:3px 10px; border-radius:999px; text-transform:none; }
+.practice-btn{ font-family:inherit; font-size:11px; font-weight:600; color:var(--foam); background:var(--glass-fill); border:1px solid var(--glass-border); padding:4px 10px; border-radius:8px; cursor:pointer; text-transform:none; letter-spacing:0; }
+.practice-btn:hover{ background:var(--glass-fill-hi); }
+body.practice .sub-header-bar{ background:rgba(90,30,10,0.75); color:var(--signal); }
+.practice-offer{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 14px; margin-bottom:14px; border-radius:12px; background:rgba(255,106,61,0.08); border:1px dashed rgba(255,106,61,0.4); font-size:12.5px; color:var(--foam-dim); }
+.practice-offer span{ flex:1; min-width:180px; }
 </style>
 </head>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.446.0/dist/umd/lucide.min.js"></script>
@@ -1074,7 +1082,29 @@ let GUESTS = [];
 /* ======== create function to fetch Members ============= */
 /* MEMBERS = [{"member":"John Wyatt","class":"DF65","sailNo":"36"},{"member":"John Wyatt","class":"DF95","sailNo":"36"},{"member":"Lew Gemell","class":"DF65","sailNo":"10"},{"member":"Graham Brown","class":"DF95","sailNo":"921"},{"member":"Nigel Brimble","class":"DF95","sailNo":"438"},{"member":"Allen Williams","class":"DF95","sailNo":"547"},{"member":"Paul Rushton","class":"DF95","sailNo":"690"},{"member":"Cameron Percival","class":"DF95","sailNo":"725"},{"member":"Peter Burton","class":"DF95","sailNo":"99"},{"member":"Neil Johnson","class":"DF95","sailNo":"584"},{"member":"Daryl Bates","class":"DF95","sailNo":"429"},{"member":"Lew Gemell","class":"IOM","sailNo":"53"},{"member":"Peter Lee","class":"DF95","sailNo":"710"},{"member":"Tim Ryan","class":"DF95","sailNo":"270"},{"member":"Chris Cuthbert","class":"DF95","sailNo":"771"},{"member":"Peter Burton","class":"DF65","sailNo":"223"},{"member":"Peter Burton","class":"IOM","sailNo":"69"},{"member":"Chris Cuthbert","class":"Soling","sailNo":"169"},{"member":"Peter Lee","class":"Soling","sailNo":"66"},{"member":"Gregory Gallagher","class":"DF95","sailNo":"699"},{"member":"David Jackson","class":"DF95","sailNo":"997"},{"member":"John Armstrong","class":"IOM","sailNo":"52"},{"member":"Robert Hales","class":"IOM","sailNo":"21"},{"member":"Dinah Hales","class":"IOM","sailNo":"78"},{"member":"Colin Court","class":"Marblehead","sailNo":"80"},{"member":"Chris Cuthbert","class":"IOM","sailNo":"35"},{"member":"David Bolton","class":"IOM","sailNo":"180"},{"member":"John Wyatt","class":"Marblehead","sailNo":"75"},{"member":"Nigel Brimble","class":"Soling","sailNo":"56"},{"member":"Larry Reedman","class":"DF95","sailNo":"382"},{"member":"David Bolton","class":"DF95","sailNo":"32"},{"member":"Steve Malone","class":"DF95","sailNo":"866"},{"member":"Colin Court","class":"DF65","sailNo":"80"},{"member":"Anthony Bolding","class":"DF65","sailNo":"86"},{"member":"Gregory Gallagher","class":"DF65","sailNo":"486"},{"member":"Jim Hand","class":"DF95","sailNo":"22"},{"member":"Anthony Bolding","class":"IOM","sailNo":"20"},{"member":"Nigel Brimble","class":"IOM","sailNo":"91"},{"member":"John Wyatt","class":"IOM","sailNo":"26"},{"member":"Colin Court","class":"IOM","sailNo":"80"},{"member":"Allen Williams","class":"DF65","sailNo":"428"},{"member":"Paul Rushton","class":"DF65","sailNo":"161"},{"member":"Neil Johnson","class":"DF65","sailNo":"584"},{"member":"Chris Cuthbert","class":"DF65","sailNo":"771"},{"member":"Nigel Brimble","class":"DF65","sailNo":"644"},{"member":"Gary Sommer","class":"DF95","sailNo":"194"},{"member":"Peter Dahl","class":"DF95","sailNo":"813"},{"member":"John Wyatt","class":"Soling","sailNo":"194"},{"member":"Peter Dahl","class":"Soling","sailNo":"13"},{"member":"Steve Malone","class":"Soling","sailNo":"94"},{"member":"Graham Brown","class":"IOM","sailNo":"29"},{"member":"Graham Brown","class":"DF65","sailNo":"106"},{"member":"Stewart Blundell","class":"DF95","sailNo":"52"},{"member":"Anthony Bolding","class":"General","sailNo":"201"},{"member":"John Pye","class":"DF65","sailNo":"913"}];
 */
+/* ============ PRACTICE MODE DATA (no network, no sheets) ============ */
+let LIVE_EVENTS = [];
+const PRACTICE_MEMBERS = [
+  {member:'Alex Anchor',   sailNo:'11', className:'DF95', homeClub:'SMMC'},
+  {member:'Bella Bowline', sailNo:'22', className:'DF95', homeClub:'SMMC'},
+  {member:'Charlie Cleat', sailNo:'33', className:'DF95', homeClub:'SMMC'},
+  {member:'Dana Deck',     sailNo:'44', className:'DF95', homeClub:'SMMC'},
+  {member:'Eddie Ebb',     sailNo:'55', className:'DF95', homeClub:'SMMC'},
+  {member:'Fiona Flood',   sailNo:'66', className:'DF95', homeClub:'SMMC'},
+  {member:'Gus Gybe',      sailNo:'77', className:'DF95', homeClub:'SMMC'},
+  {member:'Hana Helm',     sailNo:'88', className:'DF95', homeClub:'SMMC'}
+];
+const PRACTICE_GUESTS = [
+  {member:'Visiting Sailor', sailNo:'99', className:'DF95', homeClub:'Guest Club', isGuest:true}
+];
+function practiceEvents(){
+  const t = new Date();
+  const d = `${String(t.getDate()).padStart(2,'0')}/${String(t.getMonth()+1).padStart(2,'0')}/${t.getFullYear()}`;
+  return [{ id:'PRACTICE', date:d, start:'11:00', end:'13:00', class:'DF95', regattaType:'Practice', round:'1', season:'Practice', status:'Not Started' }];
+}
+
 async function getMembers(className) {
+  if (state.practice) { MEMBERS = PRACTICE_MEMBERS.map(m => ({...m})); return; }
   try {
     const data = await apiGet("members", className);
     MEMBERS = Array.isArray(data.members)
@@ -1088,6 +1118,7 @@ async function getMembers(className) {
 }
 
 async function getGuests(eventId, className) {
+  if (state.practice) { GUESTS = PRACTICE_GUESTS.map(g => ({...g})); return; }
   try {
     const rows = await fetchSheet("results", "GuestRegistrations");
     GUESTS = rows
@@ -1199,6 +1230,7 @@ let state = {
   longPressTarget: null,      // {sailNo, mode:'draft'|'race', raceIdx} currently showing the code-change modal
   drag: null,                  // active drag-to-reorder session, see bindDragHandle
   selectedClass: 'ALL',
+  practice: false,             // true = practice mode: sample data, nothing saved to backend or sent
 };
 
 // Entries lock the instant the first race exists — not before.
@@ -1206,7 +1238,8 @@ function entriesLocked(){ return state.races.length > 0; }
 
 const STORE_PREFIX = 'smmc-race-';
 
-function storageKey(eventId){ return STORE_PREFIX + eventId; }
+const PRACTICE_PREFIX = 'smmc-practice-';
+function storageKey(eventId){ return (state.practice ? PRACTICE_PREFIX : STORE_PREFIX) + eventId; }
 
 function saveState(){
   if(!state.event) return;
@@ -1328,6 +1361,8 @@ function svgLayoutGrid() { return `<i data-lucide="layout-grid"></i>`; }
 function svgFlag(){ return `<i data-lucide="flag" width="16" height="16"></i>`; }
 function svgSave() { return `<i data-lucide="save"></i>`; }
 function svgExit() { return `<i data-lucide="power"></i>`; }
+function svgHelp() { return `<i data-lucide="help-circle" width="20" height="20"></i>`; }
+function svgFlask() { return `<i data-lucide="flask-conical"></i>`; }
 
 function headerHTML(){
   const ev = state.event;
@@ -1356,6 +1391,7 @@ function headerHTML(){
       </div>
     </a>
     <div class="nav-spacer"></div>
+    <button class="icon-btn" onclick="openManual()" title="Help – open user manual" aria-label="Help" style="margin-right:8px">${svgHelp()}</button>
     ${state.overlay === 'results'
       ? `<button class="icon-btn" onclick="closeOverlay()" title="Back to racing" style="margin-right:8px">${svgBack()}</button>
         <button class="btn btn-primary btn-sm" onclick="openOverlay('export')" style="margin-right:8px">${svgSave()} Save Results</button>`
@@ -1380,6 +1416,7 @@ function render(){
 
   attachDynamicHandlers();
   if (typeof lucide !== 'undefined') lucide.createIcons();
+  document.body.classList.toggle('practice', !!state.practice);
   const navEl = document.querySelector('.app-nav');
   if(navEl) document.documentElement.style.setProperty('--nav-h', navEl.offsetHeight + 'px');
 }
@@ -1390,7 +1427,12 @@ function subHeaderHTML(){
     'select-competitors': 'Select Competitors',
     'race-capture':       'Capture Race Results',
   };
-  return `<div class="sub-header-bar">${labels[state.screen] || 'Race Results'}</div>`;
+  return `<div class="sub-header-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span>${labels[state.screen] || 'Race Results'}</span>
+    ${state.practice ? `<span class="practice-chip">PRACTICE – nothing is saved or sent</span>
+      <button class="practice-btn" data-reset-practice="1">Reset</button>
+      <button class="practice-btn" data-exit-practice="1">Exit practice</button>` : ''}
+  </div>`;
 }
 
 /* ---------------- Screen: Event Select (calendar) ---------------- */
@@ -1469,6 +1511,8 @@ function renderEventSelect(){
 
   return `
     <div class="panel glass panel-pad">
+      ${state.practice ? '' : `<div class="practice-offer"><span>New here? Try a practice regatta with sample sailors. Nothing is saved or sent.</span>
+        <button class="btn btn-ghost btn-sm" data-enter-practice="1">${svgFlask()} Practice mode</button></div>`}
       <div class="section-title">Select a regatta</div>
       <div class="section-hint">Showing upcoming races only. Filter by class or search below.</div>
       ${renderClassFilterBar(classes)}
@@ -1679,6 +1723,8 @@ function menuHTML(){
     <div class="menu-sep"></div>
     <div class="menu-item" data-open-overlay="export">${svgSend()} Send for Race Processing</div>
     <div class="menu-sep"></div>
+    <div class="menu-item" onclick="openManual()">${svgHelp()} Help / User Manual</div>
+    ${state.practice ? `<div class="menu-item" data-exit-practice="1">${svgFlask()} Exit practice mode</div>` : ''}
     <div class="menu-item" onclick="window.close()">${svgExit()} Exit</div>
     <div class="menu-item" data-new-event="1">${svgRestart()} Change regatta</div>
   </div>`;
@@ -1788,6 +1834,7 @@ function renderExportPanel(){
   <button class="btn btn-primary btn-block" data-save-report="1">Save report text</button>
   <div class="panel glass panel-pad" style="margin-top:16px">
     <div class="field-label">Send for race processing</div>
+    ${state.practice ? `<div class="section-hint" style="color:var(--signal)">Practice mode: this will NOT download or send anything.</div>` : ''}
     <div class="section-hint">Downloads the full regatta record — event details, entries and every race — in the standard SMMC results format, ready to hand off for processing.</div>
     <button class="btn btn-primary btn-block" data-download-json="1">${svgSend()} Send for Race Processing</button>
   </div>
@@ -2071,6 +2118,11 @@ function buildExportObject(){
 }
 
 async function saveAndSend(){
+  if(state.practice){
+    showToast('Practice only – nothing was sent');
+    setTimeout(() => changeEvent(), 1000);
+    return;
+  }
   await downloadJSON();
   state.sent = true;
   saveState();
@@ -2282,6 +2334,9 @@ function attachDynamicHandlers(){
   document.querySelectorAll('[data-save-report]').forEach(el=> el.addEventListener('click', saveReportText));
   document.querySelectorAll('[data-download-json]').forEach(el => el.addEventListener('click', saveAndSend));
   document.querySelectorAll('[data-new-event]').forEach(el=> el.addEventListener('click', changeEvent));
+  document.querySelectorAll('[data-enter-practice]').forEach(el=> el.addEventListener('click', enterPractice));
+  document.querySelectorAll('[data-exit-practice]').forEach(el=> el.addEventListener('click', exitPractice));
+  document.querySelectorAll('[data-reset-practice]').forEach(el=> el.addEventListener('click', resetPractice));
   document.querySelectorAll('[data-set-code]').forEach(el=>{
     el.addEventListener('click', ()=> setCode(el.getAttribute('data-set-code')));
   });
@@ -2295,6 +2350,44 @@ function attachDynamicHandlers(){
 }
 
 
+
+/* ---------------- Help + Practice mode ---------------- */
+function openManual(){
+  state.menuOpen = false;
+  window.open('Capture_Result_User_Manual.html', 'smmcManual', 'width=900,height=800,scrollbars=yes,resizable=yes');
+}
+
+function resetViewState(){
+  state.event = null; state.entries = []; state.races = []; state.draft = null; state.viewRaceIdx = null;
+  state.reportText = ''; state.sent = false; state.pendingSelection = new Set();
+  state.screen = 'select-event'; state.overlay = null; state.menuOpen = false;
+  state.selectedClass = 'ALL'; state.eventSearch = '';
+}
+
+function enterPractice(){
+  LIVE_EVENTS = EVENTS;
+  state.practice = true;
+  EVENTS = practiceEvents();
+  resetViewState();
+  render();
+  showToast('Practice mode on – nothing is saved or sent');
+}
+
+function exitPractice(){
+  state.practice = false;
+  EVENTS = LIVE_EVENTS;
+  resetViewState();
+  render();
+  showToast('Back to live mode');
+}
+
+function resetPractice(){
+  if(!confirm('Clear all practice data and start fresh?')) return;
+  Object.keys(localStorage).filter(k => k.startsWith(PRACTICE_PREFIX)).forEach(k => localStorage.removeItem(k));
+  resetViewState();
+  render();
+  showToast('Practice data cleared');
+}
 
 /* ============ BOOT ============ */
 document.getElementById('app-header').innerHTML = headerHTML();
