@@ -541,11 +541,12 @@ select.guest-inline-input option {
                                 <th>Home Club</th>
                                 <th>Class</th>
                                 <th>Model</th>
+                                <th>Hull Colour</th>
                                 <th class="col-center" style="width:70px;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="registeredGuestsTableBody"></tbody>
-                    </table>>
+                    </table>
                 </div>
                 <div class="fn-message" id="modalGuestMsg"></div>
             </div>
@@ -1303,6 +1304,7 @@ function renderModalGuestTable() {
             <td>${escHtml(g.HomeClub)}</td>
             <td>${escHtml(g.RaceClass || '—')}</td>
             <td>${escHtml(g.Model || '—')}</td>
+            <td>${escHtml(g['Hull Colour'] || g.HullColour || '—')}</td>
             <td class="col-center">
                 <button type="button" class="icon-btn" title="Delete Guest" onclick="deleteGuestSailor('${escHtml(g.HexKey)}')">
                     <i class="inline-icon" data-lucide="trash-2" color="#ff6a3d"></i>
@@ -1327,8 +1329,11 @@ function renderModalGuestTable() {
                 </select>
             </td>
             <td><input type="text" id="newGuestModel" class="guest-inline-input" placeholder="Model" onkeydown="if(event.key==='Enter') quickAddGuest()"></td>
+            <td><input type="text" id="newGuestHullColour" class="guest-inline-input" placeholder="Hull Colour" onkeydown="if(event.key==='Enter') quickAddGuest()"></td>
             <td class="col-center">
                 <button type="button" id="addGuestBtn" class="icon-btn" style="background: var(--glow); color: var(--ocean-deep);" title="Add Guest" onclick="quickAddGuest()">
+                    <i class="inline-icon" data-lucide="plus"></i>
+                </button>
             </td>
         </tr>
     `;
@@ -1352,11 +1357,12 @@ function setGuestAdding(on) {
 
 async function quickAddGuest() {
     if (document.getElementById('addGuestBtn')?.disabled) return;
-    const sailNo   = document.getElementById('newGuestSailNo').value.trim();
-    const name     = document.getElementById('newGuestName').value.trim();
-    const homeClub = document.getElementById('newGuestHomeClub').value.trim();
-    const raceClass = document.getElementById('newGuestClass').value.trim();
-    const modelName = document.getElementById('newGuestModel').value.trim();
+    const sailNo     = document.getElementById('newGuestSailNo').value.trim();
+    const name       = document.getElementById('newGuestName').value.trim();
+    const homeClub   = document.getElementById('newGuestHomeClub').value.trim();
+    const raceClass  = document.getElementById('newGuestClass').value.trim();
+    const modelName  = document.getElementById('newGuestModel').value.trim();
+    const hullColour = document.getElementById('newGuestHullColour').value.trim();
 
     if (!name || !homeClub) {
         showMsg('modalGuestMsg', 'Please enter competitor name and home club.', true);
@@ -1372,6 +1378,7 @@ async function quickAddGuest() {
         EventDate:      evt ? (evt.EventDate || '') : '',
         RaceClass:      raceClass || (evt ? (evt.RaceClass || '') : ''),
         Model:          modelName,
+        "Hull Colour":  hullColour,
         SailNo:         sailNo || '—',
         CompetitorName: name,
         HomeClub:       homeClub,
@@ -1384,12 +1391,10 @@ async function quickAddGuest() {
         await appendSheet(DOMAIN.results, "GuestRegistrations", record);
         showMsg('modalGuestMsg', 'Guest added successfully.', false);
 
-        // Update local state and re-render modal list and event list
         allGuestRegistrations.push(record);
         renderModalGuestTable();
         renderGuestEventsList();
 
-        // Focus sail number ready for the next guest entry
         document.getElementById('newGuestSailNo').focus();
     } catch (err) {
         setGuestAdding(false);
@@ -1417,10 +1422,10 @@ function copyGuestRoster() {
         return;
     }
 
-    const lines = guests.map(g => `${g.SailNo}\t${g.CompetitorName}\t${g.HomeClub}\t${g.RaceClass || ''}\t${g.Model || ''}`);
-    const text  = `Sail No\tCompetitor Name\tHome Club\tClass\tModel\n` + lines.join('\n');
-
-    navigator.clipboard.writeText(text).then(() => {
+    const lines = guests.map(g => 
+        `${g.SailNo}\t${g.CompetitorName}\t${g.HomeClub}\t${g.RaceClass || ''}\t${g.Model || ''}\t${g['Hull Colour'] || g.HullColour || ''}`
+    );
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
         showMsg('modalGuestMsg', 'Guest roster copied to clipboard!', false);
     }).catch(err => {
         showMsg('modalGuestMsg', 'Copy failed: ' + err.message, true);
