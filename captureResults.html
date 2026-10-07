@@ -1226,7 +1226,10 @@ function sailChip(boatId, cls='p-sail'){
 }
 function hullStyle(boatId){
   const e = entryFor(boatId);
-  const c = e && e.hull ? String(e.hull).trim() : '';
+  return hullCss(e && e.hull);
+}
+function hullCss(hull){
+  const c = hull ? String(hull).trim() : '';
   return c ? `background:${c};color:${/yellow|white|lime|cyan|silver|pink/i.test(c) ? '#0b1f33' : '#fff'};` : '';
 }
 
@@ -1550,10 +1553,11 @@ function renderCompetitorSelect(){
   const rows = roster.map(m => {
     const checked = state.pendingSelection.has(String(m.id));
     return `<div class="member-row" data-toggle-member="${m.id}">
+      <div class="member-name" style="flex:1;min-width:0">${escapeHTML(m.member)}</div>
+      <div class="sail-tag">${escapeHTML(m.homeClub || 'SMMC')}</div>
+      ${classEmblem(m.className, 26)}
+      <div class="sail-tag" style="${hullCss(m.hull)}">#${escapeHTML(String(m.sailNo))}</div>
       <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
-      <div class="member-name">${escapeHTML(m.member)}</div>
-      ${m.isGuest ? `<div class="sail-tag">${escapeHTML(m.homeClub || 'Guest')}</div>` : ''}
-      <div class="sail-tag">#${m.sailNo}</div>
     </div>`;
   }).join('');
 
