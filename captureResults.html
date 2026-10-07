@@ -1142,8 +1142,7 @@ async function getGuests(eventId, className) {
 }
 
 function getRoster() {
-  if (!state.event.class === "Twilight") return [...MEMBERS, ...GUESTS];
-  return [...MEMBERS, ...GUESTS].filter(m => m.className === state.event.class);
+  return [...MEMBERS, ...GUESTS];
 }
 
 /* ======== create function to fetch Events ============= */
