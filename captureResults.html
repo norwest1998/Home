@@ -953,23 +953,23 @@ button{ font-family: inherit; }
 .race-insert-row svg{ width:14px; height:14px; flex:none; }
 
 /* ---------- class emblem images + filter bar ---------- */
-.class-emblem{ border-radius:6px; object-fit:contain; flex:none; background:rgba(255, 255, 255, 0.467); backdrop-filter:blur(4px); }
+.class-emblem{ border-radius:6px; object-fit:contain; flex:none; background:var(--foam); }
 .class-filter-bar {
   display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px;
 }
 .class-filter-btn { 
   display:flex; align-items:center; gap:7px;
   font-family:var(--font-data); font-size:11.5px; letter-spacing:.02em;
-  padding:6px; min-width:36px; justify-content:center; border-radius:10px; cursor:pointer;
+  padding:0; width:40px; height:40px; justify-content:center; border-radius:10px; cursor:pointer; overflow:hidden;
   background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam-dim);
   transition:background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .class-filter-btn:hover { color:var(--foam); background:var(--glass-fill-hi); }
-.class-filter-btn.active { background:var(--glass-fill-hi); border-color:var(--glow); color:var(--glow); }
+.class-filter-btn.active { background:var(--glass-fill-hi); border-color:var(--glow); color:var(--glow); box-shadow:0 0 0 2px var(--glow); }
+.class-filter-btn:has(.cal-filter-icon){ border:none; background:var(--foam); }
 .class-filter-btn .cal-filter-icon {
-  width:22px; height:22px; object-fit:contain; border-radius:5px; flex-shrink:0;
-  background:rgba(255,255,255,0.467); padding:3px;
-  backdrop-filter:blur(4px);
+  width:100%; height:100%; object-fit:contain; border-radius:0; flex-shrink:0;
+  background:var(--foam); padding:5px; box-sizing:border-box;
 }
 .class-filter-btn .cal-filter-icon--all {
   width:22px; height:22px; border-radius:5px; flex-shrink:0;
@@ -1080,6 +1080,9 @@ let EVENTS = [];
 let MEMBERS = [];
 let GUESTS = [];
 
+/* ======== create function to fetch Members ============= */
+/* MEMBERS = [{"member":"John Wyatt","class":"DF65","sailNo":"36"},{"member":"John Wyatt","class":"DF95","sailNo":"36"},{"member":"Lew Gemell","class":"DF65","sailNo":"10"},{"member":"Graham Brown","class":"DF95","sailNo":"921"},{"member":"Nigel Brimble","class":"DF95","sailNo":"438"},{"member":"Allen Williams","class":"DF95","sailNo":"547"},{"member":"Paul Rushton","class":"DF95","sailNo":"690"},{"member":"Cameron Percival","class":"DF95","sailNo":"725"},{"member":"Peter Burton","class":"DF95","sailNo":"99"},{"member":"Neil Johnson","class":"DF95","sailNo":"584"},{"member":"Daryl Bates","class":"DF95","sailNo":"429"},{"member":"Lew Gemell","class":"IOM","sailNo":"53"},{"member":"Peter Lee","class":"DF95","sailNo":"710"},{"member":"Tim Ryan","class":"DF95","sailNo":"270"},{"member":"Chris Cuthbert","class":"DF95","sailNo":"771"},{"member":"Peter Burton","class":"DF65","sailNo":"223"},{"member":"Peter Burton","class":"IOM","sailNo":"69"},{"member":"Chris Cuthbert","class":"Soling","sailNo":"169"},{"member":"Peter Lee","class":"Soling","sailNo":"66"},{"member":"Gregory Gallagher","class":"DF95","sailNo":"699"},{"member":"David Jackson","class":"DF95","sailNo":"997"},{"member":"John Armstrong","class":"IOM","sailNo":"52"},{"member":"Robert Hales","class":"IOM","sailNo":"21"},{"member":"Dinah Hales","class":"IOM","sailNo":"78"},{"member":"Colin Court","class":"Marblehead","sailNo":"80"},{"member":"Chris Cuthbert","class":"IOM","sailNo":"35"},{"member":"David Bolton","class":"IOM","sailNo":"180"},{"member":"John Wyatt","class":"Marblehead","sailNo":"75"},{"member":"Nigel Brimble","class":"Soling","sailNo":"56"},{"member":"Larry Reedman","class":"DF95","sailNo":"382"},{"member":"David Bolton","class":"DF95","sailNo":"32"},{"member":"Steve Malone","class":"DF95","sailNo":"866"},{"member":"Colin Court","class":"DF65","sailNo":"80"},{"member":"Anthony Bolding","class":"DF65","sailNo":"86"},{"member":"Gregory Gallagher","class":"DF65","sailNo":"486"},{"member":"Jim Hand","class":"DF95","sailNo":"22"},{"member":"Anthony Bolding","class":"IOM","sailNo":"20"},{"member":"Nigel Brimble","class":"IOM","sailNo":"91"},{"member":"John Wyatt","class":"IOM","sailNo":"26"},{"member":"Colin Court","class":"IOM","sailNo":"80"},{"member":"Allen Williams","class":"DF65","sailNo":"428"},{"member":"Paul Rushton","class":"DF65","sailNo":"161"},{"member":"Neil Johnson","class":"DF65","sailNo":"584"},{"member":"Chris Cuthbert","class":"DF65","sailNo":"771"},{"member":"Nigel Brimble","class":"DF65","sailNo":"644"},{"member":"Gary Sommer","class":"DF95","sailNo":"194"},{"member":"Peter Dahl","class":"DF95","sailNo":"813"},{"member":"John Wyatt","class":"Soling","sailNo":"194"},{"member":"Peter Dahl","class":"Soling","sailNo":"13"},{"member":"Steve Malone","class":"Soling","sailNo":"94"},{"member":"Graham Brown","class":"IOM","sailNo":"29"},{"member":"Graham Brown","class":"DF65","sailNo":"106"},{"member":"Stewart Blundell","class":"DF95","sailNo":"52"},{"member":"Anthony Bolding","class":"General","sailNo":"201"},{"member":"John Pye","class":"DF65","sailNo":"913"}];
+*/
 /* ============ PRACTICE MODE DATA (no network, no sheets) ============ */
 let LIVE_EVENTS = [];
 const PRACTICE_MEMBERS = [
@@ -1101,16 +1104,17 @@ function practiceEvents(){
   return [{ id:'PRACTICE', date:d, start:'11:00', end:'13:00', class:'DF95', regattaType:'Practice', round:'1', season:'Practice', status:'Not Started' }];
 }
 
-/* ======== function to fetch Members ============= */
 async function getMembers(className) {
   if (state.practice) { MEMBERS = PRACTICE_MEMBERS.map(m => ({...m})); return; }
   try {
     if (className === "Twilight") className = "All";  // special case for Twilight events 
     const queryClass = className  
     const data = await apiGet("members", queryClass);
+    console.log(`getMembers(${className}): received data`, data);
     MEMBERS = Array.isArray(data.members)
       ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC", boat: m.id }))
       : [];
+    console.log(`getMembers(${className}): received ${MEMBERS.length} members`, MEMBERS.slice(0,3));
   } catch (error) {
     console.error("Failed to load member data:", error);
     MEMBERS = [];
@@ -1142,7 +1146,9 @@ function getRoster() {
   return [...MEMBERS, ...GUESTS];   // server already filters members by class
 }
 
-/* ======== function to fetch Events ============= */
+/* ======== create function to fetch Events ============= */
+/* EVENTS = [{"id":"370EF1BB","date":"27/06/2026","start":"13:00","end":"16:00","class":"DF95","regattaType":"Winter Cup","round":"2","season":"2025-26","status":"Processed"},{"id":"159142DB","date":"04/07/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"1","season":"2026-27","status":"Processed"},{"id":"86D02EF6","date":"04/07/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"1","season":"2026-27","status":"Processed"},{"id":"EEB77BF4","date":"11/07/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"1","season":"2026-27","status":"Processed"},{"id":"AC5BA019","date":"11/07/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"1","season":"2026-27","status":"Processed"},{"id":"3F0C4B13","date":"18/07/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"1","season":"2026-27","status":"Processed"},{"id":"AD187522","date":"25/07/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"1","season":"2026-27","status":"Processed"},{"id":"466407EB","date":"25/07/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"2","season":"2026-27","status":"Processed"},{"id":"ED4DB7E4","date":"01/08/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"","season":"2026-27","status":"Rescheduled"},{"id":"FCB2CF3F","date":"01/08/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"","season":"2026-27","status":"Rescheduled"},{"id":"7339EBDA","date":"08/08/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"2","season":"2026-27","status":"Processed"},{"id":"1876575D","date":"08/08/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"3","season":"2026-27","status":"Processed"},{"id":"D118E89B","date":"15/08/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"2","season":"2026-27","status":"Processed"},{"id":"08F2FC15","date":"22/08/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"2","season":"2026-27","status":"Rescheduled"},{"id":"BD8A0212","date":"22/08/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"4","season":"2026-27","status":"Processed"},{"id":"3EC2BCE7","date":"29/08/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"2","season":"2026-27","status":"Processed"},{"id":"CCB1F9D2","date":"05/09/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"3","season":"2026-27","status":"Processed"},{"id":"BAA64958","date":"05/09/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"3","season":"2026-27","status":"Not Started"},{"id":"543BB205","date":"12/09/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"3","season":"2026-27","status":"Processed"},{"id":"B64AB794","date":"12/09/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"3","season":"2026-27","status":"Processed"},{"id":"68FF593C","date":"19/09/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"3","season":"2026-27","status":"Not Started"},{"id":"C87D76CF","date":"26/09/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"3","season":"2026-27","status":"Not Started"},{"id":"37FEF84F","date":"26/09/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"6","season":"2026-27","status":"Not Started"},{"id":"AEAB98F7","date":"03/10/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"4","season":"2026-27","status":"Not Started"},{"id":"4EA65D6E","date":"03/10/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"4","season":"2026-27","status":"Not Started"},{"id":"04DAABA0","date":"10/10/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"4","season":"2026-27","status":"Not Started"},{"id":"02C75C89","date":"10/10/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"7","season":"2026-27","status":"Not Started"},{"id":"04055C78","date":"24/10/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"4","season":"2026-27","status":"Not Started"},{"id":"A828F590","date":"24/10/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"8","season":"2026-27","status":"Not Started"},{"id":"E14D1364","date":"31/10/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"4","season":"2026-27","status":"Rescheduled"},{"id":"F9E85F11","date":"07/11/2026","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"5","season":"2026-27","status":"Not Started"},{"id":"61513739","date":"07/11/2026","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"5","season":"2026-27","status":"Not Started"},{"id":"FAFB5678","date":"14/11/2026","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"5","season":"2026-27","status":"Not Started"},{"id":"B884F027","date":"14/11/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"9","season":"2026-27","status":"Not Started"},{"id":"5BEA23A2","date":"21/11/2026","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"5","season":"2026-27","status":"Not Started"},{"id":"3F16E665","date":"28/11/2026","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"5","season":"2026-27","status":"Not Started"},{"id":"61D3198E","date":"28/11/2026","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"10","season":"2026-27","status":"Not Started"},{"id":"CF50CF69","date":"06/02/2027","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"6","season":"2026-27","status":"Not Started"},{"id":"2E9B243A","date":"06/02/2027","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"6","season":"2026-27","status":"Not Started"},{"id":"930EC3E6","date":"13/02/2027","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"6","season":"2026-27","status":"Not Started"},{"id":"12F71654","date":"13/02/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"11","season":"2026-27","status":"Not Started"},{"id":"364AA299","date":"20/02/2027","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"6","season":"2026-27","status":"Not Started"},{"id":"E4E85FB7","date":"27/02/2027","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"6","season":"2026-27","status":"Not Started"},{"id":"D4C458A8","date":"27/02/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"12","season":"2026-27","status":"Not Started"},{"id":"33163C3A","date":"06/03/2027","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"7","season":"2026-27","status":"Not Started"},{"id":"32F0065F","date":"06/03/2027","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"7","season":"2026-27","status":"Not Started"},{"id":"92E4BED2","date":"13/03/2027","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"7","season":"2026-27","status":"Not Started"},{"id":"A3AF5E2C","date":"20/03/2027","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"7","season":"2026-27","status":"Not Started"},{"id":"FE1F82BF","date":"27/03/2027","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"7","season":"2026-27","status":"Not Started"},{"id":"429B1EE2","date":"27/03/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"13","season":"2026-27","status":"Not Started"},{"id":"81E748AD","date":"03/04/2027","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"8","season":"2026-27","status":"Not Started"},{"id":"495F856E","date":"03/04/2027","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"8","season":"2026-27","status":"Not Started"},{"id":"C18F3763","date":"10/04/2027","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"8","season":"2026-27","status":"Not Started"},{"id":"10811240","date":"10/04/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"14","season":"2026-27","status":"Not Started"},{"id":"AE950388","date":"17/04/2027","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"8","season":"2026-27","status":"Not Started"},{"id":"3C72E611","date":"24/04/2027","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"8","season":"2026-27","status":"Not Started"},{"id":"5A3A6B88","date":"24/04/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"15","season":"2026-27","status":"Not Started"},{"id":"054EE4C6","date":"01/05/2027","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"9","season":"2026-27","status":"Not Started"},{"id":"724F29D2","date":"01/05/2027","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"9","season":"2026-27","status":"Not Started"},{"id":"F17D684D","date":"08/05/2027","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"9","season":"2026-27","status":"Not Started"},{"id":"4EAECDC0","date":"08/05/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"16","season":"2026-27","status":"Not Started"},{"id":"ED94462A","date":"15/05/2027","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"9","season":"2026-27","status":"Not Started"},{"id":"A3811F45","date":"22/05/2027","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"9","season":"2026-27","status":"Not Started"},{"id":"6982234E","date":"22/05/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"17","season":"2026-27","status":"Not Started"},{"id":"0523109F","date":"05/06/2027","start":"11:00","end":"13:00","class":"IOM","regattaType":"Racing","round":"10","season":"2026-27","status":"Not Started"},{"id":"C3E2F6C3","date":"05/06/2027","start":"14:00","end":"16:00","class":"Soling","regattaType":"Scratch","round":"10","season":"2026-27","status":"Not Started"},{"id":"BAF6DDE0","date":"12/06/2027","start":"11:00","end":"13:00","class":"DF95","regattaType":"Handicap","round":"10","season":"2026-27","status":"Not Started"},{"id":"C1C9442E","date":"12/06/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"18","season":"2026-27","status":"Not Started"},{"id":"A2D3A210","date":"19/06/2027","start":"14:00","end":"16:00","class":"DF95","regattaType":"Scratch","round":"10","season":"2026-27","status":"Not Started"},{"id":"6D2D21C6","date":"26/06/2027","start":"11:00","end":"13:00","class":"DF65","regattaType":"Scratch","round":"10","season":"2026-27","status":"Not Started"},{"id":"AEC95B1D","date":"26/06/2027","start":"14:00","end":"16:00","class":"General","regattaType":"Handicap","round":"19","season":"2026-27","status":"Not Started"}];
+*/
 async function getEvents() {
   try {
     const data = await apiGet("events");
@@ -1158,7 +1164,7 @@ async function getEvents() {
           id: e.hexKey,
           date: `${dd}/${String(mm).padStart(2, '0')}/${year}`,
           start: e.startTime,
-          end: e.finishTime,  
+          end: e.finishTime,
           class: e.boatClass,
           regattaType: e.regattaType,
           round: String(e.roundNum ?? ''),
@@ -1168,6 +1174,7 @@ async function getEvents() {
         };
       });
     });
+    console.log('raw', data.events?.length, 'mapped', EVENTS.length, EVENTS[0]);
   } catch (error) {
     console.error("Failed to load events:", error);
     EVENTS = [];
@@ -1175,6 +1182,7 @@ async function getEvents() {
 }
 
 async function apiGet(action, className) {
+  console.log("in apiGet action: " + action);
   const url = action === "members"
       ? `${CLB_WEBAPP_URL}?action=ClassMembers` + (className ? `&className=${encodeURIComponent(className)}` : "")
       : `${CAL_WEBAPP_URL}?type=calendar`;
@@ -1193,13 +1201,16 @@ function parseDMY(d){ const [dd,mm,yyyy] = d.split('/').map(Number); return new 
 function fmtDate(d){ const dt = parseDMY(d); return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`; }
 
 /* Class emblem images live at home/images/classes/{className}.png — falls back to the text roundel if missing */
+function emblemFile(cls){
+  if (cls === "General" || cls === "Twilight") return "smmc-logo";
+  if (cls === "Social") return "SmileyFace";
+  return cls;
+}
 function classEmblem(className, size){
   const s = size || 20;
   const safe = escapeHTML(className);
-  var emblem = className;
-  if (emblem === "General" || emblem === "Twilight") emblem = "smmc-logo";
-  if (emblem === "Social") emblem = "SmileyFace";
-  return `<img class="class-emblem" style="width:${s}px;height:${s}px;padding:3px;border-radius:6px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);flex-shrink:0;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
+  const emblem = emblemFile(className);
+  return `<img class="class-emblem" style="width:${s}px;height:${s}px;padding:3px;border-radius:6px;background:var(--foam);flex-shrink:0;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
 }
 
 function classEmblemFallback(img){
@@ -1215,7 +1226,7 @@ function classEmblemFallback(img){
 function entryFor(boatId){ return state.entries.find(x => String(x.boatId) === String(boatId)); }
 function sailFor(boatId){ const e = entryFor(boatId); return e ? e.sailNo : '?'; }
 function sailChip(boatId, cls='p-sail'){
-  return `<span class="${cls} sail-pill" style="${hullStyle(boatId)}border-radius:6px;padding:1px 0;">${escapeHTML(String(sailFor(boatId)))}</span>`;
+  return `<span class="${cls} sail-pill" style="${hullStyle(boatId)}border-radius:6px;padding:1px 0;">#${escapeHTML(String(sailFor(boatId)))}</span>`;
 }
 function hullStyle(boatId){
   const e = entryFor(boatId);
@@ -1371,6 +1382,16 @@ function svgLock() { return `<i data-lucide="lock"></i>`; }
 function svgPencil() { return `<i data-lucide="pencil"></i>`; }
 function svgLayoutGrid() { return `<i data-lucide="layout-grid"></i>`; }
 function svgFlag(){ return `<i data-lucide="flag" width="16" height="16"></i>`; }
+const MIN_RACES = 4, MIN_COMPETITORS = 4;
+function saveBlockers(){
+  const b = [];
+  if(state.races.length < MIN_RACES) b.push('races');
+  if(state.entries.length < MIN_COMPETITORS) b.push('competitors');
+  return b;
+}
+function svgFinishFlag(){
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-checkered-flag"><line x1="4" y1="22" x2="4" y2="3"/><path d="M4 5c5-1 7 2 16 0v10c-9 2-11-1-16 0"/><path d="M4 8.3c5-1 7 2 16 0"/><path d="M4 11.6c5-1 7 2 16 0"/><path d="M8 4.3v10.3"/><path d="M12 4v10.5"/><path d="M16 3.6v10.7"/></svg>`;
+}
 function svgSave() { return `<i data-lucide="save"></i>`; }
 function svgExit() { return `<i data-lucide="power"></i>`; }
 function svgHelp() { return `<i data-lucide="help-circle" width="20" height="20"></i>`; }
@@ -1383,8 +1404,8 @@ function headerHTML(){
     const dt = parseDMY(ev.date);
     const dateStr = `${DOW[dt.getDay()]} ${dt.getDate()} ${MON[dt.getMonth()]} ${dt.getFullYear()}`;
     sub = `<div class="subheader">
-      <img class="cal-filter-icon" style="width:22px;height:22px;padding:2px;border-radius:5px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);flex-shrink:0;" 
-          src="${EMBLEM_IMAGE_URI}${encodeURIComponent(ev.class === 'General' || ev.class === 'Twilight' ? 'smmc-logo' : ev.class)}.png" 
+      <img class="cal-filter-icon" style="width:22px;height:22px;padding:2px;border-radius:5px;background:var(--foam);flex-shrink:0;" 
+          src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblemFile(ev.class))}.png" 
           alt="${escapeHTML(ev.class)}">
       <span class="badge badge-default">${escapeHTML(ev.regattaName)}</span>
       <span class="badge badge-default">${dateStr}</span>
@@ -1403,6 +1424,8 @@ function headerHTML(){
       </div>
     </a>
     <div class="nav-spacer"></div>
+    ${(showMenu && !state.overlay && state.races.length >= 1)
+      ? `<button class="icon-btn" onclick="openOverlay('export')" title="Finish – save regatta" aria-label="Finish regatta" style="margin-right:8px">${svgFinishFlag()}</button>` : ''}
     <button class="icon-btn" onclick="openManual()" title="Help – open user manual" aria-label="Help" style="margin-right:8px">${svgHelp()}</button>
     ${state.overlay === 'results'
       ? `<button class="icon-btn" onclick="closeOverlay()" title="Back to racing" style="margin-right:8px">${svgBack()}</button>
@@ -1456,7 +1479,7 @@ function renderClassFilterBar(classes){
       // Assign an empty string for 'ALL', otherwise render the class emblem
       const icon = cls === 'ALL'
         ? ''
-        : `<img class="cal-filter-icon" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(cls === 'General' ? 'smmc-logo' : cls)}.png" alt="${escapeHTML(cls)}">`;
+        : `<img class="cal-filter-icon" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblemFile(cls))}.png" alt="${escapeHTML(cls)}">`;
 
       return `<button type="button" class="class-filter-btn ${active ? 'active' : ''}" data-filter-class="${escapeHTML(cls)}"
           title="${cls === 'ALL' ? 'All Classes' : escapeHTML(cls)}" aria-label="${cls === 'ALL' ? 'All Classes' : escapeHTML(cls)}">
@@ -1549,7 +1572,7 @@ function renderCompetitorSelect(){
       <div class="member-name" style="flex:1;min-width:0">${escapeHTML(m.member)}</div>
       <div class="sail-tag">${escapeHTML(m.homeClub || 'SMMC')}</div>
       ${m.className ? classEmblem(m.className, 26) : ''}
-      <div class="sail-tag sail-pill" style="${hullCss(m.hull)}">${escapeHTML(String(m.sailNo))}</div>
+      <div class="sail-tag sail-pill" style="${hullCss(m.hull)}">#${escapeHTML(String(m.sailNo))}</div>
       <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
     </div>`;
   }).join('');
@@ -1651,7 +1674,7 @@ function renderDraftRace(){
     const rank = state.races.length > 0 ? idx+1 : null;
     return `<div class="sail-icon" data-boat-icon="${sn}" style="${hullStyle(sn)}">
       ${rank ? `<div class="pennant"></div>` : ''}
-      <div class="num">${sailFor(sn)}</div>
+      <div class="num">#${sailFor(sn)}</div>
       ${rank ? `<div class="rank">#${rank} o/a</div>` : ''}
     </div>`;
   }).join('');
@@ -1750,7 +1773,7 @@ function overlaysHTML(){
   if(state.overlay === 'entries'){
     title = 'Regatta Entries';
     body = `<div class="panel glass panel-pad">
-      ${state.entries.map((e,i)=>`<div class="member-row"><div style="width:22px;color:var(--ink-soft);font-weight:700;font-size:12px">${i+1}</div><div class="member-name">${escapeHTML(e.member)}</div><div class="sail-tag">${e.sailNo}</div></div>`).join('')}
+      ${state.entries.map((e,i)=>`<div class="member-row"><div style="width:22px;color:var(--ink-soft);font-weight:700;font-size:12px">${i+1}</div><div class="member-name">${escapeHTML(e.member)}</div><div class="sail-tag">#${e.sailNo}</div></div>`).join('')}
     </div>
     <div class="helper-note">Entries are locked once the regatta has started and cannot be removed.</div>`;
   } else if(state.overlay === 'scoresheet'){
@@ -1782,7 +1805,7 @@ function renderScoresheet(){
   const rows = [];
   for(let i=0;i<n;i++){
     rows.push(`<tr><td class="name-cell">${ord(i+1)}</td>` +
-      state.races.map(r => `<td>${r.positions[i] ? sailFor(r.positions[i]) : ''}</td>`).join('') + `</tr>`);
+      state.races.map(r => `<td>${r.positions[i] ? '#'+sailFor(r.positions[i]) : ''}</td>`).join('') + `</tr>`);
   }
   const codeRow = (label, fn) => {
     const cells = state.races.map(fn);
@@ -1790,9 +1813,9 @@ function renderScoresheet(){
     return `<tr class="dnf-cell"><td class="name-cell">${label}</td>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`;
   };
   rows.push(
-    codeRow('DNS', r => r.dns.map(b=>sailFor(b)).join(', ')),
-    codeRow('DNF', r => r.dnf.map(b=>sailFor(b)).join(', ')),
-    codeRow('RO',  r => r.raceRO ? sailFor(r.raceRO) : '')
+    codeRow('DNS', r => r.dns.map(b=>'#'+sailFor(b)).join(', ')),
+    codeRow('DNF', r => r.dnf.map(b=>'#'+sailFor(b)).join(', ')),
+    codeRow('RO',  r => r.raceRO ? '#'+sailFor(r.raceRO) : '')
   );
 
   return `<div class="table-scroll"><table class="data-table"><thead><tr>${head}</tr></thead><tbody>${rows.join('')}</tbody></table></div>
@@ -1849,7 +1872,9 @@ function renderExportPanel(){
     <div class="field-label">Send for race processing</div>
     ${state.practice ? `<div class="section-hint" style="color:var(--signal)">Practice mode: this will NOT download or send anything.</div>` : ''}
     <div class="section-hint">Downloads the full regatta record — event details, entries and every race — in the standard SMMC results format, ready to hand off for processing.</div>
-    <button class="btn btn-primary btn-block" data-download-json="1">${svgSend()} Send for Race Processing</button>
+    ${saveBlockers().length
+      ? `<div class="section-hint" style="color:var(--signal);font-weight:600">Regatta cannot be saved due to minimum ${saveBlockers().join(' and ')} not achieved (need ${MIN_RACES}+ races and ${MIN_COMPETITORS}+ competitors).</div>`
+      : `<button class="btn btn-primary btn-block" data-download-json="1">${svgSend()} Send for Race Processing</button>`}
   </div>
   `;
 }
@@ -1877,7 +1902,7 @@ function longPressModalHTML(){
   return `<div class="modal-backdrop open" data-close-modal="1">
     <div class="modal-sheet" onclick="event.stopPropagation()">
       <div class="modal-handle"></div>
-      <div class="modal-title">${sn} — ${escapeHTML(name)}</div>
+      <div class="modal-title">#${sn} — ${escapeHTML(name)}</div>
       <div class="modal-sub">Change this boat's result for Race ${raceNumber}</div>
       ${options}
       <div class="modal-cancel" data-close-modal="1">Cancel</div>
@@ -2132,6 +2157,7 @@ function buildExportObject(){
 }
 
 async function saveAndSend(){
+  if(saveBlockers().length){ showToast('Regatta cannot be saved: minimum '+saveBlockers().join(' and ')+' not achieved'); return; }
   if(state.practice){
     showToast('Practice only – nothing was sent');
     setTimeout(() => changeEvent(), 1000);
