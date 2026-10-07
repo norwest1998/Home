@@ -953,7 +953,7 @@ button{ font-family: inherit; }
 .race-insert-row svg{ width:14px; height:14px; flex:none; }
 
 /* ---------- class emblem images + filter bar ---------- */
-.class-emblem{ border-radius:6px; object-fit:contain; flex:none; background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); }
+.class-emblem{ border-radius:6px; object-fit:contain; flex:none; background:rgba(255, 255, 255, 0.467); backdrop-filter:blur(4px); }
 .class-filter-bar {
   display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px;
 }
@@ -968,7 +968,7 @@ button{ font-family: inherit; }
 .class-filter-btn.active { background:var(--glass-fill-hi); border-color:var(--glow); color:var(--glow); }
 .class-filter-btn .cal-filter-icon {
   width:22px; height:22px; object-fit:contain; border-radius:5px; flex-shrink:0;
-  background:rgba(255,255,255,0.15); padding:3px;
+  background:rgba(255,255,255,0.467); padding:3px;
   backdrop-filter:blur(4px);
 }
 .class-filter-btn .cal-filter-icon--all {
@@ -1790,7 +1790,7 @@ function renderScoresheet(){
   const rows = [];
   for(let i=0;i<n;i++){
     rows.push(`<tr><td class="name-cell">${ord(i+1)}</td>` +
-      state.races.map(r => `<td>${r.positions[i] ? '#'+sailFor(r.positions[i]) : ''}</td>`).join('') + `</tr>`);
+      state.races.map(r => `<td>${r.positions[i] ? sailFor(r.positions[i]) : ''}</td>`).join('') + `</tr>`);
   }
   const codeRow = (label, fn) => {
     const cells = state.races.map(fn);
@@ -1798,9 +1798,9 @@ function renderScoresheet(){
     return `<tr class="dnf-cell"><td class="name-cell">${label}</td>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`;
   };
   rows.push(
-    codeRow('DNS', r => r.dns.map(b=>'#'+sailFor(b)).join(', ')),
-    codeRow('DNF', r => r.dnf.map(b=>'#'+sailFor(b)).join(', ')),
-    codeRow('RO',  r => r.raceRO ? '#'+sailFor(r.raceRO) : '')
+    codeRow('DNS', r => r.dns.map(b=>sailFor(b)).join(', ')),
+    codeRow('DNF', r => r.dnf.map(b=>sailFor(b)).join(', ')),
+    codeRow('RO',  r => r.raceRO ? sailFor(r.raceRO) : '')
   );
 
   return `<div class="table-scroll"><table class="data-table"><thead><tr>${head}</tr></thead><tbody>${rows.join('')}</tbody></table></div>
