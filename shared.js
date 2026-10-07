@@ -254,6 +254,17 @@ async function triggerResultsProcessing() {
     return data.message;
 }
 
+async function apiGet(action, extra = {}) {
+    const res = await fetch(GATEWAY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, ...extra })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data.data ?? data;
+}
+
 // Utilities
 function fmtTime(iso){
     const d = new Date(iso);

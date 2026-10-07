@@ -592,6 +592,18 @@ const SystemHealth = {
     entries: [],
     init() {
         const refreshBtn = document.getElementById('refreshHealthBtn');
+        const clearBtn = document.getElementById('clearCacheBtn');
+        if (clearBtn) clearBtn.addEventListener('click', async () => {
+            clearBtn.disabled = true;
+            try {
+                await apiGet("refreshCache");
+                this.load();
+            } catch (err) {
+                alert("Cache clear failed: " + err.message);
+            } finally {
+                clearBtn.disabled = false;
+            }
+        });
         if (refreshBtn) refreshBtn.addEventListener('click', () => this.load());
         if (document.getElementById('sysHealthBody')) this.load();
     },
