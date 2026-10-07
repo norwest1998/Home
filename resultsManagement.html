@@ -728,6 +728,16 @@ function debounce(fn, ms = 150) {
     let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
 }
 
+function stripTZ(v) {
+    if (!v) return '';
+    return String(v)
+        .replace(/\s*GMT[+-]\d{4}.*$/, '')
+        .replace(/\s*\([^)]*\)\s*$/, '')
+        .replace(/^(\d{4}-\d{2}-\d{2})T([\d:]+)(\.\d+)?Z?$/, '$1 $2')
+        .replace(/ 00:00:00$/, '')
+        .trim();
+}
+
 /**
  * Parse a Drive file name into { date, class, type }
  * Expected format: "DF95 Handicap - 11/07/2026"
@@ -1453,7 +1463,7 @@ function renderAvgRequests(list = allAvgRequests) {
         <div class="avg-req-row" onclick="openAvgReqModal(${i})">
             <div>
                 <div class="req-name">${escHtml(r.memberName)} — ${escHtml(r.raceClass)} ${escHtml(r.raceType)}</div>
-                <div class="req-meta">${escHtml(r.raceDate)} · Submitted ${escHtml(r.submitted)}</div>
+                <div class="req-meta">${escHtml(stripTZ(r.raceDate))} · Submitted ${escHtml(stripTZ(r.submitted))}</div>
             </div>
             <span class="badge ${badgeMap[r.status] || 'badge-default'}">${escHtml(r.status)}</span>
             <div class="row-actions">
@@ -1737,7 +1747,7 @@ function openAvgReqModal(idx) {
     if (!activeAvgReq) return;
     const r = activeAvgReq;
     document.getElementById('avgReqModalTitle').textContent = 'Average Score Request';
-    document.getElementById('avgReqModalMeta').textContent  = `${r.memberName} · ${r.raceClass} ${r.raceType} · ${r.raceDate}`;
+    document.getElementById('avgReqModalMeta').textContent  = `${r.memberName} · ${r.raceClass} ${r.raceType} · ${stripTZ(r.raceDate)}`;
 
     const isPending = r.status === 'pending';
     document.getElementById('avgApproveBtn').style.display = isPending ? '' : 'none';
@@ -1749,9 +1759,15 @@ function openAvgReqModal(idx) {
             <div class="req-field-row"><span class="req-field-label">Member</span><span class="req-field-value">${escHtml(r.memberName)}</span></div>
             <div class="req-field-row"><span class="req-field-label">Class</span><span class="req-field-value">${escHtml(r.raceClass)}</span></div>
             <div class="req-field-row"><span class="req-field-label">Regatta Type</span><span class="req-field-value">${escHtml(r.raceType)}</span></div>
-            <div class="req-field-row"><span class="req-field-label">Race Date</span><span class="req-field-value">${escHtml(r.raceDate)}</span></div>
+            <div class="req-field-row"><span class="req-field-label">Race Date</span><span class="req-field-value">${escHtml(stripTZ(r.raceDate))}</span></div>
             <div class="req-field-row"><span class="req-field-label">Reason</span><span class="req-field-value">${escHtml(r.reason || '—')}</span></div>
-            <div class="req-field-row"><span class="req-field-label">Submitted</span><span class="req-field-value">${escHtml(r.submitted)}</span></div>
+            <div class="req-field-row"><span class="req-field-label">Submitted</span><span class="req-field-value">${escHtml(stripTZ(r.submitted))}</span></div>
+        </div>
+        <div class="req-modal-section" id="conflictSection">
+            <div class="req-modal-section-title">Conflicting Regatta</div>
+            <div class="req-field-row"><span class="req-field-label">Regatta</span><span class="req-field-value">${escHtml(r.conflict || '—')}</span></div>
+            <div class="req-field-row"><span class="req-field-label">Status</span><span class="req-field-value" id="conflictStatus">Awaiting results</span></div>
+            <div id="conflictResult"></div>
         </div>
         <div class="req-modal-section">
             <div class="req-modal-section-title">Current Status</div>
@@ -1762,11 +1778,76 @@ function openAvgReqModal(idx) {
         </div>`;
     document.getElementById('avgReqModal').classList.add('open');
     if (window.lucide) lucide.createIcons();
+    refreshConflictResults(r);
 }
 
 function closeAvgReqModal() {
     document.getElementById('avgReqModal').classList.remove('open');
     activeAvgReq = null;
+}
+
+const _conflictCache = {};
+const normName = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+async function lookupConflictResult(r) {
+    const id = (String(r.conflict || '').match(/\d{4,}/) || [])[0];   // works for "21099" or ".../results/21099"
+    if (!id) return { published: false };
+
+    if (!_conflictCache[id]) {
+        const res = fetch(GATEWAY_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify({action:"aryaResults", eventId:id})});
+        _conflictCache[id] = await res.json();
+    }
+    const data = _conflictCache[id];
+    if (!data.ok || !Array.isArray(data.results) || !data.results.length) return { published: false };
+
+    const me  = normName(r.memberName);
+    const row = data.results.find(x => normName(x.compname) === me);
+    return { published: true, found: !!row, event: data.event, row };
+}
+
+async function refreshConflictResults(r) {
+    const statusEl = document.getElementById('conflictStatus');
+    const resultEl = document.getElementById('conflictResult');
+    try {
+        const res = await lookupConflictResult(r);
+        if (activeAvgReq !== r || !statusEl) return;          // modal closed/changed
+
+        if (!res.published) { statusEl.textContent = 'Awaiting results'; return; }
+        statusEl.textContent = 'Results published';
+
+        if (!res.found) {
+            resultEl.innerHTML = `<div class="req-field-row"><span class="req-field-label">Competitor</span><span class="req-field-value">Not found in results</span></div>`;
+            return;
+        }
+        
+        const x = res.row;
+        const races = Object.values(x.results || {}).join(', ');
+        const rows = [
+            ['Event',    res.event.eventname.trim()],
+            ['Position', `${x.comppos} of ${res.event.competitors}`],
+            ['Sail No',  x.compsailno],
+            ['Club',     x.compclubname],
+            ['Gross',    x.grossScore],
+            ['Nett',     x.nettScore],
+            ['Races',    races]
+        ];
+        resultEl.innerHTML = rows.map(([l, v]) =>
+            `<div class="req-field-row"><span class="req-field-label">${escHtml(l)}</span><span class="req-field-value">${escHtml(v)}</span></div>`
+        ).join('');
+
+        if (r.status === 'pending') {                          // auto-approve
+            await updateSheet(DOMAIN.requests, "AvgScrReq", r.hexKey,
+                { "Status": "approved", "Decision Date": new Date().toISOString() });
+            r.status = 'approved';
+            showMsg('avgReqMsg', `${r.memberName} found in conflicting regatta results — request approved.`, false);
+            renderAvgRequests();
+            renderStats();
+            openAvgReqModal(allAvgRequests.indexOf(r));        // refresh buttons/badge
+        }
+    } catch (err) {
+        if (statusEl) statusEl.textContent = 'Awaiting results';
+        console.warn('Conflict lookup failed:', err);
+    }
 }
 
 async function decideAvgReq(decision) {

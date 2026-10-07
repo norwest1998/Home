@@ -19,6 +19,7 @@ const RESULTS_GATEWAY_URL = "https://script.google.com/macros/s/AKfycbwHYDa3Jg-4
 const TEMPLATE_GW_URL = "https://script.google.com/macros/s/AKfycbzXAuRrP7wCHWqaDJ5m-gh0V9MOxOKMFEuKUMGvf5NAh0tgLhtyHDeX8J9CQ-5PSOE2Ng/exec";
 const EMAIL_GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzrdcwjXHalBizwnRw62jKiY34saRkHewG5ueuO3wr3XsjcEtK2yCfX_LvzdOUrlV3g/exec";
 const TRIGGERESULTS_URL = "https://script.google.com/macros/s/AKfycbxNvDM21y1L77uhmd0W5JyygwHke8FrbxM_B3EhcvTGCXzx_BDxFwK1OeuI6Zn-unta/exec";
+
 const DOMAIN = {
     members:   "members",
     documents: "documents",
