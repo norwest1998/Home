@@ -1160,7 +1160,7 @@ async function getEvents() {
           id: e.hexKey,
           date: `${dd}/${String(mm).padStart(2, '0')}/${year}`,
           start: e.startTime,
-          end: e.finishTime,
+          end: e.finishTime,  
           class: e.boatClass,
           regattaType: e.regattaType,
           round: String(e.roundNum ?? ''),
@@ -1201,7 +1201,7 @@ function classEmblem(className, size){
   const s = size || 20;
   const safe = escapeHTML(className);
   var emblem = className;
-  if (emblem === "General") emblem = "smmc-logo";
+  if (emblem === "General" || emblem === "Twilight") emblem = "smmc-logo";
   if (emblem === "Social") emblem = "SmileyFace";
   return `<img class="class-emblem" style="width:${s}px;height:${s}px;padding:3px;border-radius:6px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);flex-shrink:0;" src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblem)}.png" alt="${safe}" data-class="${safe}" onerror="classEmblemFallback(this)">`;
 }
