@@ -1106,7 +1106,7 @@ function practiceEvents(){
 async function getMembers(className) {
   if (state.practice) { MEMBERS = PRACTICE_MEMBERS.map(m => ({...m})); return; }
   try {
-    if (className) className = "Twilight" ? "All" : className;  // special case for Twilight events 
+    if (className === "Twilight") className = "All";  // special case for Twilight events 
     const queryClass = className  
     const data = await apiGet("members", queryClass);
     console.log(`getMembers(${className}): received data`, data);
@@ -1140,6 +1140,7 @@ async function getGuests(eventId, className) {
 }
 
 function getRoster() {
+  if (!state.event.class === "Twilight") return [...MEMBERS, ...GUESTS];
   return [...MEMBERS, ...GUESTS].filter(m => m.className === state.event.class);
 }
 
