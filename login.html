@@ -1,15 +1,99 @@
-<script src="https://accounts.google.com/gsi/client" async></script>
-<div id="g_id_onload" data-client_id="YOUR_CLIENT_ID.apps.googleusercontent.com" data-callback="onGoogle"></div>
-<div class="g_id_signin"></div><p id="err"></p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  body { min-height:100vh; display:flex; align-items:center; justify-content:center; margin:0; }
+  .login-card { width:100%; max-width:380px; padding:28px; border-radius:12px;
+                background:var(--ocean-mid, #12304a); border:1px solid var(--glass-border, rgba(255,255,255,.15)); }
+  .login-card h2 { margin:0 0 4px; }
+  .login-card p.sub { margin:0 0 20px; font-size:13px; opacity:.7; }
+  .login-card input { width:100%; box-sizing:border-box; padding:10px 12px; margin:6px 0 10px; border-radius:6px;
+                      border:1px solid var(--glass-border, rgba(255,255,255,.2)); background:transparent; color:inherit; font-size:14px; }
+  .login-card button.go { width:100%; padding:10px; border-radius:6px; border:0; cursor:pointer; font-size:14px; font-weight:600; }
+  .divider { text-align:center; font-size:12px; opacity:.5; margin:16px 0; }
+  #err { color:#ff6b6b; font-size:13px; min-height:18px; margin-top:10px; }
+  #msg { font-size:13px; opacity:.8; margin-bottom:8px; }
+  #googleBtn { display:flex; justify-content:center; min-height:44px; }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <h2>Sign in</h2>
+  <p class="sub">Use the email address registered with the club.</p>
+
+  <div id="googleBtn"></div>
+  <div class="divider">or sign in with an emailed code</div>
+
+  <div id="stepEmail">
+    <input id="em" type="email" placeholder="Email address" autocomplete="email">
+    <button class="go btn" id="sendBtn">Email me a code</button>
+  </div>
+  <div id="stepCode" style="display:none;">
+    <div id="msg"></div>
+    <input id="cd" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code">
+    <button class="go btn" id="checkBtn">Sign in</button>
+  </div>
+  <div id="err"></div>
+</div>
+
 <script src="shared.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-async function onGoogle(r) {
-  try {
-    const d = await gw({ action: "login", idToken: r.credential });
-    sessionStorage.setItem(TOKEN_KEY, d.token);
-    sessionStorage.setItem("SMMC_USER", JSON.stringify({ email: d.email, name: d.name, role: d.role }));
-    const n = new URLSearchParams(location.search).get("next") || "";
-    location.replace(n.startsWith("/") && !n.startsWith("//") ? n : "admin.html");
-  } catch (e) { document.getElementById("err").textContent = e.message; }
+// >>> Paste the FULL client ID from Google Cloud Console (must end in .apps.googleusercontent.com)
+const GOOGLE_CLIENT_ID = "PASTE_YOUR_CLIENT_ID.apps.googleusercontent.com";
+
+const $ = id => document.getElementById(id);
+const setErr = m => { $("err").textContent = m || ""; };
+
+function finish(d) {
+  sessionStorage.setItem(TOKEN_KEY, d.token);
+  sessionStorage.setItem("SMMC_USER", JSON.stringify({ email: d.email, name: d.name, role: d.role, exp: d.exp }));
+  const n = new URLSearchParams(location.search).get("next") || "";
+  location.replace(n.startsWith("/") && !n.startsWith("//") ? n : "admin.html");
 }
+
+// --- Google ---
+async function onGoogle(resp) {
+  setErr("");
+  try { finish(await gw({ action: "login", idToken: resp.credential })); }
+  catch (e) { setErr(e.message); }
+}
+window.addEventListener("load", () => {
+  if (GOOGLE_CLIENT_ID.startsWith("PASTE_")) { setErr("Set GOOGLE_CLIENT_ID in login.html"); return; }
+  const t = setInterval(() => {
+    if (!window.google || !google.accounts) return;
+    clearInterval(t);
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogle });
+    google.accounts.id.renderButton($("googleBtn"), { theme: "outline", size: "large", text: "signin_with", width: 320 });
+  }, 150);
+});
+
+// --- Emailed code ---
+$("sendBtn").addEventListener("click", async () => {
+  setErr("");
+  const email = $("em").value.trim();
+  if (!email) return setErr("Enter your email address.");
+  $("sendBtn").disabled = true;
+  try {
+    await gw({ action: "requestCode", email });
+    $("stepEmail").style.display = "none";
+    $("stepCode").style.display = "block";
+    $("msg").textContent = "If that email is registered, a code was sent. It expires in 10 minutes.";
+    $("cd").focus();
+  } catch (e) { setErr(e.message); }
+  $("sendBtn").disabled = false;
+});
+$("checkBtn").addEventListener("click", async () => {
+  setErr("");
+  try { finish(await gw({ action: "verifyCode", email: $("em").value.trim(), code: $("cd").value.trim() })); }
+  catch (e) { setErr(e.message); }
+});
+$("cd").addEventListener("keydown", e => { if (e.key === "Enter") $("checkBtn").click(); });
+$("em").addEventListener("keydown", e => { if (e.key === "Enter") $("sendBtn").click(); });
 </script>
+</body>
+</html>
