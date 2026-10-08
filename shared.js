@@ -1,5 +1,12 @@
 // config.js  (or inline in a shared include)
 
+const TOKEN_KEY = "SMMC_TOKEN";
+const PUBLIC_PAGES = ["login.html"];
+if (!PUBLIC_PAGES.some(p => location.pathname.endsWith(p)) && !sessionStorage.getItem(TOKEN_KEY)) {
+    location.replace("login.html?next=" + encodeURIComponent(location.pathname + location.search));
+}
+function logout() { sessionStorage.clear(); location.replace("login.html"); }
+
 const ADMIN_CACHE_KEY = "SMMC_ADMIN_DATA_v2";
 
 function readAdminCache(...keys) {
@@ -266,6 +273,18 @@ async function apiGet(action, extra = {}) {
     return data.data ?? data;
 }
 
+async function gw(payload, url = GATEWAY_URL) {
+    const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ ...payload, token: sessionStorage.getItem(TOKEN_KEY) })
+    });
+    const text = await res.text();
+    let data; try { data = JSON.parse(text); } catch(e) { throw new Error("Invalid Server Response"); }
+    if (data.code === "AUTH" && payload.action !== "login") { logout(); throw new Error("Session expired"); }
+    if (data.error) throw new Error(data.error);
+    return data;
+}
 // Utilities
 function fmtTime(iso){
     const d = new Date(iso);

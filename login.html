@@ -1,0 +1,15 @@
+<script src="https://accounts.google.com/gsi/client" async></script>
+<div id="g_id_onload" data-client_id="YOUR_CLIENT_ID.apps.googleusercontent.com" data-callback="onGoogle"></div>
+<div class="g_id_signin"></div><p id="err"></p>
+<script src="shared.js"></script>
+<script>
+async function onGoogle(r) {
+  try {
+    const d = await gw({ action: "login", idToken: r.credential });
+    sessionStorage.setItem(TOKEN_KEY, d.token);
+    sessionStorage.setItem("SMMC_USER", JSON.stringify({ email: d.email, name: d.name, role: d.role }));
+    const n = new URLSearchParams(location.search).get("next") || "";
+    location.replace(n.startsWith("/") && !n.startsWith("//") ? n : "admin.html");
+  } catch (e) { document.getElementById("err").textContent = e.message; }
+}
+</script>
