@@ -2015,7 +2015,7 @@ async function loadData() {
   if (selectedEventCard) selectedEventCard.innerHTML = `<div class="section-loading"><span class="spinner"></span> Loading…</div>`;
 
   try {
-    eventData = await gw({action: "fetch", domain: DOMAIN.calendar, sheet: "Event Data"});
+    eventData = await fetchSheet({ domain: DOMAIN.calendar, sheet: "Event Data" });
     eventData.forEach(e => {
       if (!e.HexKey) e.HexKey = `${e.Date}|${e.Start || ""}|${e.Class || ""}`;
       if (!e.Season) e.Season = inferSeason(e.Date); // Fixed: Replaced `eventData.Date` array call with element call `e.Date`
