@@ -1752,6 +1752,7 @@ VIGATION HEADER
   </footer>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="memberStatsModal.js"></script>
+  <script src="shared.js"></script>
   <script>
     // =========================================================
     // API CONFIGURATION
@@ -1773,6 +1774,7 @@ VIGATION HEADER
     gh:     { label: 'General Handicap', className: 'General', spreadsheetId: '1xMKT7HapmqEIuqhQQxH1pfPkRWam5x88Pxaah1xayog', insignia: '/Home/images/classes/smmc-logo.png' },
     df65:   { label: 'DF65 Scratch',     className: 'DF65',    spreadsheetId: '1T5zgrZpJDmQKmkMlnOmnAb_ext18zx733mMuvh4akvg', insignia: '/Home/images/classes/DF65.png' },
     social: { label: 'Social Sailing',   className: 'Social',  spreadsheetId: '', insignia: '/Home/images/classes/SmileyFace.png' },
+    twilight: { label: 'Twilight Sailing', className: 'Twilight', spreadsheetId: '', insignia: '/Home/images/classes/smmc-logo.png' }
     };
 
     const CLASS_IMAGE_MAP = Object.values(RESULTS_CONFIG).reduce((map, cls) => {
@@ -1811,15 +1813,34 @@ VIGATION HEADER
     const BOOTSTRAP_API = HOME_DATA_API + "?action=bootstrap";
     const getJSON = u => fetch(u).then(r => r.json());
 
-    function readCache() { try { return localStorage.getItem(CACHE_KEY); } catch (e) { return null; } }
+    function readCache() { 
+      try { 
+        return sessionStorage.getItem(CACHE_KEY); 
+      } catch (e) { 
+        return null; 
+      } 
+    }
+
+      const homeUrl = HOME_DATA_API + "?action=bootstrap";
+    }
 
     async function refreshBootstrap(cachedRaw) {
+      const tokenKey = sessionStorage.getItem(TOKEN_KEY);
+      let raw = null;
       try {
-        const raw = await (await fetch(BOOTSTRAP_API)).text();
+        if (tokenKey) {
+          raw = await fetch(HOME_DATA_API, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "bootstrapPrivate", data: cachedRaw, token: tokenKey })   
+          });
+        } else {
+          raw = await (await fetch(BOOTSTRAP_API)).text();
+        }
         const data = JSON.parse(raw);
         if (data.error) throw new Error(data.error);
         if (raw !== cachedRaw) renderTopDown(data);          // skip identical re-render
-        try { localStorage.setItem(CACHE_KEY, raw); } catch (e) {}
+        try { sessionStorage.setItem(CACHE_KEY, raw); } catch (e) {}
         return raw;
       } catch (err) {
         console.error("Bootstrap failed:", err);

@@ -8,8 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://apis.google.com/js/api.js"></script>
 
 <!-- Link Shared Theme -->
 <link rel="stylesheet" href="theme.css">
@@ -388,9 +386,7 @@ const DOC_CONFIG = {
     docWebAppUrl: "https://script.google.com/macros/s/AKfycbxXLDeqvXmA9dre7InhJKkA6NsCFkaAaHEtmNSyzaFe_a0_f_slphXjQDhJXmJT5Ils/exec",
     documentsSheet: "Documents",
     versionsSheet: "DocumentVersions",
-    driveClientId: "738246015685-4vk2o2l7nit598jvkl8r423sa4hff8rf.apps.googleusercontent.com",
-    rootFolderId: "1h-nPRC_EH2G-SG8PqDWU0WXfTTpO4feM",
-    driveScope: "https://www.googleapis.com/auth/drive.readonly"
+    rootFolderId: "1h-nPRC_EH2G-SG8PqDWU0WXfTTpO4feM"
 };
 
 /* ---------- Sheets helpers ---------- */
@@ -414,51 +410,36 @@ function getStatusPillClass(status) {
 }
 
 /* ---------- Google Drive auth (Google Identity Services) ---------- */
-let driveToken = null;
-let tokenClient = null;
+document.getElementById("driveStatusText").textContent = "Connected (via gateway)";
+document.getElementById("driveStatusText").style.color = "#4ade80";
+document.getElementById("driveConnectBtn").style.display = "none";
 
-function initGis() {
-    if (!window.google || DOC_CONFIG.driveClientId.startsWith("YOUR_")) return;
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: DOC_CONFIG.driveClientId,
-        scope: DOC_CONFIG.driveScope,
-        callback: (resp) => {
-            if (resp.error) { console.error(resp); return; }
-            driveToken = resp.access_token;
-            
-            const statusText = document.getElementById("driveStatusText");
-            statusText.textContent = "Connected";
-            statusText.style.color = "#4ade80";
 
-            document.getElementById("driveConnectBtn").textContent = "Reconnect";
-        }
+function fileToBase64(file) {
+    return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload  = () => res(r.result.split(",")[1]);
+        r.onerror = () => rej(new Error("Read failed"));
+        r.readAsDataURL(file);
     });
 }
-document.getElementById("driveConnectBtn").addEventListener("click", () => {
-    if (!tokenClient) { alert("Set driveClientId / driveApiKey in DOC_CONFIG first."); return; }
-    tokenClient.requestAccessToken();
-});
-window.addEventListener("load", () => setTimeout(initGis, 300));
 
 async function driveUploadNew(file) {
-    const metadata = { name: file.name, parents: [DOC_CONFIG.rootFolderId] };
-    const form = new FormData();
-    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-    form.append("file", file);
-    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink", {
-        method: "POST", headers: { Authorization: `Bearer ${driveToken}` }, body: form
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    return { fileId: data.id, link: data.webViewLink };
+    const data = await fileToBase64(file);
+    const d = await gw({ action: "uploadNew", folder: "documents", name: file.name, data,
+                         mimeType: file.type || "application/octet-stream" }, RESULTS_GATEWAY_URL);
+    return { fileId: d.fileId, link: d.link };
 }
+
 async function driveUpdateContent(fileId, file) {
-    const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
-        method: "PATCH", headers: { Authorization: `Bearer ${driveToken}`, "Content-Type": file.type || "application/octet-stream" }, body: file
+    const data = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload  = () => res(r.result.split(",")[1]);   // strip "data:...;base64,"
+        r.onerror = () => rej(new Error("Read failed"));
+        r.readAsDataURL(file);
     });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    return data;
+    return gw({ action: "updateFile", fileId, data,
+                mimeType: file.type || "application/octet-stream" }, RESULTS_GATEWAY_URL);
 }
 
 /* ---------- State + rendering ---------- */
@@ -466,7 +447,7 @@ let DOCS = [];
 let activeCategory = null;
 
 async function loadDocs() {
-    DOCS = await fetchSheet(DOMAIN.documents, "Documents");
+    DOCS = await gw({ domain: DOMAIN.documents, sheet: "Documents" }, DOC_CONFIG.docWebAppUrl);
     renderLibraryTree();
     renderGrid();
     // Update stats pills
@@ -687,15 +668,9 @@ document.getElementById("statusFilter").addEventListener("change", renderGrid);
 document.getElementById("visibilityFilter").addEventListener("change", renderGrid);
 
 async function fetchDriveFolderContents(folderId) {
-    if (!driveToken) { alert("Connect Google Drive first."); return []; }
-    const query = `'${folderId}' in parents and trashed = false`;
-    const fields = "files(id, name, mimeType, webViewLink)";
-    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}`;
 
-    const response = await fetch(url, { headers: { Authorization: `Bearer ${driveToken}` } });
-    const data = await response.json();
-    if (data.error) throw new Error(data.error.message);
-    return data.files || [];
+    const d = await gw({ action: "listChildren", folderId }, RESULTS_GATEWAY_URL);
+    return d.files || [];
 }
 
 async function handleStatusPillChange(selectEl) {
@@ -747,19 +722,9 @@ async function handleStatusPillChange(selectEl) {
 }
 
 async function triggerReviewEmailNotification(doc, uploaderName) {
-    const response = await fetch(DOC_CONFIG.docWebAppUrl, {
-        method: "POST",
-        body: JSON.stringify({
-            action: "sendReviewNotification",
-            docTitle: doc.Title,
-            docLink: doc.DriveLink || "No link provided",
-            category: doc.Category || "Uncategorised",
-            version: doc.Version || "1",
-            uploader: uploaderName
-        })
-    });
-    const result = await response.json();
-    if (result.error) throw new Error(result.error);
+    await gw({ action: "sendReviewNotification", docTitle: doc.Title,
+            docLink: doc.DriveLink || "No link provided", category: doc.Category || "Uncategorised",
+            version: doc.Version || "1", uploader: uploaderName }, DOC_CONFIG.docWebAppUrl);
 }
 
 let driveFolderStack = [{ id: DOC_CONFIG.rootFolderId, name: "Root" }];
@@ -840,14 +805,9 @@ document.getElementById("driveFileArchiveBtn").addEventListener("click", async (
     if (!confirm(`Are you sure you want to move "${currentDriveFile.name}" to the Archive folder?`)) return;
 
     try {
-        const archiveFolderId = await getOrCreateArchiveFolder();
-        const previousParents = (currentDriveFile.parents || []).join(",");
         await logDocumentAction(currentDriveFile.id, currentDriveFile.name, "Archive Document");
 
-        const url = `https://www.googleapis.com/drive/v3/files/${currentDriveFile.id}?addParents=${archiveFolderId}&removeParents=${previousParents}`;
-        const res = await fetch(url, { method: "PATCH", headers: { Authorization: `Bearer ${driveToken}` } });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message);
+        await gw({ action: "archiveFile", fileId: currentDriveFile.id }, RESULTS_GATEWAY_URL);
 
         const matchedDoc = DOCS.find(d => d.DriveFileId === currentDriveFile.id);
         if (matchedDoc) {
@@ -876,12 +836,7 @@ let currentDriveFile = null;
 
 async function selectDriveDocument(fileId) {
     try {
-        const fields = "id, name, mimeType, size, createdTime, modifiedTime, webViewLink, parents, description, version, lastModifyingUser(displayName, emailAddress), owners(displayName, emailAddress)";
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=${encodeURIComponent(fields)}`, {
-            headers: { Authorization: `Bearer ${driveToken}` }
-        });
-        const file = await res.json();
-        if (file.error) throw new Error(file.error.message);
+        const file = await gw({ action: "fileMeta", fileId }, RESULTS_GATEWAY_URL);
 
         currentDriveFile = file;
         await logDocumentAction(file.id, file.name, "View Document Details");
@@ -931,24 +886,6 @@ async function selectDriveDocument(fileId) {
 document.getElementById("driveFileCloseBtn").addEventListener("click", () => {
     document.getElementById("driveFileModal").classList.remove("visible");
 });
-
-async function getOrCreateArchiveFolder() {
-    const q = `'${DOC_CONFIG.rootFolderId}' in parents and name = 'Archive' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
-    const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}`, {
-        headers: { Authorization: `Bearer ${driveToken}` }
-    });
-    const searchData = await searchRes.json();
-    if (searchData.files && searchData.files.length > 0) return searchData.files[0].id;
-
-    const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${driveToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Archive", mimeType: "application/vnd.google-apps.folder", parents: [DOC_CONFIG.rootFolderId] })
-    });
-    const createData = await createRes.json();
-    await logDocumentAction("Archive", DOC_CONFIG.rootFolderId, "Create Archive Folder ");
-    return createData.id;
-}
 
 /* ---------- Audit Logging Functions ---------- */
 async function logDocumentAction(fileId, fileName, action) {
@@ -1038,7 +975,6 @@ document.getElementById("uploadCancelBtn").addEventListener("click", () => { res
 document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
     const file = document.getElementById("fileInput").files[0];
     if (!file) { alert("Choose a file."); return; }
-    if (!driveToken) { alert("Connect Google Drive first."); return; }
     const title = document.getElementById("titleInput").value.trim();
     const category = document.getElementById("categoryInput").value.trim();
     const keywords = document.getElementById("keywordsInput").value.trim();
@@ -1061,13 +997,13 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
 
             setStep(1, "active");
             const newVersion = (parseInt(doc.Version, 10) || 1) + 1;
-            await updateSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, doc.RowID, {
+            await updateSheet(DOMAIN.documents, DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, doc.RowID, {
                 Version: newVersion, LastModifiedBy: who, LastModifiedDate: now, Status: "Draft"
             });
             setStep(1, "done");
 
             setStep(2, "active");
-            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
+            await appendSheet(DOMAIN.documents,DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
                 RowID: genRowId(), DocID: doc.RowID, Version: newVersion,
                 DriveFileId: doc.DriveFileId, DriveLink: doc.DriveLink, ChangedBy: who, ChangedDate: now, Notes: notes
             });
@@ -1079,7 +1015,7 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
 
             setStep(1, "active");
             const rowId = genRowId();
-            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, {
+            await appendSheet(DOMAIN.documents, DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, {
                 RowID: rowId, Title: title || file.name, Category: category, Keywords: keywords,
                 DriveFileId: fileId, DriveLink: link, Version: 1, Status: "Draft", Owner: who,
                 LastModifiedBy: who, LastModifiedDate: now, ReviewedBy: "", ReviewDate: "", SignedOffBy: "", SignOffDate: "",
@@ -1088,7 +1024,7 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
             setStep(1, "done");
 
             setStep(2, "active");
-            await appendSheet(DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
+            await appendSheet(DOMAIN.documents, DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
                 RowID: genRowId(), DocID: rowId, Version: 1, DriveFileId: fileId, DriveLink: link, ChangedBy: who, ChangedDate: now, Notes: notes || "Initial upload"
             });
             setStep(2, "done");
@@ -1158,37 +1094,13 @@ document.getElementById("syncCloseBtn").addEventListener("click", () => {
 });
 
 async function fetchAllDriveFilesRecursively(folderId, updateScanStatus) {
-    let allFiles = [];
-    
-    async function scanFolder(fId, currentPath = "") {
-        const query = `'${fId}' in parents and trashed = false`;
-        const fields = "files(id, name, mimeType, webViewLink)";
-        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=${encodeURIComponent(fields)}`;
-
-        const response = await fetch(url, { headers: { Authorization: `Bearer ${driveToken}` } });
-        const data = await response.json();
-        if (data.error) throw new Error(data.error.message);
-
-        const items = data.files || [];
-
-        for (const item of items) {
-            if (item.mimeType === "application/vnd.google-apps.folder") {
-                if (updateScanStatus) updateScanStatus(`Scanning subfolder: ${item.name}...`);
-                const nextPath = currentPath ? `${currentPath}/${item.name}` : item.name;
-                await scanFolder(item.id, nextPath);
-            } else {
-                allFiles.push({ ...item, category: currentPath || "Root" });
-                if (updateScanStatus) updateScanStatus(`Discovered ${allFiles.length} file(s)...`);
-            }
-        }
-    }
-
-    await scanFolder(folderId, "");
+    if (updateScanStatus) updateScanStatus("Scanning Drive folders...");
+    const d = await gw({ action: "listRecursive", folderId }, RESULTS_GATEWAY_URL);
+    return d.files || [];
     return allFiles;
 }
 
 async function syncDriveToSheet() {
-    if (!driveToken) { alert("Connect Google Drive first."); return; }
 
     const modal = document.getElementById("syncModal");
     const spinner = document.getElementById("syncSpinner");

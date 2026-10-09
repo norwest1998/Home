@@ -165,11 +165,6 @@
 <script>
 window.SMMC_Sheets = { fetchSheet, batchFetchSheets, updateSheet, appendSheet, DOMAIN };
 
-function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
-}
-
 function getRowVal(row, possibleKeys) {
     if (!row) return "";
     const rowKeys = Object.keys(row);
@@ -184,7 +179,7 @@ function getRowVal(row, possibleKeys) {
 
 async function initAdmin() {
     // 1. Instant Cache Load
-    const cachedRaw = localStorage.getItem(ADMIN_CACHE_KEY);
+    const cachedRaw = sessionStorage.getItem(ADMIN_CACHE_KEY);
     if (cachedRaw) {
         try {
             const cachedData = JSON.parse(cachedRaw);
@@ -220,7 +215,7 @@ async function initAdmin() {
         };
 
         // Cache and re-render
-        localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(freshData));
+        sessionStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(freshData));
         renderAll(freshData);
 
     } catch (err) {
@@ -617,7 +612,7 @@ const SystemHealth = {
         if (sysHealthSummary) sysHealthSummary.textContent = '';
 
         try {
-            const rows = await fetchSheet(DOMAIN.audit, "SchemaRegistry");
+            const rows = await GW({domain: DOMAIN.audit, sheet: "SchemaRegistry"});
             if (!Array.isArray(rows)) throw new Error("SchemaRegistry data invalid.");
             this.entries = rows;
             this.render();

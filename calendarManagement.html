@@ -1762,23 +1762,18 @@ async function addToCalendar(hexKey) {
   logAction(`Exporting "${event.Class} - ${event.Event || event["Event Type"]}" to ${targetCalName}...`);
 
   try {
-    const res = await fetch(calWebAppUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "exportToCalendar", hexKey: hexKey })
-    });
+    const res = await gw({ action: "exportToCalendar", hexKey: hexKey }, calWebAppUrl);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
     event.AddedStatus = targetCalName;
-    appendSheet(DOMAIN.audit, "AuditLog",{
-      hexCode: hexKey,
+    awaitgw({action: "append", domain: DOMAIN.audit, sheet: "AuditLog", hexCode: hexKey, data: {
       name: event.Class,
       detail: "AddedStatus",
       before: `Exported to ${targetCalName}`,
       after: targetCalName,
       status: "success"
-    });
+    }});
 
     logAction(`Successfully added event to "${targetCalName}"!`);
     renderStats();
@@ -1796,11 +1791,7 @@ btnBulkExport.addEventListener("click", () => {
     msgElem: msgElem,
     loadingMsg: "Syncing events with Google Calendar...",
     actionFn: async () => {
-      const res = await fetch(calWebAppUrl, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "exportToCalendar", hexKey: null })
-      });
+      const res = await gw({ action: "exportToCalendar", hexKey: null },calWebAppUrl);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       
@@ -1819,7 +1810,7 @@ requestBtn.addEventListener("click", async () => {
   const currentEvent = eventData.find(e => e.HexKey === selectedHex);
   requestBtn.disabled = true;
   try {
-    await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "Pending " + slotHex });
+    await gw({action: "update", domain: DOMAIN.calendar, sheet: "Event Data", hexCode: selectedHex, data: { "Rescheduled Date": "Pending " + slotHex }});
     logAction(`Reschedule requested for ${currentEvent?.Class} → slot ${slotHex}`);
     await loadData();
   } catch (err) {
@@ -1847,18 +1838,16 @@ approveBtn.addEventListener("click", async () => {
     const d = parseLocalDate(slot.Date);
     const newMonth = d ? d.toLocaleString("en-AU", { month: "short" }) : "";
 
-    await updateSheet(DOMAIN.calendar, "Event Data", slotHex,{
+    await gw({action: "update", domain: DOMAIN.calendar, sheet: "Event Data", hexCode: slotHex, data: {
       Class: event.Class || "",
       ['Regatta Type']: event['Regatta Type'] || "",
       ['Event Type']: event["Event Type"] || "",
       Season: event.Season || ""
-    });
+    }},calWebAppUrl);
 
-    await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, {
-      // Fixed: Converted trailing single quotes to backticks for expression evaluation
+    await gw({action: "update", domain: DOMAIN.calendar, sheet: "Event Data", hexCode: selectedHex, data: {
       "Rescheduled Date": `${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`,
-      Results: "Rescheduled" 
-    });
+      Results: "Rescheduled" }},calWebAppUrl);
     logAction(`Reschedule approved: ${event.Class} → ${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`);
     await loadData();
   } catch (err) {
@@ -1964,11 +1953,7 @@ regionalConflictBtn?.addEventListener("click", () => {
     msgElem: msgElem,
     loadingMsg: "Scanning regional championship calendars...",
     actionFn: async () => {
-      const res = await fetch(calWebAppUrl, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "runRegionalConflicts" })
-      });
+      const res = await gw({action: "runRegionalConflicts"}, calWebAppUrl);
       const result = await res.json();
       if (result.error) throw new Error(result.error);
       if (result.success === false) throw new Error(result.error || "Conflict scan failed");
@@ -1991,11 +1976,7 @@ generateSeasonBtn?.addEventListener("click", () => {
     msgElem: msgElem,
     loadingMsg: `Generating fixtures for season ${nextSeason}...`,
     actionFn: async () => {
-      const res = await fetch(ssnWebAppUrl, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "generateSeasonFixtures" })
-      });
+      const res = await gw({action: "generateSeasonFixtures"}, ssnWebAppUrl);
       const result = await res.json();
       if (result.error) throw new Error(result.error);
 
@@ -2034,15 +2015,15 @@ async function loadData() {
   if (selectedEventCard) selectedEventCard.innerHTML = `<div class="section-loading"><span class="spinner"></span> Loading…</div>`;
 
   try {
-    eventData = await fetchSheet(DOMAIN.calendar, "Event Data");
+    eventData = await gw({domain: DOMAIN.calendar, sheet: "Event Data"});
     eventData.forEach(e => {
       if (!e.HexKey) e.HexKey = `${e.Date}|${e.Start || ""}|${e.Class || ""}`;
       if (!e.Season) e.Season = inferSeason(e.Date); // Fixed: Replaced `eventData.Date` array call with element call `e.Date`
       console.log("synched to calendar: " + e['Calendar Synced']);
     });
     
-    classes  = await fetchSheet(DOMAIN.members, "Classes");
-    regattas = await fetchSheet(DOMAIN.members, "Regattas");
+    classes  = await gw({domain: DOMAIN.members, sheet: "Classes"});
+    regattas = await gw({domain: DOMAIN.members, sheet: "Regattas"});
 
     renderSeasonDropdown();
     renderMonthDropdown();

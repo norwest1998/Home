@@ -736,13 +736,12 @@ const TEMPLATE_SS_ID  = "1M0_jDbN35e6eX96SNylY-J887Ks48Y9dNudOYMgKkjE";
 
 async function tFetch(sheet) {
   if (!TEMPLATE_GW_URL) return [];
-  const r = await fetch(`${TEMPLATE_GW_URL}?action=fetch&sheet=${encodeURIComponent(sheet)}`);
-  const d = await r.json(); if (d.error) throw new Error(d.error); return d.values || [];
+  const d = (await gw(`{ action: "fetch", sheet: ${encodeURIComponent(sheet)}`, TEMPLATE_GW_URL));
+  return d.values || [];
 }
 async function tPost(payload) {
   if (!TEMPLATE_GW_URL) throw new Error("TEMPLATE_GW_URL not configured.");
-  const r = await fetch(TEMPLATE_GW_URL, {method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
-  const d = await r.json(); if (d.error) throw new Error(d.error); return d;
+  return (await gw(payload, TEMPLATE_GW_URL));
 }
 
 function uid() { return "T"+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,6).toUpperCase(); }
@@ -810,7 +809,7 @@ function initEmoji() {
    MEMBER AC & CHIPS
    ================================================================ */
 async function loadMembers(){
-  try{ members = await fetchSheet(DOMAIN.members,"Members"); } catch(e){ members = []; }
+  members = await gw({ action: "fetch", domain: DOMAIN.members, sheet: "Members" }, GATEWAY_URL);
   populateMemberFilters();
   renderMembersList();
 }
@@ -994,12 +993,16 @@ document.querySelectorAll(".compose-tab").forEach(tab => {
    TRACKING DATA
    ================================================================ */
 async function loadDashboard(){
-  try{dashRows=await fetchSheet(TRACKING_DOMAIN,"Dashboard");renderDashboard();}
-  catch(e){document.getElementById("dashBody").innerHTML=`<tr><td colspan="9" style="color:var(--signal);padding:16px;">Error: ${escapeHtml(e.message)}</td></tr>`;}
+  dashRows  = await gw({ action: "fetch", domain: TRACKING_DOMAIN, sheet: "Dashboard", hexKey: null }); 
+  renderDashboard(); 
 }
 async function loadTracking(){
-  try{trackRows=await fetchSheet(TRACKING_DOMAIN,"Tracking");populateBatchFilter();renderStats();renderTracking();}
-  catch(e){document.getElementById("trackBody").innerHTML=`<tr><td colspan="12" style="color:var(--signal);padding:16px;">Error: ${escapeHtml(e.message)}</td></tr>`;}
+  trackRows = await gw({ action: "fetch", domain: TRACKING_DOMAIN, sheet: "tracking", hexKey: null }); 
+
+  ;populateBatchFilter();
+  renderStats();
+  renderTracking();}
+
 }
 
 function renderStats(){
@@ -1611,10 +1614,7 @@ async function sendEmail(){
     });
 
     if(isScheduled){
-      const res=await fetch(EMAIL_GATEWAY,{
-        method:"POST",
-        headers:{"Content-Type":"text/plain;charset=utf-8"},
-        body:JSON.stringify({
+      const res=await gw({
           action:       "createScheduledTrigger",
           draftId:      batchKey,
           scheduledAt:  schedTime,
@@ -1626,21 +1626,24 @@ async function sendEmail(){
           key:          campaignKey,
           templateId:   selectedTmplId||"",
           recipients:   recipientPayloads
-        })
-      });
+        },EMAIL_GATEWAY);
       const result=await res.json();
       if(!result.success) throw new Error(result.error||"Failed to create trigger.");
 
       for(const r of recipientPayloads){
-        await appendSheet(TRACKING_DOMAIN,"Tracking",{
-          "Batch Key":     batchKey+"-"+r.email,
-          "Key":           campaignKey,
-          "Contact Name":  r.name,
-          "Email Status":  "Scheduled",
-          "Date Sent":     schedTime,
+        await gw({
+          action: "append",
+          domain:  TRACKING_DOMAIN,
+          sheet: "Tracking",
+          data: {
+            "Batch Key":     batchKey+"-"+r.email,
+            "Key":           campaignKey,
+            "Contact Name":  r.name,
+            "Email Status":  "Scheduled",
+            "Date Sent":     schedTime,
           "Recipient Email":r.email,
           "Thread ID":     batchKey
-        });
+        }},EMAIL_GATEWAY);
       }
       currentDraftId=batchKey;
       showToast(`Scheduled for ${new Date(schedTime).toLocaleString()}. Trigger created.`,"success");
@@ -1651,7 +1654,7 @@ async function sendEmail(){
         allTo.join(", "),ccList,null
       );
       for(const r of recipientPayloads){
-        await appendSheet(TRACKING_DOMAIN,"Tracking",{
+        await gw({action: "append", domain: TRACKING_DOMAIN, sheet: "Tracking", data: {
           "Batch Key":     batchKey+"-"+r.email,
           "Key":           campaignKey,
           "Contact Name":  r.name,
@@ -1659,10 +1662,10 @@ async function sendEmail(){
           "Date Sent":     new Date().toISOString(),
           "Recipient Email":r.email,
           "Thread ID":     sentId
-        });
+        }},EMAIL_GATEWAY);
       }
       if(currentDraftId){
-        try{ await deleteRow(TRACKING_DOMAIN,"Drafts",currentDraftId); }catch(_){}
+        await gw({action: "deleteRow", domain: TRACKING_DOMAIN, sheet: "Drafts", hexKey: currentDraftId});
         currentDraftId=null;
       }
       showToast(`Sent to ${allTo.length} recipient${allTo.length>1?"s":""}!`,"success");

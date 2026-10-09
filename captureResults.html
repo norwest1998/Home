@@ -1107,8 +1107,7 @@ async function getMembers(className) {
   try {
     if (className === "Twilight") className = "All";  // special case for Twilight events 
     const queryClass = className  
-    const data = await apiGet("members", queryClass);
-    console.log(`getMembers(${className}): received data`, data);
+    const data = await gw({action: "fetch", domain: "members", sheet: "ClassMembers", className: queryClass}, CLB_WEBAPP_URL);
     MEMBERS = Array.isArray(data.members)
       ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC", boat: m.id }))
       : [];
@@ -1122,7 +1121,7 @@ async function getMembers(className) {
 async function getGuests(eventId, className) {
   if (state.practice) { GUESTS = PRACTICE_GUESTS.map(g => ({...g})); return; }
   try {
-    const rows = await fetchSheet("results", "GuestRegistrations");
+    const rows = await gw({domain: "results", sheet: "GuestRegistrations"},);
     GUESTS = rows
       .filter(g => String(g.EventID) === String(eventId))
       .map(g => ({
@@ -1179,10 +1178,9 @@ async function getEvents() {
 
 async function apiGet(action, className) {
   console.log("in apiGet action: " + action);
-  const url = action === "members"
-      ? `${CLB_WEBAPP_URL}?action=ClassMembers` + (className ? `&className=${encodeURIComponent(className)}` : "")
-      : `${CAL_WEBAPP_URL}?type=calendar`;
-  const res = await fetch(url);
+  const res = action === "members"
+      ? await gw({action: "ClassMembers", className: className},CLB_WEBAPP_URL)
+      : await gw({action: "calendar", className: className},CAL_WEBAPP_URL) `${CAL_WEBAPP_URL}?type=calendar`;
   if (!res.ok) throw new Error(`Server error (${res.status})`);
   const data = await res.json();
   if (data.error) throw new Error(data.error);

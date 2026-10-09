@@ -11,7 +11,7 @@ const ADMIN_CACHE_KEY = "SMMC_ADMIN_DATA_v2";
 
 function readAdminCache(...keys) {
     try {
-        const all = JSON.parse(localStorage.getItem(ADMIN_CACHE_KEY));
+        const all = JSON.parse(sessionStorage.getItem(ADMIN_CACHE_KEY));
         if (!all) return null;
         if (!keys.length) return all;
         return Object.fromEntries(keys.map(k => [k, all[k]]));
@@ -42,22 +42,7 @@ const DOMAIN = {
 // READ OPERATIONS -> Switched to POST to avoid Google Apps Script redirecting GETs to HTML Auth Pages
 async function fetchSheet(domain, sheetName, hexKey = null) {
     const action = hexKey ? "display" : "fetch";
-    const payload = { action, domain, sheet: sheetName };
-    if (hexKey) payload.hexKey = hexKey;
-
-    const res = await fetch(GATEWAY_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-    });
-    
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } 
-    catch(e) { throw new Error("Invalid Server Response: " + text.substring(0, 60) + "..."); }
-
-    if (data.error) throw new Error(data.error);
-    if (data.record) return data.record;                // single-record display
+    const data = await gw({ action: action, domain, sheet: sheetName, hexKey}); 
  
     const rows = data.values ?? [];
     if (rows.length > 0) registerSchema(domain, sheetName, rows); // fire-and-forget
@@ -65,31 +50,14 @@ async function fetchSheet(domain, sheetName, hexKey = null) {
 }
 
 async function searchSheet(domain, sheetName, filtersArray) {
-    const payload = { action: "search", domain, sheet: sheetName, filtersArray };
-    const res = await fetch(GATEWAY_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-    });
-    
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } 
-    catch(e) { throw new Error("Invalid Server Response: " + text.substring(0, 60) + "..."); }
-    
-    if (data.error) throw new Error(data.error);
-    if (data.record) return data.record; 
+
+    const data = (await gw({ action: "search", domain, sheet: sheetName, filtersArray  }));
     return data.values ?? [];
 }
 
 async function batchFetchSheets(requestsArray) {
-    const payload = { action: "batchFetch", requests: requestsArray };
-    const res = await fetch(GATEWAY_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-    });
-    
+     
+    const res = await gw({ action: "batchFetch", requests: requestsArray});  
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); } 
@@ -186,17 +154,8 @@ async function registerSchema(domain, sheetName, rows) {
     if (!Array.isArray(rows) || rows.length === 0) return;
     const columns = Object.keys(rows[0]);
     try {
-        await fetch(GATEWAY_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body:    JSON.stringify({
-                action:   "registerSchema",
-                domain:   domain,
-                sheet:    sheetName,
-                columns:  columns,
-                rowCount: rows.length
-            })
-        });
+        await gw({ action: "registerSchema", domain, sheet: sheetName, columns:  columns, rowCount: rows.length });
+        return true;
     } catch (e) {
         // Silent — schema registration must never break the calling page
         console.warn("SchemaRegistry update failed:", e);
@@ -204,73 +163,35 @@ async function registerSchema(domain, sheetName, rows) {
 }
 
 async function updateSheet(domain, sheetName, hexKey, updates) {
-    const res  = await fetch(GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "update", domain: domain, sheet: sheetName, hexKey: hexKey, update: updates })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    await gw({ action: "update", domain, sheet: sheetName, hexKey, update: updates });
     return true;
 }
 
 async function appendSheet(domain, sheetName, rowData) {
-    const res  = await fetch(GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "append", domain: domain, sheet: sheetName, rowData: rowData })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    await gw({ action: "append", domain: domain, sheet: sheetName, rowData: rowData });
     return true;
 }
 
-async function deleteRow(domain, sheetName, hexKey) {
-    const res  = await fetch(GATEWAY_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "delete", domain: domain, sheet: sheetName, hexKey: hexKey })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+async function deleteRow(domain, sheetName, hexKey) {    
+    await gw({ action: "delete", domain, sheet: sheetName, hexKey, update: updates });
     return true;
 }
 
 // Drive Operations
 async function fetchDriveFolder(folderKey) {
-    const res  = await fetch(`${RESULTS_GATEWAY_URL}?action=listFolder&folder=${folderKey}`);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return data.files || [];
+    return (await gw({ action: "listFolder", folder: folderKey }, RESULTS_GATEWAY_URL)).files || [];
 }
 
 async function fetchDriveFile(fileId) {
-    const res  = await fetch(`${RESULTS_GATEWAY_URL}?action=readFile&fileId=${encodeURIComponent(fileId)}`);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return data.content;
+    return (await gw({ action: "readFile", file: fileId }, RESULTS_GATEWAY_URL);
 }
 
 async function triggerResultsProcessing() {
-    const res  = await fetch(TRIGGERESULTS_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body:    JSON.stringify({ action: "triggerResults" })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error + "(Check the Upload folder for files to process.)");
-    return data.message;
+    return (await gw({ action: "triggerResults"}, RESULTS_GATEWAY_URL));
 }
 
-async function apiGet(action, extra = {}) {
-    const res = await fetch(GATEWAY_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action, ...extra })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    return data.data ?? data;
+async function apiGet(action, extra = {}) {  
+    return (await gw({ action, ...extra }));
 }
 
 async function gw(payload, url = GATEWAY_URL) {
@@ -281,7 +202,10 @@ async function gw(payload, url = GATEWAY_URL) {
     });
     const text = await res.text();
     let data; try { data = JSON.parse(text); } catch(e) { throw new Error("Invalid Server Response"); }
-    if (data.code === "AUTH" && payload.action !== "login") { logout(); throw new Error("Session expired"); }
+    if (data.code === "AUTH" && !["login","requestCode","verifyCode"].includes(payload.action)) {
+        logout(); 
+        throw new Error("Session expired");
+    }
     if (data.error) throw new Error(data.error);
     return data;
 }
