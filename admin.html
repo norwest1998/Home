@@ -612,7 +612,7 @@ const SystemHealth = {
         if (sysHealthSummary) sysHealthSummary.textContent = '';
 
         try {
-            const rows = await GW({domain: DOMAIN.audit, sheet: "SchemaRegistry"});
+            const rows = await fetchSheet(DOMAIN.audit, "SchemaRegistry");
             if (!Array.isArray(rows)) throw new Error("SchemaRegistry data invalid.");
             this.entries = rows;
             this.render();
