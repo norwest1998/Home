@@ -202,7 +202,7 @@ async function gw(payload, url = GATEWAY_URL) {
     });
     const text = await res.text();
     let data; try { data = JSON.parse(text); } catch(e) { throw new Error("Invalid Server Response"); }
-    if (data.code === "AUTH" && !["login","requestCode","verifyCode"].includes(payload.action)) {
+    if (data.code === "AUTH" && !["login","requestCode","verifyCode","passwordLogin"].includes(payload.action)) {
         logout(); 
         throw new Error("Session expired");
     }
@@ -210,6 +210,13 @@ async function gw(payload, url = GATEWAY_URL) {
     return data;
 }
 // Utilities
+const ROLE_RANK = { viewer: 1, editor: 2, admin: 3 };
+function applyRoles() {
+  const r = ROLE_RANK[(JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}")).role] || 0;
+  document.querySelectorAll("[data-min-role]").forEach(el => { if (r < ROLE_RANK[el.dataset.minRole]) el.style.display = "none"; });
+}
+document.addEventListener("DOMContentLoaded", applyRoles);
+
 function fmtTime(iso){
     const d = new Date(iso);
     return d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });

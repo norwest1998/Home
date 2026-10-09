@@ -31,6 +31,7 @@ const Nav = {
             const sections = this._scanSections();
             this._render(sections);
         }, 0);
+        applyRoles();
     },
 
     // Scans all .section-head elements, auto-assigns ids where missing,

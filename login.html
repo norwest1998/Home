@@ -37,6 +37,18 @@
     <input id="cd" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code">
     <button class="go btn" id="checkBtn">Sign in</button>
   </div>
+  <div class="divider">or sign in with a password</div>
+  <div id="stepPwd">
+    <input id="uid" placeholder="User ID / email" autocomplete="username">
+    <input id="pw" type="password" placeholder="Password" autocomplete="current-password">
+    <button class="go btn" id="pwBtn">Sign in</button>
+  </div>
+  <div id="stepChange" style="display:none;">
+    <div id="msg">You must set a new password.</div>
+    <input id="np" type="password" placeholder="New password (10+ characters)" autocomplete="new-password">
+    <input id="np2" type="password" placeholder="Confirm new password" autocomplete="new-password">
+    <button class="go btn" id="chBtn">Save password</button>
+  </div>
   <div id="err"></div>
 </div>
 <input id="em" type="email" placeholder="Email"> <button onclick="sendCode()">Email me a code</button>
@@ -75,6 +87,24 @@ window.addEventListener("load", () => {
 });
 
 // --- Emailed code ---
+let pendingPwd = "";
+$("pwBtn").addEventListener("click", async () => {
+  setErr("");
+  try {
+    const d = await gw({ action: "passwordLogin", userId: $("uid").value.trim(), password: $("pw").value });
+    if (!d.mustChange) return finish(d);
+    sessionStorage.setItem(TOKEN_KEY, d.token);          // limited token: only changePassword is accepted
+    pendingPwd = $("pw").value;
+    ["stepPwd","stepEmail","stepCode","googleBtn"].forEach(i => $(i).style.display = "none");
+    $("stepChange").style.display = "block";
+  } catch (e) { setErr(e.message); }
+});
+$("chBtn").addEventListener("click", async () => {
+  setErr("");
+  if ($("np").value !== $("np2").value) return setErr("Passwords do not match.");
+  try { finish(await gw({ action: "changePassword", oldPassword: pendingPwd, newPassword: $("np").value })); pendingPwd = ""; }
+  catch (e) { setErr(e.message); }
+});
 $("sendBtn").addEventListener("click", async () => {
   setErr("");
   const email = $("em").value.trim();
