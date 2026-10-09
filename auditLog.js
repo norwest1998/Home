@@ -83,7 +83,7 @@ const AuditLog = {
 
     async load() {
         try {
-            const rows = await gw({ action: "fetch", domain: DOMAIN.audit, sheet: "AuditLog"});
+            const rows = await fetchSheet(DOMAIN.audit, "AuditLog");
             if (!Array.isArray(rows)) throw new Error("Audit log data invalid.");
             this.entries = rows.map(r => ({
                 hexCode:    r["HexCode"]   || "",
