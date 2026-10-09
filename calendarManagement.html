@@ -2015,15 +2015,15 @@ async function loadData() {
   if (selectedEventCard) selectedEventCard.innerHTML = `<div class="section-loading"><span class="spinner"></span> Loading…</div>`;
 
   try {
-    eventData = await fetchSheet({ domain: DOMAIN.calendar, sheet: "Event Data" });
+    eventData = await fetchSheet(DOMAIN.calendar, "Event Data" );
     eventData.forEach(e => {
       if (!e.HexKey) e.HexKey = `${e.Date}|${e.Start || ""}|${e.Class || ""}`;
       if (!e.Season) e.Season = inferSeason(e.Date); // Fixed: Replaced `eventData.Date` array call with element call `e.Date`
       console.log("synched to calendar: " + e['Calendar Synced']);
     });
     
-    classes  = await fetchSheet({domain: DOMAIN.members, sheet: "Classes"});
-    regattas = await fetchSheet({domain: DOMAIN.members, sheet: "Regattas"});
+    classes  = await fetchSheet(DOMAIN.members, "Classes");
+    regattas = await fetchSheet(DOMAIN.members, "Regattas");
 
     renderSeasonDropdown();
     renderMonthDropdown();
