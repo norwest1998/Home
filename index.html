@@ -1821,25 +1821,15 @@ VIGATION HEADER
       } 
     }
 
-      const homeUrl = HOME_DATA_API + "?action=bootstrap";
-    }
-
     async function refreshBootstrap(cachedRaw) {
-      const tokenKey = sessionStorage.getItem(TOKEN_KEY);
-      let raw = null;
       try {
-        if (tokenKey) {
-          raw = await fetch(HOME_DATA_API, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "bootstrapPrivate", data: cachedRaw, token: tokenKey })   
-          });
-        } else {
-          raw = await (await fetch(BOOTSTRAP_API)).text();
-        }
+        const response = await fetch(BOOTSTRAP_API);
+        const raw = await response.text();
+        
         const data = JSON.parse(raw);
         if (data.error) throw new Error(data.error);
         if (raw !== cachedRaw) renderTopDown(data);          // skip identical re-render
+        
         try { sessionStorage.setItem(CACHE_KEY, raw); } catch (e) {}
         return raw;
       } catch (err) {
