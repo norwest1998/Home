@@ -57,13 +57,7 @@ async function searchSheet(domain, sheetName, filtersArray) {
 
 async function batchFetchSheets(requestsArray) {
      
-    const res = await gw({ action: "batchFetch", requests: requestsArray});  
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } 
-    catch(e) { throw new Error("Invalid Server Response: " + text.substring(0, 60) + "..."); }
-    
-    if (data.error) throw new Error(data.error);
+    const data = await gw({ action: "batchFetch", requests: requestsArray });  
 
     // Fire-and-forget schema registration for all fetched sheets
     if (data.results) {
