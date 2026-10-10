@@ -267,11 +267,10 @@ async function loadAll() {
     ["total","admin","editor","viewer","locked","nologin"].forEach(k => $("stat-" + k).innerHTML = `<span class="spinner"></span>`);
     try {
         const [u, m] = await Promise.all([
-            fetchSheet(DOMAIN.audit, "Users").catch(() => []),
+            apiGet("listUsers"),                                        // admin-only action; never returns hashes
             fetchSheet(DOMAIN.members, "Members").catch(() => [])
         ]);
-        console.log("Loaded users:", u.length, "members:", m.length);
-        users = u.values || null;
+        users = Array.isArray(u.values) ? u.values : null;
         if (!users) throw new Error("listUsers returned unexpected data: " + JSON.stringify(u).slice(0, 300));
         members = m || [];
         renderStats();
