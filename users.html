@@ -270,7 +270,8 @@ async function loadAll() {
             fetchSheet(DOMAIN.audit, "Users").catch(() => []),
             fetchSheet(DOMAIN.members, "Members").catch(() => [])
         ]);
-        users = u.values || [];
+        users = Array.isArray(u.values) ? u.values : null;
+        if (!users) throw new Error("listUsers returned unexpected data: " + JSON.stringify(u).slice(0, 300));
         members = m || [];
         renderStats();
         renderTable();
