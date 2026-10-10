@@ -1870,8 +1870,8 @@ async function initiateProcessing() {
     showMsg('processingMsg', 'Initiating processing… checking upload folder.', false);
     try {
     
-        const msg = triggerResultsProcessing();   // must exist in this project
-        return respond({ message: typeof msg === "string" ? msg : "Processing triggered." });
+        const msg = await triggerResultsProcessing();
+        showMsg('processingMsg', msg && typeof msg.message === "string" ? msg.message : "Processing triggered.", false);
 
     } catch (err) {
         showMsg('processingMsg', 'Error: ' + err.message, true);
