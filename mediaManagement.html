@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="smmc-domain" content="apps">
+<title>Media Management — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* Stats board */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+.stat-card {
+    padding: 20px 18px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.stat-card .stat-val {
+    font-family: var(--font-display);
+    font-size: 32px;
+    color: var(--foam);
+    line-height: 1;
+}
+.stat-card .stat-val.warn { color: #ffb347; }
+.stat-card .stat-val.accent { color: #ff6b6b; }
+.stat-card .stat-label {
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--foam-dim);
+    text-transform: uppercase;
+}
+
+/* Toolbar */
+.media-toolbar {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    align-items: center; margin-bottom: 16px;
+}
+.media-toolbar .search-wrap { flex: 1; min-width: 220px; margin-bottom: 0; }
+
+.glass-select {
+    appearance: none; -webkit-appearance: none;
+    background: rgba(255,255,255,0.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0b8c8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+    border: 1px solid var(--glass-border); border-radius: 8px; color: var(--foam);
+    font-family: var(--font-body, 'Inter', sans-serif); font-size: 12px;
+    padding: 5px 30px 5px 12px; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    min-width: 140px;
+}
+.glass-select:hover  { background-color: rgba(255,255,255,0.12); border-color: var(--foam-dim); }
+.glass-select:focus  { outline: none; border-color: var(--foam); }
+.glass-select option { background: #0f2535; color: var(--foam); }
+
+/* Table */
+.media-table-wrap { max-height: 520px; overflow: auto; border-radius: 10px; border: 1px solid var(--glass-border); }
+table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.media-table th {
+    position: sticky; top: 0; background: var(--ocean-mid);
+    text-align: left; padding: 10px;
+    font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--foam-dim); border-bottom: 1px solid var(--glass-border);
+}
+.media-table td {
+    padding: 10px; border-bottom: 1px solid var(--glass-border);
+    color: var(--foam); vertical-align: top;
+}
+.media-table tr:last-child td { border-bottom: none; }
+.media-table tr.clickable { cursor: pointer; }
+.media-table tr.clickable:hover td { background: rgba(255,255,255,0.04); }
+
+.report-preview {
+    max-width: 340px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;  
+    overflow: hidden;
+    font-size: 11.5px;
+    color: var(--foam-dim);
+}
+
+/* Modal */
+.modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); z-index: 1000;
+    align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+    background: var(--ocean-mid); border: 1px solid var(--glass-border);
+    border-radius: 16px; width: 100%; max-width: 700px;
+    max-height: 90vh; overflow-y: auto; padding: 28px;
+    display: flex; flex-direction: column; gap: 20px;
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; }
+.modal-header h3 { font-size: 18px; color: var(--foam); }
+.modal-close { background: none; border: none; color: var(--foam-dim); cursor: pointer; font-size: 20px; }
+.modal-close:hover { color: var(--foam); }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+.form-row.full   { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label {
+    font-family: var(--font-data); font-size: 10px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--foam-dim);
+}
+.form-group input, .form-group select, .form-group textarea {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border);
+    border-radius: 8px; color: var(--foam); font-family: var(--font-body);
+    font-size: 13px; padding: 8px 12px; width: 100%; box-sizing: border-box;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--foam); }
+.form-group textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
+
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; padding-top: 4px; }
+.modal-status { font-size: 12px; display: none; }
+.modal-status.visible { display: block; }
+.modal-status.success { color: var(--glow); }
+.modal-status.error   { color: #ff6b6b; }
+
+.err-box { background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); padding: 10px; border-radius: 6px; color: #ff6b6b; font-size: 12px; display: none; }
+
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<main class="container">
+
+    <div class="admin-header">
+        <div class="admin-title-group">
+            <h1>Facebook Media Management</h1>
+        </div>
+        <a href="admin.html" class="btn btn-ghost" style="flex-shrink:0;">Back to Dashboard</a>
+    </div>
+
+    <!-- Stats board -->
+    <section class="stats-grid" id="statsGrid">
+        <div class="glass stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-label">Total Posts</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-posted">—</div><div class="stat-label">Successfully Posted</div></div>
+        <div class="glass stat-card"><div class="stat-val warn" id="stat-pending">—</div><div class="stat-label">Pending / Queue</div></div>
+        <div class="glass stat-card"><div class="stat-val accent" id="stat-failed">—</div><div class="stat-label">Failed</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-month">—</div><div class="stat-label">Posts This Month</div></div>
+    </section>
+
+    <!-- Queue Table -->
+    <div class="section-head">
+        <h2>Posting Queue & History</h2>
+        <p>Review automatic race reports, manually edit content, or requeue failed posts.</p>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title-left"><span class="dot"></span><h3>Social Media Queue</h3></div>
+        </div>
+        <div class="tab-content active">
+            <div class="media-toolbar">
+                <div class="search-wrap">
+                    <i class="nav-icon" data-lucide="search"></i>
+                    <input class="search-input" id="searchQueue" placeholder='Search class, report, or status…'>
+                </div>
+                <select class="glass-select" id="filterStatus">
+                    <option value="">All Statuses</option>
+                    <option value="POSTED">Posted</option>
+                    <option value="PENDING">Pending / Processing</option>
+                    <option value="FAILED">Failed</option>
+                </select>
+                <select class="glass-select" id="filterClass">
+                    <option value="">All Classes</option>
+                </select>
+                <select class="glass-select" id="filterMonth">
+                    <option value="">All Time</option>
+                </select>
+                <button class="btn btn-ghost" id="refreshBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+            </div>
+            <div class="media-table-wrap">
+                <table class="media-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Class / Regatta</th>
+                            <th>Race Date</th>
+                            <th>Report Snippet</th>
+                            <th>Post Link / ID</th>
+                        </tr>
+                    </thead>
+                    <tbody id="queueBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="queueEmpty" style="display:none;">No posts found.</div>
+        </div>
+    </div>
+
+    <!-- ===================== POST MODAL ===================== -->
+    <div class="modal-overlay" id="postModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Edit Post Data</h3>
+                <button class="modal-close" id="modalClose">✕</button>
+            </div>
+
+            <div class="err-box" id="modalErrorBox"></div>
+
+            <div class="form-row triple">
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="fStatus" disabled>
+                        <option value="POSTED">POSTED</option>
+                        <option value="PENDING">PENDING</option>
+                        <option value="PROCESSING">PROCESSING</option>
+                        <option value="FAILED">FAILED</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Regatta / Class</label>
+                    <input type="text" id="fRegatta">
+                </div>
+                <div class="form-group">
+                    <label>Race Date</label>
+                    <input type="text" id="fRaceDate" placeholder="dd/mm/yyyy or yyyy-mm-dd">
+                </div>
+            </div>
+
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Race Report Caption</label>
+                    <textarea id="fReport" placeholder="The caption text that will be posted to Facebook..."></textarea>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Source Spreadsheet ID (Readonly)</label>
+                    <input type="text" id="fSpreadsheetId" readonly style="opacity:0.7">
+                </div>
+                <div class="form-group">
+                    <label>Source Sheet ID (Readonly)</label>
+                    <input type="text" id="fSheetId" readonly style="opacity:0.7">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <span class="modal-status" id="modalStatus"></span>
+                <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+                <button class="btn btn-primary" id="modalSave" style="background:linear-gradient(135deg, #fbbf24, #d97706); color:#fff; box-shadow:0 8px 24px rgba(245,158,11,0.25);">Save Data Only</button>
+                <button class="btn btn-primary" id="modalRepost" title="Changes status to PENDING so the cron job runs it again">Save & Re-queue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIT LOG -->
+    <div id="auditLog-placeholder"></div>
+    <footer>
+        <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
+    </footer>
+</main>
+
+<script src="shared.js"></script>
+<script src="nav.js"></script>   
+<script src="auditLog.js"></script>
+
+<script>
+    /* Configuration - Adjust if Queue sheet is hosted elsewhere */
+    const QUEUE_DOMAIN = DOMAIN.apps;
+    const QUEUE_SHEET  = "Queue";
+
+    let posts = [];
+    let editingPostKey = null;
+
+    /* Robust Date Parser for mixed formats (dd/mm/yyyy or yyyy-mm-dd) */
+    function parseRobustDate(dStr) {
+        if (!dStr) return new Date(NaN);
+        const s = String(dStr).trim();
+        // Match DD/MM/YYYY
+        let m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+        if (m) return new Date(`${m[3]}-${m[2]}-${m[1]}T12:00:00Z`);
+        return new Date(s);
+    }
+    function fmtDate(dStr) {
+        const d = parseRobustDate(dStr);
+        return isNaN(d) ? dStr : d.toLocaleDateString("en-AU", { day:"2-digit", month:"short", year:"numeric" });
+    }
+    function gv(row, ...keys) {
+        for (const k of keys) {
+            const match = Object.keys(row).find(r => r.toLowerCase().trim() === k.toLowerCase());
+            if (match && row[match] !== undefined) return String(row[match]).trim();
+        }
+        return "";
+    }
+
+    async function loadAll() {
+        const body = document.getElementById("queueBody");
+        body.innerHTML = `<tr class="spinner-row"><td colspan="5" style="text-align:center;padding:24px;"><span class="spinner"></span> Loading media queue…</td></tr>`;
+        document.getElementById("queueEmpty").style.display = "none";
+        ["stat-total","stat-posted","stat-pending","stat-failed","stat-month"].forEach(id => document.getElementById(id).innerHTML = `<span class="spinner"></span>`);
+
+        try {
+            posts = await fetchSheet(QUEUE_DOMAIN, QUEUE_SHEET);
+        } catch(e) {
+            console.error(e);
+            body.innerHTML = `<tr><td colspan="5" style="color:#ff6b6b;padding:24px;text-align:center;">Failed to load queue. ${e.message}</td></tr>`;
+            return;
+        }
+
+        renderStats();
+        renderDropdowns();
+        renderTable();
+    }
+
+    function renderStats() {
+        const now = new Date();
+        let posted = 0, pending = 0, failed = 0, thisMonth = 0;
+
+        posts.forEach(p => {
+            const st = gv(p, "Status").toUpperCase();
+            if (st === "POSTED") posted++;
+            else if (st === "FAILED") failed++;
+            else if (st === "PENDING" || st === "PROCESSING") pending++;
+
+            const d = parseRobustDate(gv(p, "Created", "RaceDate"));
+            if (!isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) {
+                thisMonth++;
+            }
+        });
+
+        document.getElementById("stat-total").textContent = posts.length;
+        document.getElementById("stat-posted").textContent = posted;
+        document.getElementById("stat-pending").textContent = pending;
+        document.getElementById("stat-failed").textContent = failed;
+        document.getElementById("stat-month").textContent = thisMonth;
+    }
+
+    function renderDropdowns() {
+        const classSet = new Set();
+        const monthSet = new Set();
+
+        posts.forEach(p => {
+            const c = gv(p, "RegattaName", "Class");
+            if (c) classSet.add(c);
+
+            const d = parseRobustDate(gv(p, "Created", "RaceDate"));
+            if (!isNaN(d)) {
+                monthSet.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+            }
+        });
+
+        const fClass = document.getElementById("filterClass");
+        const prevC = fClass.value;
+        fClass.innerHTML = `<option value="">All Classes</option>` + [...classSet].sort().map(c => `<option value="${c}">${c}</option>`).join("");
+        fClass.value = prevC;
+
+        const fMonth = document.getElementById("filterMonth");
+        const prevM = fMonth.value;
+        fMonth.innerHTML = `<option value="">All Time</option>` + [...monthSet].sort().reverse().map(m => {
+            const [yy, mm] = m.split("-");
+            const lbl = new Date(yy, mm-1, 1).toLocaleDateString('en-AU', { month:'short', year:'numeric' });
+            return `<option value="${m}">${lbl}</option>`;
+        }).join("");
+        fMonth.value = prevM;
+    }
+
+    function renderTable() {
+        const q = document.getElementById("searchQueue").value.trim().toLowerCase();
+        const statF = document.getElementById("filterStatus").value;
+        const clsF = document.getElementById("filterClass").value;
+        const monF = document.getElementById("filterMonth").value;
+
+        let rows = [...posts];
+
+        if (q) rows = rows.filter(p => 
+            gv(p,"RegattaName").toLowerCase().includes(q) || 
+            gv(p,"RaceReport").toLowerCase().includes(q) ||
+            gv(p,"Status").toLowerCase().includes(q)
+        );
+        if (statF) rows = rows.filter(p => gv(p,"Status").toUpperCase() === statF || (statF==='PENDING' && gv(p,"Status").toUpperCase() === 'PROCESSING'));
+        if (clsF) rows = rows.filter(p => gv(p,"RegattaName") === clsF);
+        if (monF) rows = rows.filter(p => {
+            const d = parseRobustDate(gv(p, "Created", "RaceDate"));
+            if (isNaN(d)) return false;
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` === monF;
+        });
+
+        // Sort by Created / RaceDate Descending
+        rows.sort((a,b) => parseRobustDate(gv(b,"Created","RaceDate")) - parseRobustDate(gv(a,"Created","RaceDate")));
+
+        const body = document.getElementById("queueBody");
+        const empty = document.getElementById("queueEmpty");
+
+        body.innerHTML = rows.map((p, idx) => {
+            const status = gv(p,"Status").toUpperCase();
+            let badge = "badge-default";
+            if (status === "POSTED") badge = "badge-full";
+            else if (status === "FAILED") badge = "badge-expired";
+            else if (status === "PENDING" || status === "PROCESSING") badge = "badge-renewal";
+
+            const postID = gv(p,"PostID");
+            const link = postID ? `<a href="https://facebook.com/${postID}" target="_blank" onclick="event.stopPropagation();" style="color:var(--glow);text-decoration:none;"><i data-lucide="external-link" size="14"></i> View</a>` : `<span style="color:var(--foam-dim)">—</span>`;
+            
+            // Assume they have a HexKey or we fallback to Row index logic if they don't
+            const rowKey = gv(p, "HexKey", "QueueID", "Key", "PostID") || idx; 
+
+            return `<tr class="clickable" onclick="openModal('${escapeHtml(rowKey)}')">
+                <td><span class="badge ${badge}">${status || 'UNKNOWN'}</span></td>
+                <td><strong style="color:var(--foam);">${escapeHtml(gv(p,"RegattaName"))}</strong></td>
+                <td>${fmtDate(gv(p,"RaceDate"))}</td>
+                <td><div class="report-preview">${escapeHtml(gv(p,"RaceReport")) || '<i style="opacity:0.5">No report</i>'}</div></td>
+                <td>${link}</td>
+            </tr>`;
+        }).join("");
+
+        empty.style.display = rows.length ? "none" : "block";
+        if(window.lucide) lucide.createIcons();
+    }
+
+    function openModal(keyOrIdx) {
+        editingPostKey = keyOrIdx;
+        const post = posts.find(p => gv(p, "HexKey", "QueueID", "Key", "PostID") === keyOrIdx) || posts[keyOrIdx];
+        if (!post) return;
+
+        document.getElementById("fStatus").value = gv(post, "Status") || "PENDING";
+        document.getElementById("fRegatta").value = gv(post, "RegattaName");
+        document.getElementById("fRaceDate").value = gv(post, "RaceDate");
+        document.getElementById("fReport").value = gv(post, "RaceReport");
+        document.getElementById("fSpreadsheetId").value = gv(post, "SpreadsheetId");
+        document.getElementById("fSheetId").value = gv(post, "SheetId");
+
+        const errBox = document.getElementById("modalErrorBox");
+        const errMsg = gv(post, "Error");
+        if (errMsg && gv(post, "Status") === "FAILED") {
+            errBox.textContent = `Failure Reason: ${errMsg}`;
+            errBox.style.display = "block";
+        } else {
+            errBox.style.display = "none";
+        }
+
+        document.getElementById("modalStatus").className = "modal-status";
+        document.getElementById("modalStatus").textContent = "";
+        document.getElementById("postModal").classList.add("open");
+    }
+
+    function closeModal() {
+        document.getElementById("postModal").classList.remove("open");
+        editingPostKey = null;
+    }
+
+    async function savePost(requeue) {
+        if (editingPostKey === null) return;
+        const btn = requeue ? document.getElementById("modalRepost") : document.getElementById("modalSave");
+        const originalText = btn.textContent;
+        
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> Processing...`;
+
+        try {
+            // NOTE: If Queue sheet has no configured key column, updateSheet will fail. 
+            // In a production scenario ensure "Key" or "HexKey" exists in schema.
+            const updates = {
+                RegattaName: document.getElementById("fRegatta").value,
+                RaceDate: document.getElementById("fRaceDate").value,
+                RaceReport: document.getElementById("fReport").value
+            };
+
+            if (requeue) {
+                updates.Status = "PENDING";
+                updates.Error = ""; 
+                updates.PostID = "";
+            }
+
+            await updateSheet(QUEUE_DOMAIN, QUEUE_SHEET, editingPostKey, updates);
+            
+            showModalStatus(requeue ? "Post re-queued successfully!" : "Post updated successfully!", "success");
+            await loadAll(); // Refresh table
+            setTimeout(closeModal, 800);
+        } catch (e) {
+            showModalStatus("Update failed: " + e.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    function showModalStatus(msg, type) {
+        const el = document.getElementById("modalStatus");
+        el.textContent = msg; el.className = `modal-status visible ${type}`;
+    }
+
+    /* Event Listeners */
+    document.getElementById("searchQueue").addEventListener("input", renderTable);
+    document.getElementById("filterStatus").addEventListener("change", renderTable);
+    document.getElementById("filterClass").addEventListener("change", renderTable);
+    document.getElementById("filterMonth").addEventListener("change", renderTable);
+    
+    document.getElementById("refreshBtn").addEventListener("click", loadAll);
+    document.getElementById("modalClose").addEventListener("click", closeModal);
+    document.getElementById("modalCancel").addEventListener("click", closeModal);
+    document.getElementById("modalSave").addEventListener("click", () => savePost(false));
+    document.getElementById("modalRepost").addEventListener("click", () => savePost(true));
+    document.getElementById("postModal").addEventListener("click", e => { if(e.target===e.currentTarget) closeModal(); });
+
+    /* Init */
+    Promise.all([
+        fetch('nav.html').then(r => r.text()),
+        fetch('auditLog.html').then(r => r.text()),
+    ]).then(([navHtml, auditHtml]) => {
+        document.getElementById('nav-placeholder').innerHTML = navHtml;
+        document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
+
+        if (window.AuditLog) AuditLog.init();
+        if (window.Nav) Nav.init({ label: "MEDIA PORTAL" });
+
+        loadAll();
+    });
+</script>
+</body>
+</html>
