@@ -809,7 +809,7 @@ function initEmoji() {
    MEMBER AC & CHIPS
    ================================================================ */
 async function loadMembers(){
-  members = await gw({ action: "fetch", domain: DOMAIN.members, sheet: "Members" }, GATEWAY_URL);
+  members = await fetchSheet(DOMAIN.members,"Members");
   populateMemberFilters();
   renderMembersList();
 }
@@ -993,11 +993,11 @@ document.querySelectorAll(".compose-tab").forEach(tab => {
    TRACKING DATA
    ================================================================ */
 async function loadDashboard(){
-  dashRows  = await gw({ action: "fetch", domain: TRACKING_DOMAIN, sheet: "Dashboard", hexKey: null }); 
+  dashRows  = await fetchSheet(TRACKING_DOMAIN, "Dashboard"); 
   renderDashboard(); 
 }
 async function loadTracking(){
-  trackRows = await gw({ action: "fetch", domain: TRACKING_DOMAIN, sheet: "tracking", hexKey: null }); 
+  trackRows = await fetchSheet(TRACKING_DOMAIN, "tracking"); 
 
   ;populateBatchFilter();
   renderStats();
