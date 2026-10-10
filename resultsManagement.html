@@ -1794,7 +1794,8 @@ async function lookupConflictResult(r) {
     if (!id) return { published: false };
 
     if (!_conflictCache[id]) {
-        const res = fetch(GATEWAY_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify({action:"aryaResults", eventId:id})});
+        // FIXED: Added missing 'await' before fetch
+        const res = await fetch(GATEWAY_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify({action:"aryaResults", eventId:id})});
         _conflictCache[id] = await res.json();
     }
     const data = _conflictCache[id];
