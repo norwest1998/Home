@@ -36,7 +36,8 @@ const DOMAIN = {
     audit:     "audit",
     tracking:  "tracking",
     results:   "results",
-    requests:  "requests"  
+    requests:  "requests",
+    media:     "media"  
 };
 
 // READ OPERATIONS -> Switched to POST to avoid Google Apps Script redirecting GETs to HTML Auth Pages
