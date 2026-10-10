@@ -42,7 +42,7 @@ const DOMAIN = {
 // READ OPERATIONS -> Switched to POST to avoid Google Apps Script redirecting GETs to HTML Auth Pages
 async function fetchSheet(domain, sheetName, hexKey = null) {
     const action = hexKey ? "display" : "fetch";
-    const data = await gw({ action: action, domain, sheet: sheetName, hexKey}); 
+    const data = await gw({ action: action, domain: domain, sheet: sheetName, hexKey: hexKey}); 
  
     const rows = data.values ?? [];
     if (rows.length > 0) registerSchema(domain, sheetName, rows); // fire-and-forget
@@ -51,7 +51,7 @@ async function fetchSheet(domain, sheetName, hexKey = null) {
 
 async function searchSheet(domain, sheetName, filtersArray) {
 
-    const data = (await gw({ action: "search", domain, sheet: sheetName, filtersArray  }));
+    const data = (await gw({ action: "search", domain: domain, sheet: sheetName, filters: filtersArray  }));
     return data.values ?? [];
 }
 
@@ -148,7 +148,7 @@ async function registerSchema(domain, sheetName, rows) {
     if (!Array.isArray(rows) || rows.length === 0) return;
     const columns = Object.keys(rows[0]);
     try {
-        await gw({ action: "registerSchema", domain, sheet: sheetName, columns:  columns, rowCount: rows.length });
+        await gw({ action: "registerSchema", domain: domain, sheet: sheetName, columns:  columns, rowCount: rows.length });
         return true;
     } catch (e) {
         // Silent — schema registration must never break the calling page
@@ -157,7 +157,7 @@ async function registerSchema(domain, sheetName, rows) {
 }
 
 async function updateSheet(domain, sheetName, hexKey, updates) {
-    await gw({ action: "update", domain, sheet: sheetName, hexKey, update: updates });
+    await gw({ action: "update", domain: domain, sheet: sheetName, hexKey: hexKey, update: updates });
     return true;
 }
 
@@ -167,7 +167,7 @@ async function appendSheet(domain, sheetName, rowData) {
 }
 
 async function deleteRow(domain, sheetName, hexKey) {    
-    await gw({ action: "delete", domain, sheet: sheetName, hexKey, update: updates });
+    await gw({ action: "delete", domain: domain, sheet: sheetName, hexKey: hexKey });
     return true;
 }
 
