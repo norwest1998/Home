@@ -270,7 +270,7 @@ async function loadAll() {
             fetchSheet(DOMAIN.audit, "Users").catch(() => []),
             fetchSheet(DOMAIN.members, "Members").catch(() => [])
         ]);
-        users = u.values || null;
+        users = Array.isArray(u.values) ? u.values : null;
         if (!users) throw new Error("listUsers returned unexpected data: " + JSON.stringify(u).slice(0, 300));
         members = m || [];
         renderStats();
@@ -283,8 +283,7 @@ async function loadAll() {
 /* Active members with an email and no user yet */
 function availableMembers() {
     const have = new Set(users.map(u => lc(u.Email)));
-    return members
-        .filter(m => lc(mv(m, "Active")) === "true" && mv(m, "email", "Email") && !have.has(lc(mv(m, "email", "Email"))))
+    return members.filter(m => lc(mv(m, "Active")) === "true" && mv(m, "email", "Email") && !have.has(lc(mv(m, "email", "Email"))))
         .sort((a, b) => mv(a, "MemberName").localeCompare(mv(b, "MemberName")));
 }
 
