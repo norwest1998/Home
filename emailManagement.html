@@ -996,13 +996,13 @@ async function loadDashboard(){
   dashRows  = await fetchSheet(TRACKING_DOMAIN, "Dashboard"); 
   renderDashboard(); 
 }
+
 async function loadTracking(){
   trackRows = await fetchSheet(TRACKING_DOMAIN, "tracking"); 
 
   ;populateBatchFilter();
   renderStats();
-  renderTracking();}
-
+  renderTracking();
 }
 
 function renderStats(){
