@@ -427,7 +427,7 @@ function fileToBase64(file) {
 async function driveUploadNew(file) {
     const data = await fileToBase64(file);
     const d = await gw({ action: "uploadNew", folder: "documents", name: file.name, data,
-                         mimeType: file.type || "application/octet-stream" }, RESULTS_GATEWAY_URL);
+                         mimeType: file.type || "application/octet-stream" }, DOC_CONFIG.docWebAppUrl);
     return { fileId: d.fileId, link: d.link };
 }
 
@@ -439,7 +439,7 @@ async function driveUpdateContent(fileId, file) {
         r.readAsDataURL(file);
     });
     return gw({ action: "updateFile", fileId, data,
-                mimeType: file.type || "application/octet-stream" }, RESULTS_GATEWAY_URL);
+                mimeType: file.type || "application/octet-stream" }, DOC_CONFIG.docWebAppUrl);
 }
 
 /* ---------- State + rendering ---------- */
@@ -447,7 +447,9 @@ let DOCS = [];
 let activeCategory = null;
 
 async function loadDocs() {
-    DOCS = await gw({ domain: DOMAIN.documents, sheet: "Documents" }, DOC_CONFIG.docWebAppUrl);
+
+    DOCS = await fetchSheet(DOMAIN.documents, "Documents");
+    
     renderLibraryTree();
     renderGrid();
     // Update stats pills
@@ -668,8 +670,7 @@ document.getElementById("statusFilter").addEventListener("change", renderGrid);
 document.getElementById("visibilityFilter").addEventListener("change", renderGrid);
 
 async function fetchDriveFolderContents(folderId) {
-
-    const d = await gw({ action: "listChildren", folderId }, RESULTS_GATEWAY_URL);
+    const d = await gwGet({ action: "listChildren", folderId }, DOC_CONFIG.docWebAppUrl);
     return d.files || [];
 }
 
@@ -807,7 +808,8 @@ document.getElementById("driveFileArchiveBtn").addEventListener("click", async (
     try {
         await logDocumentAction(currentDriveFile.id, currentDriveFile.name, "Archive Document");
 
-        await gw({ action: "archiveFile", fileId: currentDriveFile.id }, RESULTS_GATEWAY_URL);
+        // FIXED: Hit the document gateway
+        await gw({ action: "archiveFile", fileId: currentDriveFile.id }, DOC_CONFIG.docWebAppUrl);
 
         const matchedDoc = DOCS.find(d => d.DriveFileId === currentDriveFile.id);
         if (matchedDoc) {
@@ -836,7 +838,8 @@ let currentDriveFile = null;
 
 async function selectDriveDocument(fileId) {
     try {
-        const file = await gw({ action: "fileMeta", fileId }, RESULTS_GATEWAY_URL);
+        // FIXED: Use gwGet and hit the correct document gateway
+        const file = await gwGet({ action: "fileMeta", fileId }, DOC_CONFIG.docWebAppUrl);
 
         currentDriveFile = file;
         await logDocumentAction(file.id, file.name, "View Document Details");
@@ -997,13 +1000,15 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
 
             setStep(1, "active");
             const newVersion = (parseInt(doc.Version, 10) || 1) + 1;
-            await updateSheet(DOMAIN.documents, DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, doc.RowID, {
+            // FIXED: Removed DOC_CONFIG.docWebAppUrl override, corrected parameters
+            await updateSheet(DOMAIN.documents, "Documents", doc.RowID, {
                 Version: newVersion, LastModifiedBy: who, LastModifiedDate: now, Status: "Draft"
             });
             setStep(1, "done");
 
             setStep(2, "active");
-            await appendSheet(DOMAIN.documents,DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
+            // FIXED: Corrected parameter position
+            await appendSheet(DOMAIN.documents, "DocumentVersions", {
                 RowID: genRowId(), DocID: doc.RowID, Version: newVersion,
                 DriveFileId: doc.DriveFileId, DriveLink: doc.DriveLink, ChangedBy: who, ChangedDate: now, Notes: notes
             });
@@ -1015,7 +1020,8 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
 
             setStep(1, "active");
             const rowId = genRowId();
-            await appendSheet(DOMAIN.documents, DOC_CONFIG.docWebAppUrl, DOC_CONFIG.documentsSheet, {
+            // FIXED: Corrected parameter position
+            await appendSheet(DOMAIN.documents, "Documents", {
                 RowID: rowId, Title: title || file.name, Category: category, Keywords: keywords,
                 DriveFileId: fileId, DriveLink: link, Version: 1, Status: "Draft", Owner: who,
                 LastModifiedBy: who, LastModifiedDate: now, ReviewedBy: "", ReviewDate: "", SignedOffBy: "", SignOffDate: "",
@@ -1024,7 +1030,8 @@ document.getElementById("uploadSaveBtn").addEventListener("click", async () => {
             setStep(1, "done");
 
             setStep(2, "active");
-            await appendSheet(DOMAIN.documents, DOC_CONFIG.docWebAppUrl, DOC_CONFIG.versionsSheet, {
+            // FIXED: Corrected parameter position
+            await appendSheet(DOMAIN.documents, "DocumentVersions", {
                 RowID: genRowId(), DocID: rowId, Version: 1, DriveFileId: fileId, DriveLink: link, ChangedBy: who, ChangedDate: now, Notes: notes || "Initial upload"
             });
             setStep(2, "done");
@@ -1057,7 +1064,8 @@ async function openDetailModal(docId) {
         `${doc.Category || "Uncategorised"} · Status: ${doc.Status} · Reviewed by: ${doc.ReviewedBy || "—"} (${doc.ReviewDate || "—"}) · Signed off by: ${doc.SignedOffBy || "—"} (${doc.SignOffDate || "—"})`;
     document.getElementById("detailModal").classList.add("visible");
 
-    const versions = await fetchSheet(DOMAIN.documents, "DocumentVersions",docId);
+    // FIXED: Used searchSheet to correctly grab matching versions for a specific document ID
+    const versions = await searchSheet(DOMAIN.documents, "DocumentVersions", [{ key: "DocID", value: docId }]);
     document.getElementById("detailVersions").innerHTML = versions.map(v => `
         <div class="ver-row">
             <span>v${v.Version} — ${v.ChangedBy} — ${v.ChangedDate}</span>
@@ -1065,6 +1073,7 @@ async function openDetailModal(docId) {
         </div>
     `).join("") || `<div class="fn-desc">No version history yet.</div>`;
 }
+
 document.getElementById("detailCloseBtn").addEventListener("click", () => document.getElementById("detailModal").classList.remove("visible"));
 
 document.getElementById("markReviewBtn").addEventListener("click", async () => {
@@ -1095,9 +1104,8 @@ document.getElementById("syncCloseBtn").addEventListener("click", () => {
 
 async function fetchAllDriveFilesRecursively(folderId, updateScanStatus) {
     if (updateScanStatus) updateScanStatus("Scanning Drive folders...");
-    const d = await gw({ action: "listRecursive", folderId }, RESULTS_GATEWAY_URL);
+    const d = await gwGet({ action: "listRecursive", folderId }, DOC_CONFIG.docWebAppUrl);
     return d.files || [];
-    return allFiles;
 }
 
 async function syncDriveToSheet() {
