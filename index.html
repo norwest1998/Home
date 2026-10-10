@@ -1757,7 +1757,7 @@ VIGATION HEADER
     // =========================================================
     // API CONFIGURATION
     // =========================================================
-    const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
+    //   const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
     const HOME_DATA_API = "https://script.google.com/macros/s/AKfycbzGgNMh8KNWYquGuOoGvmrasDR5npiPoNXTouuzVeY9sRwrhDo29BVDbWGrh_FfgoieXQ/exec";
     const DISCOVERY_URL = HOME_DATA_API; // legacy ?ss= contract is served by the same deployment
     const CALENDAR_URL = 'https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec';
@@ -1829,7 +1829,6 @@ VIGATION HEADER
         const data = JSON.parse(raw);
         if (data.error) throw new Error(data.error);
         if (raw !== cachedRaw) renderTopDown(data);          // skip identical re-render
-        
         try { sessionStorage.setItem(CACHE_KEY, raw); } catch (e) {}
         return raw;
       } catch (err) {
