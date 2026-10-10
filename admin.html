@@ -138,6 +138,11 @@
             <div class="health-label">Full members</div>
             <div class="health-sub"></div>
         </div>
+        <div class="glass health-stat" id="health-users">
+            <div class="health-pct"><span class="spinner spinner-lg"></span></div>
+            <div class="health-label">Members with a login</div>
+            <div class="health-sub"></div>
+        </div>
     </section>
 
     <div class="section-head" id="admin-ops">
@@ -213,6 +218,11 @@ async function initAdmin() {
             events: res[`${DOMAIN.calendar}|Event Data`],
             tracking: res[`${DOMAIN.tracking}|Tracking`]
         };
+
+        try {
+            freshData.users = (await apiGet("listUsers")).values
+                .map(u => ({ Email: u.Email, Role: u.Role, LockedUntil: u.LockedUntil }));
+        } catch (e) { freshData.users = null; }
 
         // Cache and re-render
         sessionStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(freshData));
@@ -458,6 +468,23 @@ const FUNCTIONS = [
             };
         }
     },
+    {
+        id: "user-management",
+        icon: '<i data-lucide="users" color="#257fb6"></i>',
+        title: "User Management",
+        description: "Manage portal users, roles and login methods.",
+        href: "users.html",
+        status: (data) => {
+            const u = data.users;
+            if (!u) return { pills: [{ label: "Admin only", value: "🔒", className: "badge-default" }] };
+            const locked = u.filter(x => x.LockedUntil).length;
+            return { pills: [
+                { label: "Users",  value: u.length, className: "badge-full" },
+                { label: "Admins", value: u.filter(x => x.Role === "admin").length, className: "badge-admin" },
+                { label: "Locked", value: locked, className: locked ? "badge-expired" : "badge-default" }
+            ]};
+        }
+    },
     { id: "add-new-function", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
 ];
 
@@ -581,6 +608,18 @@ function renderMemberHealth(membersData) {
         }
     });
 }
+
+function renderUserHealth(data) {
+    const el = document.getElementById("health-users"); if (!el) return;
+    const pctEl = el.querySelector(".health-pct"), sub = el.querySelector(".health-sub");
+    if (!data.users) { pctEl.textContent = "—"; sub.textContent = "Admin only"; return; }
+    const active = (data.members || []).filter(m => String(m.Active).toLowerCase() === "true");
+    const have = new Set(data.users.map(u => String(u.Email).toLowerCase()));
+    const n = active.filter(m => have.has(getRowVal(m, ["email", "Email"]).toLowerCase())).length;
+    const pct = active.length ? Math.round(n / active.length * 100) : 0;
+    pctEl.textContent = pct + "%"; pctEl.className = "health-pct " + pctClass(pct);
+    sub.textContent = `${n} of ${active.length} members`;
+}
             
 // SystemHealth Panel Module
 const SystemHealth = {
@@ -703,6 +742,7 @@ const SystemHealth = {
 function renderAll(data) {
     if (!data) return;
     renderMemberHealth(data.members);
+    renderUserHealth(data);
     renderGrid(data);
 }
 
