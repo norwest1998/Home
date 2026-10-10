@@ -462,7 +462,7 @@
 
     async function loadApplications() {
       try {
-        const data = await gw({domain: DOMAIN.apps, sheet: "Membership Applications"});
+        const data = await gw({action: "fetch",domain: DOMAIN.apps, sheet: "Membership Applications"});
         allApplications = (data || []).map(normaliseApp);
         renderTable();
       } catch (err) {
