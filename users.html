@@ -267,7 +267,7 @@ async function loadAll() {
     ["total","admin","editor","viewer","locked","nologin"].forEach(k => $("stat-" + k).innerHTML = `<span class="spinner"></span>`);
     try {
         const [u, m] = await Promise.all([
-            apiGet("listUsers"),
+            fetchSheet(DOMAIN.audit, "Users").catch(() => []),
             fetchSheet(DOMAIN.members, "Members").catch(() => [])
         ]);
         users = u.values || [];
