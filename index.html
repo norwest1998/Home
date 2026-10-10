@@ -1823,12 +1823,18 @@ VIGATION HEADER
 
     async function refreshBootstrap(cachedRaw) {
       try {
-        const response = await fetch(BOOTSTRAP_API);
+        // 1. Add cache buster and force no-store to guarantee fresh network fetch
+        const url = BOOTSTRAP_API + "&_t=" + Date.now();
+        const response = await fetch(url, { cache: "no-store" });
         const raw = await response.text();
         
         const data = JSON.parse(raw);
         if (data.error) throw new Error(data.error);
-        if (raw !== cachedRaw) renderTopDown(data);          // skip identical re-render
+        
+        // 3. Guarantee final render to inject the live latest results, 
+        // even if the rest of the payload matches the cache identically.
+        renderTopDown(data, false); 
+        
         try { sessionStorage.setItem(CACHE_KEY, raw); } catch (e) {}
         return raw;
       } catch (err) {
@@ -1873,14 +1879,26 @@ VIGATION HEADER
     async function initApp() {
       loadSideData();
       const cachedRaw = readCache();
-      if (cachedRaw) { try { renderTopDown(JSON.parse(cachedRaw)); } catch (e) { console.warn("Cache parse error", e); } }
+      if (cachedRaw) { 
+        try { 
+          // Pass true to flag that this is the initial cached render
+          renderTopDown(JSON.parse(cachedRaw), true); 
+        } catch (e) { 
+          console.warn("Cache parse error", e); 
+        } 
+      }
       await refreshBootstrap(cachedRaw);
     }
 
     /** Priority rendering - top of page down. Weather, next event and calendar are handled by loadSideData(). */
-    function renderTopDown(data) {
+    function renderTopDown(data, isFromCache = false) {
       if (!data) return;
-      if (data.latestResults) renderLatestResults(data.latestResults);
+      
+      // 2. Hold back stale latest results if this is the cached run
+      if (data.latestResults && !isFromCache) {
+         renderLatestResults(data.latestResults);
+      }
+      
       if (data.stats) renderMembershipStats(data.stats);
       if (data.members) {
         allMembers = data.members;
