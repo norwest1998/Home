@@ -3253,6 +3253,7 @@ VIGATION HEADER
           const resp = await fetch(`${CALENDAR_URL}?action=listConflicts&date=${encodeURIComponent(date)}`);
           const data = await resp.json();
           events = data.events || [];
+    console.log("Fetched events:", events);      
         } catch (err) {
           return `Failed to load events: ${err.message}`;
         }
