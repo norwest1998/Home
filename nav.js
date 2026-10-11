@@ -14,11 +14,13 @@ const DOMAINS = [
     { label: "Admin",        href: "admin.html" },
     { label: "Applications", href: "applications.html" },
     { label: "Calendar",     href: "calendarManagement.html" },
-    { label: "Documents",    href: "documentManagement.html" },
     { label: "Email",        href: "emailManagement.html" },
     { label: "Members",      href: "memberManagement.html" },
+    { label: "Media",        href: "mediaManagement.html" },
     { label: "Notes",        href: "notes.html" },
     { label: "Results",      href: "resultsManagement.html" },
+    { label: "Tracking",     href: "trackingManagement.html" },
+    { label: "Documents",    href: "documentManagement.html" }   
 ];
 
 const Nav = {
