@@ -2019,7 +2019,6 @@ async function loadData() {
     eventData.forEach(e => {
       if (!e.HexKey) e.HexKey = `${e.Date}|${e.Start || ""}|${e.Class || ""}`;
       if (!e.Season) e.Season = inferSeason(e.Date); // Fixed: Replaced `eventData.Date` array call with element call `e.Date`
-      console.log("synched to calendar: " + e['Calendar Synced']);
     });
     
     classes  = await fetchSheet(DOMAIN.members, "Classes");
