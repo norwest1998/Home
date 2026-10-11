@@ -180,6 +180,9 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
                     <option value="">All Time</option>
                 </select>
                 <button class="btn btn-ghost" id="refreshBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+                <button class="btn btn-primary" id="processQueueBtn" style="padding:5px 12px;font-size:11px;background:var(--glow);color:var(--ocean-deep);">
+                    <i data-lucide="play" size="14"></i> Process Queue Now
+                </button>
             </div>
             <div class="media-table-wrap">
                 <table class="media-table">
@@ -566,7 +569,10 @@ async function savePost(requeue) {
             }
 
             await updateSheet(QUEUE_DOMAIN, QUEUE_SHEET, editingPostKey, updates);
-            
+            if (requeue) {
+                // Instantly tell the backend to post it to Facebook!
+                await apiGet("processFacebookQueue"); 
+            }
             showModalStatus(requeue ? "Post re-queued successfully!" : "Post updated successfully!", "success");
             await loadAll(); // Refresh table
             setTimeout(closeModal, 800);
@@ -583,6 +589,29 @@ async function savePost(requeue) {
         el.textContent = msg; el.className = `modal-status visible ${type}`;
     }
 
+    document.getElementById("processQueueBtn").addEventListener("click", async () => {
+        const btn = document.getElementById("processQueueBtn");
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> Processing...`;
+
+        try {
+            // Call the new backend endpoint
+            await apiGet("processFacebookQueue"); 
+            
+            showModalStatus("Queue processed successfully!", "success");
+            
+            // Reload the table so you can instantly see PENDING change to POSTED
+            await loadAll(); 
+        } catch (e) {
+            alert("Error processing queue: " + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            if(window.lucide) lucide.createIcons();
+        }
+    });
     // --- NEW: Handle Post Deletion ---
     document.getElementById("modalDeletePost").addEventListener("click", async () => {
         if (!editingPostKey) return;

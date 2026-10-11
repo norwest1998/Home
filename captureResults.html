@@ -1171,7 +1171,7 @@ async function getEvents() {
     });
     console.log('raw', data.events?.length, 'mapped', EVENTS.length, EVENTS[0]);
   } catch (error) {
-    console.error("Failed to load events:", error);
+    console.error("Failed to load events:", error.message);
     EVENTS = [];
   }
 }
