@@ -1691,7 +1691,7 @@ VIGATION HEADER
                 </div>
 
                 <button type="submit" id="btnSubmitAvgReq" class="add-app-pill" style="margin-top:10px; height:40px; justify-content:center; width:100%; font-size:14px; font-weight:600; cursor:pointer;">
-                  Submit Application
+                  Save Request
                 </button>
                 <div id="avgReqFormStatus" style="font-size:12px; margin-top:4px; text-align:center;"></div>
               </form>
@@ -3384,7 +3384,7 @@ VIGATION HEADER
         const requestor = document.getElementById("reqMemberName").value;
 
         statusDiv.style.color = "var(--glow, #257fb6)";
-        statusDiv.innerHTML = "Submitting request…";
+        statusDiv.innerHTML = "Saving request…";
         submitBtn.disabled = true;
 
         const regattaType = document.getElementById("reqRegattaType")?.value || "";
@@ -3409,7 +3409,7 @@ VIGATION HEADER
             regattaType: regattaType,
             eventName: (document.getElementById("reqBoatClass").value + " " + regattaType).trim(),
             conflictingRegatta: conflictingRegattaValue,
-            status: "Received"
+            status: "Pending"
           }
         };
 
@@ -3417,7 +3417,7 @@ VIGATION HEADER
           
           await submitAverageScoreRequest(payload);
           statusDiv.style.color = "#4ade80";
-          statusDiv.innerHTML = "Submitted successfully! Returning to list…";
+          statusDiv.innerHTML = "Saved as Pending! Returning to list…";
 
           setTimeout(() => {
             document.getElementById("avgScoreForm").reset();
