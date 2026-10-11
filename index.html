@@ -3264,10 +3264,10 @@ VIGATION HEADER
         
         const conflict = events.filter(e => {
           const evClass = (e.class ?? e.Class ?? e.className ?? "");
-          return conflict.conflict;       
+          return evClass === className;       
         });
-
-        return conflict.length >= 1
+console.log("Filtered events:", conflict);
+        return conflict.length > 0
           ? conflict[0].conflict
           : `No conflicting event found for ${className} between ${fromDate.toDateString()} and ${toDate.toDateString()}`;
       }
