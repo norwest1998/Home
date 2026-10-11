@@ -2136,7 +2136,7 @@ VIGATION HEADER
     /* =========================================================================
       Engine
       ========================================================================= */
-    async function fetchSheet(spreadsheetId, sheetName){
+    async function fetchSpreadSheet(spreadsheetId, sheetName){
       const url = `${DISCOVERY_URL}?ss=${spreadsheetId}&sheet=${encodeURIComponent(sheetName)}`;
       const res = await fetch(url);
       const data = await res.json();
@@ -2180,7 +2180,7 @@ VIGATION HEADER
         const sheets = await getSheetsForClass(activeClass);
         sheet = sheets[activeSheetIndex];
         if (!sheet){ document.getElementById('tableBody').innerHTML = ''; statusEl.textContent = 'No sheets found.'; return; }
-        const { meta, headers, rows } = await fetchSheet(cls.spreadsheetId, sheet.name);
+        const { meta, headers, rows } = await fetchSpreadSheet(cls.spreadsheetId, sheet.name);
         renderTable(meta, headers, rows);
         statusEl.textContent = `${cls.label} • ${sheet.name} • live from Results Sheets`;
       }catch(err){
