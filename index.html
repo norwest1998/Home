@@ -1650,13 +1650,6 @@ VIGATION HEADER
             <!-- TAB 2: Applications Form -->
             <div id="avg-tab-req-app" class="tab-content">
               <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
-
-                <!-- Missed Event Date -->
-                <div class="form-group">
-                  <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Missed Event Date</label>
-                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px;">
-                </div>
-
                 <!-- Event Class & Type -->
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                   <div class="form-group">
@@ -1670,7 +1663,11 @@ VIGATION HEADER
                     </select>
                   </div>
                 </div>
-
+                <!-- Missed Event Date -->
+                <div class="form-group">
+                  <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Missed Event Date</label>
+                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px;">
+                </div>
                 <!-- Member Select -->
                 <div class="form-group">
                   <label for="reqMemberName" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Member Name</label>
