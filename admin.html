@@ -204,7 +204,8 @@ async function initAdmin() {
             { domain: DOMAIN.notes, sheet: "Notes" },
             { domain: DOMAIN.notes, sheet: "Actions" },
             { domain: DOMAIN.calendar, sheet: "Event Data" },
-            { domain: DOMAIN.tracking, sheet: "Tracking" }
+            { domain: DOMAIN.tracking, sheet: "Tracking" },
+            { domain: DOMAIN.media, sheet: "Queue" }
         ];
 
         const res = await batchFetchSheets(reqs);
@@ -216,7 +217,8 @@ async function initAdmin() {
             notes: res[`${DOMAIN.notes}|Notes`],
             actions: res[`${DOMAIN.notes}|Actions`],
             events: res[`${DOMAIN.calendar}|Event Data`],
-            tracking: res[`${DOMAIN.tracking}|Tracking`]
+            tracking: res[`${DOMAIN.tracking}|Tracking`],
+            media: res[`${DOMAIN.media}|Queue`]
         };
 
         try {
