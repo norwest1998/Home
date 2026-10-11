@@ -1650,6 +1650,13 @@ VIGATION HEADER
             <!-- TAB 2: Applications Form -->
             <div id="avg-tab-req-app" class="tab-content">
               <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
+
+                <!-- Missed Event Date -->
+                <div class="form-group">
+                  <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Missed Event Date</label>
+                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px;">
+                </div>
+
                 <!-- Event Class & Type -->
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                   <div class="form-group">
@@ -1662,11 +1669,6 @@ VIGATION HEADER
                       <option value="General Handicap">General Handicap</option>
                     </select>
                   </div>
-                </div>
-                <!-- Missed Event Date -->
-                <div class="form-group">
-                  <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Missed Event Date</label>
-                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px;">
                 </div>
 
                 <!-- Member Select -->
@@ -3378,7 +3380,10 @@ VIGATION HEADER
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const result = await response.json();
-        if (result.error) throw new Error(result.error.message);
+        if (result.error) {
+          console.error("Gateway error response:", result);
+          throw new Error(typeof result.error === "string" ? result.error : (result.error.message || JSON.stringify(result.error)));
+        }
 
         return result;
       }
@@ -3404,6 +3409,12 @@ VIGATION HEADER
         if (confSel.style.display !== "none" && !conflictingRegattaValue) {
           statusDiv.style.color = "#f87171";
           statusDiv.textContent = "Please select the conflicting ARYA event.";
+          submitBtn.disabled = false;
+          return;
+        }
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(memberEmail)) {
+          statusDiv.style.color = "#f87171";
+          statusDiv.textContent = `Member email on file is invalid: "${memberEmail}". Fix it in the members sheet.`;
           submitBtn.disabled = false;
           return;
         }
