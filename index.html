@@ -3366,26 +3366,7 @@ VIGATION HEADER
       }
 
       async function submitAverageScoreRequest(payload) {
-        if (typeof GATEWAY_URL === 'undefined' || !GATEWAY_URL) {
-          throw new Error("GATEWAY_URL is not defined.");
-        }
-
-        const response = await fetch(GATEWAY_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "appendAvgScrReq", domain: "requests", sheet: "AvgScrReq", rowData: payload.rowData})
-          
-        });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        const result = await response.json();
-        if (result.error) {
-          console.error("Gateway error response:", result);
-          throw new Error(typeof result.error === "string" ? result.error : (result.error.message || JSON.stringify(result.error)));
-        }
-
-        return result;
+        return gw({ action: "appendAvgScrReq", domain: "requests", sheet: "AvgScrReq", rowData: payload.rowData });
       }
 
       document.getElementById("avgScoreForm").addEventListener("submit", async function(e) {
