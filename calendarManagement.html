@@ -1791,8 +1791,7 @@ btnBulkExport.addEventListener("click", () => {
     msgElem: msgElem,
     loadingMsg: "Syncing events with Google Calendar...",
     actionFn: async () => {
-      const res = await gw({ action: "exportToCalendar", hexKey: null },calWebAppUrl);
-      const data = await res.json();
+      const data = await gw({ action: "exportToCalendar", hexKey: null },calWebAppUrl);
       if (data.error) throw new Error(data.error);
       
       await loadData();
@@ -1953,8 +1952,7 @@ regionalConflictBtn?.addEventListener("click", () => {
     msgElem: msgElem,
     loadingMsg: "Scanning regional championship calendars...",
     actionFn: async () => {
-      const res = await gw({action: "runRegionalConflicts"}, calWebAppUrl);
-      const result = await res.json();
+      const result = await gw({action: "runRegionalConflicts"}, calWebAppUrl);
       if (result.error) throw new Error(result.error);
       if (result.success === false) throw new Error(result.error || "Conflict scan failed");
 
@@ -1976,8 +1974,7 @@ generateSeasonBtn?.addEventListener("click", () => {
     msgElem: msgElem,
     loadingMsg: `Generating fixtures for season ${nextSeason}...`,
     actionFn: async () => {
-      const res = await gw({action: "generateSeasonFixtures"}, ssnWebAppUrl);
-      const result = await res.json();
+      const result = await gw({action: "generateSeasonFixtures"}, ssnWebAppUrl);
       if (result.error) throw new Error(result.error);
 
       await loadData();
