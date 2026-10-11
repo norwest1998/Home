@@ -1650,13 +1650,6 @@ VIGATION HEADER
             <!-- TAB 2: Applications Form -->
             <div id="avg-tab-req-app" class="tab-content">
               <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
-
-                <!-- Missed Event Date -->
-                <div class="form-group">
-                  <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Missed Event Date</label>
-                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px;">
-                </div>
-
                 <!-- Event Class & Type -->
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                   <div class="form-group">
@@ -1669,6 +1662,11 @@ VIGATION HEADER
                       <option value="General Handicap">General Handicap</option>
                     </select>
                   </div>
+                </div>
+                <!-- Missed Event Date -->
+                <div class="form-group">
+                  <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Missed Event Date</label>
+                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px;">
                 </div>
 
                 <!-- Member Select -->
@@ -3265,7 +3263,10 @@ VIGATION HEADER
 
       /* Find ranked events for date of missed event */
 /* Find ranked events for date of missed event */
+      let currentEventId = "";
+
       async function getConflictingEvents(className, date) {
+        currentEventId = "";
         try {
           // Fetch the full Annual Calendar directly via Gateway
           const events = await fetchSheet("calendar", "Event Data");
@@ -3299,7 +3300,7 @@ VIGATION HEADER
           
           // 2. Confirm the selected class is actually scheduled to race at the club on this date
           // If the club is running "General" (General Handicap), all classes are technically eligible.
-          const classScheduled = clubEventsOnDate.some(e => {
+          const classScheduled = clubEventsOnDate.find(e => {
             const evClass = (e[" Class"] || e.Class || "").trim().toLowerCase();
             const searchClass = className.toLowerCase();
             return evClass === searchClass || 
@@ -3307,6 +3308,11 @@ VIGATION HEADER
                    (searchClass === "general handicap" && evClass === "general");
           });
           
+          if (classScheduled) {
+            const idKey = Object.keys(classScheduled).find(k => k.trim().toLowerCase().replace(/\s/g, "") === "eventid");
+            currentEventId = idKey ? String(classScheduled[idKey]) : "";
+          }
+
           if (!classScheduled) {
             return `Club regatta for ${className} is not scheduled on ${formatDate(date)}`;
           }
@@ -3401,18 +3407,29 @@ VIGATION HEADER
           submitBtn.disabled = false;
           return;
         }
+        const boatClass = document.getElementById("reqBoatClass").value;
+        const boat = (Array.isArray(allBoats) ? allBoats : []).find(b =>
+          String(b.member || "").trim().toLowerCase() === requestor.trim().toLowerCase() &&
+          String(b.class || "").trim().toLowerCase() === boatClass.trim().toLowerCase());
         const payload = {
           rowData: {
-            "Request ID": "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
-            "Timestamp": new Date().toISOString(),
-            "Member Name": requestor,
-            "Member Email": memberEmail,
-            "Event Date": document.getElementById("reqEventDate").value,
-            "Boat Class": document.getElementById("reqBoatClass").value,
-            "Regatta Type": regattaType,
-            "Conflicting Regatta": conflictingRegattaValue,
-            "ConfRegID": "",
-            "Status": "Pending"
+            requestId: "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
+            timestamp: new Date().toISOString(),
+            memberName: requestor,
+            memberEmail: memberEmail,
+            eventDate: document.getElementById("reqEventDate").value,
+            boatClass: document.getElementById("reqBoatClass").value,
+            regattaType: regattaType,
+            eventName: (document.getElementById("reqBoatClass").value + " " + regattaType).trim(),
+            conflictingRegatta: conflictingRegattaValue,
+            boatId: boat ? boat.boatId : "",
+            eventId: currentEventId,
+            confRegId: "",
+            status: "Pending",
+            rejectedReason: "",
+            decisionBy: "",
+            decisionDate: "",
+            emailSent: ""
           }
         };
 
