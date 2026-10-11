@@ -1180,7 +1180,7 @@ async function apiGet(action, className) {
   console.log("in apiGet action: " + action);
   const res = action === "members"
       ? await gw({action: "ClassMembers", className: className},CLB_WEBAPP_URL)
-      : await gw({action: "calendar", className: className},CAL_WEBAPP_URL) `${CAL_WEBAPP_URL}?type=calendar`;
+      : await gw({action: "calendar", className: className}, `${CAL_WEBAPP_URL}?type=calendar`);
   if (!res.ok) throw new Error(`Server error (${res.status})`);
   const data = await res.json();
   if (data.error) throw new Error(data.error);
