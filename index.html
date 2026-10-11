@@ -3263,8 +3263,8 @@ VIGATION HEADER
         }
         
         const conflict = events.filter(e => {
-          const evClass = (e.class ?? e.Class ?? e.className ?? "").toLowerCase();
-          return evClass === className.toLowerCase();
+          const evClass = (e.class ?? e.Class ?? e.className ?? "");
+          return conflict.conflict;       
         });
 
         return conflict.length >= 1
