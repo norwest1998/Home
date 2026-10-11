@@ -1202,7 +1202,7 @@ function fmtDate(d){ const dt = parseDMY(d); return `${String(dt.getDate()).padS
 
 /* Class emblem images live at home/images/classes/{className}.png — falls back to the text roundel if missing */
 function emblemFile(cls){
-  if (cls === "General" || cls === "Twilight") return "smmc-logo";
+  if (cls === "General") return "smmc-logo";
   if (cls === "Social") return "SmileyFace";
   return cls;
 }
