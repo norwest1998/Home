@@ -1650,6 +1650,13 @@ VIGATION HEADER
             <!-- TAB 2: Applications Form -->
             <div id="avg-tab-req-app" class="tab-content">
               <form id="avgScoreForm" style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
+
+                <!-- Missed Event Date -->
+                <div class="form-group">
+                  <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Missed Event Date</label>
+                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px;">
+                </div>
+
                 <!-- Event Class & Type -->
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                   <div class="form-group">
@@ -1663,11 +1670,7 @@ VIGATION HEADER
                     </select>
                   </div>
                 </div>
-                <!-- Missed Event Date -->
-                <div class="form-group">
-                  <label for="reqEventDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Missed Event Date</label>
-                  <input type="date" id="reqEventDate" name="eventDate" required style="width:100%; padding:10px; border-radius:8px;">
-                </div>
+
                 <!-- Member Select -->
                 <div class="form-group">
                   <label for="reqMemberName" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Member Name</label>
@@ -1687,7 +1690,7 @@ VIGATION HEADER
                   <select id="reqConflictingRegattaSelect" style="display:none; width:100%; padding:10px; border-radius:8px;"></select>
                 </div>
 
-                <button type="submit" id="btnSubmitAvgReq" class="add-app-pill" style="display:flex; margin-top:10px; height:40px; justify-content:center; width:100%; font-size:14px; font-weight:600; cursor:pointer;">
+                <button type="submit" id="btnSubmitAvgReq" style="display:flex; align-items:center; justify-content:center; margin-top:10px; height:40px; width:100%; font-size:14px; font-weight:600; cursor:pointer; border:none; border-radius:8px; background:var(--glow, #257fb6); color:#fff;">
                   Save Request
                 </button>
                 <div id="avgReqFormStatus" style="font-size:12px; margin-top:4px; text-align:center;"></div>
@@ -3026,7 +3029,7 @@ VIGATION HEADER
 
           activeMembers.forEach(m => {
             const name = m.Name || m.name || m.memberName || m.memberNameFull || m["Member Name"] || "";
-            const email = m.Email || m.email || m.memberEmail || m["Member Email"] || "";
+            const email = m.Email || m.email || m.memberEmail || m["Member Email"] || m["Email Address"] || m.emailAddress || m["E-mail"] || "";
             
             if (name) {
               const opt = document.createElement("option");
@@ -3378,7 +3381,10 @@ VIGATION HEADER
         e.preventDefault();
         const statusDiv = document.getElementById("avgReqFormStatus");
         const submitBtn = document.getElementById("btnSubmitAvgReq");
-        const requestor = document.getElementById("reqMemberName").value;
+        const memberSel = document.getElementById("reqMemberName");
+        const requestor = memberSel.value;
+        const memberEmail = memberSel.selectedOptions[0]?.dataset.email
+          || document.getElementById("reqMemberEmail").value || "";
 
         statusDiv.style.color = "var(--glow, #257fb6)";
         statusDiv.innerHTML = "Saving request…";
@@ -3397,16 +3403,16 @@ VIGATION HEADER
         }
         const payload = {
           rowData: {
-            "Request ID": "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
-            "Timestamp": new Date().toISOString(),
-            "Member Name": requestor,
-            "Member Email": document.getElementById("reqMemberEmail").value,
-            "Event Date": document.getElementById("reqEventDate").value,
-            "Boat Class": document.getElementById("reqBoatClass").value,
-            "Regatta Type": regattaType,
-            "Conflicting Regatta": conflictingRegattaValue,
-            "ConfRegID": "",
-            "Status": "Pending"
+            requestId: "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
+            timestamp: new Date().toISOString(),
+            memberName: requestor,
+            memberEmail: memberEmail,
+            eventDate: document.getElementById("reqEventDate").value,
+            boatClass: document.getElementById("reqBoatClass").value,
+            regattaType: regattaType,
+            eventName: (document.getElementById("reqBoatClass").value + " " + regattaType).trim(),
+            conflictingRegatta: conflictingRegattaValue,
+            status: "Pending"
           }
         };
 
