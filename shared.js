@@ -227,6 +227,7 @@ async function gw(payload, url = GATEWAY_URL) {
     if (data.error) throw new Error(data.error);
     return data;
 }
+
 // Utilities
 const ROLE_RANK = { viewer: 1, editor: 2, admin: 3 };
 function applyRoles() {

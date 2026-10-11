@@ -1106,11 +1106,23 @@ async function getMembers(className) {
   if (state.practice) { MEMBERS = PRACTICE_MEMBERS.map(m => ({...m})); return; }
   try {
     if (className === "Twilight") className = "All";  // special case for Twilight events 
-    const queryClass = className  
-    const data = await gw({action: "fetch", domain: "members", sheet: "ClassMembers", className: queryClass}, CLB_WEBAPP_URL);
-    MEMBERS = Array.isArray(data.members)
-      ? data.members.map(m => ({ ...m, className: m.class ?? m.className, homeClub: m.homeClub || "SMMC", boat: m.id }))
-      : [];
+    const queryClass = className;
+    
+    // Instead of CLB_WEBAPP_URL, we use fetchSheet to use GATEWAY_URL natively
+    const rows = await fetchSheet("members", "ClassMembers");
+    const filtered = (queryClass === "All" || queryClass === "General" || !queryClass) 
+         ? rows 
+         : rows.filter(r => r.Class === queryClass || r.className === queryClass);
+
+    MEMBERS = filtered.map(m => ({
+         ...m,
+         className: m.Class ?? m.className,
+         homeClub: m.homeClub || "SMMC",
+         boat: m.id || m.BoatID,
+         member: m.Member,
+         sailNo: m.SailNo,
+         hull: m["Hull Colour"] || m.hull || "white"
+    }));
     console.log(`getMembers(${className}): received ${MEMBERS.length} members`, MEMBERS.slice(0,3));
   } catch (error) {
     console.error("Failed to load member data:", error);
@@ -1121,16 +1133,17 @@ async function getMembers(className) {
 async function getGuests(eventId, className) {
   if (state.practice) { GUESTS = PRACTICE_GUESTS.map(g => ({...g})); return; }
   try {
-    const rows = await gw({domain: "results", sheet: "GuestRegistrations"},);
+    // Navigate naturally via Gateway.js leveraging the internal results database natively
+    const rows = await fetchSheet("results", "GuestRegistrations");
     GUESTS = rows
       .filter(g => String(g.EventID) === String(eventId))
       .map(g => ({
-        id:        'G-' + (g.GuestID ?? g.SailNo),   // use your guest row ID if the sheet has one
+        id:        'G-' + (g.HexKey ?? g.SailNo),   
         member:    g.CompetitorName,
         sailNo:    String(g.SailNo),
-        className: g.RaceClass || g.BoatClass || g.Class || ((className === 'Twilight' || className === 'General') ? '' : className),  // boat's own class; event class only for single-class events
-        homeClub:  g.HomeClub,
-        hull:     g.HullColor || "white",
+        className: g.RaceClass || g.Model || ((className === 'Twilight' || className === 'General') ? '' : className),  
+        homeClub:  g.HomeClub || "Guest Club",
+        hull:      g.HullColour || g.HullColor || "white",
         isGuest:   true
       }));
   } catch (e) {
@@ -1146,7 +1159,8 @@ function getRoster() {
 /* ======== create function to fetch Events ============= */
 async function getEvents() {
   try {
-    const data = await apiGet("events");
+    // Uses standard GET avoiding the POST restriction on external endpoints which caused the verifyToken crash
+    const data = await gwGet({ type: "calendar" }, CAL_WEBAPP_URL);
     EVENTS = (data.months || []).flatMap(mo => {
       const year = (String(mo.monthLabel).match(/\d{4}/) || [new Date().getFullYear()])[0];
       return (mo.events || [])
@@ -1174,17 +1188,6 @@ async function getEvents() {
     console.error("Failed to load events:", error.message);
     EVENTS = [];
   }
-}
-
-async function apiGet(action, className) {
-  console.log("in apiGet action: " + action);
-  const res = action === "members"
-      ? await gw({action: "ClassMembers", className: className},CLB_WEBAPP_URL)
-      : await gw({action: "calendar", className: className}, `${CAL_WEBAPP_URL}?type=calendar`);
-  if (!res.ok) throw new Error(`Server error (${res.status})`);
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return data;
 }
 
 const CLASS_ABBR = { 'DF65':'65', 'DF95':'95', 'IOM':'IOM', 'Soling':'SOL', 'General':'GEN', 'Marblehead':'MB' };
