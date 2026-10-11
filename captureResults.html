@@ -1110,9 +1110,11 @@ async function getMembers(className) {
     
     // Instead of CLB_WEBAPP_URL, we use fetchSheet to use GATEWAY_URL natively
     const rows = await fetchSheet("members", "ClassMembers");
+    const activeRows = rows.filter(r => String(r.Active).trim().toLowerCase() === "true");
+
     const filtered = (queryClass === "All" || queryClass === "General" || !queryClass) 
-         ? rows 
-         : rows.filter(r => r.Class === queryClass || r.className === queryClass);
+         ? activeRows 
+         : activeRows.filter(r => r.Class === queryClass || r.className === queryClass);
 
     MEMBERS = filtered.map(m => ({
          ...m,
