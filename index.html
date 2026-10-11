@@ -3262,14 +3262,7 @@ VIGATION HEADER
           return `No events found in calendar`;
         }
         
-        const nearEvents = events.filter(e => {
-          const rawDate = e?.Date ?? e?.date;
-          if (!e || !rawDate) return false;
-          const evDate = new Date(rawDate);
-          return evDate >= fromDate && evDate <= toDate;
-        });
-
-        const conflict = nearEvents.filter(e => {
+        const conflict = events.filter(e => {
           const evClass = (e.class ?? e.Class ?? e.className ?? "").toLowerCase();
           return evClass === className.toLowerCase();
         });
