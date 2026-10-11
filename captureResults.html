@@ -1116,9 +1116,10 @@ async function getMembers(className) {
 
     MEMBERS = filtered.map(m => ({
          ...m,
+         id: m.BoatID || m.id, // <-- FIXED: Map BoatID to id so they are uniquely selectable
          className: m.Class ?? m.className,
          homeClub: m.homeClub || "SMMC",
-         boat: m.id || m.BoatID,
+         boat: m.BoatID || m.id,
          member: m.Member,
          sailNo: m.SailNo,
          hull: m["Hull Colour"] || m.hull || "white"
