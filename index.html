@@ -3403,16 +3403,16 @@ VIGATION HEADER
         }
         const payload = {
           rowData: {
-            requestId: "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
-            timestamp: new Date().toISOString(),
-            memberName: requestor,
-            memberEmail: memberEmail,
-            eventDate: document.getElementById("reqEventDate").value,
-            boatClass: document.getElementById("reqBoatClass").value,
-            regattaType: regattaType,
-            eventName: (document.getElementById("reqBoatClass").value + " " + regattaType).trim(),
-            conflictingRegatta: conflictingRegattaValue,
-            status: "Pending"
+            "Request ID": "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
+            "Timestamp": new Date().toISOString(),
+            "Member Name": requestor,
+            "Member Email": memberEmail,
+            "Event Date": document.getElementById("reqEventDate").value,
+            "Boat Class": document.getElementById("reqBoatClass").value,
+            "Regatta Type": regattaType,
+            "Conflicting Regatta": conflictingRegattaValue,
+            "ConfRegID": "",
+            "Status": "Pending"
           }
         };
 
