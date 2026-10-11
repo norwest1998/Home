@@ -3240,36 +3240,97 @@ VIGATION HEADER
       }
 
       /* Find ranked events for date of missed event */
+/* Find ranked events for date of missed event */
       async function getConflictingEvents(className, date) {
-
-        let events = [];
-
-        const fromDate = new Date(date);
-        const toDate = new Date(date);
-        fromDate.setDate(fromDate.getDate() - 3);
-        toDate.setDate(toDate.getDate() + 3);
-
         try {
-          const resp = await fetch(`${CALENDAR_URL}?action=listConflicts&date=${encodeURIComponent(date)}`);
-          const data = await resp.json();
-          events = data.events || [];
-    console.log("Fetched events:", events);      
+          // Fetch the full Annual Calendar directly via Gateway
+          const events = await fetchSheet("calendar", "Event Data");
+          
+          if (!events || events.length === 0) {
+            return `No events found in calendar`;
+          }
+
+          // Safely parse the input date (expected format "YYYY-MM-DD")
+          const parts = date.split("-");
+          const targetY = parseInt(parts[0], 10);
+          const targetM = parseInt(parts[1], 10) - 1;
+          const targetD = parseInt(parts[2], 10);
+
+          // 1. Find all club events matching this specific date (combining both AM and PM slots)
+          const clubEventsOnDate = events.filter(e => {
+            const evDateStr = e[" Date"] || e.Date || "";
+            if (!evDateStr) return false;
+            
+            const evDateObj = new Date(evDateStr);
+            if (isNaN(evDateObj.getTime())) return false;
+            
+            return evDateObj.getFullYear() === targetY && 
+                   evDateObj.getMonth() === targetM && 
+                   evDateObj.getDate() === targetD;
+          });
+
+          if (clubEventsOnDate.length === 0) {
+            return `No club events scheduled for ${formatDate(date)}`;
+          }
+          
+          // 2. Confirm the selected class is actually scheduled to race at the club on this date
+          // If the club is running "General" (General Handicap), all classes are technically eligible.
+          const classScheduled = clubEventsOnDate.some(e => {
+            const evClass = (e[" Class"] || e.Class || "").trim().toLowerCase();
+            const searchClass = className.toLowerCase();
+            return evClass === searchClass || 
+                   evClass === "general" ||
+                   (searchClass === "general handicap" && evClass === "general");
+          });
+          
+          if (!classScheduled) {
+            return `Club regatta for ${className} is not scheduled on ${formatDate(date)}`;
+          }
+
+          // 3. Extract the Regional Conflicts (typically listed on the AM slot, but we check all)
+          let allConflictsStr = "";
+          for (const ev of clubEventsOnDate) {
+             const conflicts = ev[" Regional Conflicts"] || ev["Regional Conflicts"] || ev.RegionalConflicts || "";
+             if (conflicts && conflicts.trim()) {
+                 allConflictsStr += "\n" + conflicts.trim();
+             }
+          }
+          
+          if (!allConflictsStr.trim()) {
+            return `No regional conflicts listed for ${formatDate(date)}`;
+          }
+
+          // 4. Parse the multi-line string and identify the specific conflicting event for this class
+          const conflictLines = allConflictsStr.split('\n').map(l => l.trim()).filter(Boolean);
+          
+          const matchedConflicts = conflictLines.filter(line => {
+            const l = line.toLowerCase();
+            const c = className.toLowerCase();
+            
+            // Check for direct match or common abbreviations used in ARYA ranking events
+            if (l.includes(c)) return true;
+            if (c === "iom" && (l.includes("one metre") || l.includes("1m"))) return true;
+            if (c === "df95" && (l.includes("df 95") || l.includes("dragonflite 95"))) return true;
+            if (c === "df65" && (l.includes("df 65") || l.includes("dragonforce 65"))) return true;
+            if (c === "10r" && (l.includes("ten rater") || l.includes("10 rater"))) return true;
+            if (c === "soling" && l.includes("soling")) return true;
+            if (c === "a class" && l.includes("a class")) return true;
+            if (c === "marblehead" && (l.includes("marblehead") || l.includes("rm "))) return true;
+            
+            return false;
+          });
+
+          if (matchedConflicts.length > 0) {
+            // Deduplicate (in case listed identically in both AM and PM slots) and join
+            return [...new Set(matchedConflicts)].join(" / ");
+          } else {
+            return `No ARYA Ranking event found specifically for ${className} on ${formatDate(date)}`;
+          }
+
         } catch (err) {
+          console.error("Error fetching conflicting events:", err);
           return `Failed to load events: ${err.message}`;
         }
-
-        if (events.length === 0) {
-          return `No events found in calendar`;
-        }
-        
-        const conflict = events.filter(e => {
-          const evClass = (e.class ?? e.Class ?? e.className ?? "");
-          return evClass === className;       
-        });
-console.log("Filtered events:", conflict);
-        return conflict.length > 0
-          ? conflict[0].conflict
-          : `No conflicting event found for ${className} between ${fromDate.toDateString()} and ${toDate.toDateString()}`;
       }
 
       async function submitAverageScoreRequest(payload) {
