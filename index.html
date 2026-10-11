@@ -1687,6 +1687,7 @@ VIGATION HEADER
                   <input type="text" id="reqConflictingRegatta" name="conflictingRegatta" readonly
                           value="Will load after Date and Class are entered"
                           style="width:100%; padding:10px; border-radius:8px; opacity:0.7; cursor:default;">
+                  <select id="reqConflictingRegattaSelect" style="display:none; width:100%; padding:10px; border-radius:8px;"></select>
                 </div>
 
                 <button type="submit" id="btnSubmitAvgReq" class="add-app-pill" style="margin-top:10px; height:40px; justify-content:center; width:100%; font-size:14px; font-weight:600; cursor:pointer;">
@@ -3042,7 +3043,29 @@ VIGATION HEADER
         }
       }
 
+      function hideConflictSelect() {
+        const sel = document.getElementById("reqConflictingRegattaSelect");
+        sel.style.display = "none";
+        sel.innerHTML = "";
+        document.getElementById("reqConflictingRegatta").style.display = "";
+      }
+
+      function showConflicts(result) {
+        const field = document.getElementById("reqConflictingRegatta");
+        const sel = document.getElementById("reqConflictingRegattaSelect");
+        hideConflictSelect();
+        if (Array.isArray(result) && result.length > 1) {
+          sel.innerHTML = '<option value="">Select conflicting event…</option>' +
+            result.map(r => `<option value="${r.replace(/"/g, "&quot;")}">${r}</option>`).join("");
+          field.style.display = "none";
+          sel.style.display = "";
+        } else {
+          field.value = Array.isArray(result) ? result[0] : result;
+        }
+      }
+
       document.getElementById("reqEventDate").addEventListener("change", function(e) {
+        hideConflictSelect();
         const misDate = document.getElementById("reqEventDate").value;
         const selectedOpt = document.getElementById("reqBoatClass").value;
         if (!misDate)  {
@@ -3057,12 +3080,13 @@ VIGATION HEADER
           } else {
             const field = document.getElementById("reqConflictingRegatta");
             field.value = `⏳ Searching for ${selectedOpt} event near ${misDate}…`;
-            getConflictingEvents(selectedOpt, misDate).then(result => { field.value = result; });
+            getConflictingEvents(selectedOpt, misDate).then(showConflicts);
           }
         }
       });
       
       document.getElementById("reqBoatClass").addEventListener("change", function(e) {
+        hideConflictSelect();
         const selectedOpt = e.target.value;
         const misDate = document.getElementById("reqEventDate").value;
         if (!selectedOpt) {
@@ -3077,7 +3101,7 @@ VIGATION HEADER
           } else {
             const field = document.getElementById("reqConflictingRegatta");
             field.value = `⏳ Searching for ${selectedOpt} event near ${misDate}…`;
-            getConflictingEvents(selectedOpt, misDate).then(result => { field.value = result; });
+            getConflictingEvents(selectedOpt, misDate).then(showConflicts);
           }           
         }
       });
@@ -3322,7 +3346,7 @@ VIGATION HEADER
 
           if (matchedConflicts.length > 0) {
             // Deduplicate (in case listed identically in both AM and PM slots) and join
-            return [...new Set(matchedConflicts)].join(" / ");
+            return [...new Set(matchedConflicts)];
           } else {
             return `No ARYA Ranking event found specifically for ${className} on ${formatDate(date)}`;
           }
@@ -3364,6 +3388,16 @@ VIGATION HEADER
         submitBtn.disabled = true;
 
         const regattaType = document.getElementById("reqRegattaType")?.value || "";
+        const confSel = document.getElementById("reqConflictingRegattaSelect");
+        const conflictingRegattaValue = confSel.style.display !== "none"
+          ? confSel.value
+          : document.getElementById("reqConflictingRegatta").value;
+        if (confSel.style.display !== "none" && !conflictingRegattaValue) {
+          statusDiv.style.color = "#f87171";
+          statusDiv.textContent = "Please select the conflicting ARYA event.";
+          submitBtn.disabled = false;
+          return;
+        }
         const payload = {
           rowData: {
             requestId: "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
@@ -3374,7 +3408,7 @@ VIGATION HEADER
             boatClass: document.getElementById("reqBoatClass").value,
             regattaType: regattaType,
             eventName: (document.getElementById("reqBoatClass").value + " " + regattaType).trim(),
-            conflictingRegatta: document.getElementById("reqConflictingRegatta").value,
+            conflictingRegatta: conflictingRegattaValue,
             status: "Received"
           }
         };
@@ -3387,6 +3421,7 @@ VIGATION HEADER
 
           setTimeout(() => {
             document.getElementById("avgScoreForm").reset();
+            hideConflictSelect();
             statusDiv.innerHTML = "";
             submitBtn.disabled = false;
 
