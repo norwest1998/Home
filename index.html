@@ -3394,8 +3394,6 @@ VIGATION HEADER
         const submitBtn = document.getElementById("btnSubmitAvgReq");
         const memberSel = document.getElementById("reqMemberName");
         const requestor = memberSel.value;
-        const memberEmail = memberSel.selectedOptions[0]?.dataset.email
-          || document.getElementById("reqMemberEmail").value || "";
 
         statusDiv.style.color = "var(--glow, #257fb6)";
         statusDiv.innerHTML = "Saving request…";
@@ -3412,12 +3410,6 @@ VIGATION HEADER
           submitBtn.disabled = false;
           return;
         }
-        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(memberEmail)) {
-          statusDiv.style.color = "#f87171";
-          statusDiv.textContent = `Member email on file is invalid: "${memberEmail}". Fix it in the members sheet.`;
-          submitBtn.disabled = false;
-          return;
-        }
         const boatClass = document.getElementById("reqBoatClass").value;
         const boat = (Array.isArray(allBoats) ? allBoats : []).find(b =>
           String(b.member || "").trim().toLowerCase() === requestor.trim().toLowerCase() &&
@@ -3427,7 +3419,6 @@ VIGATION HEADER
             requestId: "REQ-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
             timestamp: new Date().toISOString(),
             memberName: requestor,
-            memberEmail: memberEmail,
             eventDate: document.getElementById("reqEventDate").value,
             boatClass: document.getElementById("reqBoatClass").value,
             regattaType: regattaType,
