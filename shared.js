@@ -276,7 +276,8 @@ document.addEventListener("DOMContentLoaded", () => Account.mount());
 
 const _acctCss = document.createElement("style");
 _acctCss.textContent = `
-.acct{position:relative;margin-left:auto;padding-left:12px;flex:none}
+.acct{position:relative;padding-left:12px;flex:none}
+.nav-glass .nav-links,.nav-glass .nav-toggle{margin-left:auto}
 .acct-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff}
 .acct-card{display:none;position:absolute;right:0;top:100%;min-width:230px;padding:12px 14px;border-radius:10px;z-index:1000;
