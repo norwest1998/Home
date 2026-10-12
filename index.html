@@ -2160,24 +2160,37 @@ VIGATION HEADER
     }
 
     function renderLatestResults(data) {
-    const metaEl = document.getElementById('latestResultsMeta');
-    const ribbonEl = document.getElementById('resultsRibbon');
-    const emblemEl = document.getElementById('latestClassEmblem');
-    
-    if (!data.ok) {
+      const metaEl = document.getElementById('latestResultsMeta');
+      const ribbonEl = document.getElementById('resultsRibbon');
+      const emblemEl = document.getElementById('latestClassEmblem');
+      
+      if (!data.ok) {
         showError(metaEl, 'Latest results unavailable');
         ribbonEl.innerHTML = `<div class="finish-chip glass"><div class="pos">–</div><div class="sailor">No results available</div><div class="sail-no">&nbsp;</div></div>`;
         return;
-    }
-    
-    metaEl.textContent = `${data.event.roundLabel} • ${data.event.championship} (Raced ${data.event.racedOn})`;
-    const clsName = data.event.className || data.event.boatClass;
-    const emblemUrl = getClassImage(clsName);
-    defaultStandingsToLatest(data.event);
-    if (emblemUrl && emblemEl) {
-        emblemEl.src = emblemUrl; emblemEl.alt = `${clsName} Emblem`; emblemEl.style.display = 'inline-block';
-    }
-    ribbonEl.innerHTML = data.results.length ? data.results.map(chipHTML).join('') : `<div class="finish-chip glass"><div class="pos">–</div><div class="sailor">No results recorded</div><div class="sail-no">&nbsp;</div></div>`;
+      }
+      
+      // Format Event Name: Class + Regatta Type
+      const eventName = data.event.eventName || 
+        [data.event.className || data.event.boatClass, data.event.regattaType].filter(Boolean).join(' ') || 
+        data.event.championship;
+
+      metaEl.textContent = `${data.event.roundLabel} • ${eventName} (Raced ${data.event.racedOn})`;
+
+      const clsName = data.event.className || data.event.boatClass;
+      const emblemUrl = getClassImage(clsName);
+      
+      defaultStandingsToLatest(data.event);
+      
+      if (emblemUrl && emblemEl) {
+        emblemEl.src = emblemUrl;
+        emblemEl.alt = `${clsName} Emblem`;
+        emblemEl.style.display = 'inline-block';
+      }
+      
+      ribbonEl.innerHTML = data.results.length 
+        ? data.results.map(chipHTML).join('') 
+        : `<div class="finish-chip glass"><div class="pos">–</div><div class="sailor">No results recorded</div><div class="sail-no">&nbsp;</div></div>`;
     }
 
     // --- Weather ---
@@ -2464,8 +2477,10 @@ VIGATION HEADER
     function defaultStandingsToLatest(ev) {
       if (standingsLocked || !ev) return;
       const cn  = String(ev.className || ev.boatClass || '').toLowerCase();
-      const txt = `${ev.championship || ''} ${cn}`.toLowerCase();
+      const eventTitle = String(ev.eventName || ev.championship || '').toLowerCase();
+      const txt = `${eventTitle} ${cn}`.toLowerCase();
       const entries = Object.entries(RESULTS_CONFIG).filter(([, c]) => c.spreadsheetId);
+      
       let hit = entries.find(([, c]) => txt.includes(c.label.toLowerCase()));
       if (!hit) {
         const m = entries.filter(([, c]) => c.className.toLowerCase() === cn);
@@ -2476,7 +2491,7 @@ VIGATION HEADER
       activeClass = hit[0];
       activeSheetIndex = 0;
       const sel = document.getElementById('classSelector');
-      if (sel) { // standings already rendered -> refresh
+      if (sel) {
         sel.value = activeClass;
         updateClassInsignia(activeClass);
         renderRoundTabs().then(loadActiveSheet);
