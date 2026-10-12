@@ -3265,6 +3265,10 @@ VIGATION HEADER
       let currentEventName = "";
       let currentRegattaType = "";
 
+      const pick = (row, ...names) => {
+        const k = Object.keys(row).find(k => names.includes(k.trim().toLowerCase().replace(/[\s_]/g, "")));
+        return k ? String(row[k]).trim() : "";
+      };
 
       async function getConflictingEvents(className, date) {
         currentEventId = "";
@@ -3286,7 +3290,7 @@ VIGATION HEADER
 
           // 1. Find all club events matching this specific date (combining both AM and PM slots)
           const clubEventsOnDate = events.filter(e => {
-            const evDateStr = e[" Date"] || e.Date || "";
+            const evDateStr = e.Date || e[" Date"] ||  "";
             if (!evDateStr) return false;
             
             const evDateObj = new Date(evDateStr);
@@ -3304,7 +3308,7 @@ VIGATION HEADER
           // 2. Confirm the selected class is actually scheduled to race at the club on this date
           // If the club is running "General" (General Handicap), all classes are technically eligible.
           const classScheduled = clubEventsOnDate.find(e => {
-            const evClass = (e[" Class"] || e.Class || "").trim().toLowerCase();
+            const evClass = (e.Class ||e[" Class"] ||  "").trim().toLowerCase();
             const searchClass = className.toLowerCase();
             return evClass === searchClass || evClass === "twilight" ||
                    evClass === "general" ||
@@ -3313,9 +3317,9 @@ VIGATION HEADER
           
           if (classScheduled) {
             const idKey = Object.keys(classScheduled).find(k => k.trim().toLowerCase().replace(/\s/g, "") === "eventid");
-            currentEventId = idKey ? String(classScheduled[idKey]) : "";
-            currentEventName = classScheduled["Event Name"] || classScheduled.EventName || "";
-            currentRegattaType = classScheduled["Regatta Type"] || classScheduled.RegattaType || "";
+            currentEventId     = pick(classScheduled, "eventid", "id");
+            currentEventName   = pick(classScheduled, "eventname");
+            currentRegattaType = pick(classScheduled, "regattatype");
           }
 
           if (!classScheduled) {
