@@ -245,3 +245,45 @@ function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
+
+// Account badge (top-right of .nav-glass)
+const Account = {
+  mount() {
+    const hdr = document.querySelector(".nav-glass");
+    if (!hdr || hdr.querySelector(".acct")) return;
+    const u = JSON.parse(sessionStorage.getItem("SMMC_USER") || "null");
+    if (!u) return;
+    const src = (u.name || u.email || "?").trim();
+    const parts = src.split(/[\s@.]+/).filter(Boolean);
+    const ini = ((parts[0]?.[0] || "?") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+    const role = u.role || "viewer", lvl = ROLE_RANK[role] || 0;
+    const cap = role.charAt(0).toUpperCase() + role.slice(1);
+    const el = document.createElement("div");
+    el.className = "acct"; el.tabIndex = 0;
+    el.innerHTML = `
+      <div class="acct-icon">${escapeHtml(ini)}</div>
+      <div class="acct-card">
+        <strong>${escapeHtml(u.name || "—")}</strong>
+        <div><span>Email</span>${escapeHtml(u.email || "—")}</div>
+        <div><span>Role</span>${escapeHtml(cap)}</div>
+        <div><span>Access</span>Level ${lvl} of 3</div>
+        <a href="#" onclick="logout();return false;">Sign out</a>
+      </div>`;
+    hdr.appendChild(el);
+  }
+};
+document.addEventListener("DOMContentLoaded", () => Account.mount());
+
+const _acctCss = document.createElement("style");
+_acctCss.textContent = `
+.acct{position:relative;margin-left:auto;padding-left:12px;flex:none}
+.acct-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff}
+.acct-card{display:none;position:absolute;right:0;top:100%;min-width:230px;padding:12px 14px;border-radius:10px;z-index:1000;
+  background:#12304a;border:1px solid rgba(255,255,255,.2);box-shadow:0 8px 24px rgba(0,0,0,.4);font-size:13px;color:#fff}
+.acct:hover .acct-card,.acct:focus-within .acct-card{display:block}
+.acct-card strong{display:block;font-size:14px;margin-bottom:6px}
+.acct-card div{margin:3px 0}
+.acct-card span{display:inline-block;width:56px;opacity:.6}
+.acct-card a{display:block;margin-top:8px;color:#ff8b8b;font-size:12px}`;
+document.head.appendChild(_acctCss);

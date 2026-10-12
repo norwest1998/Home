@@ -33,6 +33,7 @@ const Nav = {
             const sections = this._scanSections();
             this._render(sections);
         }, 0);
+        Account.mount();
         applyRoles();
     },
 
