@@ -1708,7 +1708,6 @@ VIGATION HEADER
 
               <div class="app-filters" id="avgReqFilters">
                 <button class="app-filter-btn active" data-status="all" type="button">All</button>
-                <button class="app-filter-btn" data-status="Received" type="button">Received</button>
                 <button class="app-filter-btn" data-status="Pending" type="button">Pending</button>
                 <button class="app-filter-btn" data-status="Approved" type="button">Approved</button>
                 <button class="app-filter-btn" data-status="Rejected" type="button">Rejected</button>
@@ -1885,9 +1884,9 @@ VIGATION HEADER
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                   <!-- Sub-Topic Chosen by Member -->
                   <div class="form-group">
-                    <label for="hysSubTopic" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Sub-Topic *</label>
+                    <label for="hysSubTopic" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Topic *</label>
                     <select id="hysSubTopic" name="subTopic" required>
-                      <option value="" disabled selected>Select sub-topic…</option>
+                      <option value="" disabled selected>Select topic…</option>
                       <option value="General Discussion">General Discussion</option>
                       <option value="Racing & Rules">Racing &amp; Rules</option>
                       <option value="Social Sailing">Social Sailing</option>
@@ -3410,7 +3409,7 @@ VIGATION HEADER
           eventName:    r["Event Name"] || r.eventName || [r.className, r.regattaType].filter(Boolean).join(" ") || "Average Score Request",
           date:         formatDate(r["Event Date"] || r.eventDate || r.date) || "-",
           conflict:     r["Conflicting Regatta"] || r.conflictingRegatta || r.conflict || "-",
-          status:       String(r.Status || r.status || "Received"),
+          status:       String(r.Status || r.status || "Pending"),
           decisionDate: formatDate(r["Decision Date"] || r.decisionDate) || "-",
           decisionBy:   r["Decision By"] || r.decisionBy || r.committee || "-",
           reason:       r["Rejected Reason"] || r.rejectedReason || r.readon || "N/A"
@@ -3937,8 +3936,8 @@ VIGATION HEADER
         if (currentTargetFilter !== 'all') {
           items = items.filter(x => {
             const t = x.target.toLowerCase();
-            if (currentTargetFilter === 'committee') return t.includes('committee') || t.includes('both');
-            if (currentTargetFilter === 'members') return t.includes('member') || t.includes('both');
+            if (currentTargetFilter === 'committee') return t.includes('committee');
+            if (currentTargetFilter === 'members') return t.includes('member');
             return true;
           });
         }
