@@ -1581,7 +1581,7 @@ VIGATION HEADER
               <div class="calendar-filters" id="boatClassFilters"></div>
               <!-- <div class="app-filters">
                 <button class="member-filter-btn" data-boat-filter="active">Active</button>
-                <button class="member-filter-btn" data-boat-filter="gh">GH Eligible</button>
+                <button class="member-filter-btn" data-boat-filter="gh">GH Registered</button>
               </div> -->
               <div class="count-chip" id="boatCount"></div>
               <div class="app-list" id="boatList">
@@ -3215,7 +3215,6 @@ VIGATION HEADER
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
               <span style="padding:4px 10px; border-radius:12px; font-size:11px; font-weight:600; ${statusStyle}">${esc(n.status)}</span>
-              <span style="font-size:12px; color:var(--foam-sub, #888);">${esc(n.reqId)}</span>
             </div>
           `;
           container.appendChild(card);
@@ -3263,9 +3262,14 @@ VIGATION HEADER
 
       /* Find ranked events for date of missed event */
       let currentEventId = "";
+      let currentEventName = "";
+      let currentRegattaType = "";
+
 
       async function getConflictingEvents(className, date) {
         currentEventId = "";
+        currentEventName = "";
+        currentRegattaType = "";
         try {
           // Fetch the full Annual Calendar directly via Gateway
           const events = await fetchSheet("calendar", "Event Data");
@@ -3302,7 +3306,7 @@ VIGATION HEADER
           const classScheduled = clubEventsOnDate.find(e => {
             const evClass = (e[" Class"] || e.Class || "").trim().toLowerCase();
             const searchClass = className.toLowerCase();
-            return evClass === searchClass || 
+            return evClass === searchClass || evClass === "twilight" ||
                    evClass === "general" ||
                    (searchClass === "general handicap" && evClass === "general");
           });
@@ -3310,6 +3314,8 @@ VIGATION HEADER
           if (classScheduled) {
             const idKey = Object.keys(classScheduled).find(k => k.trim().toLowerCase().replace(/\s/g, "") === "eventid");
             currentEventId = idKey ? String(classScheduled[idKey]) : "";
+            currentEventName = classScheduled["Event Name"] || classScheduled.EventName || "";
+            currentRegattaType = classScheduled["Regatta Type"] || classScheduled.RegattaType || "";
           }
 
           if (!classScheduled) {
@@ -3400,10 +3406,11 @@ VIGATION HEADER
             memberEmail: "",
             eventDate: document.getElementById("reqEventDate").value,
             boatClass: document.getElementById("reqBoatClass").value,
-            regattaType: regattaType,
+            regattaType: currentRegattaType,
             conflictingRegatta: conflictingRegattaValue,
             boatId: boat ? boat.boatId : "",
             eventId: currentEventId,
+            eventName: currentEventName,
             confRegId: "",
             status: "Pending",
             rejectedReason: "",
