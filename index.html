@@ -1258,6 +1258,21 @@
       border-color: var(--glow, #257fb6);
       box-shadow: 0 0 12px rgba(37, 127, 182, 0.35);
     }
+
+    /* User name read-only label/badge */
+    .hys-user-badge {
+      display: flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: rgba(10, 20, 32, 0.45);
+      border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+      color: var(--foam, #ffffff);
+      font-size: 13px;
+      font-weight: 600;
+      min-height: 40px;
+      box-sizing: border-box;
+    }
 </style>
 </head>
 <body>
@@ -1774,22 +1789,23 @@ VIGATION HEADER
           </div>     
           <span class="tag">Average Points Request Module</span>
         </div>
+
         <!-- =========================================================
-            HAVE YOUR SAY (MEMBER NOTES & FEEDBACK MODULE)
+            HAVE YOUR SAY (MEMBERS FORUM MODULE)
             ========================================================= -->
         <div id="have-your-say" class="tile glass">
           <div class="tile-title">
             <i class="tile-icon" data-lucide="message-square-text" color="#257fb6"></i>
             <h3>Have Your Say</h3>
           </div>
-          <p class="subh">Member notes, feedback, and open discussions for the club community or committee.</p>
+          <p class="subh">Members Forum: notes, discussions, and feedback for the club community or committee.</p>
 
           <div class="panel">
             <!-- Panel Header -->
             <div class="panel-header">
               <div class="panel-title-left">
                 <span class="dot"></span>
-                <h3>Notes &amp; Discussions</h3>
+                <h3>Members Forum</h3>
               </div>
               <div class="tab-row-wrap">
                 <div class="tab-row" id="hysTabRow">
@@ -1810,13 +1826,13 @@ VIGATION HEADER
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
                 <input class="search-input" type="text" id="hysSearch"
-                      placeholder="Search notes by title, topic, member, or text…" autocomplete="off">
+                      placeholder="Search notes by sub-topic, member, or text…" autocomplete="off">
               </div>
 
               <!-- Filters Toolbar -->
               <div class="app-filters" id="hysFilters" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
-                <select id="hysTopicFilter" class="member-filter-select" style="min-width:130px;">
-                  <option value="all">All Topics</option>
+                <select id="hysSubTopicFilter" class="member-filter-select" style="min-width:140px;">
+                  <option value="all">All Sub-Topics</option>
                 </select>
 
                 <button class="app-filter-btn active" data-target="all" type="button">All Notes</button>
@@ -1836,7 +1852,7 @@ VIGATION HEADER
               <div class="app-list" id="hysList">
                 <div class="empty-state">
                   <div class="spinner"></div>
-                  <div>Loading notes…</div>
+                  <div>Loading forum notes…</div>
                 </div>
               </div>
             </div>
@@ -1845,13 +1861,14 @@ VIGATION HEADER
             <div id="hys-tab-note-capture" class="tab-content">
               <form id="hysForm" style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                  <!-- Member Name -->
+                  <!-- Member Name Display (Extracted from Logged-in User) -->
                   <div class="form-group">
-                    <label for="hysMemberName" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Your Name *</label>
-                    <select id="hysMemberName" name="memberName" required>
-                      <option value="" disabled selected>Select active member…</option>
-                    </select>
-                    <input type="hidden" id="hysMemberEmail" name="memberEmail">
+                    <label style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Member Name</label>
+                    <div id="hysMemberNameDisplay" class="hys-user-badge">
+                      <span id="hysMemberNameText">Loading user…</span>
+                    </div>
+                    <input type="hidden" id="hysMemberName" name="memberName" value="">
+                    <input type="hidden" id="hysMemberEmail" name="memberEmail" value="">
                   </div>
 
                   <!-- Date -->
@@ -1862,11 +1879,11 @@ VIGATION HEADER
                 </div>
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                  <!-- Topic -->
+                  <!-- Sub-Topic Chosen by Member -->
                   <div class="form-group">
-                    <label for="hysTopic" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Topic *</label>
-                    <select id="hysTopic" name="topic" required>
-                      <option value="" disabled selected>Select topic…</option>
+                    <label for="hysSubTopic" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Sub-Topic *</label>
+                    <select id="hysSubTopic" name="subTopic" required>
+                      <option value="" disabled selected>Select sub-topic…</option>
                       <option value="General Discussion">General Discussion</option>
                       <option value="Racing & Rules">Racing &amp; Rules</option>
                       <option value="Social Sailing">Social Sailing</option>
@@ -1892,7 +1909,7 @@ VIGATION HEADER
                 <!-- Subject / Title -->
                 <div class="form-group">
                   <label for="hysSubject" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Subject / Title *</label>
-                  <input type="text" id="hysSubject" name="subject" required placeholder="Brief summary of your note…" style="width:100%; padding:10px; border-radius:8px;">
+                  <input type="text" id="hysSubject" name="subject" required placeholder="Headline of your note…" style="width:100%; padding:10px; border-radius:8px;">
                 </div>
 
                 <!-- Note Content -->
@@ -3664,13 +3681,14 @@ VIGATION HEADER
       if (window.lucide) lucide.createIcons();
     })();
 
-// =========================================================
-// HAVE YOUR SAY (MEMBER NOTES & FEEDBACK MODULE)
-// =========================================================
+    // =========================================================
+    // HAVE YOUR SAY (MEMBERS FORUM MODULE)
+    // =========================================================
     (function() {
+      const DEFAULT_FORUM_TOPIC = "Members Forum";
       let rawHysNotes = [];
       let currentTargetFilter = 'all';
-      let currentTopicFilter = 'all';
+      let currentSubTopicFilter = 'all';
       let currentDateFilter = 'all';
       let currentSearchQuery = '';
 
@@ -3680,8 +3698,51 @@ VIGATION HEADER
         initHysForm();
         initHysDrawer();
         initHysDateDefault();
+        updateHysUserDisplay();
         loadHysNotes();
       });
+
+      // Extract user info from session/local storage
+      function getLoggedInUser() {
+        let name = "";
+        let email = "";
+
+        try {
+          const smmcUser = JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}");
+          if (smmcUser.name) name = smmcUser.name;
+          if (smmcUser.email) email = smmcUser.email;
+        } catch(e) {}
+
+        if (!name) name = localStorage.getItem("memberName") || localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
+        if (!email) email = localStorage.getItem("memberEmail") || localStorage.getItem("userEmail") || sessionStorage.getItem("userEmail") || "";
+
+        if (!name) {
+          try {
+            const token = sessionStorage.getItem("SMMC_TOKEN");
+            if (token && token.includes(".")) {
+              const payload = JSON.parse(atob(token.split(".")[0]));
+              if (payload.name) name = payload.name;
+              if (payload.email) email = payload.email;
+            }
+          } catch(e) {}
+        }
+
+        return {
+          name: name.trim() || "Club Member",
+          email: email.trim() || ""
+        };
+      }
+
+      function updateHysUserDisplay() {
+        const user = getLoggedInUser();
+        const nameText = document.getElementById("hysMemberNameText");
+        const nameInput = document.getElementById("hysMemberName");
+        const emailInput = document.getElementById("hysMemberEmail");
+
+        if (nameText) nameText.textContent = user.name;
+        if (nameInput) nameInput.value = user.name;
+        if (emailInput) emailInput.value = user.email;
+      }
 
       function initHysDateDefault() {
         const dateInput = document.getElementById("hysDate");
@@ -3727,36 +3788,8 @@ VIGATION HEADER
         } else {
           if (capTab) capTab.classList.add("active");
           if (listTab) listTab.classList.remove("active");
-          populateHysMembersDropdown();
+          updateHysUserDisplay();
           initHysDateDefault();
-        }
-      }
-
-      function populateHysMembersDropdown() {
-        const select = document.getElementById("hysMemberName");
-        if (!select) return;
-
-        const currentVal = select.value;
-        select.innerHTML = '<option value="" disabled selected>Select active member…</option>';
-
-        if (Array.isArray(allMembers) && allMembers.length > 0) {
-          const active = allMembers.filter(m => {
-            const act = m.active ?? m.Active;
-            return act === true || String(act).toLowerCase() === "true";
-          });
-
-          active.forEach(m => {
-            const name = m.name || m.Name || "";
-            const email = m.email || m.Email || "";
-            if (name) {
-              const opt = document.createElement("option");
-              opt.value = name;
-              opt.textContent = name;
-              opt.dataset.email = email;
-              if (name === currentVal) opt.selected = true;
-              select.appendChild(opt);
-            }
-          });
         }
       }
 
@@ -3764,7 +3797,7 @@ VIGATION HEADER
         const root = document.getElementById("have-your-say");
         if (!root) return;
 
-        // Real-time Search
+        // Search input
         const searchInput = root.querySelector("#hysSearch");
         if (searchInput) {
           searchInput.addEventListener("input", (e) => {
@@ -3783,16 +3816,16 @@ VIGATION HEADER
           });
         });
 
-        // Topic dropdown
-        const topicSelect = root.querySelector("#hysTopicFilter");
-        if (topicSelect) {
-          topicSelect.addEventListener("change", (e) => {
-            currentTopicFilter = e.target.value;
+        // Sub-Topic dropdown filter
+        const subTopicSelect = root.querySelector("#hysSubTopicFilter");
+        if (subTopicSelect) {
+          subTopicSelect.addEventListener("change", (e) => {
+            currentSubTopicFilter = e.target.value;
             applyHysFiltersAndRender();
           });
         }
 
-        // Date dropdown
+        // Date dropdown filter
         const dateSelect = root.querySelector("#hysDateFilter");
         if (dateSelect) {
           dateSelect.addEventListener("change", (e) => {
@@ -3802,37 +3835,55 @@ VIGATION HEADER
         }
       }
 
-      function populateHysTopicFilter() {
-        const sel = document.getElementById("hysTopicFilter");
+      function populateHysSubTopicFilter() {
+        const sel = document.getElementById("hysSubTopicFilter");
         if (!sel) return;
 
-        const topics = [...new Set(rawHysNotes.map(n => n.Topic || n.topic).filter(Boolean))].sort();
+        const subTopics = [...new Set(rawHysNotes.map(n => {
+          const rawSub = n.SubTopic || n["Sub Topic"] || n.subTopic || "";
+          return rawSub.includes("•") ? rawSub.split("•")[0].trim() : rawSub.trim();
+        }).filter(Boolean))].sort();
+
         const current = sel.value;
-        sel.innerHTML = '<option value="all">All Topics</option>' +
-          topics.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
-        if (topics.includes(current)) sel.value = current;
+        sel.innerHTML = '<option value="all">All Sub-Topics</option>' +
+          subTopics.map(st => `<option value="${esc(st)}">${esc(st)}</option>`).join('');
+        if (subTopics.includes(current)) sel.value = current;
       }
 
       async function loadHysNotes() {
         try {
           const notesData = await fetchSheet(DOMAIN.notes || "notes", "Notes");
-          rawHysNotes = Array.isArray(notesData) ? notesData : [];
-          populateHysTopicFilter();
+          // ONLY keep notes where Topic === "Members Forum"
+          rawHysNotes = (Array.isArray(notesData) ? notesData : []).filter(n => {
+            const t = String(n.Topic || n.topic || "").trim().toLowerCase();
+            return t === DEFAULT_FORUM_TOPIC.toLowerCase();
+          });
+
+          populateHysSubTopicFilter();
           applyHysFiltersAndRender();
         } catch (err) {
-          console.warn("Could not load notes from registry:", err);
+          console.warn("Could not load forum notes:", err);
           const list = document.getElementById("hysList");
-          if (list) list.innerHTML = `<div class="empty-state">No notes recorded yet. Be the first to have your say!</div>`;
+          if (list) list.innerHTML = `<div class="empty-state">No forum notes recorded yet. Be the first to have your say!</div>`;
         }
       }
 
       function normHysNote(r, idx) {
         const noteId = r.NoteID || r.noteId || `NOTE-${idx + 1}`;
         const dateRaw = r.Date || r.date || "";
-        const topic = r.Topic || r.topic || "General";
-        const subTopic = r.SubTopic || r["Sub Topic"] || r.subTopic || "General Note";
+        const rawSubTopic = r.SubTopic || r["Sub Topic"] || r.subTopic || "General Note";
         const noteText = r.Note || r.note || "";
         const copyIn = r.CopyIn || r["Copy In"] || r.copyIn || "";
+
+        let subTopicCategory = "General";
+        let title = rawSubTopic;
+        if (rawSubTopic.includes("•")) {
+          const parts = rawSubTopic.split("•");
+          subTopicCategory = parts[0].trim();
+          title = parts.slice(1).join("•").trim();
+        } else {
+          subTopicCategory = rawSubTopic.trim();
+        }
 
         let author = "Club Member";
         let target = "All Members";
@@ -3852,8 +3903,8 @@ VIGATION HEADER
           noteId,
           dateRaw,
           dateFormatted: (typeof formatDate === 'function') ? formatDate(dateRaw) : dateRaw,
-          topic,
-          subTopic,
+          subTopicCategory,
+          title,
           noteText,
           author,
           target
@@ -3873,9 +3924,9 @@ VIGATION HEADER
           });
         }
 
-        // Topic filter
-        if (currentTopicFilter !== 'all') {
-          items = items.filter(x => x.topic.toLowerCase() === currentTopicFilter.toLowerCase());
+        // Sub-Topic Category filter
+        if (currentSubTopicFilter !== 'all') {
+          items = items.filter(x => x.subTopicCategory.toLowerCase() === currentSubTopicFilter.toLowerCase());
         }
 
         // Date range filter
@@ -3891,15 +3942,15 @@ VIGATION HEADER
           });
         }
 
-        // Search query filter
+        // Search query
         if (currentSearchQuery) {
           items = items.filter(x =>
-            [x.subTopic, x.topic, x.author, x.noteText]
+            [x.title, x.subTopicCategory, x.author, x.noteText]
               .some(val => String(val).toLowerCase().includes(currentSearchQuery))
           );
         }
 
-        // Newest first
+        // Sort descending by date
         items.sort((a, b) => new Date(b.dateRaw || 0) - new Date(a.dateRaw || 0));
 
         const countChip = document.getElementById("hysCount");
@@ -3914,7 +3965,7 @@ VIGATION HEADER
         container.innerHTML = "";
 
         if (!items || items.length === 0) {
-          container.innerHTML = `<div class="empty-state">No matching notes found.</div>`;
+          container.innerHTML = `<div class="empty-state">No matching notes found in Members Forum.</div>`;
           return;
         }
 
@@ -3942,9 +3993,9 @@ VIGATION HEADER
 
           card.innerHTML = `
             <div style="flex:1; margin-right:12px; overflow:hidden;">
-              <div style="font-weight:600; font-size:14px; color:var(--foam, #fff); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(item.subTopic)}</div>
+              <div style="font-weight:600; font-size:14px; color:var(--foam, #fff); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(item.title)}</div>
               <div style="font-size:12px; color:var(--foam-dim, #aaa); margin-top:2px;">
-                <strong style="color:var(--foam);">${esc(item.author)}</strong> &bull; ${esc(item.dateFormatted)} &bull; <span style="color:var(--glow);">${esc(item.topic)}</span>
+                <strong style="color:var(--foam);">${esc(item.author)}</strong> &bull; ${esc(item.dateFormatted)} &bull; <span style="color:var(--glow);">${esc(item.subTopicCategory)}</span>
               </div>
               <div style="font-size:11.5px; color:var(--foam-dim); opacity:0.85; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                 ${esc(cleanPreview)}${item.noteText.length > 95 ? '…' : ''}
@@ -3976,7 +4027,7 @@ VIGATION HEADER
         const overlay = document.getElementById("hysDrawer");
         if (!overlay) return;
 
-        document.getElementById("hysDrawerTitle").textContent = item.subTopic;
+        document.getElementById("hysDrawerTitle").textContent = item.title;
         document.getElementById("hysDrawerSub").textContent = `${item.author} • ${item.dateFormatted}`;
 
         const isCommittee = item.target.toLowerCase().includes("committee");
@@ -3986,7 +4037,7 @@ VIGATION HEADER
 
         document.getElementById("hysDrawerBody").innerHTML = `
           <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
-            <span class="badge badge-default" style="font-size:11px; padding:4px 10px;">${esc(item.topic)}</span>
+            <span class="badge badge-default" style="font-size:11px; padding:4px 10px;">${esc(item.subTopicCategory)}</span>
             <span style="font-size:11px; padding:4px 10px; border-radius:6px; font-weight:600; ${targetBadgeStyle}">${esc(item.target)}</span>
           </div>
 
@@ -4021,14 +4072,6 @@ VIGATION HEADER
       }
 
       function initHysForm() {
-        const memberSel = document.getElementById("hysMemberName");
-        if (memberSel) {
-          memberSel.addEventListener("change", function(e) {
-            const opt = e.target.options[e.target.selectedIndex];
-            document.getElementById("hysMemberEmail").value = opt ? (opt.dataset.email || "") : "";
-          });
-        }
-
         const form = document.getElementById("hysForm");
         if (!form) return;
 
@@ -4038,15 +4081,16 @@ VIGATION HEADER
           const submitBtn = document.getElementById("btnSubmitHys");
           const statusDiv = document.getElementById("hysFormStatus");
 
-          const author = document.getElementById("hysMemberName").value;
-          const email = document.getElementById("hysMemberEmail").value;
+          const user = getLoggedInUser();
+          const author = user.name || "Club Member";
+          const email = user.email || "";
           const date = document.getElementById("hysDate").value;
-          const topic = document.getElementById("hysTopic").value;
+          const subTopic = document.getElementById("hysSubTopic").value;
           const target = document.getElementById("hysTarget").value;
           const subject = document.getElementById("hysSubject").value.trim();
           const noteText = document.getElementById("hysNote").value.trim();
 
-          if (!author || !date || !topic || !subject || !noteText) {
+          if (!date || !subTopic || !subject || !noteText) {
             statusDiv.style.color = "#f87171";
             statusDiv.textContent = "Please fill in all required fields.";
             return;
@@ -4054,17 +4098,18 @@ VIGATION HEADER
 
           submitBtn.disabled = true;
           statusDiv.style.color = "var(--glow, #257fb6)";
-          statusDiv.textContent = "Saving your note…";
+          statusDiv.textContent = "Saving your note to Members Forum…";
 
           const newNoteId = "NOTE-" + Date.now().toString(36).toUpperCase();
           const noteFormatted = `[By ${author} - Addressed to ${target}]\n\n${noteText}`;
           const copyInFormatted = `From: ${author} <${email}>; Target: ${target}`;
+          const fullSubTopicCombined = `${subTopic} • ${subject}`;
 
           const rowData = {
             NoteID: newNoteId,
             Date: date,
-            Topic: topic,
-            SubTopic: subject,
+            Topic: DEFAULT_FORUM_TOPIC,         // Defaulted to "Members Forum"
+            SubTopic: fullSubTopicCombined,      // The chosen topic is the SubTopic
             Note: noteFormatted,
             Attachments: "",
             CopyIn: copyInFormatted,
@@ -4075,16 +4120,18 @@ VIGATION HEADER
           try {
             await appendSheet(DOMAIN.notes || "notes", "Notes", rowData);
 
-            // Prepend locally so the update shows immediately
+            // Prepend locally for immediate UI update
             rawHysNotes.unshift(rowData);
-            populateHysTopicFilter();
+            populateHysSubTopicFilter();
             applyHysFiltersAndRender();
 
             statusDiv.style.color = "#4ade80";
-            statusDiv.textContent = "Thank you! Your note has been posted.";
+            statusDiv.textContent = "Thank you! Your note has been posted to Members Forum.";
 
             setTimeout(() => {
               form.reset();
+              updateHysUserDisplay();
+              initHysDateDefault();
               statusDiv.textContent = "";
               submitBtn.disabled = false;
               switchHysTab("note-list");
@@ -4099,9 +4146,7 @@ VIGATION HEADER
         });
       }
 
-      // Hook for the global bootstrap / members reload
-      window.populateHysMembersDropdown = populateHysMembersDropdown;
-      if (window.lucide) lucide.createIcons();
+      window.updateHysUserDisplay = updateHysUserDisplay;
     })();
 
     // =========================================================
