@@ -1202,6 +1202,62 @@
       border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
       color: var(--foam, #ffffff);
     }
+
+    /* =========================================================
+      HAVE YOUR SAY & LIQUID GLASS FORM CONTROLS
+      ========================================================= */
+    #have-your-say select {
+      color-scheme: dark;
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: rgba(10, 20, 32, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+      color: var(--foam, #ffffff);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+
+    #have-your-say select:focus {
+      border-color: var(--glow, #257fb6);
+      box-shadow: 0 0 12px rgba(37, 127, 182, 0.35);
+    }
+
+    #have-your-say select option {
+      background-color: #0d1622;
+      color: #ffffff;
+      padding: 10px;
+    }
+
+    #have-your-say select option:disabled {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    #have-your-say input[type="text"]:not(.search-input),
+    #have-your-say input[type="date"],
+    #have-your-say textarea {
+      color-scheme: dark;
+      background: rgba(10, 20, 32, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+      color: var(--foam, #ffffff);
+      font-family: var(--font-body);
+      font-size: 13px;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    #have-your-say textarea:focus,
+    #have-your-say input[type="text"]:not(.search-input):focus,
+    #have-your-say input[type="date"]:focus {
+      border-color: var(--glow, #257fb6);
+      box-shadow: 0 0 12px rgba(37, 127, 182, 0.35);
+    }
 </style>
 </head>
 <body>
@@ -1224,6 +1280,8 @@ VIGATION HEADER
           <li><a href="#members-list" onclick="return selectMemberTab('members', true)">Members List</a></li>
           <li><a href="#members-list" onclick="return selectMemberTab('applications', true)">Applications</a></li>
           <li><a href="#boat-register">Boat Register</a></li>
+          <li><a href="#avg-score-requests">Average Score Requests</a></li>
+          <li><a href="#have-your-say">Have Your Say</a></li>
         </ul>
       </li>
 
@@ -1716,7 +1774,161 @@ VIGATION HEADER
           </div>     
           <span class="tag">Average Points Request Module</span>
         </div>
+        <!-- =========================================================
+            HAVE YOUR SAY (MEMBER NOTES & FEEDBACK MODULE)
+            ========================================================= -->
+        <div id="have-your-say" class="tile glass">
+          <div class="tile-title">
+            <i class="tile-icon" data-lucide="message-square-text" color="#257fb6"></i>
+            <h3>Have Your Say</h3>
+          </div>
+          <p class="subh">Member notes, feedback, and open discussions for the club community or committee.</p>
 
+          <div class="panel">
+            <!-- Panel Header -->
+            <div class="panel-header">
+              <div class="panel-title-left">
+                <span class="dot"></span>
+                <h3>Notes &amp; Discussions</h3>
+              </div>
+              <div class="tab-row-wrap">
+                <div class="tab-row" id="hysTabRow">
+                  <button class="tab active" data-hys-tab="note-list" type="button">Notes List</button>
+                  <button class="tab" data-hys-tab="note-capture" type="button">Write Note</button>
+                </div>
+                <button class="add-app-pill" id="addHysPill" type="button" title="Write Note">
+                  <span>+</span> New Note
+                </button>
+              </div>
+            </div>
+
+            <!-- TAB 1: Notes List -->
+            <div id="hys-tab-note-list" class="tab-content active">
+              <div class="search-wrap">
+                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input class="search-input" type="text" id="hysSearch"
+                      placeholder="Search notes by title, topic, member, or text…" autocomplete="off">
+              </div>
+
+              <!-- Filters Toolbar -->
+              <div class="app-filters" id="hysFilters" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
+                <select id="hysTopicFilter" class="member-filter-select" style="min-width:130px;">
+                  <option value="all">All Topics</option>
+                </select>
+
+                <button class="app-filter-btn active" data-target="all" type="button">All Notes</button>
+                <button class="app-filter-btn" data-target="committee" type="button">Committee</button>
+                <button class="app-filter-btn" data-target="members" type="button">Members</button>
+
+                <select id="hysDateFilter" class="member-filter-select" style="min-width:120px;">
+                  <option value="all">All Dates</option>
+                  <option value="30">Last 30 Days</option>
+                  <option value="90">Last 90 Days</option>
+                  <option value="year">This Year</option>
+                </select>
+              </div>
+
+              <div class="count-chip" id="hysCount">0 Notes</div>
+
+              <div class="app-list" id="hysList">
+                <div class="empty-state">
+                  <div class="spinner"></div>
+                  <div>Loading notes…</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 2: Capture Form -->
+            <div id="hys-tab-note-capture" class="tab-content">
+              <form id="hysForm" style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                  <!-- Member Name -->
+                  <div class="form-group">
+                    <label for="hysMemberName" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Your Name *</label>
+                    <select id="hysMemberName" name="memberName" required>
+                      <option value="" disabled selected>Select active member…</option>
+                    </select>
+                    <input type="hidden" id="hysMemberEmail" name="memberEmail">
+                  </div>
+
+                  <!-- Date -->
+                  <div class="form-group">
+                    <label for="hysDate" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Date *</label>
+                    <input type="date" id="hysDate" name="date" required style="width:100%; padding:10px; border-radius:8px;">
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                  <!-- Topic -->
+                  <div class="form-group">
+                    <label for="hysTopic" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Topic *</label>
+                    <select id="hysTopic" name="topic" required>
+                      <option value="" disabled selected>Select topic…</option>
+                      <option value="General Discussion">General Discussion</option>
+                      <option value="Racing & Rules">Racing &amp; Rules</option>
+                      <option value="Social Sailing">Social Sailing</option>
+                      <option value="Facilities & Venue">Facilities &amp; Venue</option>
+                      <option value="Boats & Technical">Boats &amp; Technical</option>
+                      <option value="Suggestion / Idea">Suggestion / Idea</option>
+                      <option value="Committee Matters">Committee Matters</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <!-- Target Audience -->
+                  <div class="form-group">
+                    <label for="hysTarget" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Addressed To *</label>
+                    <select id="hysTarget" name="target" required>
+                      <option value="All Members">All Members</option>
+                      <option value="Committee">Committee</option>
+                      <option value="Both">All Members &amp; Committee</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Subject / Title -->
+                <div class="form-group">
+                  <label for="hysSubject" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Subject / Title *</label>
+                  <input type="text" id="hysSubject" name="subject" required placeholder="Brief summary of your note…" style="width:100%; padding:10px; border-radius:8px;">
+                </div>
+
+                <!-- Note Content -->
+                <div class="form-group">
+                  <label for="hysNote" style="font-size:12px; color:var(--glow, #257fb6); display:block; margin-bottom:4px; font-weight:600;">Note / Message *</label>
+                  <textarea id="hysNote" name="note" rows="5" required placeholder="Write your note or feedback here…" style="width:100%; padding:10px; border-radius:8px; resize:vertical; min-height:100px;"></textarea>
+                </div>
+
+                <button type="submit" id="btnSubmitHys" style="display:flex; align-items:center; justify-content:center; margin-top:10px; height:40px; width:100%; font-size:14px; font-weight:600; cursor:pointer; border:none; border-radius:8px; background:var(--glow, #257fb6); color:#fff;">
+                  Submit Note
+                </button>
+                <div id="hysFormStatus" style="font-size:12px; margin-top:4px; text-align:center;"></div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Note Detail Drawer -->
+          <div class="drawer-overlay" id="hysDrawer">
+            <div class="drawer drawer-wide">
+              <div class="drawer-header">
+                <div class="drawer-header-left">
+                  <h4 id="hysDrawerTitle">Note Details</h4>
+                  <span class="drawer-header-sub" id="hysDrawerSub"></span>
+                </div>
+                <button class="drawer-close" id="closeHysDrawer" type="button">✕</button>
+              </div>
+              <div class="drawer-body" id="hysDrawerBody">
+                <div class="drawer-loading">
+                  <div class="spinner"></div>
+                  <span>Loading note…</span>
+                </div>
+              </div>
+            </div>
+          </div>     
+          <span class="tag">Member Feedback Module</span>
+        </div>
         <!-- Placeholder 4: Reschedule Event App 
         <div id="reschedule-event" class="tile glass">
           <div class="tile-title">
@@ -3449,6 +3661,445 @@ VIGATION HEADER
       });
       window.initActiveMembersDropdown = initActiveMembersDropdown;
       window.applyFiltersAndRenderAvgReq = applyFiltersAndRender;
+    })();
+
+// =========================================================
+// HAVE YOUR SAY (MEMBER NOTES & FEEDBACK MODULE)
+// =========================================================
+    (function() {
+      let rawHysNotes = [];
+      let currentTargetFilter = 'all';
+      let currentTopicFilter = 'all';
+      let currentDateFilter = 'all';
+      let currentSearchQuery = '';
+
+      document.addEventListener("DOMContentLoaded", function() {
+        initHysTabNavigation();
+        initHysFilters();
+        initHysForm();
+        initHysDrawer();
+        initHysDateDefault();
+        loadHysNotes();
+      });
+
+      function initHysDateDefault() {
+        const dateInput = document.getElementById("hysDate");
+        if (dateInput && !dateInput.value) {
+          dateInput.value = new Date().toISOString().split("T")[0];
+        }
+      }
+
+      function initHysTabNavigation() {
+        const root = document.getElementById("have-your-say");
+        if (!root) return;
+
+        root.querySelectorAll("#hysTabRow .tab").forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            switchHysTab(btn.getAttribute("data-hys-tab"));
+          });
+        });
+
+        const pill = root.querySelector("#addHysPill");
+        if (pill) {
+          pill.addEventListener("click", (e) => {
+            e.stopPropagation();
+            switchHysTab("note-capture");
+          });
+        }
+      }
+
+      function switchHysTab(tabKey) {
+        const root = document.getElementById("have-your-say");
+        if (!root) return;
+
+        root.querySelectorAll("#hysTabRow .tab").forEach(btn => {
+          btn.classList.toggle("active", btn.getAttribute("data-hys-tab") === tabKey);
+        });
+
+        const listTab = root.querySelector("#hys-tab-note-list");
+        const capTab = root.querySelector("#hys-tab-note-capture");
+
+        if (tabKey === "note-list") {
+          if (listTab) listTab.classList.add("active");
+          if (capTab) capTab.classList.remove("active");
+        } else {
+          if (capTab) capTab.classList.add("active");
+          if (listTab) listTab.classList.remove("active");
+          populateHysMembersDropdown();
+          initHysDateDefault();
+        }
+      }
+
+      function populateHysMembersDropdown() {
+        const select = document.getElementById("hysMemberName");
+        if (!select) return;
+
+        const currentVal = select.value;
+        select.innerHTML = '<option value="" disabled selected>Select active member…</option>';
+
+        if (Array.isArray(allMembers) && allMembers.length > 0) {
+          const active = allMembers.filter(m => {
+            const act = m.active ?? m.Active;
+            return act === true || String(act).toLowerCase() === "true";
+          });
+
+          active.forEach(m => {
+            const name = m.name || m.Name || "";
+            const email = m.email || m.Email || "";
+            if (name) {
+              const opt = document.createElement("option");
+              opt.value = name;
+              opt.textContent = name;
+              opt.dataset.email = email;
+              if (name === currentVal) opt.selected = true;
+              select.appendChild(opt);
+            }
+          });
+        }
+      }
+
+      function initHysFilters() {
+        const root = document.getElementById("have-your-say");
+        if (!root) return;
+
+        // Real-time Search
+        const searchInput = root.querySelector("#hysSearch");
+        if (searchInput) {
+          searchInput.addEventListener("input", (e) => {
+            currentSearchQuery = e.target.value.toLowerCase().trim();
+            applyHysFiltersAndRender();
+          });
+        }
+
+        // Audience filter buttons
+        root.querySelectorAll("#hysFilters .app-filter-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            root.querySelectorAll("#hysFilters .app-filter-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            currentTargetFilter = btn.getAttribute("data-target");
+            applyHysFiltersAndRender();
+          });
+        });
+
+        // Topic dropdown
+        const topicSelect = root.querySelector("#hysTopicFilter");
+        if (topicSelect) {
+          topicSelect.addEventListener("change", (e) => {
+            currentTopicFilter = e.target.value;
+            applyHysFiltersAndRender();
+          });
+        }
+
+        // Date dropdown
+        const dateSelect = root.querySelector("#hysDateFilter");
+        if (dateSelect) {
+          dateSelect.addEventListener("change", (e) => {
+            currentDateFilter = e.target.value;
+            applyHysFiltersAndRender();
+          });
+        }
+      }
+
+      function populateHysTopicFilter() {
+        const sel = document.getElementById("hysTopicFilter");
+        if (!sel) return;
+
+        const topics = [...new Set(rawHysNotes.map(n => n.Topic || n.topic).filter(Boolean))].sort();
+        const current = sel.value;
+        sel.innerHTML = '<option value="all">All Topics</option>' +
+          topics.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+        if (topics.includes(current)) sel.value = current;
+      }
+
+      async function loadHysNotes() {
+        try {
+          const notesData = await fetchSheet(DOMAIN.notes || "notes", "Notes");
+          rawHysNotes = Array.isArray(notesData) ? notesData : [];
+          populateHysTopicFilter();
+          applyHysFiltersAndRender();
+        } catch (err) {
+          console.warn("Could not load notes from registry:", err);
+          const list = document.getElementById("hysList");
+          if (list) list.innerHTML = `<div class="empty-state">No notes recorded yet. Be the first to have your say!</div>`;
+        }
+      }
+
+      function normHysNote(r, idx) {
+        const noteId = r.NoteID || r.noteId || `NOTE-${idx + 1}`;
+        const dateRaw = r.Date || r.date || "";
+        const topic = r.Topic || r.topic || "General";
+        const subTopic = r.SubTopic || r["Sub Topic"] || r.subTopic || "General Note";
+        const noteText = r.Note || r.note || "";
+        const copyIn = r.CopyIn || r["Copy In"] || r.copyIn || "";
+
+        let author = "Club Member";
+        let target = "All Members";
+
+        const fromMatch = copyIn.match(/From:\s*([^<;]+)/i);
+        if (fromMatch) author = fromMatch[1].trim();
+
+        const targetMatch = copyIn.match(/Target:\s*([^;]+)/i);
+        if (targetMatch) target = targetMatch[1].trim();
+
+        if (author === "Club Member") {
+          const bodyAuthorMatch = noteText.match(/^\[By\s+([^-\]]+)/i);
+          if (bodyAuthorMatch) author = bodyAuthorMatch[1].trim();
+        }
+
+        return {
+          noteId,
+          dateRaw,
+          dateFormatted: (typeof formatDate === 'function') ? formatDate(dateRaw) : dateRaw,
+          topic,
+          subTopic,
+          noteText,
+          author,
+          target
+        };
+      }
+
+      function applyHysFiltersAndRender() {
+        let items = (Array.isArray(rawHysNotes) ? rawHysNotes : []).map((r, i) => normHysNote(r, i));
+
+        // Target Audience filter
+        if (currentTargetFilter !== 'all') {
+          items = items.filter(x => {
+            const t = x.target.toLowerCase();
+            if (currentTargetFilter === 'committee') return t.includes('committee') || t.includes('both');
+            if (currentTargetFilter === 'members') return t.includes('member') || t.includes('both');
+            return true;
+          });
+        }
+
+        // Topic filter
+        if (currentTopicFilter !== 'all') {
+          items = items.filter(x => x.topic.toLowerCase() === currentTopicFilter.toLowerCase());
+        }
+
+        // Date range filter
+        if (currentDateFilter !== 'all') {
+          const now = new Date();
+          items = items.filter(x => {
+            const d = new Date(x.dateRaw);
+            if (isNaN(d.getTime())) return true;
+            if (currentDateFilter === '30') return (now - d) / (1000 * 60 * 60 * 24) <= 30;
+            if (currentDateFilter === '90') return (now - d) / (1000 * 60 * 60 * 24) <= 90;
+            if (currentDateFilter === 'year') return d.getFullYear() === now.getFullYear();
+            return true;
+          });
+        }
+
+        // Search query filter
+        if (currentSearchQuery) {
+          items = items.filter(x =>
+            [x.subTopic, x.topic, x.author, x.noteText]
+              .some(val => String(val).toLowerCase().includes(currentSearchQuery))
+          );
+        }
+
+        // Newest first
+        items.sort((a, b) => new Date(b.dateRaw || 0) - new Date(a.dateRaw || 0));
+
+        const countChip = document.getElementById("hysCount");
+        if (countChip) countChip.textContent = `${items.length} Note${items.length === 1 ? '' : 's'}`;
+
+        renderHysList(items);
+      }
+
+      function renderHysList(items) {
+        const container = document.getElementById("hysList");
+        if (!container) return;
+        container.innerHTML = "";
+
+        if (!items || items.length === 0) {
+          container.innerHTML = `<div class="empty-state">No matching notes found.</div>`;
+          return;
+        }
+
+        items.forEach(item => {
+          const card = document.createElement("div");
+          card.className = "app-card";
+          card.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:12px 14px; margin-bottom:8px; border-radius:10px; background:var(--glass-fill, rgba(255,255,255,0.03)); border:1px solid var(--glass-border, rgba(255,255,255,0.08)); cursor:pointer; transition:background 0.2s, transform 0.15s;";
+
+          card.addEventListener("mouseover", () => {
+            card.style.background = "var(--glass-fill-hi, rgba(255,255,255,0.08))";
+            card.style.transform = "translateX(2px)";
+          });
+          card.addEventListener("mouseout", () => {
+            card.style.background = "var(--glass-fill, rgba(255,255,255,0.03))";
+            card.style.transform = "translateX(0)";
+          });
+          card.addEventListener("click", () => openHysDrawer(item));
+
+          const isCommittee = item.target.toLowerCase().includes("committee");
+          const targetBadgeStyle = isCommittee
+            ? "background:rgba(255,106,61,0.15); color:var(--signal); border:1px solid rgba(255,106,61,0.3);"
+            : "background:rgba(94,234,212,0.15); color:var(--glow); border:1px solid rgba(94,234,212,0.3);";
+
+          const cleanPreview = item.noteText.replace(/^\[By[^\]]+\]\s*/i, '').slice(0, 95);
+
+          card.innerHTML = `
+            <div style="flex:1; margin-right:12px; overflow:hidden;">
+              <div style="font-weight:600; font-size:14px; color:var(--foam, #fff); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(item.subTopic)}</div>
+              <div style="font-size:12px; color:var(--foam-dim, #aaa); margin-top:2px;">
+                <strong style="color:var(--foam);">${esc(item.author)}</strong> &bull; ${esc(item.dateFormatted)} &bull; <span style="color:var(--glow);">${esc(item.topic)}</span>
+              </div>
+              <div style="font-size:11.5px; color:var(--foam-dim); opacity:0.85; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${esc(cleanPreview)}${item.noteText.length > 95 ? '…' : ''}
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0;">
+              <span style="padding:3px 8px; border-radius:6px; font-size:10px; font-weight:600; ${targetBadgeStyle}">
+                ${esc(item.target)}
+              </span>
+              <span class="app-chevron" style="color:var(--foam-dim); font-size:14px;">›</span>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      function initHysDrawer() {
+        const closeBtn = document.getElementById("closeHysDrawer");
+        const overlay = document.getElementById("hysDrawer");
+        if (closeBtn) closeBtn.addEventListener("click", closeHysDrawer);
+        if (overlay) {
+          overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) closeHysDrawer();
+          });
+        }
+      }
+
+      function openHysDrawer(item) {
+        const overlay = document.getElementById("hysDrawer");
+        if (!overlay) return;
+
+        document.getElementById("hysDrawerTitle").textContent = item.subTopic;
+        document.getElementById("hysDrawerSub").textContent = `${item.author} • ${item.dateFormatted}`;
+
+        const isCommittee = item.target.toLowerCase().includes("committee");
+        const targetBadgeStyle = isCommittee
+          ? "background:rgba(255,106,61,0.15); color:var(--signal); border:1px solid rgba(255,106,61,0.3);"
+          : "background:rgba(94,234,212,0.15); color:var(--glow); border:1px solid rgba(94,234,212,0.3);";
+
+        document.getElementById("hysDrawerBody").innerHTML = `
+          <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <span class="badge badge-default" style="font-size:11px; padding:4px 10px;">${esc(item.topic)}</span>
+            <span style="font-size:11px; padding:4px 10px; border-radius:6px; font-weight:600; ${targetBadgeStyle}">${esc(item.target)}</span>
+          </div>
+
+          <div class="app-detail-section">
+            <div class="app-detail-section-title">Author &amp; Submission</div>
+            <div class="app-detail-grid">
+              <div class="app-detail-item">
+                <span class="app-detail-label">Submitted By</span>
+                <span class="app-detail-value">${esc(item.author)}</span>
+              </div>
+              <div class="app-detail-item">
+                <span class="app-detail-label">Date</span>
+                <span class="app-detail-value">${esc(item.dateFormatted)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="app-detail-section" style="margin-top:14px;">
+            <div class="app-detail-section-title">Note Content</div>
+            <div style="font-size:13.5px; line-height:1.6; color:var(--foam); white-space:pre-wrap; padding:8px 0; word-break:break-word;">
+              ${esc(item.noteText.replace(/^\[By[^\]]+\]\s*/i, ''))}
+            </div>
+          </div>
+        `;
+
+        overlay.classList.add("open");
+      }
+
+      function closeHysDrawer() {
+        const overlay = document.getElementById("hysDrawer");
+        if (overlay) overlay.classList.remove("open");
+      }
+
+      function initHysForm() {
+        const memberSel = document.getElementById("hysMemberName");
+        if (memberSel) {
+          memberSel.addEventListener("change", function(e) {
+            const opt = e.target.options[e.target.selectedIndex];
+            document.getElementById("hysMemberEmail").value = opt ? (opt.dataset.email || "") : "";
+          });
+        }
+
+        const form = document.getElementById("hysForm");
+        if (!form) return;
+
+        form.addEventListener("submit", async function(e) {
+          e.preventDefault();
+
+          const submitBtn = document.getElementById("btnSubmitHys");
+          const statusDiv = document.getElementById("hysFormStatus");
+
+          const author = document.getElementById("hysMemberName").value;
+          const email = document.getElementById("hysMemberEmail").value;
+          const date = document.getElementById("hysDate").value;
+          const topic = document.getElementById("hysTopic").value;
+          const target = document.getElementById("hysTarget").value;
+          const subject = document.getElementById("hysSubject").value.trim();
+          const noteText = document.getElementById("hysNote").value.trim();
+
+          if (!author || !date || !topic || !subject || !noteText) {
+            statusDiv.style.color = "#f87171";
+            statusDiv.textContent = "Please fill in all required fields.";
+            return;
+          }
+
+          submitBtn.disabled = true;
+          statusDiv.style.color = "var(--glow, #257fb6)";
+          statusDiv.textContent = "Saving your note…";
+
+          const newNoteId = "NOTE-" + Date.now().toString(36).toUpperCase();
+          const noteFormatted = `[By ${author} - Addressed to ${target}]\n\n${noteText}`;
+          const copyInFormatted = `From: ${author} <${email}>; Target: ${target}`;
+
+          const rowData = {
+            NoteID: newNoteId,
+            Date: date,
+            Topic: topic,
+            SubTopic: subject,
+            Note: noteFormatted,
+            Attachments: "",
+            CopyIn: copyInFormatted,
+            CreatedAt: new Date().toISOString(),
+            LastUpdated: new Date().toISOString()
+          };
+
+          try {
+            await appendSheet(DOMAIN.notes || "notes", "Notes", rowData);
+
+            // Prepend locally so the update shows immediately
+            rawHysNotes.unshift(rowData);
+            populateHysTopicFilter();
+            applyHysFiltersAndRender();
+
+            statusDiv.style.color = "#4ade80";
+            statusDiv.textContent = "Thank you! Your note has been posted.";
+
+            setTimeout(() => {
+              form.reset();
+              statusDiv.textContent = "";
+              submitBtn.disabled = false;
+              switchHysTab("note-list");
+            }, 1000);
+
+          } catch (err) {
+            console.error("Note submit error:", err);
+            statusDiv.style.color = "#ef4444";
+            statusDiv.textContent = "Submission failed: " + err.message;
+            submitBtn.disabled = false;
+          }
+        });
+      }
+
+      // Hook for the global bootstrap / members reload
+      window.populateHysMembersDropdown = populateHysMembersDropdown;
     })();
 
     // =========================================================
