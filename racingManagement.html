@@ -194,8 +194,21 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
                 <div class="form-group"><label>Description</label><textarea id="fDesc" placeholder="Optional"></textarea></div>
             </div>
             <div class="form-row triple">
-                <div class="form-group"><label>Discards: drop</label><input type="number" id="fDrop" min="0" max="20" placeholder="0 = none"></div>
-                <div class="form-group"><label>After N races</label><input type="number" id="fAfter" min="1" max="50" placeholder="e.g. 5"></div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Discards Rule</label>
+                        <select id="fDiscardsPreset">
+                            <option value="smmc_standard">SMMC Standard (1 drop @ 4, 2 @ 8, +1 every 8)</option>
+                            <option value="rrs_standard">World Sailing Standard (1 drop @ 4, 2 @ 8)</option>
+                            <option value="none">No Discards (All races count)</option>
+                            <option value="custom">Custom Thresholds</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="customThresholdWrap" style="display:none;">
+                        <label>Milestone Race Numbers (comma-separated)</label>
+                        <input type="text" id="fCustomThresholds" placeholder="e.g. 4, 8, 16, 24">
+                    </div>
+                </div>
                 <div class="form-group"><label>Status</label>
                     <select id="fActive"><option value="true">Active</option><option value="false">Archived</option></select></div>
             </div>
@@ -238,10 +251,22 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 const M = DOMAIN.members;
 const D = DOMAIN.racing;                          // sheets live in the members spreadsheet
 // Add a new race type here (and its scorer on the results side) — no schema change needed.
+const DEFAULT_HCAP_CONFIG = JSON.stringify({
+    method: "start_offset",
+    positions: ["1", "2", "3", "4", "n", "L-3", "L-2", "L-1", "L"],
+    brackets: {
+        "<4":  [10, 5, 0, 0, 0, 0, 0, -5, -10],
+        "<7":  [15, 10, 5, 0, 0, 0, -5, -10, -15],
+        "<13": [20, 15, 10, 5, 0, -5, -10, -15, -20],
+        "13+": [20, 15, 10, 5, 0, -5, -10, -15, -20]
+    }
+});
+
 const RACE_TYPES = [
     { v: "scratch",  l: "Scratch",  cfg: "" },
-    { v: "handicap", l: "Handicap", cfg: '{"method":"start_offset"}' }
+    { v: "handicap", l: "Handicap", cfg: DEFAULT_HCAP_CONFIG }
 ];
+
 const SCORING = [{ v: "low_point", l: "Low point" }, { v: "high_point", l: "High point" }];
 const TYPE_TO_FORMAT = { "scratch": "FMT-SCRATCH", "handicap": "FMT-HANDICAP", "racing": "FMT-IOM", "iom format": "FMT-IOM" };
 
@@ -314,6 +339,54 @@ function renderStats() {
     $("stat-specs").textContent = specs.filter(isActive).length;
     $("stat-unassigned").textContent = regattas.filter(r => !gv(r, "formatId")).length;
 }
+// Discard processing
+const DISCARD_PRESETS = {
+    smmc_standard: [4, 8, 16, 24, 32],
+    rrs_standard:  [4, 8],
+    none:          []
+};
+
+function getDiscardsJson() {
+    const preset = $("fDiscardsPreset").value;
+    if (preset === "none") return "";
+    let thresholds = DISCARD_PRESETS[preset];
+    if (preset === "custom") {
+        thresholds = $("fCustomThresholds").value.split(",")
+            .map(x => parseInt(x.trim(), 10))
+            .filter(n => !isNaN(n) && n > 0)
+            .sort((a, b) => a - b);
+    }
+    return JSON.stringify({ thresholds });
+}
+
+function loadDiscardsIntoForm(jsonStr) {
+    if (!jsonStr) {
+        $("fDiscardsPreset").value = "none";
+        $("customThresholdWrap").style.display = "none";
+        return;
+    }
+    try {
+        const obj = JSON.parse(jsonStr);
+        const th = (obj.thresholds || []).join(",");
+        if (th === DISCARD_PRESETS.smmc_standard.join(",")) {
+            $("fDiscardsPreset").value = "smmc_standard";
+            $("customThresholdWrap").style.display = "none";
+        } else if (th === DISCARD_PRESETS.rrs_standard.join(",")) {
+            $("fDiscardsPreset").value = "rrs_standard";
+            $("customThresholdWrap").style.display = "none";
+        } else {
+            $("fDiscardsPreset").value = "custom";
+            $("customThresholdWrap").style.display = "";
+            $("fCustomThresholds").value = th;
+        }
+    } catch {
+        $("fDiscardsPreset").value = "none";
+    }
+}
+
+$("fDiscardsPreset").addEventListener("change", e => {
+    $("customThresholdWrap").style.display = e.target.value === "custom" ? "" : "none";
+});
 
 /* ============ FORMATS TABLE ============ */
 function renderFormats() {
