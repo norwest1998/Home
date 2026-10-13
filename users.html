@@ -90,6 +90,7 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12.5px; }
         <div class="glass stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-label">Total Users</div></div>
         <div class="glass stat-card"><div class="stat-val accent" id="stat-admin">—</div><div class="stat-label">Admins</div></div>
         <div class="glass stat-card"><div class="stat-val" id="stat-editor">—</div><div class="stat-label">Editors</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-coord">—</div><div class="stat-label">Coordinators</div></div>
         <div class="glass stat-card"><div class="stat-val" id="stat-viewer">—</div><div class="stat-label">Viewers</div></div>
         <div class="glass stat-card"><div class="stat-val warn" id="stat-locked">—</div><div class="stat-label">Locked</div></div>
         <div class="glass stat-card"><div class="stat-val" id="stat-nologin">—</div><div class="stat-label">Members w/o Login</div></div>
@@ -113,6 +114,7 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12.5px; }
                 <select class="glass-select" id="filterRole">
                     <option value="">All Roles</option>
                     <option value="viewer">Viewer</option>
+                    <option value="coord">Coordinator</option>
                     <option value="editor">Editor</option>
                     <option value="admin">Admin</option>
                 </select>
@@ -266,7 +268,7 @@ function status(id, msg, type) { const el = $(id); el.textContent = msg; el.clas
 /* ---------- LOAD ---------- */
 async function loadAll() {
     $("usersBody").innerHTML = `<tr class="spinner-row"><td colspan="6"><span class="spinner"></span> Loading users…</td></tr>`;
-    ["total","admin","editor","viewer","locked","nologin"].forEach(k => $("stat-" + k).innerHTML = `<span class="spinner"></span>`);
+    ["total","admin","editor","coord","viewer","locked","nologin"].forEach(k => $("stat-" + k).innerHTML = `<span class="spinner"></span>`);
     try {
         const [u, m] = await Promise.all([
             apiGet("listUsers"),                                        // admin-only action; never returns hashes
@@ -294,6 +296,7 @@ function renderStats() {
     $("stat-total").textContent  = users.length;
     $("stat-admin").textContent  = n("admin");
     $("stat-editor").textContent = n("editor");
+    $("stat-coord").textContent = n("coord");
     $("stat-viewer").textContent = n("viewer");
     $("stat-locked").textContent = users.filter(isLocked).length;
     $("stat-nologin").textContent = availableMembers().length;
@@ -308,7 +311,7 @@ function renderTable() {
         (!lt || String(u.LoginType).toLowerCase().split(",").map(s => s.trim()).includes(lt))
     ).sort((a, b) => String(a.Name).localeCompare(String(b.Name)));
 
-    const roleBadge = { admin: "badge-admin", editor: "badge-affiliate", viewer: "badge-default" };
+    const roleBadge = { admin: "badge-admin", editor: "badge-affiliate", coord: "badge-affiliate", viewer: "badge-default" };
     $("usersBody").innerHTML = rows.map(u => `
         <tr class="clickable" data-email="${escapeHtml(u.Email)}">
             <td>${escapeHtml(u.Name)}</td>
