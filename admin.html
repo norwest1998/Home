@@ -153,10 +153,10 @@
     <section class="fn-grid" id="fnGrid"></section>
 
     <!-- Sheet Layout monitor-->
-    <div id="systemHealth-placeholder"></div>
+    <div id="systemHealth-placeholder" data-min-role="editor"></div>
 
     <!-- AUDIT LOG -->
-    <div id="auditLog-placeholder"></div>
+    <div id="auditLog-placeholder" data-min-role="editor"></div>
 
     <footer>
         <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
@@ -535,7 +535,7 @@ function renderGrid(data) {
     
     const usage = getUsage();
     grid.innerHTML = "";
-    
+
     // Filter functions by role rank
     const allowed = FUNCTIONS.filter(fn => {
         if (fn.placeholder) return userRank >= ROLE_RANK.admin;
