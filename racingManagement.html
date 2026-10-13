@@ -235,7 +235,8 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 <script src="auditLog.js"></script>
 <script>
 /* ============ CONFIG ============ */
-const D = DOMAIN.racing;                       // sheets live in the members spreadsheet
+const M = DOMAIN.members;
+const D = DOMAIN.racing;                          // sheets live in the members spreadsheet
 // Add a new race type here (and its scorer on the results side) — no schema change needed.
 const RACE_TYPES = [
     { v: "scratch",  l: "Scratch",  cfg: "" },
@@ -292,7 +293,7 @@ async function loadAll() {
     try {
         [formats, specs, regattas, classes] = await Promise.all([
             fetchSheet(D, "RacingFormats"), fetchSheet(D, "RaceSpecs"),
-            fetchSheet(D, "Regattas"), fetchSheet(D, "Classes").catch(() => [])
+            fetchSheet(M, "Regattas"), fetchSheet(M, "Classes").catch(() => [])
         ]);
         formats = formats.filter(f => gv(f, "formatId"));
         specs = specs.filter(s => gv(s, "specId"));
@@ -574,7 +575,7 @@ $("regBody").addEventListener("change", async e => {
     if (fid && !classAllowed(reg, fid) && !confirm(`Class "${gv(reg, "Class")}" is not in this format's valid classes. Assign anyway?`)) return renderRegattas();
     e.target.disabled = true;
     try { 
-        const res = await gw({ action: "update", domain: D, sheet: "Regattas", hexKey: id, update: { formatId: fid } });
+        const res = await gw({ action: "update", domain: M, sheet: "Regattas", hexKey: id, update: { formatId: fid } });
         if (res.error || res.updatedCount === 0) {
             throw new Error(res.error || "No fields were updated. Check sheet headers.");
         }
@@ -594,7 +595,7 @@ async function autoAssign() {
     if (!confirm(`Assign formats to ${todo.length} regatta(s) based on their current type?`)) return;
     $("autoAssignBtn").disabled = true;
     try {
-        for (const r of todo) await updateSheet(D, "Regattas", gv(r, "ID"), { formatId: TYPE_TO_FORMAT[gv(r, "RegattaType").toLowerCase()] });
+        for (const r of todo) await updateSheet(M, "Regattas", gv(r, "ID"), { formatId: TYPE_TO_FORMAT[gv(r, "RegattaType").toLowerCase()] });
         status($("regStatus"), `${todo.length} regatta(s) assigned.`, "success");
         await refresh();
     } catch (err) { status($("regStatus"), "Failed: " + err.message, "error"); }
