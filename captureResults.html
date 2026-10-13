@@ -1774,6 +1774,8 @@ function renderDraftRace(){
         : `<button class="nav-arrow" data-cancel-draft="1" title="Cancel">${svgX()}</button>`
       }
     </div>
+    ${isHcapRace(d.raceNumber) && d.positions.length === 0
+      ? `<button class="btn btn-ghost btn-sm" style="margin:0 0 10px" data-back-prerace="1">← Pre-race handicaps</button>` : ''}
     <div class="race-grid">
       <div class="positions-col">
         <div class="col-label">Finish order</div>
@@ -1787,6 +1789,8 @@ function renderDraftRace(){
     </div>
   `;
 }
+
+function backToPreRace(){ state.draft.started = false; render(); }
 
 function renderPreRace(){
   const d = state.draft;
@@ -2438,6 +2442,7 @@ function finishRace(){
 
 /* ---------------- Attach handlers after each render ---------------- */
 function attachDynamicHandlers(){
+  document.querySelectorAll('[data-back-prerace]').forEach(el => el.addEventListener('click', backToPreRace));
   document.querySelectorAll('[data-start-race]').forEach(el => el.addEventListener('click', startRace));
   document.querySelectorAll('[data-select-event]').forEach(el=>{
     el.addEventListener('click', ()=> selectEvent(el.getAttribute('data-select-event')));
