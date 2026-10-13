@@ -1060,6 +1060,10 @@ textarea.report-box::placeholder{ color: var(--foam-dim); }
 body.practice .sub-header-bar{ background:rgba(90,30,10,0.75); color:var(--signal); }
 .practice-offer{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 14px; margin-bottom:14px; border-radius:12px; background:rgba(255,106,61,0.08); border:1px dashed rgba(255,106,61,0.4); font-size:12.5px; color:var(--foam-dim); }
 .practice-offer span{ flex:1; min-width:180px; }
+.hc-row{display:flex;align-items:center;gap:8px;width:100%}
+.hc-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hc-adj{display:inline-block;min-width:34px;text-align:right;color:var(--glow);font-variant-numeric:tabular-nums}
+.hc-new{display:inline-block;min-width:38px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.446.0/dist/umd/lucide.min.js"></script>
@@ -1157,6 +1161,62 @@ async function getGuests(eventId, className) {
 
 function getRoster() {
   return [...MEMBERS, ...GUESTS];   // server already filters members by class
+}
+/* ======== HANDICAPS ======== */
+let REGATTAS = [];
+const HYBRID_SCRATCH = { 'IOM Racing': 2 };   // regattaName -> number of opening scratch races
+
+async function getRegattas(){
+  if(state.practice || REGATTAS.length) return;
+  try{ REGATTAS = await fetchSheet("members","Regattas"); }catch(e){ console.error(e); REGATTAS = []; }
+}
+
+function findHcapRule(ev){
+  const row = REGATTAS.find(r => r.Class === ev.class && r.RegattaType === ev.regattaType);
+  if(!row || !String(row['Hcap Formula'] ?? '').trim()) return null;
+  const tokens = String(row['Hcap Formula']).replace(/\./g, ',')   // tolerates the "L-2.L-1" typo
+                   .split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  const col = k => String(row[k] ?? '').split(',').map(s => Number(s.trim()) || 0);
+  return { tokens, cols: { lt4: col('<4'), lt7: col('<7'), lt13: col('<13'), ge13: col('13+') } };
+}
+
+function hcapFor(m, ev){
+  return ev.class === 'General' ? (Number(m['GH HCap']) || 0) : (Number(m.Handicap) || 0);
+}
+
+function hcapAdjust(rule, pos, n){            // pos is 1-based, n = finishers
+  const v = n < 4 ? rule.cols.lt4 : n < 7 ? rule.cols.lt7 : n < 13 ? rule.cols.lt13 : rule.cols.ge13;
+  const T = rule.tokens;
+  let i = T.indexOf(String(pos));
+  if(i < 0) i = T.findIndex(t => { const m = /^L(?:-(\d+))?$/.exec(t); return m && n - (m[1] ? +m[1] : 0) === pos; });
+  if(i < 0) i = T.indexOf('N');
+  return i < 0 ? 0 : (v[i] || 0);
+}
+
+// {boatId:{old,adj,new}} for one race, given the handicaps going into it
+function raceHcaps(positions, start, raceNum, n){
+  const ev = state.event, out = {};
+  Object.keys(start).forEach(id => out[id] = { old: start[id], adj: 0, new: start[id] });
+  if(raceNum > (HYBRID_SCRATCH[ev.regattaName] || 0)){
+    positions.forEach((id,i) => { const a = hcapAdjust(ev.hcapRule, i+1, n); out[id] = { old: start[id], adj: a, new: start[id] + a }; });
+  }
+  return out;
+}
+
+// handicaps going into the race at index idx (chained from entries through earlier races)
+function hcapStart(idx){
+  let h = {}; state.entries.forEach(e => h[e.boatId] = e.hcap || 0);
+  for(let i=0; i<idx && i<state.races.length; i++){
+    const r = state.races[i], o = raceHcaps(r.positions, h, r.raceNumber, r.positions.length);
+    h = Object.fromEntries(Object.entries(o).map(([k,v]) => [k, v.new]));
+  }
+  return h;
+}
+
+function fillHTML(id, o){
+  if(!o) return `${sailChip(id)}<br><span class="p-name">${escapeHTML(memberFor(id))}</span>`;
+  const adj = o.adj > 0 ? `+${o.adj}` : o.adj < 0 ? `${o.adj}` : '&nbsp;';
+  return `<div class="hc-row">${sailChip(id)}<span class="p-name hc-name">${escapeHTML(memberFor(id))}</span><span class="hc-adj">${adj}</span><span class="hc-new">${o.new}</span></div>`;
 }
 
 /* ======== create function to fetch Events ============= */
@@ -1574,6 +1634,7 @@ function renderCompetitorSelect(){
     return `<div class="member-row" data-toggle-member="${m.id}">
       <div class="member-name" style="flex:1;min-width:0">${escapeHTML(m.member)}</div>
       <div class="sail-tag">${escapeHTML(m.homeClub || 'SMMC')}</div>
+      ${ev.hcapRule ? `<div class="sail-tag" title="Handicap">${m.hcap}</div>` : ''}
       ${m.className ? classEmblem(m.className, 26) : ''}
       <div class="sail-tag sail-pill" style="${hullCss(m.hull)}">${escapeHTML(String(m.sailNo))}</div>
       <div class="checkbox ${checked?'checked':''}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
@@ -1654,7 +1715,12 @@ function renderDraftRace(){
   const n = state.entries.length;
   const placed = new Set([...d.positions, ...d.dns, ...d.dnf, d.ro].filter(Boolean));
   const available = currentStandingsOrder().filter(sn => !placed.has(sn));
-
+  
+  const allPlaced = available.length === 0;
+  const expN = n - d.dns.length - d.dnf.length - (d.ro ? 1 : 0);
+  const hc = state.event.hcapRule
+    ? raceHcaps(d.positions, hcapStart(d.insertAt ?? state.races.length), d.raceNumber, expN) : null;
+   
   const posSlots = [];
   for(let i=0;i<n;i++){
     const boatId = d.positions[i];
@@ -1682,7 +1748,7 @@ function renderDraftRace(){
     </div>`;
   }).join('');
 
-  const allPlaced = available.length === 0;
+
 
   return `
     <div class="race-hero">
@@ -1712,11 +1778,13 @@ function renderDraftRace(){
 
 function renderCapturedRaceView(idx){
   const r = state.races[idx];
+  const hc = state.event.hcapRule
+    ? raceHcaps(r.positions, hcapStart(idx), r.raceNumber, r.positions.length) : null;
   const rows = [];
   r.positions.forEach((sn,i) => rows.push(`<div class="pos-slot filled" data-race-row="${sn}">
       <div class="drag-handle" data-drag-handle="${sn}">${svgDrag()}</div>
       <div class="pos-num">${i+1}</div>
-      <div class="pos-fill">${sailChip(sn)}<br><span class="p-name">${escapeHTML(memberFor(sn))}</span></div>
+      <div class="pos-fill">${fillHTML(sn, hc && hc[sn])}</div>
     </div>`));
   r.dns.forEach(sn => rows.push(`<div class="pos-code-row" data-race-row="${sn}"><span class="code-badge">DNS</span>${sailChip(sn)}<span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(sn))}</span></div>`));
   r.dnf.forEach(sn => rows.push(`<div class="pos-code-row" data-race-row="${sn}"><span class="code-badge">DNF</span>${sailChip(sn)}<span style="flex:1;font-size:12px;color:var(--foam-dim)">${escapeHTML(memberFor(sn))}</span></div>`));
@@ -1942,8 +2010,15 @@ async function selectEvent(id){
      </div>`;
 
   try {
-    await Promise.all([getMembers(full.className), getGuests(full.id, full.className)]);
+        await Promise.all([getMembers(full.className), getGuests(full.id, full.className), getRegattas()]);
   } catch (e) { console.error(e); }
+
+  full.hcapRule = findHcapRule(ev);
+  if(full.hcapRule){
+    if(ev.class === 'General') MEMBERS = MEMBERS.filter(m => String(m.GH).trim().toLowerCase() === 'true');
+    MEMBERS.forEach(m => m.hcap = hcapFor(m, ev));
+    GUESTS.forEach(g => g.hcap = Number(g.hcap) || 0);
+  }
 
   const saved = loadState(id);
   state.event = full;
@@ -1984,7 +2059,7 @@ function confirmEntries(){
   const roster = getRoster();   // members AND guests
   const isFirstTime = state.entries.length === 0;
   state.entries = roster.filter(m => state.pendingSelection.has(String(m.id)))
-                        .map(m => ({  boatId: String(m.id), sailNo: String(m.sailNo), member: m.member, hull: m.hull || '' }));
+                        .map(m => ({  boatId: String(m.id), sailNo: String(m.sailNo), member: m.member, hull: m.hull || '', hcap: Number(m.hcap) || 0 }));
   state.screen = 'race-capture';
   saveState();
   showToast(isFirstTime ? 'Entries saved' : 'Entries updated');
