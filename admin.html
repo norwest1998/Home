@@ -731,31 +731,25 @@ const FUNCTIONS = [
             };
         }
     },
-    { 
-        id: "racingManagement",
+    {
+        id: "racing-management",
         minRole: "editor",
-        icon: '<i data-lucide="users" color="#257fb6"></i>',
+        icon: '<i data-lucide="flag-triangle-right" color="#257fb6"></i>',
         title: "Racing Management",
-        description: "Manage and monitor racing formats, scoring, discards and weighting.",
-        href: "racingManagement.html", 
+        description: "Racing formats, race specs and regatta format assignment.",
+        href: "racingManagement.html",
         status: (data) => {
-            const formats = data.racing || [];
-            const total = formats.length;
-            const active = formats.filter(r => r.Active === true).length;
-            const inUse = formats.filter(r => r.Status === 'PENDING' || r.Status === 'PROCESSING').length;
-            const RaceSpecs = formats.filter(r => r.Active === true).length;
-            const nonconf = formats.filter(r => r.Status === 'PENDING' || r.Status === 'PROCESSING').length;
-            
-            return {
-                pills: [
-                    { label: "Formats", value: total, className: total > 0 ? "badge-renewal" : "badge-default" },
-                    { label: "Active", value: active, className: "badge-full" },
-                    { label: "In Use", value: inUse, className: inUse > 0 ? "badge-expired" : "badge-default" },
-                    { label: "Formats", value: total, className: total > 0 ? "badge-renewal" : "badge-default" },
-                    { label: "Active", value: active, className: "badge-full" },
-                ]
-            };
-        }        
+            const f = data.racingFormats || [], s = data.raceSpecs || [], r = data.regattas || [];
+            const act = x => { const a = getRowVal(x, ["active"]).toUpperCase(); return a === "" || a === "TRUE"; };
+            const used = new Set(r.map(x => getRowVal(x, ["formatId"])).filter(Boolean));
+            const none = r.filter(x => !getRowVal(x, ["formatId"])).length;
+            return { pills: [
+                { label: "Formats",   value: f.filter(act).length, className: "badge-full" },
+                { label: "Specs",     value: s.filter(act).length, className: "badge-default" },
+                { label: "In Use",    value: used.size,            className: "badge-affiliate" },
+                { label: "No Format", value: none,                 className: none ? "badge-renewal" : "badge-default" }
+            ]};
+        }
     },
     { id: "add-new-function", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
 ];
