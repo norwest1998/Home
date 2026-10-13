@@ -1727,7 +1727,8 @@ function renderDraftRace(){
   if(!d.started) return renderPreRace();
   const n = state.entries.length;
   const placed = new Set([...d.positions, ...d.dns, ...d.dnf, d.ro].filter(Boolean));
-  const available = currentStandingsOrder().filter(sn => !placed.has(sn));
+  const standingsOrder = currentStandingsOrder();
+  const available = standingsOrder.filter(sn => !placed.has(sn));
   
   const allPlaced = available.length === 0;
   const expN = n - d.dns.length - d.dnf.length - (d.ro ? 1 : 0);
@@ -1753,12 +1754,12 @@ function renderDraftRace(){
   d.dnf.forEach(sn => codeRows.push(`<div class="pos-code-row" data-clear-code="dnf:${sn}"><span class="code-badge">DNF</span>${sailChip(sn)}<span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(sn))}</span></div>`));
   if(d.ro) codeRows.push(`<div class="pos-code-row ro" data-clear-code="ro:${d.ro}"><span class="code-badge">RO</span>${sailChip(d.ro)}<span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(d.ro))}</span></div>`);
 
-  const icons = available.map((sn, idx) => {
-    const rank = state.races.length > 0 ? idx+1 : null;
+  const icons = available.map(sn => {
+    const rank = state.races.length > 0 ? standingsOrder.indexOf(sn) + 1 : null;
     return `<div class="sail-icon" data-boat-icon="${sn}" style="${hullStyle(sn)}">
       ${rank ? `<div class="pennant"></div>` : ''}
       <div class="num">${sailFor(sn)}</div>
-      ${rank ? `<div class="rank">${rank} o/a</div>` : ''}
+      ${rank ? `<div class="rank">${rank} of ${standingsOrder.length}</div>` : ''}
     </div>`;
   }).join('');
 
