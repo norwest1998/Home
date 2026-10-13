@@ -343,43 +343,44 @@ select.guest-inline-input option {
             <h2>Processed Results</h2>
             <p>Files in the Race Results – Processed folder. Click a row to view the scoresheet.</p>
         </div>
-    </div>
 
-    <div class="panel">
-        <div class="panel-header">
-            <div class="panel-title-left"><span class="dot"></span><h3>Race Files</h3></div>
-        </div>
-        <div class="tab-content active">
-            <div class="panel-toolbar" style="justify-content:space-between;">
-                <div class="search-wrap">
-                    <i class="inline-icon" data-lucide="search"></i>
-                    <input id="resultsSearch" class="search-input" type="text"
-                        placeholder="Search by class, type or date…"
-                        oninput="filterResults()">
+
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title-left"><span class="dot"></span><h3>Race Files</h3></div>
+            </div>
+            <div class="tab-content active">
+                <div class="panel-toolbar" style="justify-content:space-between;">
+                    <div class="search-wrap">
+                        <i class="inline-icon" data-lucide="search"></i>
+                        <input id="resultsSearch" class="search-input" type="text"
+                            placeholder="Search by class, type or date…"
+                            oninput="filterResults()">
+                    </div>
+                    <select id="classFilter" class="mm-select" onchange="filterResults()">
+                        <option value="all">All Classes</option>
+                    </select>
+                    <select id="typeFilter" class="mm-select" onchange="filterResults()">
+                        <option value="all">All Regatta Types</option>
+                    </select>
+                    <button type="button" class="btn btn-ghost" onclick="loadAll()" title="Refresh">
+                        <i class="inline-icon" data-lucide="refresh-cw" color="#257fb6"></i> Refresh
+                    </button>
                 </div>
-                <select id="classFilter" class="mm-select" onchange="filterResults()">
-                    <option value="all">All Classes</option>
-                </select>
-                <select id="typeFilter" class="mm-select" onchange="filterResults()">
-                    <option value="all">All Regatta Types</option>
-                </select>
-                <button type="button" class="btn btn-ghost" onclick="loadAll()" title="Refresh">
-                    <i class="inline-icon" data-lucide="refresh-cw" color="#257fb6"></i> Refresh
-                </button>
+                <div id="resultRowsScroll" style="overflow-y:auto;max-height:620px;scrollbar-width:none;">
+                    <div id="resultRows" class="result-rows"></div>
+                </div>
+                </div> <!-- end resultRowsScroll -->
+                <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
+                    <button id="resultChevronUp"   class="icon-btn" style="display:none;width:100%;border-radius:8px;justify-content:center;" onclick="shiftResultPage(-1)" title="Scroll up">
+                        <i class="inline-icon" data-lucide="chevron-up"></i>
+                    </button>
+                    <button id="resultChevronDown" class="icon-btn" style="display:none;width:100%;border-radius:8px;justify-content:center;" onclick="shiftResultPage(1)" title="Scroll down">
+                        <i class="inline-icon" data-lucide="chevron-down"></i>
+                    </button>
+                </div>
+                <div class="fn-message" id="resultMsg"></div>
             </div>
-            <div id="resultRowsScroll" style="overflow-y:auto;max-height:620px;scrollbar-width:none;">
-                <div id="resultRows" class="result-rows"></div>
-            </div>
-            </div> <!-- end resultRowsScroll -->
-            <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
-                <button id="resultChevronUp"   class="icon-btn" style="display:none;width:100%;border-radius:8px;justify-content:center;" onclick="shiftResultPage(-1)" title="Scroll up">
-                    <i class="inline-icon" data-lucide="chevron-up"></i>
-                </button>
-                <button id="resultChevronDown" class="icon-btn" style="display:none;width:100%;border-radius:8px;justify-content:center;" onclick="shiftResultPage(1)" title="Scroll down">
-                    <i class="inline-icon" data-lucide="chevron-down"></i>
-                </button>
-            </div>
-            <div class="fn-message" id="resultMsg"></div>
         </div>
     </div>
 
@@ -424,37 +425,38 @@ select.guest-inline-input option {
     </div>
 
     <!-- Processing -->
-    <div class="section-head" id="admin-actions">
+    <div class="section-head" id="admin-actions" data-min-role="editor">
         <div>
             <h2>Admin Actions</h2>
             <p>Manually trigger processing if the Results Scheduler failed to fire.</p>
         </div>
-    </div>
 
-    <div class="panel">
-        <div class="panel-header">
-            <div class="panel-title-left"><span class="dot"></span><h3>Results Processing</h3></div>
-        </div>
-        <div class="tab-content active">
-            <div class="trigger-info">
-                <i class="inline-icon trigger-icon" data-lucide="alert-triangle"></i>
-                <div class="trigger-info-text">
-                    <strong>Manual Trigger</strong>
-                    <p>Only use this if the Results Scheduler trigger failed. Check the Upload folder first — processing will only run if a file is present. The scheduler will be re-armed for the next regatta after processing completes.</p>
+
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title-left"><span class="dot"></span><h3>Results Processing</h3></div>
+            </div>
+            <div class="tab-content active">
+                <div class="trigger-info">
+                    <i class="inline-icon trigger-icon" data-lucide="alert-triangle"></i>
+                    <div class="trigger-info-text">
+                        <strong>Manual Trigger</strong>
+                        <p>Only use this if the Results Scheduler trigger failed. Check the Upload folder first — processing will only run if a file is present. The scheduler will be re-armed for the next regatta after processing completes.</p>
+                    </div>
                 </div>
+                <div id="uploadFileList" class="result-rows" style="margin-top:10px;"></div>
+                <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-ghost" onclick="initiateProcessing()">
+                        <i class="inline-icon" data-lucide="play-circle" color="#5eead4"></i> Initiate Processing
+                    </button>
+                    <button type="button" class="btn btn-ghost" onclick="checkUploadFolder()">
+                        <i class="inline-icon" data-lucide="folder-search" color="#5eead4"></i> Check Upload Folder
+                    </button>
+                </div>
+                <div class="fn-message" id="processingMsg"></div>
             </div>
-            <div id="uploadFileList" class="result-rows" style="margin-top:10px;"></div>
-            <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                <button type="button" class="btn btn-ghost" onclick="initiateProcessing()">
-                    <i class="inline-icon" data-lucide="play-circle" color="#5eead4"></i> Initiate Processing
-                </button>
-                <button type="button" class="btn btn-ghost" onclick="checkUploadFolder()">
-                    <i class="inline-icon" data-lucide="folder-search" color="#5eead4"></i> Check Upload Folder
-                </button>
-            </div>
-            <div class="fn-message" id="processingMsg"></div>
         </div>
-    </div>
+    </div> <!-- end admin-actions -->
 
     <!-- Guest Registration Section -->
     <div class="section-head" id="guest-registration">
@@ -671,10 +673,10 @@ select.guest-inline-input option {
             <!-- Populated by openAvgReqModal() -->
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-ghost" id="avgDeclineBtn" onclick="decideAvgReq('declined')">
+            <button type="button" class="btn btn-ghost" id="avgDeclineBtn" data-min-role="editor"onclick="decideAvgReq('declined')">
                 <i class="inline-icon" data-lucide="x-circle" color="#ff6a3d"></i> Decline
             </button>
-            <button type="button" class="btn btn-primary" id="avgApproveBtn" onclick="decideAvgReq('approved')">
+            <button type="button" class="btn btn-primary" id="avgApproveBtn"  data-min-role="editor"onclick="decideAvgReq('approved')">
                 <i class="inline-icon" data-lucide="check-circle"></i> Approve &amp; Notify
             </button>
         </div>

@@ -229,7 +229,7 @@ async function gw(payload, url = GATEWAY_URL) {
 }
 
 // Utilities
-const ROLE_RANK = { viewer: 1, editor: 2, admin: 3 };
+const ROLE_RANK = { viewer: 1, coord: 2,editor: 3, admin: 3 };
 function applyRoles() {
   const r = ROLE_RANK[(JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}")).role] || 0;
   document.querySelectorAll("[data-min-role]").forEach(el => { if (r < ROLE_RANK[el.dataset.minRole]) el.style.display = "none"; });
@@ -266,7 +266,7 @@ const Account = {
         <strong>${escapeHtml(u.name || "—")}</strong>
         <div><span>Email</span>${escapeHtml(u.email || "—")}</div>
         <div><span>Role</span>${escapeHtml(cap)}</div>
-        <div><span>Access</span>Level ${lvl} of 3</div>
+        <div><span>Access</span>Level ${lvl} of 4</div>
         <a href="#" onclick="logout();return false;">Sign out</a>
       </div>`;
     hdr.appendChild(el);

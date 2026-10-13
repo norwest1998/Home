@@ -247,6 +247,7 @@ ADMIN FUNCTIONS GRID
 const FUNCTIONS = [
     {
         id: "Member-Applications",
+        minRole: "editor",
         icon: '<i data-lucide="user-plus" color="#257fb6"></i>',
         title: "Online Membership Applications",
         description: "Manage online applications through the process.",
@@ -284,7 +285,8 @@ const FUNCTIONS = [
         }
     },
     { 
-        id: "member-management", 
+        id: "member-management",
+        minRole: "editor",
         icon: '<i data-lucide="user-group" color="#257fb6"></i>', 
         title: "Member Management", 
         description: "Manage member details and communcation",
@@ -317,6 +319,7 @@ const FUNCTIONS = [
     },
     {
         id: "documentRepository",
+        minRole: "editor",
         icon: '<i data-lucide="folder-open" color="#257fb6"></i>',
         title: "Document Management",
         description: "Library, search, versioning, review and sign-off.",
@@ -335,6 +338,7 @@ const FUNCTIONS = [
     },
     {
         id: "notes",
+        minRole: "editor",
         icon: '<i data-lucide="notebook-pen" color="#257fb6"></i>',
         title: "Notes",
         description: "Capture, manage and action meeting and topic notes.",
@@ -361,6 +365,7 @@ const FUNCTIONS = [
     },
     {
         id: "calendar-management",
+        minRole: "coord",
         icon: '<i data-lucide="calendar-sync" color="#257fb6"></i>',
         title: "Calendar Management",
         description: "Manage Calendar Events.",
@@ -392,6 +397,7 @@ const FUNCTIONS = [
     },
     {
         id: "race-management",
+        minRole: "coord",
         icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#257fb6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v3" /><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6" /><rect x="8" y="2" width="8" height="4" rx="1" ry="1" /><line x1="8" y1="10" x2="14" y2="10" /><line x1="8" y1="14" x2="11" y2="14" /><line x1="8" y1="18" x2="11" y2="18" /><path d="M17 11v8h4c0 0-1-6-4-8z" /><path d="M15 14.5v4.5h1.5c0 0-.5-3.5-1.5-4.5z" /><path d="M18 22l1.5 1.5L23 20" /></svg>`,
         title: "Results Management",
         description: "Manage Regatta Results.",
@@ -447,6 +453,7 @@ const FUNCTIONS = [
     },
     {
         id: "email-management",
+        minRole: "editor",
         icon: '<i data-lucide="mail" color="#257fb6"></i>',
         title: "Email Management",
         description: "Track sent emails, responses, open rates and reminders across all communication campaigns.",
@@ -472,6 +479,7 @@ const FUNCTIONS = [
     },
     {
         id: "user-management",
+        minRole: "editor",
         icon: '<i data-lucide="users" color="#257fb6"></i>',
         title: "User Management",
         description: "Manage portal users, roles and login methods.",
@@ -489,6 +497,7 @@ const FUNCTIONS = [
     },
     {
         id: "media-management",
+        minRole: "editor",
         icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" color="#257fb6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-facebook"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>',
         title: "Media Management",
         description: "Manage and monitor Facebook posts, queue, and race reports.",
@@ -518,10 +527,24 @@ const bumpUsage = (id) => { const u = getUsage(); u[id] = (u[id]||0)+1; localSto
 function renderGrid(data) {
     const grid = document.getElementById("fnGrid");
     if (!grid) return; // Prevent innerHTML error if element goes missing
+
+    // Get current user role and rank
+    const user = JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}");
+    const userRole = user.role || "viewer";
+    const userRank = ROLE_RANK[userRole] || 0;
     
     const usage = getUsage();
     grid.innerHTML = "";
-    const sorted = [...FUNCTIONS].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
+    
+    // Filter functions by role rank
+    const allowed = FUNCTIONS.filter(fn => {
+        if (fn.placeholder) return userRank >= ROLE_RANK.admin;
+        const requiredRank = ROLE_RANK[fn.minRole || "editor"] || 3;
+        return userRank >= requiredRank;
+    });
+
+    const sorted = [...allowed].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
+
 
     sorted.forEach((fn, idx) => {
         const card = document.createElement("div");
