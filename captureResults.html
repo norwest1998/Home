@@ -1216,6 +1216,11 @@ function hcapStart(idx){
   return h;
 }
 
+function isHcapRace(n){
+  const ev = state.event;
+  return !!(ev && ev.hcapRule) && n > (HYBRID_SCRATCH[ev.regattaName] || 0);
+}
+
 function fillHTML(id, o){
   if(!o) return `${sailChip(id)}<br><span class="p-name">${escapeHTML(memberFor(id))}</span>`;
   const adj = o.adj > 0 ? `+${o.adj}` : o.adj < 0 ? `${o.adj}` : '&nbsp;';
@@ -1717,6 +1722,7 @@ function renderRaceCapture(){
 
 function renderDraftRace(){
   const d = state.draft;
+  if(!d.started) return renderPreRace();
   const n = state.entries.length;
   const placed = new Set([...d.positions, ...d.dns, ...d.dnf, d.ro].filter(Boolean));
   const available = currentStandingsOrder().filter(sn => !placed.has(sn));
@@ -1738,6 +1744,7 @@ function renderDraftRace(){
       posSlots.push(`<div class="pos-slot"><div class="pos-num">${i+1}</div><div class="pos-fill" style="color:var(--ink-soft)">—</div></div>`);
     }
   }
+
   // DNS/DNF/RO rows appended below positions
   const codeRows = [];
   d.dns.forEach(sn => codeRows.push(`<div class="pos-code-row" data-clear-code="dns:${sn}"><span class="code-badge">DNS</span>${sailChip(sn)}<span style="flex:1;font-size:12px;color:var(--ink-soft)">${escapeHTML(memberFor(sn))}</span></div>`));
@@ -1780,6 +1787,35 @@ function renderDraftRace(){
     </div>
   `;
 }
+
+function renderPreRace(){
+  const d = state.draft;
+  const start = hcapStart(d.insertAt ?? state.races.length);          // calculated handicaps, untouched
+  const lowest = Math.min(...state.entries.map(e => start[e.boatId]));
+  const rows = [...state.entries]
+    .sort((a,b) => start[a.boatId] - start[b.boatId] || Number(a.sailNo) - Number(b.sailNo))
+    .map(e => `<div class="pos-slot filled"><div class="pos-fill"><div class="hc-row">
+        ${sailChip(e.boatId)}<span class="p-name hc-name">${escapeHTML(e.member)}</span>
+        <span class="hc-adj">${start[e.boatId]}</span><span class="hc-new">${start[e.boatId] - lowest}</span>
+      </div></div></div>`).join('');
+  return `
+    <div class="race-hero">
+      <div class="race-hero-title" style="flex:1">
+        <div class="rnum">Race ${d.raceNumber}</div>
+        <div class="rstatus">Pre-race handicaps</div>
+      </div>
+    </div>
+    <div class="panel glass panel-pad">
+      <div class="hc-row" style="font-size:11px;color:var(--foam-dim);margin-bottom:6px">
+        <span class="hc-name">Competitor</span><span class="hc-adj">Hcap</span><span class="hc-new">Race</span>
+      </div>
+      ${rows}
+    </div>
+    <button class="btn btn-primary btn-block" data-start-race="1">Start Race ${d.raceNumber}</button>
+    <button class="btn btn-ghost btn-block" style="margin-top:10px" data-cancel-draft="1">Cancel</button>`;
+}
+
+function startRace(){ state.draft.started = true; render(); }
 
 function renderCapturedRaceView(idx){
   const r = state.races[idx];
@@ -2080,14 +2116,15 @@ function editEntries(){
 }
 
 function addRace(){
-  state.draft = { raceNumber: state.races.length + 1, positions: [], dns: [], dnf: [], ro: '', insertAt: null };
+  const rn = state.races.length + 1;
+  state.draft = { raceNumber: rn, positions: [], dns: [], dnf: [], ro: '', insertAt: null, started: !isHcapRace(rn) };
   state.viewRaceIdx = null;
   render();
 }
 
 // Insert a new race before the race currently at position idx (idx===0 means "before the first race")
 function insertRaceAt(idx){
-  state.draft = { raceNumber: idx + 1, positions: [], dns: [], dnf: [], ro: '', insertAt: idx };
+  state.draft = { raceNumber: idx + 1, positions: [], dns: [], dnf: [], ro: '', insertAt: idx, started: !isHcapRace(idx + 1) };
   state.viewRaceIdx = null;
   render();
 }
@@ -2401,6 +2438,7 @@ function finishRace(){
 
 /* ---------------- Attach handlers after each render ---------------- */
 function attachDynamicHandlers(){
+  document.querySelectorAll('[data-start-race]').forEach(el => el.addEventListener('click', startRace));
   document.querySelectorAll('[data-select-event]').forEach(el=>{
     el.addEventListener('click', ()=> selectEvent(el.getAttribute('data-select-event')));
   });
