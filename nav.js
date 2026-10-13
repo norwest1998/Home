@@ -20,7 +20,8 @@ const DOMAINS = [
     { label: "Notes",        href: "notes.html" },
     { label: "Results",      href: "resultsManagement.html" },
     { label: "Tracking",     href: "trackingManagement.html" },
-    { label: "Documents",    href: "documentManagement.html" }   
+    { label: "Documents",    href: "documentManagement.html" },
+    { label: "Racing",       href: "racingManagement.html" } 
 ];
 
 const Nav = {
