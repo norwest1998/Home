@@ -573,8 +573,18 @@ $("regBody").addEventListener("change", async e => {
     const id = e.target.closest("tr").dataset.id, fid = e.target.value, reg = regattas.find(r => gv(r, "ID") === id);
     if (fid && !classAllowed(reg, fid) && !confirm(`Class "${gv(reg, "Class")}" is not in this format's valid classes. Assign anyway?`)) return renderRegattas();
     e.target.disabled = true;
-    try { await updateSheet(D, "Regattas", id, { formatId: fid }); status($("regStatus"), `${id} updated.`, "success"); await refresh(); }
-    catch (err) { status($("regStatus"), "Failed: " + err.message, "error"); renderRegattas(); }
+    try { 
+        const res = await gw({ action: "update", domain: D, sheet: "Regattas", hexKey: id, update: { formatId: fid } });
+        if (res.error || res.updatedCount === 0) {
+            throw new Error(res.error || "No fields were updated. Check sheet headers.");
+        }
+        status($("regStatus"), `${id} updated.`, "success"); 
+        await refresh(); 
+    }
+    catch (err) { 
+        status($("regStatus"), "Failed: " + err.message, "error"); 
+        renderRegattas(); 
+    }
 });
 
 async function autoAssign() {
