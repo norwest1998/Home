@@ -10,6 +10,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 
+<!-- Leaflet.js Mapping Library -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <!-- Link Shared Theme -->
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -84,6 +88,160 @@
 .fn-message.visible { display: block; }
 .fn-message.success { color: var(--glow); }
 .fn-message.error { color: #ff6b6b; }
+
+/* ============================================================
+   MEMBER MAP SECTION STYLES
+   ============================================================ */
+.map-panel {
+    margin-top: 10px;
+    margin-bottom: 36px;
+    overflow: hidden;
+}
+
+.map-toolbar {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: rgba(0,0,0,0.15);
+}
+
+.map-filters-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.slider-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 5px 14px;
+    font-family: var(--font-data);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--foam);
+}
+
+.slider-control input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 140px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+}
+
+.slider-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--glow);
+    box-shadow: 0 0 8px var(--glow);
+    cursor: pointer;
+}
+
+.slider-control input[type="range"]::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--glow);
+    border: none;
+    box-shadow: 0 0 8px var(--glow);
+    cursor: pointer;
+}
+
+#memberMap {
+    height: 540px;
+    width: 100%;
+    background: var(--ocean-deep);
+    z-index: 1;
+}
+
+/* Custom Leaflet Dark Theme Overrides */
+.leaflet-popup-content-wrapper {
+    background: #0d2940 !important;
+    color: var(--foam) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.5) !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+.leaflet-popup-tip {
+    background: #0d2940 !important;
+    border: 1px solid var(--glass-border) !important;
+}
+
+.leaflet-popup-content {
+    margin: 14px 16px !important;
+    line-height: 1.4 !important;
+    font-family: var(--font-body) !important;
+}
+
+.map-popup-head {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--foam);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.map-popup-item {
+    font-size: 11.5px;
+    color: var(--foam-dim);
+    margin: 3px 0;
+}
+
+.map-popup-boats {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--glass-border);
+    font-size: 11px;
+}
+
+.map-marker-pin {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--glow);
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 10px rgba(94, 234, 212, 0.85);
+    cursor: pointer;
+}
+.map-marker-pin.inactive {
+    background: var(--signal);
+    box-shadow: 0 0 8px rgba(255, 106, 61, 0.7);
+}
+
+.map-club-pin {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #ff6a3d;
+    border: 3px solid #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 13px;
+    box-shadow: 0 0 16px rgba(255,106,61,0.9);
+    animation: pulse 2.4s infinite;
+}
 </style>
 </head>
 <body>
@@ -143,6 +301,63 @@
             <div class="health-label">Members with a login</div>
             <div class="health-sub"></div>
         </div>
+    </section>
+
+    <!-- NEW SECTION: MEMBER GEOGRAPHICAL DISTRIBUTION MAP (EDITOR ROLE) -->
+    <div class="section-head" data-min-role="editor">
+        <h2><i data-lucide="map-pin" class="inline-icon" style="color:var(--glow);"></i> Member Geographic Distribution</h2>
+        <p>Spatial analysis of membership, active fleet, and catchment radius around Norwest Lake.</p>
+    </div>
+
+    <section class="panel map-panel" data-min-role="editor" id="memberMapPanel">
+        <div class="panel-header">
+            <div class="panel-title-left">
+                <span class="dot"></span>
+                <h3>Club Footprint & Catchment</h3>
+                <span class="badge badge-full" id="mapMatchBadge">Loading...</span>
+            </div>
+            <div style="font-size: 11px; color: var(--foam-dim); display: flex; align-items: center; gap: 8px;">
+                <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#ff6a3d;"></span>
+                Venue: <strong>Norwest Lake, Baulkham Hills</strong>
+            </div>
+        </div>
+
+        <div class="map-toolbar">
+            <div class="map-filters-group">
+                <!-- Active Filter -->
+                <select id="mapFilterActive" class="member-filter-select" aria-label="Filter Active Status">
+                    <option value="active">Active Members Only</option>
+                    <option value="all">All Members</option>
+                    <option value="inactive">Inactive / Expired</option>
+                </select>
+
+                <!-- Class Filter -->
+                <select id="mapFilterClass" class="member-filter-select" aria-label="Filter Class">
+                    <option value="all">All Boat Classes</option>
+                </select>
+
+                <!-- Active Boats Filter -->
+                <select id="mapFilterBoatStatus" class="member-filter-select" aria-label="Filter Active Boats">
+                    <option value="all">Any Fleet Status</option>
+                    <option value="has_active_boat">Has Active Boat(s)</option>
+                    <option value="has_any_boat">Has Registered Boat(s)</option>
+                </select>
+
+                <!-- Reset view -->
+                <button type="button" class="member-filter-btn" id="mapResetViewBtn">
+                    <i data-lucide="crosshair" style="width:12px;height:12px;vertical-align:-1px;"></i> Center Club
+                </button>
+            </div>
+
+            <!-- Radius Slider (1km - 200km) -->
+            <div class="slider-control">
+                <span>Radius:</span>
+                <input type="range" id="mapRadiusSlider" min="1" max="200" value="50" step="1">
+                <span id="mapRadiusLabel" style="font-weight:600;min-width:48px;color:var(--glow);">50 km</span>
+            </div>
+        </div>
+
+        <div id="memberMap"></div>
     </section>
 
     <div class="section-head" id="admin-ops">
@@ -233,7 +448,6 @@ async function initAdmin() {
     } catch (err) {
         console.error("Failed to bootstrap fresh admin data", err);
         if (!cachedRaw) {
-            // Provide fallback error visual states if no cache exists
             document.querySelectorAll('.spinner').forEach(s => {
                 s.parentElement.innerHTML = '<span class="badge badge-expired">Error loading</span>';
             });
@@ -407,7 +621,6 @@ const FUNCTIONS = [
             const now = new Date();
             const year = now.getFullYear();
 
-            // Current season window (1 July to 30 June)
             const seasonStart = new Date(now.getMonth() >= 6 ? year : year - 1, 6, 1);
             const seasonEnd   = new Date(now.getMonth() >= 6 ? year + 1 : year, 5, 30, 23, 59, 59);
 
@@ -416,7 +629,6 @@ const FUNCTIONS = [
                 return val.includes("competition") || val.includes("regatta") || val.includes("race");
             };
 
-            // Filter regattas falling within the current season
             const seasonRegattas = events.filter(e => {
                 if (!isComp(e)) return false;
                 const d = new Date(getRowVal(e, ["Date", "Event Date", "Start Date"]));
@@ -534,9 +746,8 @@ const bumpUsage = (id) => { const u = getUsage(); u[id] = (u[id]||0)+1; localSto
 
 function renderGrid(data) {
     const grid = document.getElementById("fnGrid");
-    if (!grid) return; // Prevent innerHTML error if element goes missing
+    if (!grid) return;
 
-    // Get current user role and rank
     const user = JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}");
     const userRole = user.role || "viewer";
     const userRank = ROLE_RANK[userRole] || 0;
@@ -544,7 +755,6 @@ function renderGrid(data) {
     const usage = getUsage();
     grid.innerHTML = "";
 
-    // Filter functions by role rank
     const allowed = FUNCTIONS.filter(fn => {
         if (fn.placeholder) return userRank >= ROLE_RANK.admin;
         const requiredRank = ROLE_RANK[fn.minRole || "editor"] || 3;
@@ -552,7 +762,6 @@ function renderGrid(data) {
     });
 
     const sorted = [...allowed].sort((a,b) => (usage[b.id]||0) - (usage[a.id]||0));
-
 
     sorted.forEach((fn, idx) => {
         const card = document.createElement("div");
@@ -637,7 +846,7 @@ function renderMemberHealth(membersData) {
     const withWhatsapp = activeMembers.filter(m => String(m.WhatsApp).toLowerCase() === 'true').length;
     const withPaidUp   = activeMembers.filter(m => String(m["Paid up"]).toLowerCase() === 'true').length;
     const withActive = total;
-    const withAddr = activeMembers.filter(m => hasVal(m, ["Address Line", "Post Code"])).length;
+    const withAddr = activeMembers.filter(m => hasVal(m, ["Address Line", "Post Code", "Suburb", "PCode"])).length;
     const withCont = activeMembers.filter(m => hasVal(m, ["Emergency Contact Name", "Emergency Contact"])).length;
     const withMulti    = activeMembers.filter(m => !m["Home Club"] || m["Home Club"].trim() === '').length; 
 
@@ -674,7 +883,320 @@ function renderUserHealth(data) {
     pctEl.textContent = pct + "%"; pctEl.className = "health-pct " + pctClass(pct);
     sub.textContent = `${n} of ${active.length} members`;
 }
-            
+
+/* ============================================================
+   MEMBER GEOGRAPHIC MAP MODULE
+   ============================================================ */
+const MemberMap = {
+    map: null,
+    radiusCircle: null,
+    clubMarker: null,
+    memberLayerGroup: null,
+    data: null,
+    clubCoords: [-33.7335, 150.9634], // SMMC Sailing Venue: Norwest Lake, Baulkham Hills
+
+    // Pre-indexed coordinate lookup for Sydney and NSW suburbs/postcodes
+    suburbCoords: {
+        "north rocks": [-33.7667, 151.0250],
+        "wahroonga": [-33.7192, 151.1167],
+        "castle hill": [-33.7317, 151.0044],
+        "pennant hills": [-33.7397, 151.0717],
+        "mosman": [-33.8286, 151.2442],
+        "prospect": [-33.8053, 150.9117],
+        "kellyville": [-33.7083, 150.9583],
+        "west pennant hills": [-33.7483, 151.0417],
+        "oatlands": [-33.8000, 151.0333],
+        "waverton": [-33.8383, 151.1967],
+        "beecroft": [-33.7500, 151.0667],
+        "baulkham hills": [-33.7600, 150.9900],
+        "blacktown": [-33.7689, 150.9064],
+        "toongabbie": [-33.7883, 150.9550],
+        "cherrybrook": [-33.7217, 151.0500],
+        "carlingford": [-33.7783, 151.0500],
+        "kurrajong": [-33.5500, 150.6667],
+        "seven hills": [-33.7750, 150.9367],
+        "belrose": [-33.7250, 151.2167],
+        "maroubra": [-33.9500, 151.2400],
+        "monterey": [-33.9783, 151.1500],
+        "lemon tree passage": [-32.7300, 152.0400],
+        "smithfield": [-33.8617, 150.9317],
+        "caddens": [-33.7700, 150.7250],
+        "belmont": [-33.0333, 151.6583],
+        "west pymble": [-33.7583, 151.1333],
+        "leumeah": [-34.0533, 150.8367],
+        "umina beach": [-33.5283, 151.3167],
+        "stanhope gdns": [-33.7167, 150.9167],
+        "stanhope gardens": [-33.7167, 150.9167],
+        "rydalmere": [-33.8167, 151.0333],
+        "norwest": [-33.7335, 150.9634],
+        "epping": [-33.7733, 151.1117],
+        "south turramurra": [-33.7433, 151.1217],
+        "dural": [-33.6800, 151.0300],
+        "glenwood": [-33.7300, 150.9300],
+        "winston hills": [-33.7800, 150.9850],
+        "blaxland": [-33.7450, 150.6133],
+        "turramurra": [-33.7333, 151.1250],
+        "constitution hill": [-33.7917, 150.9750],
+        "chipping norton": [-33.9167, 150.9667],
+        "north haven": [-31.6367, 152.8100],
+        "parramatta": [-33.8150, 151.0011],
+        "hornsby": [-33.7033, 151.0983],
+        "penrith": [-33.7510, 150.6942]
+    },
+
+    haversineKm(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    },
+
+    initMap() {
+        if (this.map) return;
+        const container = document.getElementById("memberMap");
+        if (!container) return;
+
+        // Leaflet base setup
+        this.map = L.map('memberMap', {
+            center: this.clubCoords,
+            zoom: 10,
+            zoomControl: true
+        });
+
+        // Dark Matter / Oceanic Tile layer
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            maxZoom: 19
+        }).addTo(this.map);
+
+        this.memberLayerGroup = L.layerGroup().addTo(this.map);
+
+        // Norwest Lake club base marker
+        const clubIcon = L.divIcon({
+            className: 'custom-club-icon',
+            html: '<div class="map-club-pin" title="SMMC Venue - Norwest Lake">⛵</div>',
+            iconSize: [26, 26],
+            iconAnchor: [13, 13]
+        });
+
+        this.clubMarker = L.marker(this.clubCoords, { icon: clubIcon }).addTo(this.map);
+        this.clubMarker.bindPopup(`
+            <div style="font-family:var(--font-body);padding:2px;">
+                <div style="font-weight:700;color:var(--signal);font-size:13.5px;margin-bottom:3px;">
+                    Sydney Maritime Modellers Club
+                </div>
+                <div style="font-size:11.5px;color:var(--foam);">Norwest Lake, Solent Circuit</div>
+                <div style="font-size:10.5px;color:var(--foam-dim);">Baulkham Hills, NSW</div>
+            </div>
+        `);
+
+        // Radius circle
+        this.radiusCircle = L.circle(this.clubCoords, {
+            radius: 50 * 1000,
+            color: '#5eead4',
+            weight: 1.5,
+            opacity: 0.8,
+            fillColor: '#164a56',
+            fillOpacity: 0.18
+        }).addTo(this.map);
+
+        this.bindEvents();
+    },
+
+    bindEvents() {
+        const slider = document.getElementById("mapRadiusSlider");
+        const radiusLbl = document.getElementById("mapRadiusLabel");
+        const activeFilter = document.getElementById("mapFilterActive");
+        const classFilter = document.getElementById("mapFilterClass");
+        const boatFilter = document.getElementById("mapFilterBoatStatus");
+        const resetBtn = document.getElementById("mapResetViewBtn");
+
+        if (slider) {
+            slider.addEventListener("input", (e) => {
+                const val = parseInt(e.target.value, 10);
+                if (radiusLbl) radiusLbl.textContent = `${val} km`;
+                if (this.radiusCircle) this.radiusCircle.setRadius(val * 1000);
+                this.render();
+            });
+        }
+
+        [activeFilter, classFilter, boatFilter].forEach(el => {
+            if (el) el.addEventListener("change", () => this.render());
+        });
+
+        if (resetBtn) {
+            resetBtn.addEventListener("click", () => {
+                if (this.map) {
+                    this.map.setView(this.clubCoords, 10);
+                    if (this.clubMarker) this.clubMarker.openPopup();
+                }
+            });
+        }
+    },
+
+    populateClasses(boats) {
+        const classSelect = document.getElementById("mapFilterClass");
+        if (!classSelect || !boats) return;
+
+        const currentVal = classSelect.value;
+        const classes = new Set();
+
+        boats.forEach(b => {
+            const cls = getRowVal(b, ["Class", "ClassId", "Model"]);
+            if (cls) classes.add(cls);
+        });
+
+        const sorted = Array.from(classes).sort();
+        let opts = `<option value="all">All Boat Classes</option>`;
+        sorted.forEach(c => {
+            opts += `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`;
+        });
+        classSelect.innerHTML = opts;
+        if (currentVal) classSelect.value = currentVal;
+    },
+
+    resolveCoords(member) {
+        const suburb = getRowVal(member, ["Suburb", "Address Line", "City"]).toLowerCase().trim();
+        const pcode = getRowVal(member, ["PCode", "Postcode", "Post Code"]).trim();
+
+        // Check suburb index
+        for (const [sub, coords] of Object.entries(this.suburbCoords)) {
+            if (suburb.includes(sub) || sub.includes(suburb && suburb.length > 3 ? suburb : "###")) {
+                // Slight jitter for multiple members in the exact same suburb
+                const jitterLat = (Math.random() - 0.5) * 0.007;
+                const jitterLng = (Math.random() - 0.5) * 0.007;
+                return [coords[0] + jitterLat, coords[1] + jitterLng];
+            }
+        }
+
+        // Postcode fallback approximations for NSW
+        if (pcode.startsWith("21")) return [-33.76 + (Math.random() - 0.5) * 0.06, 151.01 + (Math.random() - 0.5) * 0.06];
+        if (pcode.startsWith("20")) return [-33.82 + (Math.random() - 0.5) * 0.06, 151.15 + (Math.random() - 0.5) * 0.06];
+        if (pcode.startsWith("27")) return [-33.72 + (Math.random() - 0.5) * 0.08, 150.80 + (Math.random() - 0.5) * 0.08];
+        if (pcode.startsWith("22")) return [-33.50 + (Math.random() - 0.5) * 0.15, 151.30 + (Math.random() - 0.5) * 0.15];
+
+        return null;
+    },
+
+    render() {
+        if (!this.data || !this.data.members) return;
+        this.initMap();
+        if (!this.map || !this.memberLayerGroup) return;
+
+        this.memberLayerGroup.clearLayers();
+
+        const activeMode = document.getElementById("mapFilterActive")?.value || "active";
+        const selectedClass = document.getElementById("mapFilterClass")?.value || "all";
+        const boatFilter = document.getElementById("mapFilterBoatStatus")?.value || "all";
+        const maxRadiusKm = parseInt(document.getElementById("mapRadiusSlider")?.value || "50", 10);
+
+        const members = this.data.members || [];
+        const boats = this.data.boats || [];
+
+        // Build member boats map
+        const boatsByMember = {};
+        boats.forEach(b => {
+            const owner = getRowVal(b, ["Member", "MemberName", "Owner"]).toLowerCase().trim();
+            if (!owner) return;
+            if (!boatsByMember[owner]) boatsByMember[owner] = [];
+            boatsByMember[owner].push(b);
+        });
+
+        let matchedCount = 0;
+        let plottedCount = 0;
+
+        members.forEach(m => {
+            const name = getRowVal(m, ["MemberName", "Member", "FirstName"]).trim();
+            const rawActive = getRowVal(m, ["Active", "Membership Status"]).toLowerCase();
+            const isActive = ["true", "yes", "paid"].includes(rawActive);
+
+            // 1. Active Filter
+            if (activeMode === "active" && !isActive) return;
+            if (activeMode === "inactive" && isActive) return;
+
+            const memberBoats = boatsByMember[name.toLowerCase()] || [];
+            const hasActiveBoat = memberBoats.some(b => ["true", "yes", "active"].includes(getRowVal(b, ["Active"]).toLowerCase()));
+
+            // 2. Class Filter
+            if (selectedClass !== "all") {
+                const ownsClass = memberBoats.some(b => {
+                    const cls = getRowVal(b, ["Class", "ClassId", "Model"]);
+                    return cls.toLowerCase() === selectedClass.toLowerCase();
+                });
+                if (!ownsClass) return;
+            }
+
+            // 3. Active Boats Filter
+            if (boatFilter === "has_active_boat" && !hasActiveBoat) return;
+            if (boatFilter === "has_any_boat" && memberBoats.length === 0) return;
+
+            // 4. Address & Radius filter
+            const coords = this.resolveCoords(m);
+            if (!coords) return;
+
+            const distKm = this.haversineKm(this.clubCoords[0], this.clubCoords[1], coords[0], coords[1]);
+            if (distKm > maxRadiusKm) return;
+
+            matchedCount++;
+            plottedCount++;
+
+            // Create Member Pin
+            const isMemberActive = isActive;
+            const pinClass = isMemberActive ? 'map-marker-pin' : 'map-marker-pin inactive';
+            const markerIcon = L.divIcon({
+                className: 'custom-member-icon',
+                html: `<div class="${pinClass}" title="${escapeHtml(name)}"></div>`,
+                iconSize: [18, 18],
+                iconAnchor: [9, 9]
+            });
+
+            const marker = L.marker(coords, { icon: markerIcon });
+
+            // Popup details
+            const membershipType = getRowVal(m, ["Membership", "Membership Type", "Type"]) || "Member";
+            const suburb = getRowVal(m, ["Suburb"]);
+            const pcode = getRowVal(m, ["PCode"]);
+            const address = [suburb, pcode].filter(Boolean).join(", ") || "Address on file";
+
+            const boatsHtml = memberBoats.length > 0
+                ? memberBoats.map(b => {
+                    const bClass = getRowVal(b, ["Class", "Model"]) || "Boat";
+                    const bSail = getRowVal(b, ["SailNo", "Sail Number"]);
+                    const bActive = ["true", "yes"].includes(getRowVal(b, ["Active"]).toLowerCase()) ? "Active" : "Inactive";
+                    return `<div>• <strong>${escapeHtml(bClass)}</strong> ${bSail ? `#${escapeHtml(bSail)}` : ''} <span style="opacity:0.7">(${bActive})</span></div>`;
+                }).join("")
+                : '<div style="opacity:0.6;font-style:italic;">No registered boats</div>';
+
+            const popupContent = `
+                <div class="map-popup-head">
+                    <span>${escapeHtml(name)}</span>
+                    <span class="badge ${isMemberActive ? 'badge-full' : 'badge-expired'}">${isMemberActive ? 'Active' : 'Inactive'}</span>
+                </div>
+                <div class="map-popup-item"><strong>Type:</strong> ${escapeHtml(membershipType)}</div>
+                <div class="map-popup-item"><strong>Location:</strong> ${escapeHtml(address)}</div>
+                <div class="map-popup-item"><strong>Distance:</strong> ${distKm.toFixed(1)} km from Norwest Lake</div>
+                <div class="map-popup-boats">
+                    <strong style="color:var(--glow);">Fleet:</strong>
+                    ${boatsHtml}
+                </div>
+            `;
+
+            marker.bindPopup(popupContent);
+            this.memberLayerGroup.addLayer(marker);
+        });
+
+        // Update Counter badge
+        const badge = document.getElementById("mapMatchBadge");
+        if (badge) {
+            badge.textContent = `${matchedCount} Member${matchedCount === 1 ? '' : 's'} within ${maxRadiusKm} km`;
+            badge.className = matchedCount > 0 ? "badge badge-full" : "badge badge-default";
+        }
+    }
+};
+
 // SystemHealth Panel Module
 const SystemHealth = {
     entries: [],
@@ -798,11 +1320,17 @@ function renderAll(data) {
     renderMemberHealth(data.members);
     renderUserHealth(data);
     renderGrid(data);
+
+    // Render Geographic Map for Editor rank
+    MemberMap.data = data;
+    MemberMap.populateClasses(data.boats);
+    MemberMap.render();
 }
 
 window.SystemHealth = SystemHealth;
+window.MemberMap = MemberMap;
 
-// Wait for DOM to exist before triggering bootstrapper (in case script runs slightly early)
+// Wait for DOM to exist before triggering bootstrapper
 document.addEventListener('DOMContentLoaded', initAdmin);
 </script>
 
