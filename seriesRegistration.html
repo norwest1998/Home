@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Series Registration — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+.series-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:18px; margin:24px 0 40px; }
+.series-card { padding:20px; display:flex; flex-direction:column; gap:12px; }
+.series-card h3 { font-size:17px; color:var(--foam); margin:0; }
+.series-meta { font-size:12px; color:var(--foam-dim); }
+.progress { height:8px; border-radius:99px; background:rgba(255,255,255,.1); overflow:hidden; }
+.progress > span { display:block; height:100%; background:var(--glow); border-radius:99px; }
+.progress.below > span { background:#ffb347; }
+.progress-label { display:flex; justify-content:space-between; font-size:12px; color:var(--foam); }
+.window { font-size:12px; color:var(--foam-dim); }
+.window.closed { color:#ff8b8b; }
+.boat-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--glass-border); font-size:13px; color:var(--foam); }
+.boat-row .sub { font-size:11px; color:var(--foam-dim); }
+.notice { font-size:12px; color:var(--foam-dim); padding:8px 0; border-top:1px solid var(--glass-border); }
+.msg { font-size:13px; margin:12px 0; min-height:18px; }
+.msg.error { color:#ff6b6b; } .msg.success { color:var(--glow); }
+.spinner { display:inline-block; width:18px; height:18px; border:2px solid rgba(255,255,255,.15); border-top-color:var(--foam);
+    border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; }
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<header class="nav-glass">
+    <a href="index.html" class="brand">
+        <div class="brand-text"><strong>Sydney Maritime Modellers Club</strong><span>SERIES REGISTRATION</span></div>
+    </a>
+</header>
+
+<main class="container">
+    <div class="admin-header">
+        <div class="admin-title-group"><h1>Series Registration</h1></div>
+        <a href="index.html" class="btn btn-ghost" style="flex-shrink:0;">Back to Home</a>
+    </div>
+    <p class="series-meta" style="max-width:640px;">
+        Enter your boat in a series before it starts. The club needs enough entries to run each series, and your result is weighted by how many
+        of the entered boats actually compete. Registration closes after the race shown on each card.
+    </p>
+    <div class="msg" id="msg"></div>
+    <section class="series-grid" id="grid"><div class="glass series-card"><span class="spinner"></span> Loading series…</div></section>
+</main>
+
+<script src="shared.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const say = (m, t) => { $("msg").textContent = m || ""; $("msg").className = "msg " + (t || ""); };
+const fmtDay = iso => new Date(iso).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+let series = [];
+
+async function load() {
+    try {
+        series = (await apiGet("seriesOverview")).values || [];
+        render();
+    } catch (e) {
+        $("grid").innerHTML = `<div class="glass series-card" style="color:#ff6b6b;">Could not load series: ${escapeHtml(e.message)}</div>`;
+    }
+}
+
+function render() {
+    if (!series.length) {
+        $("grid").innerHTML = `<div class="glass series-card">No series are open for entry right now.</div>`;
+        return;
+    }
+    $("grid").innerHTML = series.map(s => {
+        const pct = s.minEntries ? Math.min(100, Math.round(s.entryCount / s.minEntries * 100)) : 100;
+        const below = s.minEntries && s.entryCount < s.minEntries;
+        const win = s.open
+            ? `Open — closes after race ${s.closeAfterRace}${s.closesOn ? " (" + fmtDay(s.closesOn) + ")" : ""}`
+            : (s.status === "Closed" ? "Registration closed — field is set" : "Registration closed");
+        const boats = s.boats.map(b => {
+            const mine = s.myEntries.find(e => e.boatId === b.boatId && String(e.status).toLowerCase() === "entered");
+            const label = `${escapeHtml(b.class)} #${escapeHtml(b.sailNo)} <span class="sub">${escapeHtml(b.model || "")}</span>`;
+            const btn = mine
+                ? `<span class="badge badge-full">Entered</span> <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" data-act="withdraw" data-entry="${escapeHtml(mine.entryId)}" ${s.open ? "" : "disabled"}>Withdraw</button>`
+                : `<button class="btn btn-primary" style="padding:4px 12px;font-size:12px;" data-act="enter" data-reg="${escapeHtml(s.id)}" data-boat="${escapeHtml(b.boatId)}" ${s.open ? "" : "disabled"}>Enter</button>`;
+            return `<div class="boat-row"><div>${label}</div><div>${btn}</div></div>`;
+        }).join("") || `<div class="notice">You have no active ${escapeHtml(s.class)} boat that can enter this series.</div>`;
+        return `<div class="glass series-card">
+            <div><h3>${escapeHtml(s.name)}</h3>
+                 <div class="series-meta">${escapeHtml(s.class)} · ${escapeHtml(s.type)}${s.format ? " · " + escapeHtml(s.format) : ""}</div></div>
+            <div>
+                <div class="progress-label"><span>${s.entryCount} entered</span><span>${s.minEntries ? "minimum " + s.minEntries : "no minimum"}</span></div>
+                <div class="progress ${below ? "below" : ""}"><span style="width:${pct}%"></span></div>
+            </div>
+            <div class="window ${s.open ? "" : "closed"}">${escapeHtml(win)}</div>
+            ${boats}
+        </div>`;
+    }).join("");
+}
+
+$("grid").addEventListener("click", async e => {
+    const b = e.target.closest("button[data-act]"); if (!b) return;
+    say("");
+    b.disabled = true;
+    try {
+        if (b.dataset.act === "enter") await gw({ action: "registerSeries", regattaId: b.dataset.reg, boatId: b.dataset.boat });
+        else if (confirm("Withdraw this boat from the series?")) await gw({ action: "withdrawSeries", entryId: b.dataset.entry });
+        else { b.disabled = false; return; }
+        say(b.dataset.act === "enter" ? "Entered." : "Withdrawn.", "success");
+        await load();
+    } catch (err) { say(err.message, "error"); b.disabled = false; }
+});
+
+load();
+</script>
+</body>
+</html>

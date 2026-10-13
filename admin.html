@@ -421,7 +421,8 @@ async function initAdmin() {
             { domain: DOMAIN.calendar, sheet: "Event Data" },
             { domain: DOMAIN.tracking, sheet: "Tracking" },
             { domain: DOMAIN.media, sheet: "Queue" },
-            { domain: DOMAIN.racing, sheet: "RacingFormat"}
+            { domain: DOMAIN.racing, sheet: "RacingFormat"},
+            { domain: DOMAIN.racing, sheet: "RaceSpecs"}
         ];
 
         const res = await batchFetchSheets(reqs);
@@ -435,7 +436,8 @@ async function initAdmin() {
             events: res[`${DOMAIN.calendar}|Event Data`],
             tracking: res[`${DOMAIN.tracking}|Tracking`],
             media: res[`${DOMAIN.media}|Queue`],
-            racing: res[`${DOMAIN.racing}|RacingFormat`]
+            racingFormats: res[`${DOMAIN.racing}|RacingFormat`],
+            raceSpecs: res[`${DOMAIN.racing}|RaceSpecs`]
         };
 
         try {
