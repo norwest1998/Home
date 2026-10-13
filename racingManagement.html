@@ -193,24 +193,29 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
             <div class="form-row full">
                 <div class="form-group"><label>Description</label><textarea id="fDesc" placeholder="Optional"></textarea></div>
             </div>
-            <div class="form-row triple">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Discards Rule</label>
-                        <select id="fDiscardsPreset">
-                            <option value="smmc_standard">SMMC Standard (1 drop @ 4, 2 @ 8, +1 every 8)</option>
-                            <option value="rrs_standard">World Sailing Standard (1 drop @ 4, 2 @ 8)</option>
-                            <option value="none">No Discards (All races count)</option>
-                            <option value="custom">Custom Thresholds</option>
-                        </select>
-                    </div>
-                    <div class="form-group" id="customThresholdWrap" style="display:none;">
-                        <label>Milestone Race Numbers (comma-separated)</label>
-                        <input type="text" id="fCustomThresholds" placeholder="e.g. 4, 8, 16, 24">
-                    </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Discards Rule</label>
+                    <select id="fDiscardsPreset">
+                        <option value="smmc_standard">SMMC Standard (1 @ 4 races, 2 @ 8, +1 every 8)</option>
+                        <option value="rrs_standard">World Sailing (1 @ 4 races, 2 @ 8)</option>
+                        <option value="none">No Discards (All races count)</option>
+                        <option value="custom">Custom Thresholds</option>
+                    </select>
                 </div>
-                <div class="form-group"><label>Status</label>
-                    <select id="fActive"><option value="true">Active</option><option value="false">Archived</option></select></div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="fActive">
+                        <option value="true">Active</option>
+                        <option value="false">Archived</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row full" id="customThresholdWrap" style="display:none;">
+                <div class="form-group">
+                    <label>Custom Milestone Races (comma-separated)</label>
+                    <input type="text" id="fCustomThresholds" placeholder="e.g. 4, 8, 16, 24">
+                </div>
             </div>
 
             <div class="box">
@@ -308,7 +313,6 @@ function className(id) {
     const c = classes.find(c => gv(c, "ClassID") === id);
     return c ? (gv(c, "ClassName") || id) : id;
 }
-function parseDiscards(s) { try { const o = JSON.parse(s); return { drop: o.drop || "", after: o.after || "" }; } catch { return { drop: "", after: "" }; } }
 
 /* ============ LOAD ============ */
 async function loadAll() {
@@ -351,42 +355,54 @@ function getDiscardsJson() {
     if (preset === "none") return "";
     let thresholds = DISCARD_PRESETS[preset];
     if (preset === "custom") {
-        thresholds = $("fCustomThresholds").value.split(",")
+        thresholds = $("fCustomThresholds").value
+            .split(",")
             .map(x => parseInt(x.trim(), 10))
             .filter(n => !isNaN(n) && n > 0)
             .sort((a, b) => a - b);
+        if (!thresholds.length) return "";
     }
     return JSON.stringify({ thresholds });
 }
 
 function loadDiscardsIntoForm(jsonStr) {
+    const wrap = $("customThresholdWrap");
     if (!jsonStr) {
         $("fDiscardsPreset").value = "none";
-        $("customThresholdWrap").style.display = "none";
+        wrap.style.display = "none";
+        $("fCustomThresholds").value = "";
         return;
     }
     try {
         const obj = JSON.parse(jsonStr);
-        const th = (obj.thresholds || []).join(",");
-        if (th === DISCARD_PRESETS.smmc_standard.join(",")) {
+        let list = [];
+        if (Array.isArray(obj.thresholds)) {
+            list = obj.thresholds;
+        } else if (obj.after) {
+            // Backward-compatibility fallback for legacy { drop, after } format
+            list = [Number(obj.after)];
+        }
+        
+        const listStr = list.join(",");
+        if (listStr === DISCARD_PRESETS.smmc_standard.join(",")) {
             $("fDiscardsPreset").value = "smmc_standard";
-            $("customThresholdWrap").style.display = "none";
-        } else if (th === DISCARD_PRESETS.rrs_standard.join(",")) {
+            wrap.style.display = "none";
+        } else if (listStr === DISCARD_PRESETS.rrs_standard.join(",")) {
             $("fDiscardsPreset").value = "rrs_standard";
-            $("customThresholdWrap").style.display = "none";
+            wrap.style.display = "none";
+        } else if (!list.length) {
+            $("fDiscardsPreset").value = "none";
+            wrap.style.display = "none";
         } else {
             $("fDiscardsPreset").value = "custom";
-            $("customThresholdWrap").style.display = "";
-            $("fCustomThresholds").value = th;
+            wrap.style.display = "";
+            $("fCustomThresholds").value = list.join(", ");
         }
     } catch {
         $("fDiscardsPreset").value = "none";
+        wrap.style.display = "none";
     }
 }
-
-$("fDiscardsPreset").addEventListener("change", e => {
-    $("customThresholdWrap").style.display = e.target.value === "custom" ? "" : "none";
-});
 
 /* ============ FORMATS TABLE ============ */
 function renderFormats() {
@@ -500,8 +516,7 @@ function openModal(id) {
     $("fName").value = f ? gv(f, "name") : "";
     $("fDesc").value = f ? gv(f, "description") : "";
     $("fScoring").value = f ? (gv(f, "scoringSystem") || "low_point") : "low_point";
-    const d = f ? parseDiscards(gv(f, "discardsRule")) : { drop: "", after: "" };
-    $("fDrop").value = d.drop; $("fAfter").value = d.after;
+    loadDiscardsIntoForm(f ? gv(f, "discardsRule") : JSON.stringify({ thresholds: DISCARD_PRESETS.smmc_standard }));
     $("fActive").value = f ? String(isActive(f)) : "true";
     const allowed = f ? splitIds(gv(f, "allowedClassIds")) : [];
     $("classChips").innerHTML = classes.map(c => {
@@ -570,6 +585,12 @@ function validate() {
     const name = $("fName").value.trim();
     if (!name) return "Name is required.";
     if (formats.some(f => gv(f, "formatId") !== editingId && isActive(f) && gv(f, "name").toLowerCase() === name.toLowerCase())) return "An active format with this name already exists.";
+    if ($("fDiscardsPreset").value === "custom") {
+    const raw = $("fCustomThresholds").value.trim();
+    if (!raw) return "Please enter at least one milestone race number for custom discards (e.g. 4, 8, 16).";
+    const nums = raw.split(",").map(x => parseInt(x.trim(), 10));
+    if (nums.some(n => isNaN(n) || n < 1)) return "Custom discard milestones must be positive whole numbers separated by commas.";
+    }
     if (!modalSpecs.length) return "Add at least one race spec.";
     for (const [i, s] of modalSpecs.entries()) {
         const c = Number(s.count);
@@ -577,8 +598,7 @@ function validate() {
         if (!(Number(s.weight) >= 0) || s.weight === "") return `Spec ${i + 1}: weight must be 0 or more.`;
         if (s.config.trim()) { try { JSON.parse(s.config); } catch { return `Spec ${i + 1}: config is not valid JSON.`; } }
     }
-    const dr = $("fDrop").value, af = $("fAfter").value;
-    if ((dr && !af) || (!dr && af)) return "Set both discard count and 'after N races', or leave both empty.";
+
     return null;
 }
 
@@ -587,11 +607,10 @@ async function saveFormat() {
     const btn = $("modalSave"); btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> Saving…`;
     try {
         const fid = editingId || uid("FMT");
-        const dr = Number($("fDrop").value), af = Number($("fAfter").value);
         const fdata = {
             formatId: fid, name: $("fName").value.trim(), description: $("fDesc").value.trim(),
             scoringSystem: $("fScoring").value,
-            discardsRule: dr > 0 && af > 0 ? JSON.stringify({ drop: dr, after: af }) : "",
+            discardsRule: getDiscardsJson(),
             allowedClassIds: [...document.querySelectorAll("#classChips input:checked")].map(i => i.value).join(","),
             active: $("fActive").value === "true"
         };
@@ -634,6 +653,9 @@ function renderRegattas() {
     $("regEmpty").style.display = rows.length ? "none" : "block";
 }
 $("regFilter").addEventListener("change", renderRegattas);
+$("fDiscardsPreset").addEventListener("change", e => {
+    $("customThresholdWrap").style.display = e.target.value === "custom" ? "" : "none";
+});
 
 function classAllowed(reg, fid) {
     const f = formats.find(f => gv(f, "formatId") === fid), allowed = splitIds(f && gv(f, "allowedClassIds"));
