@@ -420,7 +420,8 @@ async function initAdmin() {
             { domain: DOMAIN.notes, sheet: "Actions" },
             { domain: DOMAIN.calendar, sheet: "Event Data" },
             { domain: DOMAIN.tracking, sheet: "Tracking" },
-            { domain: DOMAIN.media, sheet: "Queue" }
+            { domain: DOMAIN.media, sheet: "Queue" },
+            { domain: DOMAIN.racing, sheet: "RacingFormat"}
         ];
 
         const res = await batchFetchSheets(reqs);
@@ -433,7 +434,8 @@ async function initAdmin() {
             actions: res[`${DOMAIN.notes}|Actions`],
             events: res[`${DOMAIN.calendar}|Event Data`],
             tracking: res[`${DOMAIN.tracking}|Tracking`],
-            media: res[`${DOMAIN.media}|Queue`]
+            media: res[`${DOMAIN.media}|Queue`],
+            racing: res[`${DOMAIN.racing}|RacingFormat`]
         };
 
         try {
@@ -735,7 +737,25 @@ const FUNCTIONS = [
         icon: '<i data-lucide="users" color="#257fb6"></i>',
         title: "Racing Management",
         description: "Manage and monitor racing formats, scoring, discards and weighting.",
-        href: "racingManagement.html",         
+        href: "racingManagement.html", 
+        status: (data) => {
+            const formats = data.racing || [];
+            const total = formats.length;
+            const active = formats.filter(r => r.Active === true).length;
+            const inUse = formats.filter(r => r.Status === 'PENDING' || r.Status === 'PROCESSING').length;
+            const RaceSpecs = formats.filter(r => r.Active === true).length;
+            const nonconf = formats.filter(r => r.Status === 'PENDING' || r.Status === 'PROCESSING').length;
+            
+            return {
+                pills: [
+                    { label: "Formats", value: total, className: total > 0 ? "badge-renewal" : "badge-default" },
+                    { label: "Active", value: active, className: "badge-full" },
+                    { label: "In Use", value: inUse, className: inUse > 0 ? "badge-expired" : "badge-default" },
+                    { label: "Formats", value: total, className: total > 0 ? "badge-renewal" : "badge-default" },
+                    { label: "Active", value: active, className: "badge-full" },
+                ]
+            };
+        }        
     },
     { id: "add-new-function", placeholder: true, icon: "➕", title: "Add Function", description: "Reserved slot." }
 ];
@@ -967,7 +987,7 @@ const MemberMap = {
         });
 
         // Dark Matter / Oceanic Tile layer
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_4jl4_1_74dd73f838df6080f26d1f30', {
             attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
             maxZoom: 19
         }).addTo(this.map);
