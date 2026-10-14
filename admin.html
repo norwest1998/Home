@@ -608,7 +608,7 @@ const FUNCTIONS = [
                     { label: "Socials", value: events.length - compCount, className: "badge-full" },
                     { label: "Maintenance", value: maintCount, className: "badge-full" },
                     { label: "Rescheduled", value: rescheduledCount, className: "badge-full" },
-                    { label: "Pending", value: pendingCount, className: "badge-renewal" },
+                    { label: "Pending", value: pendingCount, className:  pendingCount > 0 ? "badge-expired" : "badge-default"},
                 ]
             };
         }

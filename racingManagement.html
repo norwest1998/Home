@@ -311,7 +311,7 @@ const CAN_WRITE = ["editor", "admin"].includes(_u.role);
 const IS_ADMIN  = _u.role === "admin";
 
 /* ============ STATE ============ */
-let formats = [], specs = [], regattas = [], classes = [], entries = [], events = [];
+let formats = [], specs = [], regattas = [], classes = [], entries = [], events = [], guestRegs = [];
 const SEASON = (() => { const d = new Date(), y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1; return `${y}-${String(y + 1).slice(2)}`; })();
 let editingId = null, modalSpecs = [], removedSpecs = [];
 
@@ -353,11 +353,12 @@ async function loadAll() {
     $("regBody").innerHTML = `<tr class="spinner-row"><td colspan="6"><span class="spinner"></span> Loading regattas…</td></tr>`;
     ["formats", "active", "inuse", "specs", "unassigned", "series"].forEach(k => $("stat-" + k).innerHTML = `<span class="spinner"></span>`);
     try {
-        [formats, specs, regattas, classes, entries, events] = await Promise.all([
+        [formats, specs, regattas, classes, entries, events, guestRegs] = await Promise.all([
             fetchSheet(D, "RacingFormats"), fetchSheet(D, "RaceSpecs"),
             fetchSheet(D, "Regattas"), fetchSheet(D, "Classes").catch(() => []),
             fetchSheet(DOMAIN.requests, "SeriesEntries").catch(() => []),
-            fetchSheet(DOMAIN.calendar, "Event Data").catch(() => [])
+            fetchSheet(DOMAIN.calendar, "Event Data").catch(() => []),
+            fetchSheet(DOMAIN.results, "GuestRegistrations").catch(() => [])
         ]);
         formats = formats.filter(f => gv(f, "formatId"));
         specs = specs.filter(s => gv(s, "specId"));
@@ -701,7 +702,17 @@ function seriesInfo(reg) {
     let closes = null; if (ev.length >= after) { closes = new Date(ev[after - 1]); closes.setHours(23, 59, 59, 999); }
     const list = entries.filter(e => gv(e, "RegattaID") === id && gv(e, "Season") === SEASON);
     const entered = list.filter(e => gv(e, "Status").toLowerCase() === "entered");
-    return { id, after, st, closes, list, entered, min: parseInt(gv(reg, "MinEntries"), 10) || 0, ended: !!closes && new Date() > closes };
+    // Guests registered (Results > Guest Registration) for any event of this series, counted once each
+    const ymd = d => `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+    const days = new Set(ev.map(ymd)), cls = gv(reg, "Class").toLowerCase(), seen = new Set(), guests = [];
+    guestRegs.forEach(g => {
+        if (["cancelled", "withdrawn"].includes(gv(g, "Status").toLowerCase())) return;
+        const d = parseDate(gv(g, "EventDate"));
+        if (!d || !days.has(ymd(d)) || gv(g, "RaceClass").toLowerCase() !== cls) return;
+        const k = (gv(g, "CompetitorName") + "|" + gv(g, "SailNo")).toLowerCase();
+        if (!seen.has(k)) { seen.add(k); guests.push(g); }
+    });
+    return { id, after, st, closes, list, entered, guests, min: parseInt(gv(reg, "MinEntries"), 10) || 0, ended: !!closes && new Date() > closes };
 }
 const fmtDay = d => d.toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });
 
@@ -723,7 +734,7 @@ function renderSeries() {
             <td><input type="checkbox" class="ser-req" ${req ? "checked" : ""} ${dis}></td>
             <td>${req ? `<input type="number" class="cell-in ser-min" min="0" max="60" value="${i.min || ""}" ${dis}>` : ""}</td>
             <td>${req ? `<input type="number" class="cell-in ser-after" min="1" max="30" value="${i.after}" ${dis}>` : ""}</td>
-            <td>${req ? `${i.entered.length}${i.min ? " / " + i.min : ""} <span class="badge ${ok ? "badge-full" : "badge-expired"}">${ok ? "Go" : "Below min"}</span>
+            <td>${req ? `${i.entered.length}${i.min ? " / " + i.min : ""}${i.guests.length ? ` + ${i.guests.length} guest${i.guests.length > 1 ? "s" : ""}` : ""} <span class="badge ${ok ? "badge-full" : "badge-expired"}">${ok ? "Go" : "Below min"}</span>
                 ${gv(r, "EligibleStarters") ? `<div class="sub">${escapeHtml(gv(r, "EligibleStarters"))} eligible starters</div>` : ""}` : ""}</td>
             <td>${req ? (i.closes ? fmtDay(i.closes) : '<span class="sub">No calendar dates</span>') : ""}</td>
             <td>${stBadge}</td>
@@ -756,8 +767,9 @@ $("serBody").addEventListener("click", e => {
         return saveReg(id, { RegStatus: "Confirmed" }, `${id} confirmed.`);
     }
     if (a === "freeze") {
-        if (!confirm(`Freeze the field at ${i.entered.length} eligible starter(s)? No further entries or withdrawals will be accepted.${i.ended ? "" : "\nThe registration window has not ended yet."}`)) return;
-        return saveReg(id, { RegStatus: "Closed", EligibleStarters: i.entered.length }, `${id}: field frozen at ${i.entered.length}.`);
+        const field = i.entered.length + i.guests.length;
+        if (!confirm(`Freeze the field at ${field} eligible starter(s) (${i.entered.length} members + ${i.guests.length} guests)? No further entries or withdrawals will be accepted.${i.ended ? "" : "\nThe registration window has not ended yet."}`)) return;
+        return saveReg(id, { RegStatus: "Closed", EligibleStarters: field }, `${id}: field frozen at ${field}.`);
     }
     if (a === "reopen") {
         if (!confirm("Reopen registration? Eligible starters will be cleared until the field is frozen again.")) return;
@@ -776,14 +788,17 @@ function openEntries(id) {
 function renderEntries() {
     const reg = regattas.find(r => gv(r, "ID") === entRegId), i = seriesInfo(reg), locked = i.st === "Closed";
     $("entTitle").textContent = `${gv(reg, "ChampionshipName")} — entries ${SEASON}`;
-    $("entSummary").textContent = `${i.entered.length} entered${i.min ? ` of a minimum ${i.min}` : ""}. ${locked ? "Field is frozen; entries can't be changed here until the series is reopened." : ""}`;
+    $("entSummary").textContent = `${i.entered.length} members entered${i.min ? ` of a minimum ${i.min}` : ""}, plus ${i.guests.length} registered guest(s). ${locked ? "Field is frozen; entries can't be changed here until the series is reopened." : ""}`;
     $("entBody").innerHTML = i.list.map(e => {
         const on = gv(e, "Status").toLowerCase() === "entered", t = new Date(gv(e, "Timestamp"));
         return `<tr><td>${escapeHtml(gv(e, "MemberName"))}</td><td>${escapeHtml(gv(e, "Class"))} #${escapeHtml(gv(e, "SailNo"))}</td>
             <td>${escapeHtml(gv(e, "HandicapSnapshot")) || "—"}</td><td>${isNaN(t) ? "" : fmtDay(t)}</td>
             <td><span class="badge ${on ? "badge-full" : "badge-default"}">${escapeHtml(gv(e, "Status"))}</span></td>
             <td>${CAN_WRITE && !locked ? `<button class="btn btn-ghost mini-btn" data-e="${escapeHtml(gv(e, "EntryID"))}" data-to="${on ? "Withdrawn" : "Entered"}">${on ? "Withdraw" : "Reinstate"}</button>` : ""}</td></tr>`;
-    }).join("") || `<tr class="spinner-row"><td colspan="6">No entries yet.</td></tr>`;
+    }).join("") + i.guests.map(g => `<tr><td>${escapeHtml(gv(g, "CompetitorName"))}<div class="sub">${escapeHtml(gv(g, "HomeClub"))}</div></td>
+            <td>${escapeHtml(gv(g, "RaceClass"))} #${escapeHtml(gv(g, "SailNo"))}</td><td>—</td><td>${escapeHtml(gv(g, "EventDate"))}</td>
+            <td><span class="badge badge-affiliate">Guest</span></td><td></td></tr>`).join("")
+        || `<tr class="spinner-row"><td colspan="6">No entries yet.</td></tr>`;
 }
 $("entBody").addEventListener("click", async e => {
     const b = e.target.closest("button[data-e]"); if (!b) return;
