@@ -2038,7 +2038,7 @@ function openFileDrive(fileId) {
     window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
 }
 
-loadLastReminderasync function loadLastReminder() {
+async function loadLastReminder() {
     const el = document.getElementById('lastReminder');
     if (!el) return;
     try {
