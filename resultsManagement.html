@@ -838,7 +838,6 @@ function renderStats() {
 const CALENDAR_PAGE     = 'calendarManagement.html';
 const COORD_EMAIL       = 'results@yourclub.org';   // ← results coordinator
 const REMIND_AFTER_DAYS = 7;
-const EMAIL_WEBAPP_URL  = '…';                      // ← emailGateway /exec URL
 
 let outstandingEvents = [], postponedEvents = [];
 const _t = s => String(s ?? '').trim();
@@ -860,7 +859,7 @@ const daysOverdue = e => Math.floor((new Date().setHours(0, 0, 0, 0) - e.date) /
 
 async function loadOutstanding() {
     try {
-        const rows = await fetchSheet(DOMAIN.calendar || "calendar", "Event Data");
+        const rows = await fetchSheet(DOMAIN.calendar, "Event Data");
         const now = new Date(), y = now.getFullYear();
         const seasonStart = new Date(now.getMonth() >= 6 ? y : y - 1, 6, 1);
         const seasonEnd   = new Date(seasonStart.getFullYear() + 1, 6, 1);
@@ -881,7 +880,10 @@ async function loadOutstanding() {
         showMsg('outstandingMsg', 'Error loading events: ' + err.message, true);
     }
     renderOutstanding();
-    notifyOutstanding(true);          // auto-reminder (only fires if overdue ≥ REMIND_AFTER_DAYS)
+
+    // auto-reminder: editors/admins only
+    const role = (JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}")).role;
+    if ((ROLE_RANK[role] || 0) >= ROLE_RANK.editor) notifyOutstanding(true);
 }
 
 function evtRow(e, actions, showAge) {
@@ -920,6 +922,7 @@ function renderOutstanding() {
         ? postponedEvents.map(e => evtRow(e, rowActions(e.hexKey), false)).join('')
         : '<div class="empty-state">No postponed events</div>';
 
+    applyRoles();                       // shared.js: hide data-min-role buttons rendered after page load
     if (window.lucide) lucide.createIcons();
 }
 
@@ -939,23 +942,33 @@ async function cancelEvent(hexKey) {
 }
 
 // auto=true: only sends if oldest outstanding ≥ REMIND_AFTER_DAYS overdue and not already sent this week
+// Like gw(), but a failed/foreign token won't log the user out of the whole app
+async function emailPost(body) {
+    const res = await fetch(EMAIL_GATEWAY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ ...body, token: sessionStorage.getItem(TOKEN_KEY) })
+    });
+    let data;
+    try { data = JSON.parse(await res.text()); } catch (e) { throw new Error('Invalid Server Response'); }
+    if (data.error) throw new Error(data.error);
+    return data;
+}
+
+// auto=true: only sends if oldest outstanding ≥ REMIND_AFTER_DAYS overdue and not already sent this week
 async function notifyOutstanding(auto) {
     const list = outstandingEvents;
     if (!list.length) { if (!auto) showMsg('outstandingMsg', 'Nothing outstanding.', false); return; }
     if (auto && daysOverdue(list[0]) < REMIND_AFTER_DAYS) return;
 
-    const key  = 'OUTSTANDING-' + Math.floor(Date.now() / 604800000);        // one per week
-    const post = body => fetch(EMAIL_WEBAPP_URL, { method: 'POST',
-        body: JSON.stringify({ token: getToken(), ...body }) }).then(r => r.json());   // ← your shared.js token getter
+    const key = 'OUTSTANDING-' + Math.floor(Date.now() / 604800000);        // one per week
     try {
-        if (auto && ((await post({ action: 'find', key })).records || []).length) return;
+        if (auto && ((await emailPost({ action: 'find', key })).records || []).length) return;
 
         const html = `<p>${list.length} result(s) outstanding:</p><ul>` + list.map(e =>
             `<li>${escHtml(`${e.raceClass} ${e.regattaType}${e.round ? ' Rd ' + e.round : ''}`)} – ${formatDateYYYYMMDD(e.date)} (${daysOverdue(e)} days overdue)</li>`).join('') + '</ul>';
-        const w = new Date(Date.now() + 2 * 60000), p = n => String(n).padStart(2, '0');   // gateway needs a future time
-        const scheduledAt = `${w.getFullYear()}-${p(w.getMonth() + 1)}-${p(w.getDate())}T${p(w.getHours())}:${p(w.getMinutes())}`;
 
-        const res = await post({ action: 'sendNow',
+        const res = await emailPost({ action: 'sendNow',
             subject: `SMMC: ${list.length} outstanding result(s)`, to: COORD_EMAIL, body: html, key,
             recipients: [{ name: 'Results Coordinator', email: COORD_EMAIL, resolvedBody: html }] });
         if (!res.success) throw new Error(res.error);
