@@ -2038,22 +2038,21 @@ function openFileDrive(fileId) {
     window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
 }
 
-async function loadLastReminder() {
+loadLastReminderasync function loadLastReminder() {
     const el = document.getElementById('lastReminder');
     if (!el) return;
     try {
         const res  = await fetch(EMAIL_GATEWAY_URL, { method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'list', token: sessionStorage.getItem(TOKEN_KEY) }) });
+            body: JSON.stringify({ action: 'find', key: 'LATE-RESULTS', token: sessionStorage.getItem(TOKEN_KEY) }) });
         const data = JSON.parse(await res.text());
         if (!data.success) throw new Error(data.error || 'failed');
         const sent = (data.records || [])
-            .filter(r => r['Key'] === 'LATE-RESULTS' && r['Date Sent'])
             .map(r => new Date(r['Date Sent'])).filter(d => !isNaN(d)).sort((a, b) => b - a);
         el.textContent = sent.length
             ? 'Last reminder email sent: ' + sent[0].toLocaleString('en-AU')
             : 'No reminder emails recorded yet.';
-    } catch (e) { el.textContent = ''; }      // stays blank rather than disturbing the page
+    } catch (e) { el.textContent = ''; }
 }
 
 // ----------------------------------------------------------------
