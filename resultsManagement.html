@@ -344,15 +344,11 @@ select.guest-inline-input option {
         <div>
             <h2>Outstanding Results</h2>
             <p>Past competition events this season that haven't been scored, plus postponed events.</p>
+            <p id="lastReminder" style="font-size:12px;color:var(--foam-dim);margin:4px 0 0;"></p>
         </div>
     </div>
     <div class="panel" style="margin-bottom:16px;">
-        <div class="panel-header" style="justify-content:space-between;">
-            <div class="panel-title-left"><span class="dot"></span><h3>Not Started</h3></div>
-            <button type="button" class="btn btn-ghost" data-min-role="editor" onclick="notifyOutstanding(false)">
-                <i class="inline-icon" data-lucide="mail"></i> Email coordinator
-            </button>
-        </div>
+        <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Not Started</h3></div></div>
         <div id="outstandingRows" class="result-rows"></div>
         <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Postponed</h3></div></div>
         <div id="postponedRows" class="result-rows"></div>
@@ -836,8 +832,7 @@ function renderStats() {
 // OUTSTANDING & POSTPONED RESULTS
 // ----------------------------------------------------------------
 const CALENDAR_PAGE     = 'calendarManagement.html';
-const COORD_EMAIL       = 'results@yourclub.org';   // ← results coordinator
-const REMIND_AFTER_DAYS = 7;
+
 
 let outstandingEvents = [], postponedEvents = [];
 const _t = s => String(s ?? '').trim();
@@ -880,10 +875,7 @@ async function loadOutstanding() {
         showMsg('outstandingMsg', 'Error loading events: ' + err.message, true);
     }
     renderOutstanding();
-
-    // auto-reminder: editors/admins only
-    const role = (JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}")).role;
-    if ((ROLE_RANK[role] || 0) >= ROLE_RANK.editor) notifyOutstanding(true);
+    focusOutstandingFromUrl();
 }
 
 function evtRow(e, actions, showAge) {
@@ -892,12 +884,25 @@ function evtRow(e, actions, showAge) {
     const dmy  = formatDateYYYYMMDD(e.date).split('/').reverse().join('/');
     const age  = showAge ? daysOverdue(e) : 0;
     const col  = age > 14 ? '#f87171' : age > 7 ? '#fbbf24' : 'inherit';
-    return `<div class="result-row">
+    return `<div class="result-row" id="evt-${escHtml(e.hexKey)}">
         ${img ? `<img class="row-insignia" src="${escHtml(img)}" alt="">` : '<div class="row-insignia-placeholder"></div>'}
         <div><div class="r-name">${escHtml(name)}</div>
         <div class="r-meta">${e.resched ? 'Rescheduled' : 'Scheduled'}: ${dmy}${showAge ? ` · <span style="color:${col}">${age}d overdue</span>` : ''}</div></div>
         <div class="r-date">${dmy}</div>
         <div class="row-actions">${actions}</div></div>`;
+}
+
+// Deep link: resultsManagement.html?outstanding=<HexKey>
+function focusOutstandingFromUrl() {
+    const key = new URLSearchParams(location.search).get('outstanding');
+    if (!key) return;
+    history.replaceState(null, '', location.pathname);          // one-shot
+    const row = document.getElementById('evt-' + key);
+    if (!row) { showMsg('outstandingMsg', 'That event is no longer outstanding.', false); return; }
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    row.style.transition = 'box-shadow .4s';
+    row.style.boxShadow  = '0 0 0 2px #f87171';
+    setTimeout(() => { row.style.boxShadow = ''; }, 4000);
 }
 
 const rowActions = k => `
@@ -941,41 +946,6 @@ async function cancelEvent(hexKey) {
     } catch (err) { showMsg('outstandingMsg', 'Error: ' + err.message, true); }
 }
 
-// auto=true: only sends if oldest outstanding ≥ REMIND_AFTER_DAYS overdue and not already sent this week
-// Like gw(), but a failed/foreign token won't log the user out of the whole app
-async function emailPost(body) {
-    const res = await fetch(EMAIL_GATEWAY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ ...body, token: sessionStorage.getItem(TOKEN_KEY) })
-    });
-    let data;
-    try { data = JSON.parse(await res.text()); } catch (e) { throw new Error('Invalid Server Response'); }
-    if (data.error) throw new Error(data.error);
-    return data;
-}
-
-// auto=true: only sends if oldest outstanding ≥ REMIND_AFTER_DAYS overdue and not already sent this week
-async function notifyOutstanding(auto) {
-    const list = outstandingEvents;
-    if (!list.length) { if (!auto) showMsg('outstandingMsg', 'Nothing outstanding.', false); return; }
-    if (auto && daysOverdue(list[0]) < REMIND_AFTER_DAYS) return;
-
-    const key = 'OUTSTANDING-' + Math.floor(Date.now() / 604800000);        // one per week
-    try {
-        if (auto && ((await emailPost({ action: 'find', key })).records || []).length) return;
-
-        const html = `<p>${list.length} result(s) outstanding:</p><ul>` + list.map(e =>
-            `<li>${escHtml(`${e.raceClass} ${e.regattaType}${e.round ? ' Rd ' + e.round : ''}`)} – ${formatDateYYYYMMDD(e.date)} (${daysOverdue(e)} days overdue)</li>`).join('') + '</ul>';
-
-        const res = await emailPost({ action: 'sendNow',
-            subject: `SMMC: ${list.length} outstanding result(s)`, to: COORD_EMAIL, body: html, key,
-            recipients: [{ name: 'Results Coordinator', email: COORD_EMAIL, resolvedBody: html }] });
-        if (!res.success) throw new Error(res.error);
-        showMsg('outstandingMsg', 'Reminder sent.', false);
-    } catch (err) { showMsg('outstandingMsg', 'Reminder error: ' + err.message, true); }
-}
-
 // ----------------------------------------------------------------
 // LOAD  (calls the CLB webapp for Drive folder listings)
 // ----------------------------------------------------------------
@@ -986,6 +956,7 @@ async function loadAll() {
     loadGuestData();
     loadAvgRequests();
     loadOutstanding();
+    loadLastReminder();
 }
 
 async function loadProcessedFiles() {
@@ -2065,6 +2036,24 @@ async function checkUploadFolder() {
 function openFileDrive(fileId) {
     if (!fileId) return;
     window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
+}
+
+async function loadLastReminder() {
+    const el = document.getElementById('lastReminder');
+    if (!el) return;
+    try {
+        const res  = await fetch(EMAIL_GATEWAY_URL, { method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'list', token: sessionStorage.getItem(TOKEN_KEY) }) });
+        const data = JSON.parse(await res.text());
+        if (!data.success) throw new Error(data.error || 'failed');
+        const sent = (data.records || [])
+            .filter(r => r['Key'] === 'LATE-RESULTS' && r['Date Sent'])
+            .map(r => new Date(r['Date Sent'])).filter(d => !isNaN(d)).sort((a, b) => b - a);
+        el.textContent = sent.length
+            ? 'Last reminder email sent: ' + sent[0].toLocaleString('en-AU')
+            : 'No reminder emails recorded yet.';
+    } catch (e) { el.textContent = ''; }      // stays blank rather than disturbing the page
 }
 
 // ----------------------------------------------------------------
