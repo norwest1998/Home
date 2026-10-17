@@ -884,7 +884,8 @@ select.form-input option{background:var(--ocean-mid);color:var(--foam)}   /* fix
           <input type="text" id="modalRoundNo" class="form-input" placeholder="e.g. 1"></div>
         <div class="form-group full-field-only"><label for="modalResults">Results</label>
           <select id="modalResults" class="form-input">
-            <option>Not Started</option><option>Processed</option><option>No Score</option><option>Rescheduled</option>
+            <option>Not Started</option><option>Processed</option><option>No Score</option>
+            <option>Postponed</option><option>Rescheduled</option><option>Cancelled</option>
           </select></div>
 
         <div class="form-group full-width"><label for="modalEvent" id="modalEventLabel">Event Name</label>
@@ -2015,9 +2016,9 @@ async function loadData() {
     eventData = await fetchSheet(DOMAIN.calendar, "Event Data" );
     eventData.forEach(e => {
       if (!e.HexKey) e.HexKey = `${e.Date}|${e.Start || ""}|${e.Class || ""}`;
-      if (!e.Season) e.Season = inferSeason(e.Date); // Fixed: Replaced `eventData.Date` array call with element call `e.Date`
+      if (!e.Season) e.Season = inferSeason(e.Date);
     });
-    
+
     classes  = await fetchSheet(DOMAIN.members, "Classes");
     regattas = await fetchSheet(DOMAIN.members, "Regattas");
 
@@ -2029,12 +2030,19 @@ async function loadData() {
     renderTable();
     renderAvailableDates();
     renderSelectedEventDetails();
-    
+
+    // Deep link from Results Management: ?reschedule=<HexKey> preselects the event
+    const pre = new URLSearchParams(location.search).get("reschedule");
+    if (pre) {
+      history.replaceState(null, "", location.pathname);   // one-shot, so later reloads don't re-select
+      if (eventData.some(e => e.HexKey === pre)) selectEvent(pre);
+      else logAction("Event to reschedule was not found.");
+    }
+
   } catch (err) {
     eventsBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#f87171;">${err.message}</td></tr>`;
   }
 }
-
 
 
 /* Add Event button */

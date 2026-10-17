@@ -335,6 +335,28 @@ select.guest-inline-input option {
         <span class="badge badge-default"><span id="statAvgReqTotal">—</span> Avg Score Requests</span>
         <span class="badge" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;"><span id="statAvgReqPending">—</span> Decisions Pending</span>
         <span class="badge badge-approved"><span id="statAvgReqApproved">—</span> Requests Approved</span>
+        <span id="badgeOutstandingResults" class="badge badge-default"><span id="statOutstandingResults">—</span> Outstanding Results</span>
+        <span id="badgePostponed" class="badge badge-default"><span id="statPostponed">—</span> Postponed</span>
+    </div>
+
+    <!-- Outstanding Results -->
+    <div class="section-head" id="outstanding-results">
+        <div>
+            <h2>Outstanding Results</h2>
+            <p>Past competition events this season that haven't been scored, plus postponed events.</p>
+        </div>
+    </div>
+    <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header" style="justify-content:space-between;">
+            <div class="panel-title-left"><span class="dot"></span><h3>Not Started</h3></div>
+            <button type="button" class="btn btn-ghost" data-min-role="editor" onclick="notifyOutstanding(false)">
+                <i class="inline-icon" data-lucide="mail"></i> Email coordinator
+            </button>
+        </div>
+        <div id="outstandingRows" class="result-rows"></div>
+        <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Postponed</h3></div></div>
+        <div id="postponedRows" class="result-rows"></div>
+        <div class="fn-message" id="outstandingMsg"></div>
     </div>
 
     <!-- Processed Results Files -->
@@ -794,6 +816,7 @@ function getClassImage(raceClass) {
 }
 
 // ----------------------------------------------------------------
+// Render stats
 // ----------------------------------------------------------------
 function renderStats() {
     const now   = new Date();
@@ -810,6 +833,137 @@ function renderStats() {
 }
 
 // ----------------------------------------------------------------
+// OUTSTANDING & POSTPONED RESULTS
+// ----------------------------------------------------------------
+const CALENDAR_PAGE     = 'calendarManagement.html';
+const COORD_EMAIL       = 'results@yourclub.org';   // ← results coordinator
+const REMIND_AFTER_DAYS = 7;
+const EMAIL_WEBAPP_URL  = '…';                      // ← emailGateway /exec URL
+
+let outstandingEvents = [], postponedEvents = [];
+const _t = s => String(s ?? '').trim();
+
+// Handles Date, ISO, "2026/10/10", and "2026/10/30 11:00 AM–01:00 PM"; "Pending <hex>" → null
+function parseCalDate(v) {
+    if (!v) return null;
+    let d;
+    if (v instanceof Date) d = v;
+    else {
+        const m = String(v).match(/\d{4}[-\/]\d{2}[-\/]\d{2}(T[\d:.]+Z)?/);
+        if (!m) return null;
+        d = new Date(m[0].replace(/\//g, '-') + (m[1] ? '' : 'T00:00:00'));
+    }
+    return isNaN(d) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+const daysOverdue = e => Math.floor((new Date().setHours(0, 0, 0, 0) - e.date) / 86400000);
+
+async function loadOutstanding() {
+    try {
+        const rows = await fetchSheet(DOMAIN.calendar || "calendar", "Event Data");
+        const now = new Date(), y = now.getFullYear();
+        const seasonStart = new Date(now.getMonth() >= 6 ? y : y - 1, 6, 1);
+        const seasonEnd   = new Date(seasonStart.getFullYear() + 1, 6, 1);
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        const ev = rows.map(r => {
+            const o = Object.fromEntries(Object.entries(r).map(([k, v]) => [k.trim(), v]));
+            const orig = parseCalDate(o["Date"]), resched = parseCalDate(o["Rescheduled Date"]);
+            return { hexKey: _t(o.HexKey), raceClass: _t(o.Class), regattaType: _t(o["Regatta Type"]),
+                     round: _t(o["Round no"]), type: _t(o["Event Type"]),
+                     results: _t(o.Results).toLowerCase(), resched, date: resched || orig };
+        }).filter(e => e.hexKey && e.type === 'Competition' && e.date && e.date >= seasonStart && e.date < seasonEnd);
+
+        outstandingEvents = ev.filter(e => e.results === 'not started' && e.date < today).sort((a, b) => a.date - b.date);
+        postponedEvents   = ev.filter(e => e.results === 'postponed').sort((a, b) => a.date - b.date);
+    } catch (err) {
+        outstandingEvents = postponedEvents = [];
+        showMsg('outstandingMsg', 'Error loading events: ' + err.message, true);
+    }
+    renderOutstanding();
+    notifyOutstanding(true);          // auto-reminder (only fires if overdue ≥ REMIND_AFTER_DAYS)
+}
+
+function evtRow(e, actions, showAge) {
+    const name = `${e.raceClass} ${e.regattaType}${e.round ? ' Rd ' + e.round : ''}`.trim();
+    const img  = getClassImage(e.raceClass);
+    const dmy  = formatDateYYYYMMDD(e.date).split('/').reverse().join('/');
+    const age  = showAge ? daysOverdue(e) : 0;
+    const col  = age > 14 ? '#f87171' : age > 7 ? '#fbbf24' : 'inherit';
+    return `<div class="result-row">
+        ${img ? `<img class="row-insignia" src="${escHtml(img)}" alt="">` : '<div class="row-insignia-placeholder"></div>'}
+        <div><div class="r-name">${escHtml(name)}</div>
+        <div class="r-meta">${e.resched ? 'Rescheduled' : 'Scheduled'}: ${dmy}${showAge ? ` · <span style="color:${col}">${age}d overdue</span>` : ''}</div></div>
+        <div class="r-date">${dmy}</div>
+        <div class="row-actions">${actions}</div></div>`;
+}
+
+const rowActions = k => `
+    <button type="button" class="btn btn-ghost" data-min-role="editor" onclick="goReschedule('${escHtml(k)}')">Reschedule</button>
+    <button type="button" class="btn btn-ghost" data-min-role="editor" onclick="cancelEvent('${escHtml(k)}')">Cancel</button>`;
+
+function renderOutstanding() {
+    const setStat = (stat, badge, n, red) => {
+        document.getElementById(stat).textContent = n;
+        const b = document.getElementById(badge);
+        b.className = 'badge ' + (red && n ? '' : 'badge-default');
+        b.style.cssText = red && n ? 'background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#f87171;' : '';
+    };
+    setStat('statOutstandingResults', 'badgeOutstandingResults', outstandingEvents.length, true);
+    setStat('statPostponed', 'badgePostponed', postponedEvents.length, false);
+
+    document.getElementById('outstandingRows').innerHTML = outstandingEvents.length
+        ? outstandingEvents.map(e => evtRow(e, rowActions(e.hexKey), true)).join('')
+        : '<div class="empty-state">No outstanding results 🎉</div>';
+
+    document.getElementById('postponedRows').innerHTML = postponedEvents.length
+        ? postponedEvents.map(e => evtRow(e, rowActions(e.hexKey), false)).join('')
+        : '<div class="empty-state">No postponed events</div>';
+
+    if (window.lucide) lucide.createIcons();
+}
+
+// Opens the calendar page's Reschedule panel with this event selected
+function goReschedule(hexKey) {
+    window.location.href = `${CALENDAR_PAGE}?reschedule=${encodeURIComponent(hexKey)}`;
+}
+
+async function cancelEvent(hexKey) {
+    const e = [...outstandingEvents, ...postponedEvents].find(x => x.hexKey === hexKey);
+    if (!e || !confirm(`Cancel "${e.raceClass} ${e.regattaType}"? It will leave these lists.`)) return;
+    try {
+        await updateSheet(DOMAIN.calendar || "calendar", "Event Data", hexKey, { "Results": "Cancelled" });
+        showMsg('outstandingMsg', 'Event cancelled.', false);
+        loadOutstanding();
+    } catch (err) { showMsg('outstandingMsg', 'Error: ' + err.message, true); }
+}
+
+// auto=true: only sends if oldest outstanding ≥ REMIND_AFTER_DAYS overdue and not already sent this week
+async function notifyOutstanding(auto) {
+    const list = outstandingEvents;
+    if (!list.length) { if (!auto) showMsg('outstandingMsg', 'Nothing outstanding.', false); return; }
+    if (auto && daysOverdue(list[0]) < REMIND_AFTER_DAYS) return;
+
+    const key  = 'OUTSTANDING-' + Math.floor(Date.now() / 604800000);        // one per week
+    const post = body => fetch(EMAIL_WEBAPP_URL, { method: 'POST',
+        body: JSON.stringify({ token: getToken(), ...body }) }).then(r => r.json());   // ← your shared.js token getter
+    try {
+        if (auto && ((await post({ action: 'find', key })).records || []).length) return;
+
+        const html = `<p>${list.length} result(s) outstanding:</p><ul>` + list.map(e =>
+            `<li>${escHtml(`${e.raceClass} ${e.regattaType}${e.round ? ' Rd ' + e.round : ''}`)} – ${formatDateYYYYMMDD(e.date)} (${daysOverdue(e)} days overdue)</li>`).join('') + '</ul>';
+        const w = new Date(Date.now() + 2 * 60000), p = n => String(n).padStart(2, '0');   // gateway needs a future time
+        const scheduledAt = `${w.getFullYear()}-${p(w.getMonth() + 1)}-${p(w.getDate())}T${p(w.getHours())}:${p(w.getMinutes())}`;
+
+        const res = await post({ action: 'sendNow',
+            subject: `SMMC: ${list.length} outstanding result(s)`, to: COORD_EMAIL, body: html, key,
+            recipients: [{ name: 'Results Coordinator', email: COORD_EMAIL, resolvedBody: html }] });
+        if (!res.success) throw new Error(res.error);
+        showMsg('outstandingMsg', 'Reminder sent.', false);
+    } catch (err) { showMsg('outstandingMsg', 'Reminder error: ' + err.message, true); }
+}
+
+// ----------------------------------------------------------------
 // LOAD  (calls the CLB webapp for Drive folder listings)
 // ----------------------------------------------------------------
 async function loadAll() {
@@ -818,6 +972,7 @@ async function loadAll() {
     loadOverallSheets();
     loadGuestData();
     loadAvgRequests();
+    loadOutstanding();
 }
 
 async function loadProcessedFiles() {
