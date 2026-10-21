@@ -589,9 +589,8 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 </div>
                 <select class="glass-select" id="filterActionStatus">
                     <option value="">All Statuses</option>
-                    <option value="open">Open</option>
-                    <option value="overdue">Overdue</option>
-                    <option value="done">Done</option>
+                    <option value="active">Active</option>
+                    <option value="complete">Complete</option>
                 </select>
                 <select class="glass-select" id="filterActionMember">
                     <option value="">All Members</option>
@@ -831,16 +830,10 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
             gv(n,"Note").toLowerCase().includes(q)
         );
         if (topicF) rows = rows.filter(n => gv(n,"Topic") === topicF);
-        if (actionF === "overdue") {
-            const ids = new Set(actions.filter(a => { const d = new Date(gv(a,"By Date")); return gv(a,"Status").toLowerCase() !== "done" && !isNaN(d) && d < now; }).map(a => gv(a,"NoteID")));
-            rows = rows.filter(n => ids.has(gv(n,"NoteID")));
-        } else if (actionF === "open") {
-            const ids = new Set(actions.filter(a => gv(a,"Status").toLowerCase() !== "done").map(a => gv(a,"NoteID")));
-            rows = rows.filter(n => ids.has(gv(n,"NoteID")));
-        } else if (actionF === "none") {
-            const ids = new Set(actions.map(a => gv(a,"NoteID")));
-            rows = rows.filter(n => !ids.has(gv(n,"NoteID")));
-        }
+        if (actionF) rows = rows.filter(n => {
+            const done = gv(n,"Status").toLowerCase() === "complete";
+            return actionF === "complete" ? done : !done;
+        });
         rows.sort((a,b) => new Date(gv(b,"Date")) - new Date(gv(a,"Date")));
         
         const body  = document.getElementById("notesBody");
