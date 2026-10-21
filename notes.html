@@ -457,8 +457,8 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
             <!-- Date + Topic + Sub Topic -->
             <div class="form-row triple">
                 <div class="form-group">
-                    <label>Date *</label>
-                    <input type="date" id="fDate">
+                    <label>Created</label>
+                    <input type="date" id="fDate" readonly tabindex="-1" style="opacity:.7;cursor:default;">
                 </div>
                 <div class="form-group">
                     <label>Topic *</label>
@@ -728,16 +728,16 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
         return "";
     }
     function today() { return new Date().toISOString().split("T")[0]; }
-    function fmtDate(iso) {
-        if (!iso) return "";
-        const d = new Date(iso);
-        return isNaN(d) ? iso : d.toLocaleDateString("en-AU", { day:"2-digit", month:"short", year:"numeric" });
+    function fmtDate(v) {
+        if (!v) return "";
+        const d = new Date(v);
+        if (isNaN(d)) return v;
+        const p = n => String(n).padStart(2, "0");
+        const date = `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}`;
+        const hasTime = !/^\d{4}-\d{2}-\d{2}$/.test(String(v).trim()) && (d.getHours() || d.getMinutes());
+        return hasTime ? `${date} ${p(d.getHours())}:${p(d.getMinutes())}` : date;
     }
-    function fmtTime(val) {
-        if (!val) return "";
-        const d = new Date(val);
-        return isNaN(d) ? val : d.toLocaleString("en-AU", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" });
-    }
+    const fmtTime = fmtDate;
     function noteId() { return Date.now().toString(36).toUpperCase(); }
 
     /* =========================================================
@@ -905,7 +905,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
         } else {
             const n = notes.find(n => gv(n,"NoteID") === nid);
             if (!n) return;
-            document.getElementById("fDate").value        = gv(n,"Date");
+            document.getElementById("fDate").value        = (gv(n,"CreatedAt") || gv(n,"Date")).slice(0,10);
             document.getElementById("fTopic").value       = gv(n,"Topic");
             document.getElementById("fSubTopic").value    = gv(n,"SubTopic","Sub Topic");
             document.getElementById("fNote").value        = gv(n,"Note");
@@ -1123,10 +1123,10 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
        SAVE NOTE
        ========================================================= */
     async function saveNote() {
-        const date  = document.getElementById("fDate").value.trim();
+        const date  = editingNoteId ? document.getElementById("fDate").value : today();
         const topic = document.getElementById("fTopic").value.trim();
         const note  = document.getElementById("fNote").value.trim();
-        if (!date || !topic || !note) { showModalStatus("Date, Topic and Note are required.", "error"); return; }
+        if (!topic || !note) { showModalStatus("Topic and Note are required.", "error"); return; }
 
         const btn = document.getElementById("modalSave");
         btn.disabled = true;
