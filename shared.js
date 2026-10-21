@@ -238,8 +238,15 @@ function applyRoles() {
 document.addEventListener("DOMContentLoaded", applyRoles);
 
 function fmtTime(iso){
+    if (!iso) return "—";
     const d = new Date(iso);
-    return d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+    if (isNaN(d.getTime())) return iso;
+    const yyyy = d.getFullYear();
+    const MM = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${yyyy}/${MM}/${dd} ${hh}:${mm}`;
 }
 
 function escapeHtml(str) {
