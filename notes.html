@@ -737,7 +737,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
         const hasTime = !/^\d{4}-\d{2}-\d{2}$/.test(String(v).trim()) && (d.getHours() || d.getMinutes());
         return hasTime ? `${date} ${p(d.getHours())}:${p(d.getMinutes())}` : date;
     }
-    const fmtTime = fmtDate;
+    function fmtTime(v) { return fmtDate(v); }
     function noteId() { return Date.now().toString(36).toUpperCase(); }
 
     /* =========================================================
