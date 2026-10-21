@@ -1520,13 +1520,21 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
             showModalStatus("Complete all outstanding actions before completing this note.", "error");
             return;
         }
+        const btn = document.getElementById("modalComplete"), label = btn.textContent;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> ${done ? "Reopening…" : "Completing…"}`;
         const status = done ? "Active" : "Complete";
         try {
             await updateSheet(DOMAIN.notes, "Notes", editingNoteId, { Status: status, LastUpdated: new Date().toISOString() });
             n.Status = status;
             renderTable();
             closeNoteModal();
-        } catch (e) { showModalStatus(e.message, "error"); }
+        } catch (e) {
+            showModalStatus(e.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = label;
+        }
     });
 
         loadAll();
