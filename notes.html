@@ -897,7 +897,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
         document.getElementById("modalStatus").className         = "modal-status";
         document.getElementById("modalStatus").textContent       = "";
         if (isNew) {
-            document.getElementById("fDate").value      = today();
+            document.getElementById("fDate").value = fmtDate(new Date());
             document.getElementById("fTopic").value     = "";
             document.getElementById("fSubTopic").value  = "";
             document.getElementById("fNote").value      = "";
@@ -905,7 +905,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
         } else {
             const n = notes.find(n => gv(n,"NoteID") === nid);
             if (!n) return;
-            document.getElementById("fDate").value        = (gv(n,"CreatedAt") || gv(n,"Date")).slice(0,10);
+            document.getElementById("fDate").value = fmtDate(gv(n,"CreatedAt") || gv(n,"Date"));
             document.getElementById("fTopic").value       = gv(n,"Topic");
             document.getElementById("fSubTopic").value    = gv(n,"SubTopic","Sub Topic");
             document.getElementById("fNote").value        = gv(n,"Note");
