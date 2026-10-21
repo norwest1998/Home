@@ -1517,8 +1517,8 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
         const n = notes.find(x => gv(x,"NoteID") === editingNoteId);
         if (!n) return;
         const done = gv(n,"Status").toLowerCase() === "complete";
-        if (!done && !actions.some(a => gv(a,"NoteID") === editingNoteId)) {
-            showModalStatus("Add and save at least one action before completing this note.", "error");
+        if (!done && actionRows.some(a => a.action.trim() && (a.status || "Open").toLowerCase() !== "done")) {
+            showModalStatus("Complete all outstanding actions before completing this note.", "error");
             return;
         }
         const status = done ? "Active" : "Complete";
