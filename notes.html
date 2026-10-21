@@ -418,9 +418,8 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 </select>
                 <select class="glass-select" id="filterAction">
                     <option value="">All Statuses</option>
-                    <option value="overdue">Overdue Actions</option>
-                    <option value="open">Open Actions</option>
-                    <option value="none">No Actions</option>
+                    <option value="active">Active</option>
+                    <option value="complete">Complete</option>
                 </select>
                 <button class="btn btn-ghost" id="refreshBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
                 <button class="btn btn-primary" id="newNoteBtn" style="padding:5px 14px;font-size:12px;">+ New Note</button>
@@ -589,8 +588,9 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 </div>
                 <select class="glass-select" id="filterActionStatus">
                     <option value="">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="complete">Complete</option>
+                    <option value="overdue">Overdue Actions</option>
+                    <option value="open">Open Actions</option>
+                    <option value="none">No Actions</option>
                 </select>
                 <select class="glass-select" id="filterActionMember">
                     <option value="">All Members</option>
