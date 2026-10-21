@@ -521,6 +521,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 <span class="modal-status" id="modalStatus"></span>
                 <button class="btn btn-ghost" id="modalCancel">Cancel</button>
                 <button class="btn btn-ghost" id="modalDelete" style="color:#ff6b6b; display:none;">Delete</button>
+                <button class="btn btn-ghost" id="modalComplete" style="display:none;">Mark Complete</button>
                 <button class="btn btn-primary" id="modalSave">Save Note</button>
                 <button class="btn btn-ghost" id="exportSheetBtn" title="Save to Google Sheet" style="display:inline-flex;align-items:center;gap:6px;"><i data-lucide="file-input" size="14"></i> Export</button>
             </div>
@@ -841,10 +842,11 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
             rows = rows.filter(n => !ids.has(gv(n,"NoteID")));
         }
         rows.sort((a,b) => new Date(gv(b,"Date")) - new Date(gv(a,"Date")));
-
+        
         const body  = document.getElementById("notesBody");
         const empty = document.getElementById("notesEmpty");
         body.innerHTML = rows.map(n => {
+            const isComplete = gv(n,"Status").toLowerCase() === "complete";
             const nid = gv(n,"NoteID");
             const noteActions = actions.filter(a => gv(a,"NoteID") === nid);
             const openA = noteActions.filter(a => gv(a,"Status").toLowerCase() !== "done");
@@ -861,6 +863,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 <td>${openA.length > 0 ? `<span class="action-dot ${dotClass}"></span>${openA.length} open` : '<span style="color:var(--foam-dim)">—</span>'}</td>
                 <td>${attachCount > 0 ? `📎 ${attachCount}` : '—'}</td>
                 <td><span class="badge ${openA.length > 0 ? (dotClass==="due"?"badge-expired":"badge-renewal") : "badge-full"}">${openA.length > 0 ? (dotClass==="due"?"Overdue":"Active") : "Complete"}</span></td>
+                <td><span class="badge ${isComplete ? "badge-full" : (dotClass==="due" ? "badge-expired" : "badge-renewal")}">${isComplete ? "Complete" : (dotClass==="due" ? "Overdue" : "Active")}</span></td>
                 <td><button class="export-note" data-id="${nid}" title="Export to Google Sheet" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--foam-dim);display:inline-flex;align-items:center;border-radius:6px;transition:color 0.15s;" onmouseover="this.style.color='var(--foam)'" onmouseout="this.style.color='var(--foam-dim)'"><i data-lucide="file-input" size="14"></i></button></td>
                 </tr>`;
         }).join("");
@@ -887,6 +890,11 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
         const isNew   = !nid;
         document.getElementById("modalTitle").textContent        = isNew ? "New Note" : "Edit Note";
         document.getElementById("modalDelete").style.display     = isNew ? "none" : "inline-flex";
+        const nObj = isNew ? null : notes.find(x => gv(x,"NoteID") === nid);
+        const done = nObj && gv(nObj,"Status").toLowerCase() === "complete";
+        const cb = document.getElementById("modalComplete");
+        cb.style.display = isNew ? "none" : "inline-flex";
+        cb.textContent   = done ? "Reopen Note" : "Mark Complete";
         document.getElementById("modalStatus").className         = "modal-status";
         document.getElementById("modalStatus").textContent       = "";
         if (isNew) {
@@ -1142,6 +1150,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 await updateSheet(DOMAIN.notes, "Notes", editingNoteId, rowData);
             } else {
                 rowData.CreatedAt = new Date().toISOString();
+                rowData.Status    = "Active";
                 await appendSheet(DOMAIN.notes, "Notes", rowData);
             }
 
@@ -1504,7 +1513,22 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
     document.getElementById("actionModalCancel").addEventListener("click", closeActionEditModal);
     document.getElementById("actionModalSave").addEventListener("click", saveActionEdit);
     document.getElementById("actionEditModal").addEventListener("click", e => { if (e.target===e.currentTarget) closeActionEditModal(); });
-
+    document.getElementById("modalComplete").addEventListener("click", async () => {
+        const n = notes.find(x => gv(x,"NoteID") === editingNoteId);
+        if (!n) return;
+        const done = gv(n,"Status").toLowerCase() === "complete";
+        if (!done && !actions.some(a => gv(a,"NoteID") === editingNoteId)) {
+            showModalStatus("Add and save at least one action before completing this note.", "error");
+            return;
+        }
+        const status = done ? "Active" : "Complete";
+        try {
+            await updateSheet(DOMAIN.notes, "Notes", editingNoteId, { Status: status, LastUpdated: new Date().toISOString() });
+            n.Status = status;
+            renderTable();
+            closeNoteModal();
+        } catch (e) { showModalStatus(e.message, "error"); }
+    });
 
         loadAll();
         if(window.lucide)lucide.createIcons();
