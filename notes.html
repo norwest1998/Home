@@ -862,7 +862,6 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 <td style="max-width:260px;">${notePreview}</td>
                 <td>${openA.length > 0 ? `<span class="action-dot ${dotClass}"></span>${openA.length} open` : '<span style="color:var(--foam-dim)">—</span>'}</td>
                 <td>${attachCount > 0 ? `📎 ${attachCount}` : '—'}</td>
-                <td><span class="badge ${openA.length > 0 ? (dotClass==="due"?"badge-expired":"badge-renewal") : "badge-full"}">${openA.length > 0 ? (dotClass==="due"?"Overdue":"Active") : "Complete"}</span></td>
                 <td><span class="badge ${isComplete ? "badge-full" : (dotClass==="due" ? "badge-expired" : "badge-renewal")}">${isComplete ? "Complete" : (dotClass==="due" ? "Overdue" : "Active")}</span></td>
                 <td><button class="export-note" data-id="${nid}" title="Export to Google Sheet" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--foam-dim);display:inline-flex;align-items:center;border-radius:6px;transition:color 0.15s;" onmouseover="this.style.color='var(--foam)'" onmouseout="this.style.color='var(--foam-dim)'"><i data-lucide="file-input" size="14"></i></button></td>
                 </tr>`;
