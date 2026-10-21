@@ -155,6 +155,32 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
         </div>
     </div>
 
+    <!-- CLASSES -->
+    <div class="section-head">
+        <h2>Classes</h2>
+        <p>Boat classes, their coordinator, restrictions and base handicap.</p>
+    </div>
+    <div class="panel">
+        <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Classes</h3></div></div>
+        <div class="tab-content active">
+            <div class="toolbar">
+                <div class="search-wrap">
+                    <i class="nav-icon" data-lucide="search" size="8"></i>
+                    <input class="search-input" id="clsSearch" placeholder="Search classes…">
+                </div>
+                <span class="modal-status" id="clsStatus"></span>
+                <button class="btn btn-primary ro-hide" id="newClsBtn" style="padding:5px 14px;font-size:12px;">+ New Class</button>
+            </div>
+            <div class="tbl-wrap">
+                <table class="rm-table">
+                    <thead><tr><th>Insignia</th><th>ID</th><th>Name</th><th>Coordinator</th><th>Restrictions</th><th>Handicap</th><th>Regattas</th><th></th></tr></thead>
+                    <tbody id="clsBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="clsEmpty" style="display:none;">No classes found.</div>
+        </div>
+    </div>
+
     <!-- REGATTA ASSIGNMENT -->
     <div class="section-head">
         <h2>Regatta Assignment</h2>
@@ -221,6 +247,30 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
                 </table>
             </div>
             <div class="modal-footer"><span class="modal-status" id="entStatus"></span><button class="btn btn-ghost" id="entDone">Close</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="clsModal">
+        <div class="modal" style="max-width:560px;">
+            <div class="modal-header"><h3 id="clsTitle">New Class</h3><button class="modal-close" id="clsClose">✕</button></div>
+            <div class="form-row">
+                <div class="form-group"><label>Class ID *</label><input type="text" id="cID" placeholder="e.g. DF95"></div>
+                <div class="form-group"><label>Name *</label><input type="text" id="cName"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Coordinator</label><select id="cCoord"></select></div>
+                <div class="form-group"><label>Restrictions</label>
+                    <select id="cRestr"></select></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Handicap</label><input type="text" id="cHcap" placeholder="e.g. 180 or 100 + 1 lap"></div>
+                <div class="form-group"><label>Insignia (Drive file ID or SVG)</label><input type="text" id="cInsig"></div>
+            </div>
+            <div class="modal-footer">
+                <span class="modal-status" id="clsModalStatus"></span>
+                <button class="btn btn-ghost" id="clsCancel">Close</button>
+                <button class="btn btn-primary ro-hide" id="clsSave">Save Class</button>
+            </div>
         </div>
     </div>
 
@@ -363,13 +413,14 @@ async function loadAll() {
         formats = formats.filter(f => gv(f, "formatId"));
         specs = specs.filter(s => gv(s, "specId"));
         regattas = regattas.filter(r => gv(r, "ID"));
+        classes = classes.filter(c => gv(c, "ClassID"))
     } catch (e) {
         $("fmtBody").innerHTML = `<tr class="spinner-row"><td colspan="8" style="color:#ff6b6b;">Failed to load: ${escapeHtml(e.message)}</td></tr>`;
         return;
     }
     renderAll();
 }
-function renderAll() { renderStats(); renderFormats(); renderRegattas(); renderSeries(); if ($("seedBtn")) $("seedBtn").style.display = (!formats.length && CAN_WRITE) ? "" : "none"; if (window.lucide) lucide.createIcons(); }
+function renderAll() { renderStats(); renderFormats(); renderClasses(); renderRegattas(); renderSeries(); if ($("seedBtn")) $("seedBtn").style.display = (!formats.length && CAN_WRITE) ? "" : "none"; if (window.lucide) lucide.createIcons(); }
 
 function renderStats() {
     const act = formats.filter(isActive);
@@ -808,6 +859,84 @@ $("entBody").addEventListener("click", async e => {
 });
 ["entClose", "entDone"].forEach(i => $(i).addEventListener("click", () => $("entModal").classList.remove("open")));
 $("entModal").addEventListener("click", e => { if (e.target === e.currentTarget) $("entModal").classList.remove("open"); });
+
+/* ============ CLASSES CRUD ============ */
+const RESTRICTIONS = ["One Design", "Closed Class", "Restricted Class", "Open Class"];
+let editingClsId = null;
+const clsRegattas = c => regattas.filter(r => [gv(c, "ClassID"), gv(c, "ClassName")].some(x => x && x.toLowerCase() === gv(r, "Class").toLowerCase())).length;
+
+function insigniaCell(v) {
+    if (!v) return '<span class="sub">—</span>';
+    if (v.startsWith("<svg")) return '<span class="sub">SVG</span>';
+    return `<img src="https://lh3.googleusercontent.com/d/${encodeURIComponent(v)}=w40" alt="" style="height:24px;border-radius:4px;">`;
+}
+function renderClasses() {
+    const q = $("clsSearch").value.trim().toLowerCase();
+    const rows = classes.filter(c => !q || (gv(c, "ClassID") + " " + gv(c, "ClassName") + " " + gv(c, "Coordinator")).toLowerCase().includes(q));
+    $("clsBody").innerHTML = rows.map(c => {
+        const id = gv(c, "ClassID"), used = clsRegattas(c);
+        return `<tr class="clickable" data-id="${escapeHtml(id)}">
+            <td>${insigniaCell(gv(c, "Insignia"))}</td><td>${escapeHtml(id)}</td><td><strong>${escapeHtml(gv(c, "ClassName"))}</strong></td>
+            <td>${escapeHtml(gv(c, "Coordinator")) || '<span class="sub">—</span>'}</td>
+            <td>${escapeHtml(gv(c, "Restrictions")) || '<span class="sub">—</span>'}</td>
+            <td>${escapeHtml(gv(c, "Handicap")) || '<span class="sub">—</span>'}</td>
+            <td>${used ? `<span class="badge badge-affiliate">${used}</span>` : '<span class="sub">—</span>'}</td>
+            <td><div class="row-actions">${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="Used by regattas"' : ""}>Delete</button>` : ""}</div></td></tr>`;
+    }).join("");
+    $("clsEmpty").style.display = rows.length ? "none" : "block";
+}
+function openClsModal(id) {
+    editingClsId = id || null;
+    const c = id ? classes.find(c => gv(c, "ClassID") === id) : null;
+    $("clsTitle").textContent = c ? (CAN_WRITE ? "Edit Class" : "View Class") : "New Class";
+    $("cID").value = c ? id : ""; $("cID").disabled = !!c || !CAN_WRITE;       // key is immutable
+    $("cName").value = c ? gv(c, "ClassName") : "";
+    const coord = c ? gv(c, "Coordinator") : "";
+    const names = [...new Set(members.filter(isActive).map(m => gv(m, "MemberName")).filter(Boolean))].sort();
+    if (coord && !names.includes(coord)) names.push(coord);
+    $("cCoord").innerHTML = `<option value="">— None —</option>` + names.map(n => `<option ${n === coord ? "selected" : ""}>${escapeHtml(n)}</option>`).join("");
+    const rs = c ? gv(c, "Restrictions") : "", rl = RESTRICTIONS.includes(rs) || !rs ? RESTRICTIONS : [...RESTRICTIONS, rs];
+    $("cRestr").innerHTML = `<option value="">— None —</option>` + rl.map(r => `<option ${r === rs ? "selected" : ""}>${escapeHtml(r)}</option>`).join("");
+    $("cHcap").value = c ? gv(c, "Handicap") : "";
+    $("cInsig").value = c ? gv(c, "Insignia") : "";
+    $("clsModalStatus").className = "modal-status";
+    ["cName", "cCoord", "cRestr", "cHcap", "cInsig"].forEach(i => $(i).disabled = !CAN_WRITE);
+    $("clsModal").classList.add("open");
+}
+const closeClsModal = () => $("clsModal").classList.remove("open");
+
+async function saveClass() {
+    const id = $("cID").value.trim(), name = $("cName").value.trim(), st = $("clsModalStatus");
+    if (!id || !name) return status(st, "Class ID and Name are required.", "error");
+    if (/\s|,/.test(id)) return status(st, "Class ID can't contain spaces or commas.", "error");
+    if (!editingClsId && classes.some(c => gv(c, "ClassID").toLowerCase() === id.toLowerCase())) return status(st, "Class ID already exists.", "error");
+    const data = { ClassID: id, ClassName: name, Coordinator: $("cCoord").value, Restrictions: $("cRestr").value,
+                   Handicap: $("cHcap").value.trim(), Insignia: $("cInsig").value.trim() };
+    const btn = $("clsSave"); btn.disabled = true;
+    try {
+        if (editingClsId) await updateSheet(D, "Classes", editingClsId, data); else await appendSheet(D, "Classes", data);
+        status(st, "Class saved.", "success");
+        await refresh(); setTimeout(closeClsModal, 700);
+    } catch (e) { status(st, "Error saving: " + e.message, "error"); }
+    finally { btn.disabled = false; }
+}
+
+$("clsBody").addEventListener("click", async e => {
+    const tr = e.target.closest("tr[data-id]"); if (!tr) return;
+    const id = tr.dataset.id, btn = e.target.closest("button[data-act]");
+    if (!btn) return openClsModal(id);
+    const c = classes.find(c => gv(c, "ClassID") === id);
+    if (clsRegattas(c)) return alert("This class is used by regattas.");
+    if (!confirm(`Permanently delete class "${gv(c, "ClassName")}"?`)) return;
+    btn.disabled = true;
+    try { await deleteRow(D, "Classes", id); await refresh(); }
+    catch (err) { status($("clsStatus"), "Delete failed: " + err.message, "error"); btn.disabled = false; }
+});
+$("clsSearch").addEventListener("input", renderClasses);
+$("newClsBtn").addEventListener("click", () => openClsModal(null));
+["clsClose", "clsCancel"].forEach(i => $(i).addEventListener("click", closeClsModal));
+$("clsModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeClsModal(); });
+$("clsSave").addEventListener("click", saveClass);
 
 /* ============ INIT ============ */
 if (!CAN_WRITE) document.querySelectorAll(".ro-hide").forEach(e => e.remove());
