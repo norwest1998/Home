@@ -1123,7 +1123,7 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
        SAVE NOTE
        ========================================================= */
     async function saveNote() {
-        const date  = editingNoteId ? document.getElementById("fDate").value : today();
+        const date  = editingNoteId ? gv(notes.find(n => gv(n,"NoteID") === editingNoteId), "Date") : today();
         const topic = document.getElementById("fTopic").value.trim();
         const note  = document.getElementById("fNote").value.trim();
         if (!topic || !note) { showModalStatus("Topic and Note are required.", "error"); return; }
