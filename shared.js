@@ -202,7 +202,7 @@ async function fetchDriveFolder(folderKey) {
 }
 
 async function fetchDriveFile(fileId) {
-    return (await gwGet({ action: "readFile", file: fileId }, RESULTS_GATEWAY_URL)).content || null;
+    return (await gwGet({ action: "readFile", file: fileId, fileId: fileId }, RESULTS_GATEWAY_URL)).content || null;
 }
 
 async function triggerResultsProcessing() {

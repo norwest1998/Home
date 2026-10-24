@@ -361,45 +361,46 @@ select.guest-inline-input option {
             <h2>Processed Results</h2>
             <p>Files in the Race Results – Processed folder. Click a row to view the scoresheet.</p>
         </div>
+    </div>
 
 
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title-left"><span class="dot"></span><h3>Race Files</h3></div>
-            </div>
-            <div class="tab-content active">
-                <div class="panel-toolbar" style="justify-content:space-between;">
-                    <div class="search-wrap">
-                        <i class="inline-icon" data-lucide="search"></i>
-                        <input id="resultsSearch" class="search-input" type="text"
-                            placeholder="Search by class, type or date…"
-                            oninput="filterResults()">
-                    </div>
-                    <select id="classFilter" class="mm-select" onchange="filterResults()">
-                        <option value="all">All Classes</option>
-                    </select>
-                    <select id="typeFilter" class="mm-select" onchange="filterResults()">
-                        <option value="all">All Regatta Types</option>
-                    </select>
-                    <button type="button" class="btn btn-ghost" onclick="loadAll()" title="Refresh">
-                        <i class="inline-icon" data-lucide="refresh-cw" color="#257fb6"></i> Refresh
-                    </button>
-                </div>
-                <div id="resultRowsScroll" style="overflow-y:auto;max-height:620px;scrollbar-width:none;">
-                    <div id="resultRows" class="result-rows"></div>
-                </div>
-                </div> <!-- end resultRowsScroll -->
-                <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
-                    <button id="resultChevronUp"   class="icon-btn" style="display:none;width:100%;border-radius:8px;justify-content:center;" onclick="shiftResultPage(-1)" title="Scroll up">
-                        <i class="inline-icon" data-lucide="chevron-up"></i>
-                    </button>
-                    <button id="resultChevronDown" class="icon-btn" style="display:none;width:100%;border-radius:8px;justify-content:center;" onclick="shiftResultPage(1)" title="Scroll down">
-                        <i class="inline-icon" data-lucide="chevron-down"></i>
-                    </button>
-                </div>
-                <div class="fn-message" id="resultMsg"></div>
-            </div>
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title-left"><span class="dot"></span><h3>Race Files</h3></div>
         </div>
+        <div class="tab-content active">
+            <div class="panel-toolbar" style="justify-content:space-between;">
+                <div class="search-wrap">
+                    <i class="inline-icon" data-lucide="search"></i>
+                    <input id="resultsSearch" class="search-input" type="text"
+                        placeholder="Search by class, type or date…"
+                        oninput="filterResults()">
+                </div>
+                <select id="classFilter" class="mm-select" onchange="filterResults()">
+                    <option value="all">All Classes</option>
+                </select>
+                <select id="typeFilter" class="mm-select" onchange="filterResults()">
+                    <option value="all">All Regatta Types</option>
+                </select>
+                <button type="button" class="btn btn-ghost" onclick="loadAll()" title="Refresh">
+                    <i class="inline-icon" data-lucide="refresh-cw" color="#257fb6"></i> Refresh
+                </button>
+            </div>
+            <div id="resultRowsScroll" style="overflow-y:auto;max-height:620px;scrollbar-width:none;">
+                <div id="resultRows" class="result-rows"></div>
+            </div>
+            </div> <!-- end resultRowsScroll -->
+            <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
+                <button id="resultChevronUp"   class="icon-btn" style="display:none;width:100%;border-radius:8px;justify-content:center;" onclick="shiftResultPage(-1)" title="Scroll up">
+                    <i class="inline-icon" data-lucide="chevron-up"></i>
+                </button>
+                <button id="resultChevronDown" class="icon-btn" style="display:none;width:100%;border-radius:8px;justify-content:center;" onclick="shiftResultPage(1)" title="Scroll down">
+                    <i class="inline-icon" data-lucide="chevron-down"></i>
+                </button>
+            </div>
+            <div class="fn-message" id="resultMsg"></div>
+        </div>
+
     </div>
 
     <!-- Overall Results Sheets -->
