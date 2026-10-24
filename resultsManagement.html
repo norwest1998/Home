@@ -759,24 +759,31 @@ function stripTZ(v) {
         .trim();
 }
 
+function calcStarters(json) {
+    return Math.max(0, ...(json.races || []).map(r =>
+        (r.positions || []).filter(p => p !== '' && p !== null).length +
+        (r.dnf || []).filter(p => p !== '' && p !== null).length));
+}
+
 /**
  * Parse a Drive file name into { date, class, type }
  * Expected format: "DF95 Handicap - 11/07/2026"
  */
 function parseFileName(name) {
-    const m = name.match(/^(.+?)\s+-\s+(\d{1,2}\/\d{1,2}\/\d{4})/);
-    if (!m) return { date: null, raceClass: null, raceType: null, raw: name };
-    const parts = m[1].trim().split(/\s+/);
-    // Last word = type (Handicap / Scratch), rest = class
+    const raw  = String(name || '').replace(/\.[^.]+$/, '');
+    const m    = raw.match(/^(.+?)\s+-\s+(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+    if (!m) return { date: null, raceClass: '', raceType: '', raw };
+    let head = m[1].trim();
+    const rd = head.match(/\s+Rd\s*(\d+)$/i);
+    if (rd) head = head.slice(0, rd.index).trim();
+    const parts = head.split(/\s+/);
     const raceType  = parts.length > 1 ? parts[parts.length - 1] : parts[0];
     const raceClass = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
-    const [d, mo, y] = m[2].split('/');
     return {
-        date: new Date(`${y}-${mo}-${d}`),
-        dateStr: m[2],
-        raceClass,
-        raceType,
-        raw: name
+        date: new Date(`${m[4]}-${m[3].padStart(2,'0')}-${m[2].padStart(2,'0')}`),
+        dateStr: `${m[2]}/${m[3]}/${m[4]}`,
+        raceClass, raceType, raw,
+        fileRound: rd ? Number(rd[1]) : null
     };
 }
 
@@ -1071,7 +1078,9 @@ function renderResultPage() {
 
     container.innerHTML = list.map(f => {
         const imgSrc = getClassImage(f.raceClass);
-        const label = `${f.raceClass} ${f.raceType}${f.round ? ' Rd ' + f.round : ''}`;
+        const label = f.raceClass
+            ? `${f.raceClass} ${f.raceType}${f.round ? ' Rd ' + f.round : ''}`
+            : f.raw;
         const imgEl  = imgSrc
             ? `<img class="row-insignia" src="${escHtml(imgSrc)}" alt="${escHtml(f.raceClass)}">`
             : `<div class="row-insignia-placeholder"></div>`;
@@ -1088,7 +1097,7 @@ function renderResultPage() {
                 <button class="icon-btn" title="View Results" onclick="event.stopPropagation();openScoresheet('${escHtml(f.id)}','${escHtml(f.name)}')">
                     <i class="inline-icon" data-lucide="book-open-text"></i>
                 </button>
-                <button class="icon-btn" title="Open Round Results" onclick="event.stopPropagation();openRoundResults('${escHtml(f.id)}','${escHtml(f.name)}')">
+                <button class="icon-btn" title="Open Round Results" onclick="event.stopPropagation();openRoundResults('${escHtml(f.id)}','${escHtml(f.name)}',${f.round || 0})">
                     <i class="inline-icon" data-lucide="trophy"></i>
                 </button>
                 <button class="icon-btn" title="Open File in Drive" onclick="event.stopPropagation();openFileDrive('${escHtml(f.id)}')">
@@ -1648,7 +1657,7 @@ function assignRoundNumbers(files) {
     });
     Object.values(groups).forEach(g =>
         g.sort((a, b) => a.date - b.date || String(a.name).localeCompare(String(b.name)))
-         .forEach((f, i) => { f.round = i + 1; })
+         .forEach((f, i) => { f.round = f.fileRound || i + 1; })
     );
 }
 
@@ -1660,7 +1669,7 @@ function renderScoresheetModal(json, parsed) {
         { label: 'Date',        value: json.regattaDate  || parsed.dateStr   || '—' },
         { label: 'Start',       value: json.startTime    || '—' },
         { label: 'End',         value: json.endTime      || '—' },
-        { label: 'Competitors', value: json.competitorCount ?? '—' },
+        { label: 'Starters', value: calcStarters(json) },
     ];
     document.getElementById('modalMetaGrid').innerHTML = metaItems.map(m => `
         <div class="modal-meta-item">
@@ -1756,7 +1765,7 @@ let rrSheets         = [];   // [{name, gid}] for active spreadsheet
 let rrSpreadsheetId  = null;
 let rrFileJson       = null; // cached JSON from the processed file
 
-async function openRoundResults(fileId, fileName) {
+async function openRoundResults(fileId, fileName, round = 0) {
     // Reset modal
     document.getElementById('rrModalTitle').textContent   = 'Round Results';
     document.getElementById('rrModalMeta').textContent    = '';
@@ -1783,7 +1792,7 @@ async function openRoundResults(fileId, fileName) {
             { label: 'Class',   value: json.className   || parsed.raceClass },
             { label: 'Type',    value: json.regattaName || parsed.raceType  },
             { label: 'Date',    value: json.regattaDate || parsed.dateStr   },
-            { label: 'Starters', value: json.competitorCount ?? '—' },
+            { label: 'Starters', value: calcStarters(json) },
         ].map(m => `
             <div class="modal-meta-item">
                 <span class="modal-meta-label">${escHtml(m.label)}</span>
@@ -1808,14 +1817,12 @@ async function openRoundResults(fileId, fileName) {
         rrSheets = await getOverallRounds(rrSpreadsheetId);
         if (!rrSheets.length) throw new Error('No round sheets found in this spreadsheet.');
 
-        // 4. Try to find the tab matching the regatta date
-        const dateStr = json.regattaDate || parsed.dateStr || '';
-        const [d, mo, y] = dateStr.split('/');
-        const matchIdx = rrSheets.findIndex(s => {
-            const n = s.name.toLowerCase();
-            return n.includes(dateStr) || (d && n.includes(`${d}/${mo}`) ) || n.includes(`round`);
-        });
-        rrActiveRoundIdx = matchIdx >= 0 ? matchIdx : rrSheets.length - 1; // default to latest
+        const rn = round || parsed.fileRound || 0;
+        let matchIdx = rn ? rrSheets.findIndex(s =>
+            new RegExp(`(round|rd|r)\\s*0*${rn}\\b`, 'i').test(s.name)) : -1;
+        if (matchIdx < 0 && dateStr) matchIdx = rrSheets.findIndex(s => s.name.includes(dateStr));
+        if (matchIdx < 0 && rn && rn <= rrSheets.length) matchIdx = rn - 1;
+        rrActiveRoundIdx = matchIdx >= 0 ? matchIdx : rrSheets.length - 1;
 
         renderRRTabs();
         await loadRRSheet();
