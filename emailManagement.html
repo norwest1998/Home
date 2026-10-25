@@ -736,9 +736,11 @@ const TEMPLATE_SS_ID  = "1M0_jDbN35e6eX96SNylY-J887Ks48Y9dNudOYMgKkjE";
 
 async function tFetch(sheet) {
   if (!TEMPLATE_GW_URL) return [];
-  const d = (await gw(`{ action: "fetch", sheet: ${encodeURIComponent(sheet)}`, TEMPLATE_GW_URL));
+  // Send a proper object instead of a malformed string literal
+  const d = await gw({ action: "fetch", sheet: sheet }, TEMPLATE_GW_URL);
   return d.values || [];
 }
+
 async function tPost(payload) {
   if (!TEMPLATE_GW_URL) throw new Error("TEMPLATE_GW_URL not configured.");
   return (await gw(payload, TEMPLATE_GW_URL));
