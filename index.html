@@ -3508,6 +3508,7 @@
       let currentEventId = "";
       let currentEventName = "";
       let currentRegattaType = "";
+      let currentConfRegIds = {};   // conflict name -> ARYA event ID
 
       const pick = (row, ...names) => {
         const k = Object.keys(row).find(k => names.includes(k.trim().toLowerCase().replace(/[\s_]/g, "")));
@@ -3518,6 +3519,7 @@
         currentEventId = "";
         currentEventName = "";
         currentRegattaType = "";
+        currentConfRegIds = {};
         try {
           // Fetch the full Annual Calendar directly via Gateway
           const events = await fetchSheet("calendar", "Event Data");
@@ -3574,6 +3576,11 @@
           let allConflictsStr = "";
           for (const ev of clubEventsOnDate) {
              const conflicts = ev[" Regional Conflicts"] || ev["Regional Conflicts"] || ev.RegionalConflicts || "";
+             const ids = pick(ev, "confregid").split(/\r?\n/);
+              String(conflicts).split(/\r?\n/).forEach((line, i) => {
+                const m = (ids[i] || "").match(/(\d+)\s*$/);
+                if (line.trim() && m) currentConfRegIds[line.trim()] = m[1];
+              });
              if (conflicts && conflicts.trim()) {
                  allConflictsStr += "\n" + conflicts.trim();
              }
@@ -3659,7 +3666,7 @@
             boatId: boat ? boat.boatId : "",
             eventId: currentEventId,
             eventName: currentEventName,
-            confRegId: "",
+            confRegId: currentConfRegIds[conflictingRegattaValue] || "",
             status: "Pending",
             rejectedReason: "",
             decisionBy: "",
