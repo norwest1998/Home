@@ -407,7 +407,8 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 <script src="racingScoring.js"></script>
 <script>
 /* ============ CONFIG ============ */
-const D = DOMAIN.racing;                       // sheets live in the members spreadsheet
+const D = DOMAIN.members;       
+const R = DOMAIN.racing;                
 // Add a new race type here (and its scorer on the results side) — no schema change needed.
 const RACE_TYPES = [
     { v: "scratch",  l: "Scratch",  cfg: "" },
@@ -464,7 +465,7 @@ async function loadAll() {
     ["formats", "active", "inuse", "specs", "unassigned", "series"].forEach(k => $("stat-" + k).innerHTML = `<span class="spinner"></span>`);
     try {
         [formats, specs, regattas, classes, entries, events, guestRegs] = await Promise.all([
-            fetchSheet(D, "RacingFormats"), fetchSheet(D, "RaceSpecs"),
+            fetchSheet(R, "RacingFormats"), fetchSheet(R, "RaceSpecs"),
             fetchSheet(D, "Regattas"), fetchSheet(D, "Classes").catch(() => []),
             fetchSheet(DOMAIN.requests, "SeriesEntries").catch(() => []),
             fetchSheet(DOMAIN.calendar, "Event Data").catch(() => []),
@@ -537,7 +538,7 @@ async function toggleArchive(id, btn) {
     const f = formats.find(f => gv(f, "formatId") === id), act = isActive(f), used = usageFor(id);
     if (act && used && !confirm(`"${gv(f, "name")}" is used by ${used} regatta(s). Archive anyway? Existing regattas keep it.`)) return;
     btn.disabled = true;
-    try { await updateSheet(D, "RacingFormats", id, { active: !act }); await refresh(); }
+    try { await updateSheet(R, "RacingFormats", id, { active: !act }); await refresh(); }
     catch (err) { alert("Failed: " + err.message); btn.disabled = false; }
 }
 
@@ -546,13 +547,13 @@ async function cloneFormat(id, btn) {
     btn.disabled = true; btn.textContent = "…";
     try {
         const nid = uid("FMT");
-        await appendSheet(D, "RacingFormats", {
+        await appendSheet(R, "RacingFormats", {
             formatId: nid, name: gv(f, "name") + " (copy)", description: gv(f, "description"),
             scoringSystem: gv(f, "scoringSystem"), discardsRule: gv(f, "discardsRule"),
             allowedClassIds: gv(f, "allowedClassIds"), active: true,
             participationWeighting: isTrue(gv(f, "participationWeighting"))
         });
-        for (const s of specsFor(id)) await appendSheet(D, "RaceSpecs", specRow(uid("SPC"), nid, s));
+        for (const s of specsFor(id)) await appendSheet(R, "RaceSpecs", specRow(uid("SPC"), nid, s));
         await refresh();
     } catch (err) { alert("Clone failed: " + err.message); }
     btn.disabled = false;
@@ -567,8 +568,8 @@ async function deleteFormat(id, btn) {
     if (!confirm("Permanently delete this format and its race specs?")) return;
     btn.disabled = true;
     try {
-        for (const s of specsFor(id, true)) await deleteRow(D, "RaceSpecs", gv(s, "specId"));
-        await deleteRow(D, "RacingFormats", id);
+        for (const s of specsFor(id, true)) await deleteRow(R, "RaceSpecs", gv(s, "specId"));
+        await deleteRow(R, "RacingFormats", id);
         await refresh();
     } catch (err) { alert("Delete failed: " + err.message); btn.disabled = false; }
 }
@@ -583,10 +584,10 @@ async function seedDefaults() {
     $("seedBtn").disabled = true;
     try {
         for (const [id, name, description, list] of defs) {
-            await appendSheet(D, "RacingFormats", { formatId: id, name, description, scoringSystem: "low_point", discardsRule: "", allowedClassIds: "", active: true, participationWeighting: false });
+            await appendSheet(R, "RacingFormats", { formatId: id, name, description, scoringSystem: "low_point", discardsRule: "", allowedClassIds: "", active: true, participationWeighting: false });
             let n = 1;
             for (const [raceType, count] of list)
-                await appendSheet(D, "RaceSpecs", { specId: `SPC-${id.slice(4)}-${n}`, formatId: id, sequence: n++, raceType, count, weight: 1,
+                await appendSheet(R, "RaceSpecs", { specId: `SPC-${id.slice(4)}-${n}`, formatId: id, sequence: n++, raceType, count, weight: 1,
                     configJson: (RACE_TYPES.find(t => t.v === raceType) || {}).cfg || "", active: true });
         }
         await refresh();
@@ -784,14 +785,14 @@ async function saveFormat() {
             active: $("fActive").value === "true",
             participationWeighting: $("fPart").value === "true"
         };
-        if (editingId) await updateSheet(D, "RacingFormats", fid, fdata); else await appendSheet(D, "RacingFormats", fdata);
+        if (editingId) await updateSheet(R, "RacingFormats", fid, fdata); else await appendSheet(D, "RacingFormats", fdata);
 
         for (const [i, s] of modalSpecs.entries()) {
             const sd = { specId: s.specId || uid("SPC"), formatId: fid, sequence: i + 1, raceType: s.raceType,
                 count: Number(s.count), weight: Number(s.weight), configJson: s.config.trim(), active: true };
-            if (s.specId) await updateSheet(D, "RaceSpecs", s.specId, sd); else await appendSheet(D, "RaceSpecs", sd);
+            if (s.specId) await updateSheet(R, "RaceSpecs", s.specId, sd); else await appendSheet(R, "RaceSpecs", sd);
         }
-        for (const sid of removedSpecs) await updateSheet(D, "RaceSpecs", sid, { active: false });   // soft-remove (editors lack delete rights)
+        for (const sid of removedSpecs) await updateSheet(R, "RaceSpecs", sid, { active: false });   // soft-remove (editors lack delete rights)
 
         status($("modalStatus"), "Format saved.", "success");
         await refresh();
