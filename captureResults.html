@@ -1164,7 +1164,33 @@ function getRoster() {
 }
 /* ======== HANDICAPS ======== */
 let REGATTAS = [];
-const HYBRID_SCRATCH = { 'IOM Racing': 2 };   // regattaName -> number of opening scratch races
+let FORMATS = [], SPECS = [];
+async function getFormats(){
+  if(state.practice || SPECS.length) return;
+  try{ [FORMATS, SPECS] = await Promise.all([fetchSheet("racing","RacingFormats"), fetchSheet("racing","RaceSpecs")]); }
+  catch(e){ console.error(e); }
+}
+// 'scratch' | 'handicap' for race n, from the regatta's format (RaceSpecs expanded by count).
+// No format/specs -> 'handicap' (previous behaviour). Races past the sequence repeat the last type.
+// Format of an event: Regattas row (by RegattaID, else Class + RegattaType) -> formatId;
+// if that row has none, the format whose name matches the event's regatta type.
+function formatIdFor(ev){
+  const lc = v => String(v ?? '').trim().toLowerCase();
+  const reg = (ev.regattaId && REGATTAS.find(r => r.ID === ev.regattaId))
+           || REGATTAS.find(r => lc(r.Class) === lc(ev.class) && lc(r.RegattaType) === lc(ev.regattaType));
+  if(reg && reg.formatId) return reg.formatId;
+  const f = FORMATS.find(f => lc(f.name) === lc(ev.regattaType) && String(f.active).toLowerCase() !== 'false');
+  return f ? f.formatId : '';
+}
+function raceKind(ev, n){
+  const fid = formatIdFor(ev);
+  const seq = [];
+  SPECS.filter(s => fid && s.formatId === fid && String(s.active).toLowerCase() !== 'false')
+       .sort((a,b) => a.sequence - b.sequence)
+       .forEach(s => { for(let i=0;i<(Number(s.count)||1);i++) seq.push(String(s.raceType).toLowerCase()); });
+  return seq.length ? seq[Math.min(n, seq.length) - 1] : 'handicap';
+}
+const kindLabel = n => state.event && state.event.hcapRule ? (raceKind(state.event, n) === 'scratch' ? ' · Scratch' : ' · Handicap') : '';
 
 async function getRegattas(){
   if(state.practice || REGATTAS.length) return;
@@ -1200,7 +1226,7 @@ function hcapAdjust(rule, pos, n){            // pos is 1-based, n = finishers
 function raceHcaps(positions, start, raceNum, n){
   const ev = state.event, out = {};
   Object.keys(start).forEach(id => out[id] = { old: start[id], adj: 0, new: start[id] });
-  if(raceNum > (HYBRID_SCRATCH[ev.regattaName] || 0)){
+  if(raceKind(ev, raceNum) === 'handicap'){
     positions.forEach((id,i) => { const a = hcapAdjust(ev.hcapRule, i+1, n); out[id] = { old: start[id], adj: a, new: start[id] + a }; });
   }
   return out;
@@ -1218,7 +1244,7 @@ function hcapStart(idx){
 
 function isHcapRace(n){
   const ev = state.event;
-  return !!(ev && ev.hcapRule) && n > (HYBRID_SCRATCH[ev.regattaName] || 0);
+  return !!(ev && ev.hcapRule) && raceKind(ev, n) === 'handicap';
 }
 
 const prevManualAdj = idx => (state.races[idx-1] && state.races[idx-1].manualAdj) || 0;   // last race before idx
@@ -1249,6 +1275,7 @@ async function getEvents() {
           end: e.finishTime,
           class: e.boatClass,
           regattaType: e.regattaType,
+          regattaId: e.regattaId || e.RegattaID || '',
           round: String(e.roundNum ?? ''),
           season: e.season,
           status: e.results === 'Not Started' ? 'Not Started' : 'Processed'
@@ -1767,7 +1794,7 @@ function renderDraftRace(){
     <div class="race-hero">
       <button class="nav-arrow" ${state.races.length ? '' : 'disabled'} data-nav-race="${state.races.length-1}">${svgChevL()}</button>
       <div class="race-hero-title">
-        <div class="rnum">Race ${d.raceNumber}</div>
+        <div class="rnum">Race ${d.raceNumber}${kindLabel(d.raceNumber)}</div>
         <div class="rstatus">${allPlaced ? 'All boats placed — ready' : `Capturing… ${placed.size}/${n} placed`}</div>
       </div>
       ${allPlaced
@@ -1810,7 +1837,7 @@ function renderPreRace(){
   return `
     <div class="race-hero">
       <div class="race-hero-title" style="flex:1">
-        <div class="rnum">Race ${d.raceNumber}</div>
+        <div class="rnum">Race ${d.raceNumber}${kindLabel(d.raceNumber)}</div>
         <div class="rstatus">Pre-race handicaps</div>
       </div>
     </div>
@@ -1856,7 +1883,7 @@ function renderCapturedRaceView(idx){
     <div class="race-hero">
       <button class="nav-arrow" ${canPrev?'':'disabled'} data-nav-race="${idx-1}">${svgChevL()}</button>
       <div class="race-hero-title">
-        <div class="rnum">Race ${r.raceNumber}</div>
+        <div class="rnum">Race ${r.raceNumber}${kindLabel(r.raceNumber)}</div>
         <div class="rstatus">Captured ✓ · drag to reorder · hold to change</div>
       </div>
       ${nextBtn}
@@ -2055,7 +2082,7 @@ async function selectEvent(id){
   if(!ev) return;
   const regattaName = `${ev.class} ${ev.regattaType}`;
   const full = { id: ev.id, regattaDate: fmtDate(ev.date), date: ev.date, startTime: ev.start, endTime: ev.end,
-                 regattaName, className: ev.class, class: ev.class, round: ev.round };
+                 regattaName, className: ev.class, class: ev.class, regattaType: ev.regattaType, regattaId: ev.regattaId, round: ev.round };
   // show spinner while members/guests load
   document.getElementById('app-body').innerHTML =
     `<div style="padding:60px 20px;text-align:center;color:var(--foam-dim)">
@@ -2064,7 +2091,7 @@ async function selectEvent(id){
      </div>`;
 
   try {
-        await Promise.all([getMembers(full.className), getGuests(full.id, full.className), getRegattas()]);
+        await Promise.all([getMembers(full.className), getGuests(full.id, full.className), getRegattas(), getFormats()]);
   } catch (e) { console.error(e); }
 
   full.hcapRule = findHcapRule(ev);

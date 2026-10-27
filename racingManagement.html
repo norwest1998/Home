@@ -407,15 +407,23 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 <script src="racingScoring.js"></script>
 <script>
 /* ============ CONFIG ============ */
-const D = DOMAIN.members;       
-const R = DOMAIN.racing;                
+const R = DOMAIN.racing;                        // RacingFormats, RaceSpecs
+const D = DOMAIN.members;                       // sheets live in the members spreadsheet
 // Add a new race type here (and its scorer on the results side) — no schema change needed.
 const RACE_TYPES = [
     { v: "scratch",  l: "Scratch",  cfg: "" },
     { v: "handicap", l: "Handicap", cfg: '{"method":"start_offset"}' }
 ];
 const SCORING = [{ v: "low_point", l: "Low point" }, { v: "high_point", l: "High point" }];
-const TYPE_TO_FORMAT = { "scratch": "FMT-SCRATCH", "handicap": "FMT-HANDICAP", "racing": "FMT-IOM", "iom format": "FMT-IOM" };
+// Format for a regatta type: the format whose name matches the type (exact, else a single partial match).
+function formatForType(type) {
+    const t = String(type || "").trim().toLowerCase(); if (!t) return "";
+    const act = formats.filter(isActive);
+    const ex = act.filter(f => gv(f, "name").trim().toLowerCase() === t);
+    if (ex.length === 1) return gv(ex[0], "formatId");
+    const part = act.filter(f => gv(f, "name").toLowerCase().includes(t) || t.includes(gv(f, "name").toLowerCase()));
+    return part.length === 1 ? gv(part[0], "formatId") : "";
+}
 
 const _u = JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}");
 const CAN_WRITE = ["editor", "admin"].includes(_u.role);
@@ -785,7 +793,7 @@ async function saveFormat() {
             active: $("fActive").value === "true",
             participationWeighting: $("fPart").value === "true"
         };
-        if (editingId) await updateSheet(R, "RacingFormats", fid, fdata); else await appendSheet(D, "RacingFormats", fdata);
+        if (editingId) await updateSheet(R, "RacingFormats", fid, fdata); else await appendSheet(R, "RacingFormats", fdata);
 
         for (const [i, s] of modalSpecs.entries()) {
             const sd = { specId: s.specId || uid("SPC"), formatId: fid, sequence: i + 1, raceType: s.raceType,
@@ -842,13 +850,12 @@ $("regBody").addEventListener("change", async e => {
 });
 
 async function autoAssign() {
-    const todo = regattas.filter(r => !gv(r, "formatId") && TYPE_TO_FORMAT[gv(r, "RegattaType").toLowerCase()]
-        && formats.some(f => gv(f, "formatId") === TYPE_TO_FORMAT[gv(r, "RegattaType").toLowerCase()]));
+    const todo = regattas.filter(r => !gv(r, "formatId") && formatForType(gv(r, "RegattaType")));
     if (!todo.length) return status($("regStatus"), "Nothing to assign (needs the seeded formats; other types are left for you to pick).", "error");
     if (!confirm(`Assign formats to ${todo.length} regatta(s) based on their current type?`)) return;
     $("autoAssignBtn").disabled = true;
     try {
-        for (const r of todo) await updateSheet(D, "Regattas", gv(r, "ID"), { formatId: TYPE_TO_FORMAT[gv(r, "RegattaType").toLowerCase()] });
+        for (const r of todo) await updateSheet(D, "Regattas", gv(r, "ID"), { formatId: formatForType(gv(r, "RegattaType")) });
         status($("regStatus"), `${todo.length} regatta(s) assigned.`, "success");
         await refresh();
     } catch (err) { status($("regStatus"), "Failed: " + err.message, "error"); }
