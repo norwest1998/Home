@@ -1725,14 +1725,33 @@ eventForm.addEventListener("submit", async (e) => {
   
   const isAdd = modalMode.value === "add";
   const base = {
-    "Event Type": modalEventType.value, "Start": modalStart.value,
-    "Finish": modalFinish.value, "Event": modalEvent.value,
+    "Event Type": modalEventType.value, 
+    "Start": modalStart.value,
+    "Finish": modalFinish.value, 
+    "Event": modalEvent.value,
     "Results": modalResults.value || "Not Started"
   };
+  
   if (!isAdd || ["Competition", "Social"].includes(modalEventType.value)) {
-    Object.assign(base, { "Class": modalClass.value, "Regatta Type": modalRegattaType.value,
-                          "Season": modalSeason.value, "Round no": modalRoundNo.value });
+    Object.assign(base, { 
+      "Class": modalClass.value, 
+      "Regatta Type": modalRegattaType.value,
+      "Season": modalSeason.value, 
+      "Round no": modalRoundNo.value 
+    });
+
+    // --- NEW: Look up and attach the Regatta ID ---
+    if (modalClass.value && modalRegattaType.value) {
+      const matchedRegatta = regattas.find(r => 
+        r.Class === modalClass.value && r.RegattaType === modalRegattaType.value
+      );
+      if (matchedRegatta) {
+        // Fallbacks included just in case your Regattas sheet uses a different header name
+        base["RegattaID"] = matchedRegatta.RegattaID || matchedRegatta["Regatta ID"] || matchedRegatta.HexKey || "";
+      }
+    }
   }
+  
   const rowFor = d => ({ ...base, "Date": fmtYMD(d), "Month": d.toLocaleString("en-US", { month: "short" }) });
 
   try {
@@ -1755,6 +1774,15 @@ eventForm.addEventListener("submit", async (e) => {
 /* =========================================================
    ACTION HANDLERS (ADD TO CALENDAR, RESCHEDULE, EDIT)
    ========================================================= */
+/* =========================================================
+   ACTION HANDLERS (ADD TO CALENDAR, RESCHEDULE, EDIT)
+   ========================================================= */
+/* =========================================================
+   ACTION HANDLERS (ADD TO CALENDAR, RESCHEDULE, EDIT)
+   ========================================================= */
+/* =========================================================
+   ACTION HANDLERS (ADD TO CALENDAR, RESCHEDULE, EDIT)
+   ========================================================= */
 async function addToCalendar(hexKey) {
   const event = eventData.find(e => e.HexKey === hexKey);
   if (!event) return;
@@ -1762,12 +1790,31 @@ async function addToCalendar(hexKey) {
   const targetCalName = "Regattas - " + event.Class;
   logAction(`Exporting "${event.Class} - ${event.Event || event["Event Type"]}" to ${targetCalName}...`);
 
+  // 1. Look up the corresponding Regatta from the Regattas sheet data
+  const matchedRegatta = regattas.find(r => 
+    r.Class === event.Class && r.RegattaType === event["Regatta Type"]
+  );
+  
+  // 2. Extract the Regatta ID (handles common header naming variations)
+  const regattaID = matchedRegatta ? (matchedRegatta.RegattaID || matchedRegatta["Regatta ID"] || matchedRegatta.HexKey) : null;
+
   try {
-    const res = await gw({ action: "exportToCalendar", hexKey: hexKey }, calWebAppUrl);
-    const data = await res.json();
+    // 3. Pass the regattaID in the payload so the backend can add it to the Google Calendar Event
+    const data = await gw({ 
+      action: "exportToCalendar", 
+      hexKey: hexKey,
+      regattaID: regattaID // <-- Sent to your Google Apps Script backend!
+    }, calWebAppUrl);
+    
     if (data.error) throw new Error(data.error);
 
     event.AddedStatus = targetCalName;
+    event["Calendar Synced"] = targetCalName;
+    
+    // 4. Just update the Calendar Synced status in the Event Data sheet
+    await updateSheet(DOMAIN.calendar, "Event Data", hexKey, { "Calendar Synced": targetCalName });
+
+    // 5. Audit the changes
     await appendSheet(DOMAIN.audit, "AuditLog", hexKey, {
       name: event.Class,
       detail: "AddedStatus",
@@ -1838,11 +1885,13 @@ approveBtn.addEventListener("click", async () => {
     const d = parseLocalDate(slot.Date);
     const newMonth = d ? d.toLocaleString("en-AU", { month: "short" }) : "";
 
+    // Include RegattaID so the new rescheduled slot knows how to be scored
     await appendSheet(DOMAIN.calendar, "Event Data", slotHex, {
       Class: event.Class || "",
       ['Regatta Type']: event['Regatta Type'] || "",
       ['Event Type']: event["Event Type"] || "",
-      Season: event.Season || ""
+      Season: event.Season || "",
+      RegattaID: event.RegattaID || event.CalendarEventID || "" // Carries over the ID
     });
 
     await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, {
