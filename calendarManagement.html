@@ -1366,19 +1366,20 @@ function renderTable() {
   // Attach checkbox listeners
   eventsBody.querySelectorAll(".row-check-input").forEach(chk => {
     chk.addEventListener("change", () => {
-      const hex = chk.dataset.hex;
+      const hex = String(chk.dataset.hex);
       if (chk.checked) {
         // Automatically load into reschedule panel and scroll
         selectEvent(hex);
       } else {
         selectedRows.delete(hex);
         // If unchecking the currently active reschedule event, clear the panel
-        if (selectedHex === hex) {
+        if (String(selectedHex) === hex) {
           selectedHex = null;
           renderSelectedEventDetails();
           renderNewEventPreview();
-          renderTable();
         }
+        // Defer renderTable to not break the checkbox unchecking animation natively
+        setTimeout(() => renderTable(), 10);
       }
       updateSelectAllState();
     });
@@ -1445,12 +1446,14 @@ function renderAvailableDates(extraSlotHex = null) {
 }
 
 function selectEvent(hex) {
-  selectedHex = hex;
+  // 1. Force to string to prevent Number vs String matching errors
+  selectedHex = String(hex);
   
   // Ensure the row is also added to the selected checkboxes list
-  selectedRows.add(hex);
+  selectedRows.add(selectedHex);
 
-  const selectedEvent = eventData.find(e => e.HexKey === hex);
+  // 2. Use String() safely in the .find()
+  const selectedEvent = eventData.find(e => String(e.HexKey) === selectedHex);
 
   let targetSlotHex = "";
   if (selectedEvent && selectedEvent["Rescheduled Date"]) {
@@ -1461,11 +1464,10 @@ function selectEvent(hex) {
   renderAvailableDates(targetSlotHex);
   if (targetSlotHex) availableDates.value = targetSlotHex;
 
-  renderTable(); // Re-renders table to show row highlight and checkbox tick
   renderSelectedEventDetails();
   renderNewEventPreview();
 
-  // Scroll to panel and add a visual flash so the user sees it
+  // Scroll to panel and add a visual flash
   const panel = document.getElementById("reschedulePanel");
   if (panel) {
     panel.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1479,6 +1481,9 @@ function selectEvent(hex) {
       panel.style.borderColor = "var(--glass-border)";
     }, 1500);
   }
+  
+  // 3. Defer renderTable so it doesn't destroy the checkbox instantly while clicking
+  setTimeout(() => renderTable(), 10);
 }
 
 function renderSelectedEventDetails() {
@@ -1488,8 +1493,12 @@ function renderSelectedEventDetails() {
     return;
   }
 
-  const event = eventData.find(e => e.HexKey === selectedHex);
-  if (!event) return;
+  // Force String comparison here
+  const event = eventData.find(e => String(e.HexKey) === String(selectedHex));
+  if (!event) {
+    container.innerHTML = `<p style="color: #f87171; margin: 0;">Error: Event data could not be matched.</p>`;
+    return;
+  }
 
   container.innerHTML = `
     <div class="event-details-grid">
@@ -1515,9 +1524,11 @@ function renderSelectedEventDetails() {
 
 function renderNewEventPreview() {
   const container = document.getElementById("newEventPreviewCard");
-  const selectedEvent = eventData.find(e => e.HexKey === selectedHex);
+  
+  // Force String comparisons here
+  const selectedEvent = eventData.find(e => String(e.HexKey) === String(selectedHex));
   const slotHex = availableDates.value;
-  const slot = eventData.find(e => e.HexKey === slotHex);
+  const slot = eventData.find(e => String(e.HexKey) === String(slotHex));
 
   if (!selectedEvent || !slot) {
     container.innerHTML = `<p style="color: var(--foam-dim); margin: 0; font-style: italic;">Select an event and slot above to preview.</p>`;
@@ -1943,15 +1954,15 @@ rescheduledToggle.addEventListener("click", () => {
 document.getElementById("selectAllChk").addEventListener("change", function() {
   const rows = seasonEvents();
   if (this.checked) {
-    rows.forEach(e => selectedRows.add(e.HexKey));
-    // Auto-select the first one for rescheduling to be helpful
+    rows.forEach(e => selectedRows.add(String(e.HexKey)));
+    // Auto-select the first one for rescheduling
     if (rows.length > 0) selectEvent(rows[0].HexKey);
   } else {
     selectedRows.clear();
     selectedHex = null;
     renderSelectedEventDetails();
     renderNewEventPreview();
-    renderTable();
+    setTimeout(() => renderTable(), 10);
   }
   updateSelectAllState();
 });
