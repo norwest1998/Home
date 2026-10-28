@@ -1892,11 +1892,14 @@ requestBtn.addEventListener("click", async () => {
   const slotHex = availableDates.value;
   if (!slotHex) { logAction("No slot selected."); return; }
 
-  const currentEvent = eventData.find(e => e.HexKey === selectedHex);
+  // FIX: Force String comparison to find the current event
+  const currentEvent = eventData.find(e => String(e.HexKey) === String(selectedHex));
+  
   requestBtn.disabled = true;
   try {
     await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "Pending " + slotHex });
-    logAction(`Reschedule requested for ${currentEvent?.Class} → slot ${slotHex}`);
+    // Also added a fallback 'Event' string just in case Class is empty
+    logAction(`Reschedule requested for ${currentEvent?.Class || 'Event'} → slot ${slotHex}`);
     await loadData();
   } catch (err) {
     logAction(`Error: ${err.message}`);
@@ -1908,14 +1911,20 @@ requestBtn.addEventListener("click", async () => {
 /* --- Approve Reschedule --- */
 approveBtn.addEventListener("click", async () => {
   if (!selectedHex) { logAction("No event selected."); return; }
-  const event = eventData.find(e => e.HexKey === selectedHex);
+  
+  // FIX: Force String comparison to find the original event
+  const event = eventData.find(e => String(e.HexKey) === String(selectedHex));
+  
   if (!event || !(event["Rescheduled Date"] || "").includes("Pending")) {
     logAction("Selected event has no pending reschedule.");
     return;
   }
 
   const slotHex = event["Rescheduled Date"].replace("Pending ", "").trim();
-  const slot = eventData.find(e => e.HexKey === slotHex);
+  
+  // FIX: Force String comparison to find the destination slot
+  const slot = eventData.find(e => String(e.HexKey) === String(slotHex));
+  
   if (!slot) { logAction("Target slot not found."); return; }
 
   approveBtn.disabled = true;
@@ -1935,7 +1944,8 @@ approveBtn.addEventListener("click", async () => {
     await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, {
       "Rescheduled Date": `${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`,
       Results: "Rescheduled" });
-    logAction(`Reschedule approved: ${event.Class} → ${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`);
+      
+    logAction(`Reschedule approved: ${event.Class || 'Event'} → ${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`);
     await loadData();
   } catch (err) {
     logAction(`Error: ${err.message}`);
