@@ -1367,8 +1367,19 @@ function renderTable() {
   eventsBody.querySelectorAll(".row-check-input").forEach(chk => {
     chk.addEventListener("change", () => {
       const hex = chk.dataset.hex;
-      if (chk.checked) selectedRows.add(hex);
-      else selectedRows.delete(hex);
+      if (chk.checked) {
+        // Automatically load into reschedule panel and scroll
+        selectEvent(hex);
+      } else {
+        selectedRows.delete(hex);
+        // If unchecking the currently active reschedule event, clear the panel
+        if (selectedHex === hex) {
+          selectedHex = null;
+          renderSelectedEventDetails();
+          renderNewEventPreview();
+          renderTable();
+        }
+      }
       updateSelectAllState();
     });
   });
@@ -1435,6 +1446,10 @@ function renderAvailableDates(extraSlotHex = null) {
 
 function selectEvent(hex) {
   selectedHex = hex;
+  
+  // Ensure the row is also added to the selected checkboxes list
+  selectedRows.add(hex);
+
   const selectedEvent = eventData.find(e => e.HexKey === hex);
 
   let targetSlotHex = "";
@@ -1446,12 +1461,24 @@ function selectEvent(hex) {
   renderAvailableDates(targetSlotHex);
   if (targetSlotHex) availableDates.value = targetSlotHex;
 
-  renderTable();
+  renderTable(); // Re-renders table to show row highlight and checkbox tick
   renderSelectedEventDetails();
   renderNewEventPreview();
 
+  // Scroll to panel and add a visual flash so the user sees it
   const panel = document.getElementById("reschedulePanel");
-  if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (panel) {
+    panel.scrollIntoView({ behavior: "smooth", block: "center" });
+    
+    panel.style.transition = "box-shadow 0.4s ease, border-color 0.4s ease";
+    panel.style.boxShadow = "0 0 20px rgba(56, 189, 248, 0.4)";
+    panel.style.borderColor = "var(--glow)";
+    
+    setTimeout(() => {
+      panel.style.boxShadow = "none";
+      panel.style.borderColor = "var(--glass-border)";
+    }, 1500);
+  }
 }
 
 function renderSelectedEventDetails() {
@@ -1915,9 +1942,18 @@ rescheduledToggle.addEventListener("click", () => {
 /* Select All */
 document.getElementById("selectAllChk").addEventListener("change", function() {
   const rows = seasonEvents();
-  if (this.checked) rows.forEach(e => selectedRows.add(e.HexKey));
-  else selectedRows.clear();
-  renderTable();
+  if (this.checked) {
+    rows.forEach(e => selectedRows.add(e.HexKey));
+    // Auto-select the first one for rescheduling to be helpful
+    if (rows.length > 0) selectEvent(rows[0].HexKey);
+  } else {
+    selectedRows.clear();
+    selectedHex = null;
+    renderSelectedEventDetails();
+    renderNewEventPreview();
+    renderTable();
+  }
+  updateSelectAllState();
 });
 
 /* Bulk Actions */
