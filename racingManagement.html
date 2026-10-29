@@ -891,12 +891,12 @@ function syncPart() {
 function renderPoints() {
     const E = parseInt($("pvE").value) || 0, C = parseInt($("pvC").value) || 0;
     let html = "";
-    if (window.RacingScoring && typeof RacingScoring.points === "function") {
+    if (typeof RacingScoring !== "undefined" && RacingScoring.points) {
         for (let p = 1; p <= Math.min(C, 20); p++) {
             html += `<span class="pv">P${p}: ${RacingScoring.points({ position: p, competitors: C, eligible: E })}</span>`;
         }
     } else {
-        html = '<span class="sub">RacingScoring module not loaded.</span>';
+        html = '<span class="sub">Scoring preview unavailable (racingScoring.js missing).</span>';
     }
     $("ptsRows").innerHTML = html || '<span class="sub">Enter eligible starters and competitors.</span>';
 }
