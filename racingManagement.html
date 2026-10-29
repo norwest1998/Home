@@ -430,7 +430,7 @@ const CAN_WRITE = ["editor", "admin"].includes(_u.role);
 const IS_ADMIN  = _u.role === "admin";
 
 /* ============ STATE ============ */
-let formats = [], specs = [], regattas = [], classes = [], entries = [], events = [], guestRegs = [];
+let formats = [], specs = [], regattas = [], classes = [], entries = [], events = [], guestRegs = [], members = [];
 const SEASON = (() => { const d = new Date(), y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1; return `${y}-${String(y + 1).slice(2)}`; })();
 let editingId = null, modalSpecs = [], removedSpecs = [];
 
@@ -472,12 +472,13 @@ async function loadAll() {
     $("regBody").innerHTML = `<tr class="spinner-row"><td colspan="6"><span class="spinner"></span> Loading regattas…</td></tr>`;
     ["formats", "active", "inuse", "specs", "unassigned", "series"].forEach(k => $("stat-" + k).innerHTML = `<span class="spinner"></span>`);
     try {
-        [formats, specs, regattas, classes, entries, events, guestRegs] = await Promise.all([
+        [formats, specs, regattas, classes, entries, events, guestRegs, members] = await Promise.all([
             fetchSheet(R, "RacingFormats"), fetchSheet(R, "RaceSpecs"),
             fetchSheet(D, "Regattas"), fetchSheet(D, "Classes").catch(() => []),
             fetchSheet(DOMAIN.requests, "SeriesEntries").catch(() => []),
             fetchSheet(DOMAIN.calendar, "Event Data").catch(() => []),
-            fetchSheet(DOMAIN.results, "GuestRegistrations").catch(() => [])
+            fetchSheet(DOMAIN.results, "GuestRegistrations").catch(() => []),
+            fetchSheet(D, "Members").catch(() => [])
         ]);
         formats = formats.filter(f => gv(f, "formatId"));
         specs = specs.filter(s => gv(s, "specId"));
@@ -1041,7 +1042,7 @@ function openClsModal(id) {
     $("cID").value = c ? id : ""; $("cID").disabled = !!c || !CAN_WRITE;       // key is immutable
     $("cName").value = c ? gv(c, "ClassName") : "";
     const coord = c ? gv(c, "Coordinator") : "";
-    const names = [...new Set(members.filter(isActive).map(m => gv(m, "MemberName")).filter(Boolean))].sort();
+    const names = [...new Set((members || []).filter(isActive).map(m => gv(m, "MemberName")).filter(Boolean))].sort();
     if (coord && !names.includes(coord)) names.push(coord);
     $("cCoord").innerHTML = `<option value="">— None —</option>` + names.map(n => `<option ${n === coord ? "selected" : ""}>${escapeHtml(n)}</option>`).join("");
     const rs = c ? gv(c, "Restrictions") : "", rl = RESTRICTIONS.includes(rs) || !rs ? RESTRICTIONS : [...RESTRICTIONS, rs];
