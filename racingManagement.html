@@ -689,31 +689,46 @@ $("rgSave").addEventListener("click", saveRegatta);
 
 /* ============ MODAL ============ */
 function openModal(id) {
-    editingId = id || null; removedSpecs = [];
-    const f = id ? formats.find(f => gv(f, "formatId") === id) : null;
-    $("modalTitle").textContent = f ? (CAN_WRITE ? "Edit Format" : "View Format") : "New Format";
-    $("fScoring").innerHTML = SCORING.map(s => `<option value="${s.v}">${s.l}</option>`).join("");
-    $("fName").value = f ? gv(f, "name") : "";
-    $("fDesc").value = f ? gv(f, "description") : "";
-    $("fScoring").value = f ? (gv(f, "scoringSystem") || "low_point") : "low_point";
-    const d = f ? parseDiscards(gv(f, "discardsRule")) : { drop: "", after: "" };
-    $("fDrop").value = d.drop; $("fAfter").value = d.after;
-    $("fActive").value = f ? String(isActive(f)) : "true";
-    $("fPart").value = f ? String(isTrue(gv(f, "participationWeighting"))) : "false";
-    const allowed = f ? splitIds(gv(f, "allowedClassIds")) : [];
-    $("classChips").innerHTML = classes.map(c => {
-        const cid = gv(c, "ClassID"), on = allowed.includes(cid);
-        return `<label class="chip ${on ? "on" : ""}"><input type="checkbox" value="${escapeHtml(cid)}" ${on ? "checked" : ""}> ${escapeHtml(gv(c, "ClassName") || cid)}</label>`;
-    }).join("") || '<span class="sub">No classes found.</span>';
-    modalSpecs = f ? specsFor(id).map(s => ({ specId: gv(s, "specId"), raceType: gv(s, "raceType"), count: gv(s, "count"),
-        weight: gv(s, "weight") || "1", config: gv(s, "configJson") })) : [newSpec("scratch")];
-    renderSpecRows();
-    $("modalStatus").className = "modal-status";
-    $("fmtModal").classList.toggle("ro", !CAN_WRITE);
-    $("fmtModal").querySelectorAll("input,select,textarea").forEach(el => el.disabled = !CAN_WRITE);
-    syncPart();
-    $("fmtModal").classList.add("open");
+    try {
+        editingId = id || null; removedSpecs = [];
+        const f = id ? formats.find(f => gv(f, "formatId") === id) : null;
+        $("modalTitle").textContent = f ? (CAN_WRITE ? "Edit Format" : "View Format") : "New Format";
+        $("fScoring").innerHTML = SCORING.map(s => `<option value="${s.v}">${s.l}</option>`).join("");
+        $("fName").value = f ? gv(f, "name") : "";
+        $("fDesc").value = f ? gv(f, "description") : "";
+        $("fScoring").value = f ? (gv(f, "scoringSystem") || "low_point") : "low_point";
+        const d = f ? parseDiscards(gv(f, "discardsRule")) : { drop: "", after: "" };
+        $("fDrop").value = d.drop; $("fAfter").value = d.after;
+        $("fActive").value = f ? String(isActive(f)) : "true";
+        $("fPart").value = f ? String(isTrue(gv(f, "participationWeighting"))) : "false";
+        
+        const allowed = f ? splitIds(gv(f, "allowedClassIds")) : [];
+        $("classChips").innerHTML = (classes || []).map(c => {
+            const cid = gv(c, "ClassID"), on = allowed.includes(cid);
+            return `<label class="chip ${on ? "on" : ""}"><input type="checkbox" value="${escapeHtml(cid)}" ${on ? "checked" : ""}> ${escapeHtml(gv(c, "ClassName") || cid)}</label>`;
+        }).join("") || '<span class="sub">No classes found.</span>';
+
+        modalSpecs = f ? specsFor(id).map(s => ({ 
+            specId: gv(s, "specId"), 
+            raceType: gv(s, "raceType"), 
+            count: gv(s, "count"),
+            weight: gv(s, "weight") || "1", 
+            config: gv(s, "configJson") 
+        })) : [newSpec("scratch")];
+
+        renderSpecRows();
+        $("modalStatus").className = "modal-status";
+        $("fmtModal").classList.toggle("ro", !CAN_WRITE);
+        $("fmtModal").querySelectorAll("input,select,textarea").forEach(el => el.disabled = !CAN_WRITE);
+        
+        syncPart();
+        $("fmtModal").classList.add("open");
+    } catch (err) {
+        console.error("Error opening format modal:", err);
+        alert("Could not open format modal: " + err.message);
+    }
 }
+
 function closeModal() { $("fmtModal").classList.remove("open"); }
 const newSpec = t => ({ specId: "", raceType: t, count: 1, weight: "1", config: (RACE_TYPES.find(x => x.v === t) || {}).cfg || "" });
 
@@ -872,14 +887,19 @@ function syncPart() {
     $("ptsBox").style.display = on ? "" : "none";
     renderPoints();
 }
+
 function renderPoints() {
     const E = parseInt($("pvE").value) || 0, C = parseInt($("pvC").value) || 0;
     let html = "";
-    for (let p = 1; p <= Math.min(C, 20); p++) html += `<span class="pv">P${p}: ${RacingScoring.points({ position: p, competitors: C, eligible: E })}</span>`;
+    if (window.RacingScoring && typeof RacingScoring.points === "function") {
+        for (let p = 1; p <= Math.min(C, 20); p++) {
+            html += `<span class="pv">P${p}: ${RacingScoring.points({ position: p, competitors: C, eligible: E })}</span>`;
+        }
+    } else {
+        html = '<span class="sub">RacingScoring module not loaded.</span>';
+    }
     $("ptsRows").innerHTML = html || '<span class="sub">Enter eligible starters and competitors.</span>';
 }
-$("fPart").addEventListener("change", syncPart);
-["pvE", "pvC"].forEach(i => $(i).addEventListener("input", renderPoints));
 
 /* ============ SERIES REGISTRATION ============ */
 function parseDate(v) {
