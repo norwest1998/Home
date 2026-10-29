@@ -2029,7 +2029,8 @@ function renderExportPanel(){
     <div class="section-hint" style="margin-bottom:8px">Written separately in the race-report module — paste it in here if you have it, or leave blank and add it later.</div>
     <textarea class="report-box" id="reportTextArea" placeholder="Paste or write the narrative race report here…">${escapeHTML(state.reportText)}</textarea>
   </div>
-  <button class="btn btn-primary btn-block" data-save-report="1">Save report text</button>
+  <button class="btn btn-block" id="genReportBtn" data-gen-report="1">Generate AI Race Report</button>
+  <button class="btn btn-primary btn-block" data-save-report="1" style="margin-top:8px">Save report text</button>
   <div class="panel glass panel-pad" style="margin-top:16px">
     <div class="field-label">Send for race processing</div>
     ${state.practice ? `<div class="section-hint" style="color:var(--signal)">Practice mode: this will NOT download or send anything.</div>` : ''}
@@ -2297,6 +2298,38 @@ function closeOverlay(){
   render();
 }
 
+async function generateAIReport(){
+  if(state.generating) return;
+  if(state.practice){ showToast('Practice mode – AI report not available'); return; }
+  if(!state.races.length){ showToast('Capture at least one race first'); return; }
+  const btn = document.getElementById('genReportBtn');
+  const ta  = document.getElementById('reportTextArea');
+  const sendBtn = document.querySelector('[data-download-json]');
+  const idle = btn.innerHTML;
+  state.generating = true;
+  btn.disabled = true; ta.disabled = true; if(sendBtn) sendBtn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating report… please wait';
+  try{
+    const standings = computeStandings(state.entries, state.races).map(s => ({
+      pos: s.pos, boatId: s.boatId, member: s.member, net: s.net, total: s.total,
+      discards: [...s.discardSet].map(rs => rs.points)
+    }));
+    const res = await gw({ action: "genReport", data: { ...buildExportObject(), standings } });
+    if(!res.report) throw new Error('Empty report returned');
+    ta.value = res.report;
+    state.reportText = res.report;
+    saveState();
+    showToast('AI report generated – please read before sending');
+  }catch(e){
+    console.error(e);
+    showToast('Report generation failed: ' + e.message);
+  }finally{
+    state.generating = false;
+    btn.disabled = false; ta.disabled = false; if(sendBtn) sendBtn.disabled = false;
+    btn.innerHTML = idle;
+  }
+}
+
 function saveReportText(){
   const ta = document.getElementById('reportTextArea');
   state.reportText = ta.value;
@@ -2327,6 +2360,7 @@ function buildExportObject(){
 }
 
 async function saveAndSend(){
+  if(state.generating){ showToast('Wait for the AI report to finish'); return; }
   if(saveBlockers().length){ showToast('Regatta cannot be saved: minimum '+saveBlockers().join(' and ')+' not achieved'); return; }
   if(state.practice){
     showToast('Practice only – nothing was sent');
@@ -2545,6 +2579,7 @@ function attachDynamicHandlers(){
   });
   document.querySelectorAll('[data-close-overlay]').forEach(el=> el.addEventListener('click', closeOverlay));
   document.querySelectorAll('[data-save-report]').forEach(el=> el.addEventListener('click', saveReportText));
+  document.querySelectorAll('[data-gen-report]').forEach(el=> el.addEventListener('click', generateAIReport));
   document.querySelectorAll('[data-download-json]').forEach(el => el.addEventListener('click', saveAndSend));
   document.querySelectorAll('[data-new-event]').forEach(el=> el.addEventListener('click', changeEvent));
   document.querySelectorAll('[data-enter-practice]').forEach(el=> el.addEventListener('click', enterPractice));

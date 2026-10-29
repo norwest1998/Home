@@ -1912,7 +1912,7 @@ requestBtn.addEventListener("click", async () => {
 approveBtn.addEventListener("click", async () => {
   if (!selectedHex) { logAction("No event selected."); return; }
   
-  // FIX: Force String comparison to find the original event
+  // Force String comparison to find the original event
   const event = eventData.find(e => String(e.HexKey) === String(selectedHex));
   
   if (!event || !(event["Rescheduled Date"] || "").includes("Pending")) {
@@ -1922,7 +1922,7 @@ approveBtn.addEventListener("click", async () => {
 
   const slotHex = event["Rescheduled Date"].replace("Pending ", "").trim();
   
-  // FIX: Force String comparison to find the destination slot
+  // Force String comparison to find the destination slot
   const slot = eventData.find(e => String(e.HexKey) === String(slotHex));
   
   if (!slot) { logAction("Target slot not found."); return; }
@@ -1932,18 +1932,21 @@ approveBtn.addEventListener("click", async () => {
     const d = parseLocalDate(slot.Date);
     const newMonth = d ? d.toLocaleString("en-AU", { month: "short" }) : "";
 
-    // Include RegattaID so the new rescheduled slot knows how to be scored
-    await appendSheet(DOMAIN.calendar, "Event Data", slotHex, {
-      Class: event.Class || "",
-      ['Regatta Type']: event['Regatta Type'] || "",
-      ['Event Type']: event["Event Type"] || "",
-      Season: event.Season || "",
-      RegattaID: event.RegattaID || event.CalendarEventID || "" // Carries over the ID
+    // FIX: Use updateSheet (not appendSheet) to overwrite the target open slot!
+    await updateSheet(DOMAIN.calendar, "Event Data", slotHex, {
+      "Class": event.Class || "",
+      "Regatta Type": event['Regatta Type'] || "",
+      "Event Type": event["Event Type"] || "",
+      "Event": event.Event || "", // Ensure the Event Name/Title transfers over too
+      "Season": event.Season || "",
+      "RegattaID": event.RegattaID || "" // Carries over the Regatta ID
     });
 
+    // Update the original event to finalize the "Rescheduled" state
     await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, {
       "Rescheduled Date": `${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`,
-      Results: "Rescheduled" });
+      "Results": "Rescheduled" 
+    });
       
     logAction(`Reschedule approved: ${event.Class || 'Event'} → ${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`);
     await loadData();
