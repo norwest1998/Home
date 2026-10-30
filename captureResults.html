@@ -1201,7 +1201,8 @@ async function getRegattas(){
 
 function findHcapRule(ev){
   const row = REGATTAS.find(r => {
-    const rId = r.SeriesID || r['Series ID'] || r.seriesId || r.RegattaID || r['Regatta ID'];
+    // CRITICAL FIX: Add 'ID' and 'id' to the fallback properties
+    const rId = r.ID || r.id || r.SeriesID || r['Series ID'] || r.seriesId || r.RegattaID || r['Regatta ID'];
     if (rId && ev.seriesId && String(rId) === String(ev.seriesId)) return true;
     
     // fallback to checking by name if IDs are unmapped/unavailable
@@ -1278,6 +1279,14 @@ async function getEvents() {
   try {
     const data = await gwGet({ type: "calendar" }, CAL_WEBAPP_URL);
 
+    // Helper to find keys regardless of case or spaces (e.g., 'Format ID' == 'formatid')
+    const getVal = (obj, keys) => {
+        if(!obj) return undefined;
+        const targetKeys = keys.map(k => k.toLowerCase().replace(/\s/g, ''));
+        const foundKey = Object.keys(obj).find(key => targetKeys.includes(key.toLowerCase().replace(/\s/g, '')));
+        return foundKey ? obj[foundKey] : undefined;
+    };
+
     EVENTS = (data.months || []).flatMap(mo => {
       const year = (String(mo.monthLabel).match(/\d{4}/) || [new Date().getFullYear()])[0];
       return (mo.events || []).map(e => {
@@ -1287,35 +1296,39 @@ async function getEvents() {
         const mon = parts.length > 2 ? parts[2] : 'JAN';
         const mm = Math.max(1, MON.findIndex(m => m.toUpperCase() === mon.toUpperCase()) + 1);
 
-        const seriesId = e.seriesId || e.SeriesID || e.seriesID || e.RegattaID || e.regattaId || e.regattaID;
+        const seriesId = getVal(e, ['seriesid', 'regattaid']);
         
         // Safely resolve the associated Regatta avoiding undefined match traps
         const seriesConfig = REGATTAS.find(r => {
-            const rId = r.SeriesID || r['Series ID'] || r.seriesId || r.RegattaID || r['Regatta ID'];
+            // CRITICAL FIX: Now explicitly looks for the 'id' column from your sheet
+            const rId = getVal(r, ['id', 'seriesid', 'regattaid']);
             if (seriesId && rId && String(rId) === String(seriesId)) return true;
             
-            // Fallback matching by name
-            const rName = r.SeriesName || r['Series Name'] || r.seriesName || r.RegattaName || r['Regatta Name'] || r.EventName;
-            const eName = e.regattaType || e.EventName || e.eventName || e.title || e.seriesName;
-            if (!seriesId && !rId && eName && rName && String(eName).toLowerCase() === String(rName).toLowerCase()) return true;
-            
+            // Fallback matching by name (loose match so "Scratch" matches "DF95 Scratch")
+            const rName = getVal(r, ['seriesname', 'regattaname', 'eventname']);
+            const eName = e.seriesName || e.eventName || e.title || e.regattaType;
+            if (!seriesId && !rId && eName && rName) {
+                const en = String(eName).toLowerCase();
+                const rn = String(rName).toLowerCase();
+                if (en === rn || rn.includes(en) || en.includes(rn)) return true;
+            }
             return false;
         });
         
-        // Ensure robust extraction allowing fallback properties mapped natively from GS headers
-        const sName = seriesConfig ? (seriesConfig.SeriesName || seriesConfig['Series Name'] || seriesConfig.RegattaName || seriesConfig['Regatta Name']) : (e.regattaType || e.EventName || e.eventName || e.title || e.seriesName || 'Unknown Event');
-        const sClasses = seriesConfig ? (seriesConfig.AllowedClasses || seriesConfig['Allowed Classes'] || seriesConfig.Class || seriesConfig.boatClass) : (e.boatClass || e.Class || e.class || e.className || e.allowedClasses);
-        const sFormat = seriesConfig ? (seriesConfig.FormatID || seriesConfig['Format ID'] || seriesConfig.formatId) : (e.formatId || e.FormatID || '');
-        const sHcap = seriesConfig ? (seriesConfig.HandicapType || seriesConfig['Handicap Type'] || seriesConfig.handicapType) : (e.handicapType || e.HandicapType || 'None');
+        // Extract values robustly ignoring case/spacing differences
+        const sName = getVal(seriesConfig, ['seriesname', 'regattaname']) || e.seriesName || e.eventName || e.title || e.regattaType || 'Unknown Event';
+        const sClasses = getVal(seriesConfig, ['allowedclasses', 'class', 'boatclass']) || e.boatClass || e.className || e.class || e.allowedClasses || 'ALL';
+        const sFormat = getVal(seriesConfig, ['formatid']) || getVal(e, ['formatid']) || '';
+        const sHcap = getVal(seriesConfig, ['handicaptracking', 'handicaptype']) || e.handicapType || 'None';
 
         return {
           id: e.hexKey || e.id,
           date: `${dd}/${String(mm).padStart(2, '0')}/${year}`,
           start: e.startTime || '',
           end: e.finishTime || '',
-          seriesId: seriesId || (seriesConfig ? (seriesConfig.SeriesID || seriesConfig['Series ID']) : ''),
+          seriesId: seriesId || getVal(seriesConfig, ['id', 'seriesid', 'regattaid']) || '',
           seriesName: sName,
-          allowedClasses: sClasses || 'ALL',
+          allowedClasses: sClasses,
           formatId: sFormat,
           handicapType: sHcap,
           round: String(e.roundNum ?? e['Round no'] ?? e.round ?? ''),
@@ -1332,7 +1345,7 @@ async function getEvents() {
     EVENTS = [];
   }
 }
-
+    
 const CLASS_ABBR = { 'DF65':'65', 'DF95':'95', 'IOM':'IOM', 'Soling':'SOL', 'General':'GEN', 'Marblehead':'MB' };
 const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
