@@ -1188,7 +1188,7 @@ async function getRegattas(){
   if(state.practice || REGATTAS.length) return;
   try{ 
       // Try to fetch 'Series' first, if fails or empty, fallback to 'Regattas'
-      let res = await fetchSheet("racing","Series").catch(() => []);
+      let res = await fetchSheet("members","Series").catch(() => []);
       if (!res || res.length === 0) {
           res = await fetchSheet("members","Regattas");
       }
@@ -1200,7 +1200,17 @@ async function getRegattas(){
 }
 
 function findHcapRule(ev){
-  const row = REGATTAS.find(r => r.SeriesID === ev.seriesId);
+  const row = REGATTAS.find(r => {
+    const rId = r.SeriesID || r['Series ID'] || r.seriesId || r.RegattaID || r['Regatta ID'];
+    if (rId && ev.seriesId && String(rId) === String(ev.seriesId)) return true;
+    
+    // fallback to checking by name if IDs are unmapped/unavailable
+    const rName = r.SeriesName || r['Series Name'] || r.seriesName || r.RegattaName || r['Regatta Name'];
+    if (!rId && !ev.seriesId && rName && ev.seriesName && String(rName).toLowerCase() === String(ev.seriesName).toLowerCase()) return true;
+    
+    return false;
+  });
+  
   if(!row || !String(row['Hcap Formula'] ?? '').trim()) return null;
   const tokens = String(row['Hcap Formula']).replace(/\./g, ',')   // tolerates the "L-2.L-1" typo
                    .split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
@@ -1277,26 +1287,46 @@ async function getEvents() {
         const mon = parts.length > 2 ? parts[2] : 'JAN';
         const mm = Math.max(1, MON.findIndex(m => m.toUpperCase() === mon.toUpperCase()) + 1);
 
-        const seriesId = e.seriesId || e.SeriesID || e.seriesID || e.RegattaID || e.regattaId;
-        const seriesConfig = REGATTAS.find(r => r.SeriesID === seriesId);
+        const seriesId = e.seriesId || e.SeriesID || e.seriesID || e.RegattaID || e.regattaId || e.regattaID;
         
+        // Safely resolve the associated Regatta avoiding undefined match traps
+        const seriesConfig = REGATTAS.find(r => {
+            const rId = r.SeriesID || r['Series ID'] || r.seriesId || r.RegattaID || r['Regatta ID'];
+            if (seriesId && rId && String(rId) === String(seriesId)) return true;
+            
+            // Fallback matching by name
+            const rName = r.SeriesName || r['Series Name'] || r.seriesName || r.RegattaName || r['Regatta Name'] || r.EventName;
+            const eName = e.regattaType || e.EventName || e.eventName || e.title || e.seriesName;
+            if (!seriesId && !rId && eName && rName && String(eName).toLowerCase() === String(rName).toLowerCase()) return true;
+            
+            return false;
+        });
+        
+        // Ensure robust extraction allowing fallback properties mapped natively from GS headers
+        const sName = seriesConfig ? (seriesConfig.SeriesName || seriesConfig['Series Name'] || seriesConfig.RegattaName || seriesConfig['Regatta Name']) : (e.regattaType || e.EventName || e.eventName || e.title || e.seriesName || 'Unknown Event');
+        const sClasses = seriesConfig ? (seriesConfig.AllowedClasses || seriesConfig['Allowed Classes'] || seriesConfig.Class || seriesConfig.boatClass) : (e.boatClass || e.Class || e.class || e.className || e.allowedClasses);
+        const sFormat = seriesConfig ? (seriesConfig.FormatID || seriesConfig['Format ID'] || seriesConfig.formatId) : (e.formatId || e.FormatID || '');
+        const sHcap = seriesConfig ? (seriesConfig.HandicapType || seriesConfig['Handicap Type'] || seriesConfig.handicapType) : (e.handicapType || e.HandicapType || 'None');
+
         return {
-          id: e.hexKey,
+          id: e.hexKey || e.id,
           date: `${dd}/${String(mm).padStart(2, '0')}/${year}`,
-          start: e.startTime,
-          end: e.finishTime,
-          seriesId: seriesId,
-          seriesName: seriesConfig ? seriesConfig.SeriesName : (e.regattaType || e.EventName || 'Unknown Event'),
-          allowedClasses: seriesConfig ? seriesConfig.AllowedClasses : (e.boatClass || e.Class || 'ALL'),
-          formatId: seriesConfig ? seriesConfig.FormatID : '',
-          handicapType: seriesConfig ? seriesConfig.HandicapTracking : 'None',
-          round: String(e.roundNum ?? e['Round no'] ?? ''),
-          season: e.season,
-          status: e.results === 'Not Started' ? 'Not Started' : 'Processed'
+          start: e.startTime || '',
+          end: e.finishTime || '',
+          seriesId: seriesId || (seriesConfig ? (seriesConfig.SeriesID || seriesConfig['Series ID']) : ''),
+          seriesName: sName,
+          allowedClasses: sClasses || 'ALL',
+          formatId: sFormat,
+          handicapType: sHcap,
+          round: String(e.roundNum ?? e['Round no'] ?? e.round ?? ''),
+          season: e.season || '',
+          status: (e.results && e.results !== 'Not Started') ? e.results : 'Not Started'
         };
       });
     });
-    console.log('raw', data.events?.length, 'mapped', EVENTS.length, EVENTS[0]);
+    
+    const rawCount = data.months ? data.months.reduce((acc, mo) => acc + (mo.events ? mo.events.length : 0), 0) : 0;
+    console.log('raw', rawCount, 'mapped', EVENTS.length, EVENTS[0]);
   } catch (error) {
     console.error("Failed to load events:", error.message);
     EVENTS = [];
