@@ -2380,19 +2380,29 @@ async function generateAIReport(){
   state.generating = true;
   btn.disabled = true; ta.disabled = true; if(sendBtn) sendBtn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Generating report… please wait';
+  
+  console.log("Generating AI Report for payload:", buildExportObject());
+  
   try{
     const standings = computeStandings(state.entries, state.races).map(s => ({
       pos: s.pos, boatId: s.boatId, member: s.member, net: s.net, total: s.total,
       discards: [...s.discardSet].map(rs => rs.points)
     }));
-    const res = await gw({ action: "genReport", data: { ...buildExportObject(), standings } });
+    
+    // Explicitly pass domain for authentication and route to the RESULTS_GATEWAY
+    const res = await gw({ 
+        action: "genReport", 
+        domain: "racing", 
+        data: { ...buildExportObject(), standings } 
+    }, RESULTS_GATEWAY_URL);
+    
     if(!res.report) throw new Error('Empty report returned');
     ta.value = res.report;
     state.reportText = res.report;
     saveState();
     showToast('AI report generated – please read before sending');
   }catch(e){
-    console.error(e);
+    console.error("AI Report Error:", e);
     showToast('Report generation failed: ' + e.message);
   }finally{
     state.generating = false;
