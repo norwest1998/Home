@@ -2394,12 +2394,13 @@ async function generateAIReport(){
       discards: [...s.discardSet].map(rs => rs.points)
     }));
     
-    // Explicitly pass domain for authentication and route to the RESULTS_GATEWAY
+    // Removed RESULTS_GATEWAY_URL to avoid CORS redirect issues.
+    // Using default GATEWAY_URL but supplying the domain to fix the 'Forbidden' error.
     const res = await gw({ 
         action: "genReport", 
         domain: "racing", 
         data: { ...buildExportObject(), standings } 
-    }, RESULTS_GATEWAY_URL);
+    });
     
     if(!res.report) throw new Error('Empty report returned');
     ta.value = res.report;
