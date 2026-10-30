@@ -1106,23 +1106,23 @@ function practiceEvents(){
 }
 
 /* ======== create function to fetch Members ============= */
-async function getMembers(className) {
+async function getMembers(allowedClasses) {
   if (state.practice) { MEMBERS = PRACTICE_MEMBERS.map(m => ({...m})); return; }
   try {
-    if (className === "Twilight") className = "All";  // special case for Twilight events 
-    const queryClass = className;
-    
-    // Instead of CLB_WEBAPP_URL, we use fetchSheet to use GATEWAY_URL natively
     const rows = await fetchSheet("members", "ClassMembers");
     const activeRows = rows.filter(r => String(r.Active).trim().toLowerCase() === "true");
 
-    const filtered = (queryClass === "All" || queryClass === "General" || !queryClass) 
+    // Dynamic filtering based on Series config
+    const isAllClasses = allowedClasses.trim().toUpperCase() === "ALL";
+    const allowedArray = allowedClasses.split(',').map(c => c.trim().toLowerCase());
+
+    const filtered = isAllClasses 
          ? activeRows 
-         : activeRows.filter(r => r.Class === queryClass || r.className === queryClass);
+         : activeRows.filter(r => allowedArray.includes(String(r.Class || r.className).toLowerCase()));
 
     MEMBERS = filtered.map(m => ({
          ...m,
-         id: m.BoatID || m.id, // <-- FIXED: Map BoatID to id so they are uniquely selectable
+         id: m.BoatID || m.id,
          className: m.Class ?? m.className,
          homeClub: m.homeClub || "SMMC",
          boat: m.BoatID || m.id,
@@ -1130,7 +1130,6 @@ async function getMembers(className) {
          sailNo: m.SailNo,
          hull: m["Hull Colour"] || m.hull || "white"
     }));
-    console.log(`getMembers(${className}): received ${MEMBERS.length} members`, MEMBERS.slice(0,3));
   } catch (error) {
     console.error("Failed to load member data:", error);
     MEMBERS = [];
@@ -1175,13 +1174,9 @@ async function getFormats(){
 // Format of an event: Regattas row (by RegattaID, else Class + RegattaType) -> formatId;
 // if that row has none, the format whose name matches the event's regatta type.
 function formatIdFor(ev){
-  const lc = v => String(v ?? '').trim().toLowerCase();
-  const reg = (ev.regattaId && REGATTAS.find(r => r.ID === ev.regattaId))
-           || REGATTAS.find(r => lc(r.Class) === lc(ev.class) && lc(r.RegattaType) === lc(ev.regattaType));
-  if(reg && reg.formatId) return reg.formatId;
-  const f = FORMATS.find(f => lc(f.name) === lc(ev.regattaType) && String(f.active).toLowerCase() !== 'false');
-  return f ? f.formatId : '';
+  return ev.formatId || '';
 }
+
 function raceKind(ev, n){
   const fid = formatIdFor(ev);
   const seq = [];
@@ -1206,9 +1201,17 @@ function findHcapRule(ev){
   return { tokens, cols: { lt4: col('<4'), lt7: col('<7'), lt13: col('<13'), ge13: col('13+') } };
 }
 
+
 function hcapFor(m, ev){
-  return ev.class === 'General' ? (Number(m['GH HCap']) || 0) : (Number(m.Handicap) || 0);
+  // ev.handicapType is pulled dynamically from the Series (Regattas) sheet
+  if (ev.handicapType === 'General') {
+    return Number(m['GH HCap']) || 0;
+  } else if (ev.handicapType === 'Class') {
+    return Number(m.Handicap) || 0;
+  }
+  return 0; // Scratch / No Handicap
 }
+
 
 function hcapAdjust(rule, pos, n){            // pos is 1-based, n = finishers
   const v = n < 4 ? rule.cols.lt4 : n < 7 ? rule.cols.lt7 : n < 13 ? rule.cols.lt13 : rule.cols.ge13;
@@ -1260,29 +1263,28 @@ async function getEvents() {
   try {
     // Uses standard GET avoiding the POST restriction on external endpoints which caused the verifyToken crash
     const data = await gwGet({ type: "calendar" }, CAL_WEBAPP_URL);
-    EVENTS = (data.months || []).flatMap(mo => {
-      const year = (String(mo.monthLabel).match(/\d{4}/) || [new Date().getFullYear()])[0];
-      return (mo.events || [])
-        .filter(e => e.boatClass)
-        .map(e => {
-        const [, dd, mon] = String(e.dateLabel).split(' ');   // "SAT 03 OCT"
-        const mm = MON.findIndex(m => m.toUpperCase() === mon) + 1;
+
+  EVENTS = (data.months || []).flatMap(mo => {
+    return (mo.events || []).map(e => {
+      // Look up the Series configuration dynamically
+      const seriesConfig = REGATTAS.find(r => r.SeriesID === e.SeriesID);
       
-        return {
-          id: e.hexKey,
-          date: `${dd}/${String(mm).padStart(2, '0')}/${year}`,
-          start: e.startTime,
-          end: e.finishTime,
-          class: e.boatClass,
-          regattaType: e.regattaType,
-          regattaId: e.regattaId || e.RegattaID || '',
-          round: String(e.roundNum ?? ''),
-          season: e.season,
-          status: e.results === 'Not Started' ? 'Not Started' : 'Processed'
-        
-        };
-      });
+      return {
+        id: e.hexKey,
+        date: `${dd}/${String(mm).padStart(2, '0')}/${year}`,
+        start: e.startTime,
+        end: e.finishTime,
+        seriesId: e.SeriesID,
+        seriesName: seriesConfig ? seriesConfig.SeriesName : 'Unknown Event',
+        allowedClasses: seriesConfig ? seriesConfig.AllowedClasses : '',
+        formatId: seriesConfig ? seriesConfig.FormatID : '',
+        handicapType: seriesConfig ? seriesConfig.HandicapType : 'None',
+        round: String(e.roundNum ?? ''),
+        season: e.season,
+        status: e.results === 'Not Started' ? 'Not Started' : 'Processed'
+      };
     });
+  });
     console.log('raw', data.events?.length, 'mapped', EVENTS.length, EVENTS[0]);
   } catch (error) {
     console.error("Failed to load events:", error.message);
@@ -1595,8 +1597,9 @@ function renderEventSelect(){
   today.setDate(today.getDate() - 3);
   today.setHours(0, 0, 0, 0);
   const q = state.eventSearch.trim().toLowerCase();
-  const NO_FILTER = ['Social', 'Marblehead', 'M'];
-  const classes = [...new Set(EVENTS.map(e => e.class))].filter(c => !NO_FILTER.includes(c)).sort()
+  const classes = [...new Set(EVENTS.flatMap(e => 
+      e.allowedClasses.toUpperCase() === "ALL" ? [] : e.allowedClasses.split(',').map(c=>c.trim())
+  ))].sort();
 
   // Calendar only ever shows future/today events
   let list = EVENTS.map(e => ({...e, _dt: parseDMY(e.date)})).filter(e => e._dt >= today);
@@ -2344,10 +2347,18 @@ function buildExportObject(){
     regattaDate: ev.regattaDate,
     startTime: ev.startTime,
     endTime: ev.endTime,
-    regattaName: ev.regattaName,
-    className: ev.className,
+    
+    // Send the Series Name (e.g., "Club Championship")
+    regattaName: ev.seriesName, 
+    
+    // Pass allowed classes (e.g., "DF95" or "ALL") so the processor knows the fleet makeup
+    className: ev.allowedClasses, 
+    
+    // Pass the actual resolved Format ID (e.g., FMT-MV75O0KT3F8) for downstream processing
+    formatId: ev.formatId, 
+
     competitorCount: state.entries.length,
-    entries: state.entries.map(e => ({ boatId: e.boatId, sailNo: e.sailNo, member: e.member })),
+    entries: state.entries.map(e => ({ boatId: e.boatId, sailNo: e.sailNo, member: e.member, className: e.className })),
     raceReport: state.reportText || '',
     races: state.races.map(r => ({
       raceNumber: r.raceNumber,
