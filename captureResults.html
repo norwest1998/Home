@@ -1187,14 +1187,19 @@ const kindLabel = n => state.event && state.event.hcapRule ? (raceKind(state.eve
 async function getRegattas(){
   if(state.practice || REGATTAS.length) return;
   try{ 
-      // Try to fetch 'Series' first, if fails or empty, fallback to 'Regattas'
-      let res = await fetchSheet("members","Series").catch(() => []);
-      if (!res || res.length === 0) {
-          res = await fetchSheet("members","Regattas");
-      }
+      // Try fetching from 'racing' domain first, checking both common sheet names
+      let res = await fetchSheet("racing","Series").catch(() => []);
+      if (!res || res.length === 0) res = await fetchSheet("racing","Regattas").catch(() => []);
+      
+      // Fallbacks just in case it lives elsewhere
+      if (!res || res.length === 0) res = await fetchSheet("calendar","Series").catch(() => []);
+      if (!res || res.length === 0) res = await fetchSheet("members","Series").catch(() => []);
+      if (!res || res.length === 0) res = await fetchSheet("members","Regattas").catch(() => []);
+      
+      console.log("Loaded REGATTAS/Series data:", res);
       REGATTAS = res; 
   } catch(e) { 
-      console.error(e); 
+      console.error("Error loading Regattas:", e); 
       REGATTAS = []; 
   }
 }
