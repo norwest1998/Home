@@ -21,7 +21,7 @@ function readAdminCache(...keys) {
     }
 }
 
-const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
+const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec"; 
 const RESULTS_GATEWAY_URL = "https://script.google.com/macros/s/AKfycbwHYDa3Jg-4pojZ6zCeU_fT6Xc17Rwz_B3aFl7UbafDnb61UzuzI-uY3kagrSOo77L3/exec";
 const TEMPLATE_GW_URL = "https://script.google.com/macros/s/AKfycbzXAuRrP7wCHWqaDJ5m-gh0V9MOxOKMFEuKUMGvf5NAh0tgLhtyHDeX8J9CQ-5PSOE2Ng/exec";
 const EMAIL_GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzrdcwjXHalBizwnRw62jKiY34saRkHewG5ueuO3wr3XsjcEtK2yCfX_LvzdOUrlV3g/exec";
@@ -40,6 +40,37 @@ const DOMAIN = {
     media:     "media",
     racing:    "racing"  
 };
+
+const STD_DISCARDS = { thresholds: [4, 8, 16, 24], repeat: 8 };
+
+function parseDiscardRule(s) {
+    const std = () => ({ thresholds: [...STD_DISCARDS.thresholds], repeat: STD_DISCARDS.repeat });
+    if (s == null || String(s).trim() === "") return std();
+    let o; try { o = typeof s === "string" ? JSON.parse(s) : s; } catch { return std(); }
+    if (Array.isArray(o.thresholds))
+        return { thresholds: o.thresholds.map(Number).filter(n => n > 0).sort((a, b) => a - b), repeat: Number(o.repeat) || 0 };
+    if (o.drop > 0 && o.after > 0) return { thresholds: Array(Number(o.drop)).fill(Number(o.after)), repeat: 0 };
+    return std();
+}
+
+function discardCount(rule, races) {
+    const t = rule.thresholds;
+    let n = t.filter(x => races >= x).length;
+    if (rule.repeat > 0 && t.length) {
+        const last = t[t.length - 1];
+        if (races > last) n += Math.floor((races - last) / rule.repeat);
+    }
+    return n;
+}
+
+// scores = competitor's race scores; racesCompleted = races completed in the series
+function applyDiscards(scores, rule, racesCompleted, scoringSystem) {
+    const n = Math.min(discardCount(rule, racesCompleted), Math.max(scores.length - 1, 0)); // always keep 1
+    const hi = scoringSystem === "high_point";
+    const dropIdx = new Set(scores.map((v, i) => [v, i])
+        .sort((a, b) => hi ? a[0] - b[0] : b[0] - a[0]).slice(0, n).map(x => x[1]));
+    return { counted: scores.filter((_, i) => !dropIdx.has(i)), dropped: [...dropIdx] };
+}
 
 // READ OPERATIONS -> Switched to POST to avoid Google Apps Script redirecting GETs to HTML Auth Pages
 async function fetchSheet(domain, sheetName, hexKey = null) {

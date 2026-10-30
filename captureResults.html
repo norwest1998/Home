@@ -1112,19 +1112,19 @@ async function getMembers(allowedClasses) {
     const rows = await fetchSheet("members", "ClassMembers");
     const activeRows = rows.filter(r => String(r.Active).trim().toLowerCase() === "true");
 
-    // Dynamic filtering based on Series config
-    const isAllClasses = allowedClasses.trim().toUpperCase() === "ALL";
-    const allowedArray = allowedClasses.split(',').map(c => c.trim().toLowerCase());
+    const ac = allowedClasses || 'ALL';
+    const isAllClasses = ac.trim().toUpperCase() === "ALL";
+    const allowedArray = ac.split(',').map(c => c.trim().toLowerCase());
 
     const filtered = isAllClasses 
          ? activeRows 
-         : activeRows.filter(r => allowedArray.includes(String(r.Class || r.className).toLowerCase()));
+         : activeRows.filter(r => allowedArray.includes(String(r.Class || r.className).trim().toLowerCase()));
 
     MEMBERS = filtered.map(m => ({
          ...m,
          id: m.BoatID || m.id,
          className: m.Class ?? m.className,
-         homeClub: m.homeClub || "SMMC",
+         homeClub: m.homeClub || m.HomeClub || "SMMC",
          boat: m.BoatID || m.id,
          member: m.Member,
          sailNo: m.SailNo,
@@ -1169,10 +1169,7 @@ async function getFormats(){
   try{ [FORMATS, SPECS] = await Promise.all([fetchSheet("racing","RacingFormats"), fetchSheet("racing","RaceSpecs")]); }
   catch(e){ console.error(e); }
 }
-// 'scratch' | 'handicap' for race n, from the regatta's format (RaceSpecs expanded by count).
-// No format/specs -> 'handicap' (previous behaviour). Races past the sequence repeat the last type.
-// Format of an event: Regattas row (by RegattaID, else Class + RegattaType) -> formatId;
-// if that row has none, the format whose name matches the event's regatta type.
+
 function formatIdFor(ev){
   return ev.formatId || '';
 }
@@ -1189,11 +1186,21 @@ const kindLabel = n => state.event && state.event.hcapRule ? (raceKind(state.eve
 
 async function getRegattas(){
   if(state.practice || REGATTAS.length) return;
-  try{ REGATTAS = await fetchSheet("members","Regattas"); }catch(e){ console.error(e); REGATTAS = []; }
+  try{ 
+      // Try to fetch 'Series' first, if fails or empty, fallback to 'Regattas'
+      let res = await fetchSheet("members","Series").catch(() => []);
+      if (!res || res.length === 0) {
+          res = await fetchSheet("members","Regattas");
+      }
+      REGATTAS = res; 
+  } catch(e) { 
+      console.error(e); 
+      REGATTAS = []; 
+  }
 }
 
 function findHcapRule(ev){
-  const row = REGATTAS.find(r => r.Class === ev.class && r.RegattaType === ev.regattaType);
+  const row = REGATTAS.find(r => r.SeriesID === ev.seriesId);
   if(!row || !String(row['Hcap Formula'] ?? '').trim()) return null;
   const tokens = String(row['Hcap Formula']).replace(/\./g, ',')   // tolerates the "L-2.L-1" typo
                    .split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
@@ -1201,17 +1208,15 @@ function findHcapRule(ev){
   return { tokens, cols: { lt4: col('<4'), lt7: col('<7'), lt13: col('<13'), ge13: col('13+') } };
 }
 
-
 function hcapFor(m, ev){
   // ev.handicapType is pulled dynamically from the Series (Regattas) sheet
   if (ev.handicapType === 'General') {
-    return Number(m['GH HCap']) || 0;
+    return Number(m['GH HCap'] || m.ghHcap) || 0;
   } else if (ev.handicapType === 'Class') {
-    return Number(m.Handicap) || 0;
+    return Number(m.Handicap || m.handicap) || 0;
   }
   return 0; // Scratch / No Handicap
 }
-
 
 function hcapAdjust(rule, pos, n){            // pos is 1-based, n = finishers
   const v = n < 4 ? rule.cols.lt4 : n < 7 ? rule.cols.lt7 : n < 13 ? rule.cols.lt13 : rule.cols.ge13;
@@ -1261,30 +1266,36 @@ function fillHTML(id, o){
 /* ======== create function to fetch Events ============= */
 async function getEvents() {
   try {
-    // Uses standard GET avoiding the POST restriction on external endpoints which caused the verifyToken crash
     const data = await gwGet({ type: "calendar" }, CAL_WEBAPP_URL);
 
-  EVENTS = (data.months || []).flatMap(mo => {
-    return (mo.events || []).map(e => {
-      // Look up the Series configuration dynamically
-      const seriesConfig = REGATTAS.find(r => r.SeriesID === e.SeriesID);
-      
-      return {
-        id: e.hexKey,
-        date: `${dd}/${String(mm).padStart(2, '0')}/${year}`,
-        start: e.startTime,
-        end: e.finishTime,
-        seriesId: e.SeriesID,
-        seriesName: seriesConfig ? seriesConfig.SeriesName : 'Unknown Event',
-        allowedClasses: seriesConfig ? seriesConfig.AllowedClasses : '',
-        formatId: seriesConfig ? seriesConfig.FormatID : '',
-        handicapType: seriesConfig ? seriesConfig.HandicapType : 'None',
-        round: String(e.roundNum ?? ''),
-        season: e.season,
-        status: e.results === 'Not Started' ? 'Not Started' : 'Processed'
-      };
+    EVENTS = (data.months || []).flatMap(mo => {
+      const year = (String(mo.monthLabel).match(/\d{4}/) || [new Date().getFullYear()])[0];
+      return (mo.events || []).map(e => {
+        // Safe split in case dateLabel is missing
+        const parts = String(e.dateLabel || '').split(' ');
+        const dd = parts.length > 1 ? parts[1] : '01';
+        const mon = parts.length > 2 ? parts[2] : 'JAN';
+        const mm = Math.max(1, MON.findIndex(m => m.toUpperCase() === mon.toUpperCase()) + 1);
+
+        const seriesId = e.seriesId || e.SeriesID || e.seriesID || e.RegattaID || e.regattaId;
+        const seriesConfig = REGATTAS.find(r => r.SeriesID === seriesId);
+        
+        return {
+          id: e.hexKey,
+          date: `${dd}/${String(mm).padStart(2, '0')}/${year}`,
+          start: e.startTime,
+          end: e.finishTime,
+          seriesId: seriesId,
+          seriesName: seriesConfig ? seriesConfig.SeriesName : (e.regattaType || e.EventName || 'Unknown Event'),
+          allowedClasses: seriesConfig ? seriesConfig.AllowedClasses : (e.boatClass || e.Class || 'ALL'),
+          formatId: seriesConfig ? seriesConfig.FormatID : '',
+          handicapType: seriesConfig ? seriesConfig.HandicapType : 'None',
+          round: String(e.roundNum ?? e['Round no'] ?? ''),
+          season: e.season,
+          status: e.results === 'Not Started' ? 'Not Started' : 'Processed'
+        };
+      });
     });
-  });
     console.log('raw', data.events?.length, 'mapped', EVENTS.length, EVENTS[0]);
   } catch (error) {
     console.error("Failed to load events:", error.message);
@@ -1301,6 +1312,7 @@ function fmtDate(d){ const dt = parseDMY(d); return `${String(dt.getDate()).padS
 
 /* Class emblem images live at home/images/classes/{className}.png — falls back to the text roundel if missing */
 function emblemFile(cls){
+  if (!cls || cls.toUpperCase() === "ALL" || cls.includes(",")) return "smmc-logo";
   if (cls === "General") return "smmc-logo";
   if (cls === "Social") return "SmileyFace";
   return cls;
@@ -1507,8 +1519,8 @@ function headerHTML(){
     const dateStr = `${DOW[dt.getDay()]} ${dt.getDate()} ${MON[dt.getMonth()]} ${dt.getFullYear()}`;
     sub = `<div class="subheader">
       <img class="cal-filter-icon" style="width:22px;height:22px;padding:2px;border-radius:5px;background:var(--foam);flex-shrink:0;" 
-          src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblemFile(ev.class))}.png" 
-          alt="${escapeHTML(ev.class)}">
+          src="${EMBLEM_IMAGE_URI}${encodeURIComponent(emblemFile(ev.className))}.png" 
+          alt="${escapeHTML(ev.className)}">
       <span class="badge badge-default">${escapeHTML(ev.regattaName)}</span>
       <span class="badge badge-default">${dateStr}</span>
       <span class="badge badge-default">${ev.startTime}–${ev.endTime}</span>
@@ -1597,29 +1609,29 @@ function renderEventSelect(){
   today.setDate(today.getDate() - 3);
   today.setHours(0, 0, 0, 0);
   const q = state.eventSearch.trim().toLowerCase();
-  const classes = [...new Set(EVENTS.flatMap(e => 
-      e.allowedClasses.toUpperCase() === "ALL" ? [] : e.allowedClasses.split(',').map(c=>c.trim())
-  ))].sort();
+  
+  const classes = [...new Set(EVENTS.flatMap(e => {
+      const ac = e.allowedClasses || 'ALL';
+      return ac.toUpperCase() === "ALL" ? [] : ac.split(',').map(c=>c.trim());
+  }))].sort();
 
   // Calendar only ever shows future/today events
   let list = EVENTS.map(e => ({...e, _dt: parseDMY(e.date)})).filter(e => e._dt >= today);
 
   if(state.selectedClass !== 'ALL'){
-    list = list.filter(e => e.class === state.selectedClass);
+    list = list.filter(e => (e.allowedClasses || '').includes(state.selectedClass));
   }
   if(q){
     list = list.filter(e =>
-      e.class.toLowerCase().includes(q) ||
-      e.regattaType.toLowerCase().includes(q) ||
+      (e.allowedClasses || '').toLowerCase().includes(q) ||
+      (e.seriesName || '').toLowerCase().includes(q) ||
       e.date.includes(q) ||
-      (e.round||'').includes(q) ||
-      `${e.class} ${e.regattaType}`.toLowerCase().includes(q)
+      (e.round||'').includes(q)
     );
   }
   list.sort((a,b) => a._dt - b._dt);
 
   const rows = list.map(e => {
-    const regattaName = `${e.class} ${e.regattaType}`;
     const st = loadState(e.id);
     const saved = !!st && ((st.entries?.length || 0) > 0 || (st.races?.length || 0) > 0);
     const selectable = e.status !== 'Processing';
@@ -1638,9 +1650,9 @@ function renderEventSelect(){
         <div class="dnum">${e._dt.getDate()}</div>
         <div class="mon">${MON[e._dt.getMonth()]}</div>
       </div>
-      ${classEmblem(e.class, 34)}
+      ${classEmblem(e.allowedClasses, 34)}
       <div class="event-main">
-        <div class="event-name">${escapeHTML(regattaName)}</div>
+        <div class="event-name">${escapeHTML(e.seriesName)}</div>
         <div class="event-meta">${e.start}–${e.end} · Round ${e.round||'–'} · ${e.season}</div>
       </div>
       ${pill}
@@ -1686,10 +1698,10 @@ function renderCompetitorSelect(){
   const editing = state.entries.length > 0;
   return `
     <div class="panel glass panel-pad">
-      <div class="section-title">Regatta entries — ${escapeHTML(ev.class)}</div>
-      <div class="section-hint">Active ${escapeHTML(ev.class)} members from the club roster. Tick everyone racing today. Entries stay editable until the first race is captured.</div>
+      <div class="section-title">Regatta entries — ${escapeHTML(ev.regattaName)}</div>
+      <div class="section-hint">Active members from the club roster. Tick everyone racing today. Entries stay editable until the first race is captured.</div>
       <div class="select-all-row">
-        <span style="font-size:12.5px;color:var(--foam-dim)">${roster.length} active ${escapeHTML(ev.class)} boats</span>
+        <span style="font-size:12.5px;color:var(--foam-dim)">${roster.length} active boats</span>
         <button data-select-all="1">${allChecked ? 'Clear all' : 'Select all'}</button>
       </div>
       ${rows || `<div class="empty-note">No active members found for this class.</div>`}
@@ -2084,24 +2096,37 @@ function closeMenu(){ state.menuOpen = false; render(); }
 async function selectEvent(id){
   const ev = EVENTS.find(e => e.id === id);
   if(!ev) return;
-  const regattaName = `${ev.class} ${ev.regattaType}`;
-  const full = { id: ev.id, regattaDate: fmtDate(ev.date), date: ev.date, startTime: ev.start, endTime: ev.end,
-                 regattaName, className: ev.class, class: ev.class, regattaType: ev.regattaType, regattaId: ev.regattaId, round: ev.round };
+  
+  const full = { 
+    id: ev.id, 
+    regattaDate: fmtDate(ev.date), 
+    date: ev.date, 
+    startTime: ev.start, 
+    endTime: ev.end,
+    regattaName: ev.seriesName, 
+    className: ev.allowedClasses, 
+    class: ev.allowedClasses, 
+    regattaType: ev.seriesName, 
+    seriesId: ev.seriesId, 
+    round: ev.round,
+    formatId: ev.formatId,
+    handicapType: ev.handicapType 
+  };
+  
   // show spinner while members/guests load
   document.getElementById('app-body').innerHTML =
     `<div style="padding:60px 20px;text-align:center;color:var(--foam-dim)">
        <span class="spinner spinner-lg"></span>
-       <div style="margin-top:12px">Loading ${escapeHTML(ev.class)} entries…</div>
+       <div style="margin-top:12px">Loading entries…</div>
      </div>`;
 
   try {
-        await Promise.all([getMembers(full.className), getGuests(full.id, full.className), getRegattas(), getFormats()]);
+        await Promise.all([getMembers(full.className), getGuests(full.id, full.className), getFormats()]);
   } catch (e) { console.error(e); }
 
-  full.hcapRule = findHcapRule(ev);
+  full.hcapRule = findHcapRule(full);
   if(full.hcapRule){
-    if(ev.class === 'General') MEMBERS = MEMBERS.filter(m => String(m.GH).trim().toLowerCase() === 'true');
-    MEMBERS.forEach(m => m.hcap = hcapFor(m, ev));
+    MEMBERS.forEach(m => m.hcap = hcapFor(m, full));
     GUESTS.forEach(g => g.hcap = Number(g.hcap) || Number((loadState(id)?.entries || []).find(e => e.boatId === String(g.id))?.hcap) || 0);
   }
 
@@ -2144,7 +2169,7 @@ function confirmEntries(){
   const roster = getRoster();   // members AND guests
   const isFirstTime = state.entries.length === 0;
   state.entries = roster.filter(m => state.pendingSelection.has(String(m.id)))
-                        .map(m => ({  boatId: String(m.id), sailNo: String(m.sailNo), member: m.member, hull: m.hull || '', hcap: Number(m.hcap) || 0 }));
+                        .map(m => ({  boatId: String(m.id), sailNo: String(m.sailNo), member: m.member, hull: m.hull || '', hcap: Number(m.hcap) || 0, className: m.className || '' }));
   state.screen = 'race-capture';
   saveState();
   showToast(isFirstTime ? 'Entries saved' : 'Entries updated');
@@ -2349,10 +2374,10 @@ function buildExportObject(){
     endTime: ev.endTime,
     
     // Send the Series Name (e.g., "Club Championship")
-    regattaName: ev.seriesName, 
+    regattaName: ev.regattaName, 
     
     // Pass allowed classes (e.g., "DF95" or "ALL") so the processor knows the fleet makeup
-    className: ev.allowedClasses, 
+    className: ev.className, 
     
     // Pass the actual resolved Format ID (e.g., FMT-MV75O0KT3F8) for downstream processing
     formatId: ev.formatId, 
@@ -2660,6 +2685,7 @@ document.getElementById('app-header').innerHTML = headerHTML();
 document.getElementById('app-subheader').innerHTML = subHeaderHTML();
 document.getElementById('app-body').innerHTML = '<div style="padding:40px;text-align:center;color:var(--foam-dim)">Loading events…</div>';
 (async () => {
+  await getRegattas();
   await getEvents();
   render();
 })();
