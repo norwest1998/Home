@@ -1188,7 +1188,7 @@ async function getRegattas(){
   if(state.practice || REGATTAS.length) return;
   try{ 
       // Try to fetch 'Series' first, if fails or empty, fallback to 'Regattas'
-      let res = await fetchSheet("members","Series").catch(() => []);
+      let res = await fetchSheet("racing","Series").catch(() => []);
       if (!res || res.length === 0) {
           res = await fetchSheet("members","Regattas");
       }
@@ -1289,7 +1289,7 @@ async function getEvents() {
           seriesName: seriesConfig ? seriesConfig.SeriesName : (e.regattaType || e.EventName || 'Unknown Event'),
           allowedClasses: seriesConfig ? seriesConfig.AllowedClasses : (e.boatClass || e.Class || 'ALL'),
           formatId: seriesConfig ? seriesConfig.FormatID : '',
-          handicapType: seriesConfig ? seriesConfig.HandicapType : 'None',
+          handicapType: seriesConfig ? seriesConfig.HandicapTracking : 'None',
           round: String(e.roundNum ?? e['Round no'] ?? ''),
           season: e.season,
           status: e.results === 'Not Started' ? 'Not Started' : 'Processed'
