@@ -1,5 +1,3 @@
-// config.js  (or inline in a shared include)
-
 const TOKEN_KEY = "SMMC_TOKEN";
 const PUBLIC_PAGES = ["login.html"];
 if (!PUBLIC_PAGES.some(p => location.pathname.endsWith(p)) && !sessionStorage.getItem(TOKEN_KEY)) {
