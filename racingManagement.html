@@ -350,10 +350,12 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
                 <div class="form-group"><label>Description</label><textarea id="fDesc" placeholder="Optional"></textarea></div>
             </div>
             <div class="form-row triple">
-                <div class="form-group"><label>Discards: drop</label><input type="number" id="fDrop" min="0" max="20" placeholder="0 = none"></div>
-                <div class="form-group"><label>After N races</label><input type="number" id="fAfter" min="1" max="50" placeholder="e.g. 5"></div>
+                <div class="form-group"><label>Discards</label>
+                    <select id="fDiscMode"><option value="std">Standard (4, 8, 16, 24, +8)</option><option value="none">None</option><option value="custom">Custom</option></select></div>
+                <div class="form-group" id="fThreshWrap"><label>Drop after races</label><input id="fThresh" placeholder="e.g. 4,8"></div>
                 <div class="form-group"><label>Status</label>
-                    <select id="fActive"><option value="true">Active</option><option value="false">Archived</option></select></div>
+                    <select id="fActive"><option value="true">Active</option><option value="false">Archived</option></select>
+                </div>
             </div>
 
             <div class="form-row full">
@@ -464,8 +466,14 @@ function className(id) {
     const c = classes.find(c => gv(c, "ClassID") === id);
     return c ? (gv(c, "ClassName") || id) : id;
 }
-function parseDiscards(s) { try { const o = JSON.parse(s); return { drop: o.drop || "", after: o.after || "" }; } catch { return { drop: "", after: "" }; } }
 
+function discardUi(raw) {
+    if (!String(raw || "").trim()) return { mode: "std", t: "" };
+    const r = parseDiscardRule(raw);
+    return r.thresholds.length ? { mode: "custom", t: r.thresholds.join(",") } : { mode: "none", t: "" };
+}
+
+function syncDisc() { $("fThreshWrap").style.display = $("fDiscMode").value === "custom" ? "" : "none"; }
 /* ============ LOAD ============ */
 async function loadAll() {
     $("fmtBody").innerHTML = `<tr class="spinner-row"><td colspan="8"><span class="spinner"></span> Loading formats…</td></tr>`;
@@ -686,6 +694,7 @@ $("newRgBtn").addEventListener("click", () => openRgModal(null));
 ["rgClose", "rgCancel"].forEach(i => $(i).addEventListener("click", closeRgModal));
 $("rgModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeRgModal(); });
 $("rgSave").addEventListener("click", saveRegatta);
+$("fDiscMode").addEventListener("change", syncDisc);
 
 /* ============ MODAL ============ */
 function openModal(id) {
@@ -697,7 +706,8 @@ function openModal(id) {
         $("fName").value = f ? gv(f, "name") : "";
         $("fDesc").value = f ? gv(f, "description") : "";
         $("fScoring").value = f ? (gv(f, "scoringSystem") || "low_point") : "low_point";
-        const d = f ? parseDiscards(gv(f, "discardsRule")) : { drop: "", after: "" };
+        const d = discardUi(f ? gv(f, "discardsRule") : "");
+        $("fDiscMode").value = d.mode; $("fThresh").value = d.t; syncDisc();
         $("fDrop").value = d.drop; $("fAfter").value = d.after;
         $("fActive").value = f ? String(isActive(f)) : "true";
         $("fPart").value = f ? String(isTrue(gv(f, "participationWeighting"))) : "false";
@@ -783,7 +793,8 @@ function validate() {
     const name = $("fName").value.trim();
     if (!name) return "Name is required.";
     if (formats.some(f => gv(f, "formatId") !== editingId && isActive(f) && gv(f, "name").toLowerCase() === name.toLowerCase())) return "An active format with this name already exists.";
-    if (!modalSpecs.length) return "Add at least one race spec.";
+    if ($("fDiscMode").value === "custom" && !parseDiscardRule(JSON.stringify({thresholds: $("fThresh").value.split(",")})).thresholds.length)
+        return "Enter at least one race count, e.g. 4,8.";
     for (const [i, s] of modalSpecs.entries()) {
         const c = Number(s.count);
         if (!Number.isInteger(c) || c < 1 || c > 50) return `Spec ${i + 1}: count must be a whole number from 1 to 50.`;
@@ -800,15 +811,17 @@ async function saveFormat() {
     const btn = $("modalSave"); btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> Saving…`;
     try {
         const fid = editingId || uid("FMT");
-        const dr = Number($("fDrop").value), af = Number($("fAfter").value);
+        const mode = $("fDiscMode").value;
+        const th = $("fThresh").value.split(",").map(Number).filter(n => n > 0);
         const fdata = {
             formatId: fid, name: $("fName").value.trim(), description: $("fDesc").value.trim(),
             scoringSystem: $("fScoring").value,
-            discardsRule: dr > 0 && af > 0 ? JSON.stringify({ drop: dr, after: af }) : "",
+            discardsRule: mode === "std" ? "" : JSON.stringify({ thresholds: mode === "none" ? [] : th }),
             allowedClassIds: [...document.querySelectorAll("#classChips input:checked")].map(i => i.value).join(","),
             active: $("fActive").value === "true",
             participationWeighting: $("fPart").value === "true"
         };
+
         if (editingId) await updateSheet(R, "RacingFormats", fid, fdata); else await appendSheet(R, "RacingFormats", fdata);
 
         for (const [i, s] of modalSpecs.entries()) {
