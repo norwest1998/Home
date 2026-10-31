@@ -315,11 +315,28 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
             <div class="form-row triple">
                 <div class="form-group"><label>Week of month</label><input type="text" id="gWeek" placeholder="e.g. 2 or 2,4"></div>
                 <div class="form-group"><label>Time</label><select id="gTime"><option value="">—</option><option>AM</option><option>PM</option></select></div>
-                <div class="form-group"><label>Entry Type</label><input type="text" id="gEntryType" placeholder="e.g. Series"></div>
+                <div class="form-group"><label>Entry Type</label><select id="gEntryType"><option value="Member">Member</option><option value="Boat">Boat</option></select></div>
             </div>
             <div class="form-row">
-                <div class="form-group"><label>Handicap Tracking</label><select id="gHcapTrack"><option value="false">No</option><option value="true">Yes</option></select></div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Handicap Tracking</label>
+                        <select id="gHcapTrack">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Entry Required</label>
+                        <select id="gEntryRequired">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                </div>
             </div>
+            
             <div class="modal-footer">
                 <span class="modal-status" id="rgModalStatus"></span>
                 <button class="btn btn-ghost" id="rgCancel">Close</button>
@@ -659,9 +676,13 @@ function openRgModal(id) {
         
     $("gEntryType").value = r ? gv(r, "EntryType") : "";
     $("gHcapTrack").value = r ? (String(gv(r, "HandicapTracking")).toLowerCase() === "true" ? "true" : "false") : "false";
-
+    $("gEntryRequired").value =
+        r ? (String(gv(r, "EntryRequired")).toLowerCase() === "true"
+            ? "true"
+            : "false")
+        : "false";
     $("rgModalStatus").className = "modal-status";
-    ["gName", "gClass", "gCoord", "gWeek", "gTime", "gFmt", "gEntryType", "gHcapTrack"].forEach(i => { if($(i)) $(i).disabled = !CAN_WRITE; });
+    ["gName", "gClass", "gCoord", "gWeek", "gTime", "gFmt", "gEntryType", "gHcapTrack", "gEntryRequired"].forEach(i => { if($(i)) $(i).disabled = !CAN_WRITE; });
     
     $("rgModal").classList.add("open");
 }
@@ -676,20 +697,18 @@ async function saveRegatta() {
     if (!editingRgId && regattas.some(r => gv(r, "ID").toLowerCase() === id.toLowerCase())) return status(st, "ID already exists.", "error");
     if (wk && !/^[1-5](,[1-5])*$/.test(wk)) return status(st, "Week of month must be 1–5, e.g. 2 or 2,4.", "error");
     
-    const data = { 
-        ID: id, 
-        SeriesName: name, 
-        AllowedClasses: cls, 
+    const data = {
+        ID: id,
+        SeriesName: name,
+        Class: cls,                 // changed from AllowedClasses
         Coordinator: $("gCoord").value,
-        WeekofMonth: wk, 
+        WeekofMonth: wk,
         Time: $("gTime").value,
-        FormatID: $("gFmt").value, 
+        FormatID: $("gFmt").value,
         EntryType: $("gEntryType").value.trim(),
-        HandicapTracking: $("gHcapTrack").value === "true"
+        HandicapTracking: $("gHcapTrack").value === "true",
+        EntryRequired: $("gEntryRequired").value === "true"
     };
-    
-    // Add EntryRequired only if new (to not overwrite existing values mapped to entries list)
-    if (!editingRgId) data.EntryRequired = false;
     
     const btn = $("rgSave"); btn.disabled = true;
     try {
