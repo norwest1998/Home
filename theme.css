@@ -929,6 +929,29 @@
 
 .ql-editor { scrollbar-width: none; -ms-overflow-style: none; }
 .ql-editor::-webkit-scrollbar { display: none; }
+
+/* =========================================================
+   GLOBAL SCROLLBAR HIDE
+   Allows scrolling while hiding scrollbars everywhere
+   ========================================================= */
+
+/* Firefox */
+* {
+  scrollbar-width: none;
+}
+
+/* IE / Legacy Edge */
+* {
+  -ms-overflow-style: none;
+}
+
+/* Chrome, Edge, Safari, Opera */
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
   /* =========================================================
     FOOTER
     ========================================================= */
