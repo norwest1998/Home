@@ -891,7 +891,7 @@ function renderRegattas() {
             <td>${escapeHtml(gv(r, "ID"))}</td><td>${escapeHtml(gv(r, "SeriesName"))}</td>
             <td>${escapeHtml(gv(r, "AllowedClasses"))}</td>
             <td><select class="glass-select in-table reg-fmt" ${CAN_WRITE ? "" : "disabled"}>
-                <option value="">— None —</option>
+                <option value="">All Classes</option>
                 ${opts.map(f => `<option value="${escapeHtml(gv(f, "formatId"))}" ${gv(f, "formatId") === cur ? "selected" : ""}>${escapeHtml(gv(f, "name"))}${isActive(f) ? "" : " (archived)"}</option>`).join("")}
             </select></td>
             <td>${cur ? escapeHtml(summary(specsFor(cur))) : '<span class="sub">—</span>'}</td></tr>`;
