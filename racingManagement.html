@@ -692,7 +692,7 @@ const closeRgModal = () => $("rgModal").classList.remove("open");
 async function saveRegatta() {
     const id = $("gID").value.trim(), name = $("gName").value.trim(), cls = $("gClass").value, wk = $("gWeek").value.replace(/\s/g, ""), st = $("rgModalStatus");
     
-    if (!id || !name || !cls) return status(st, "ID, name and classes are required.", "error");
+    if (!id || !name) return status(st, "ID and name are required.", "error");
     if (/\s/.test(id)) return status(st, "ID can't contain spaces.", "error");
     if (!editingRgId && regattas.some(r => gv(r, "ID").toLowerCase() === id.toLowerCase())) return status(st, "ID already exists.", "error");
     if (wk && !/^[1-5](,[1-5])*$/.test(wk)) return status(st, "Week of month must be 1–5, e.g. 2 or 2,4.", "error");
