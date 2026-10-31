@@ -1112,8 +1112,12 @@ async function getMembers(allowedClasses) {
     const rows = await fetchSheet("members", "ClassMembers");
     const activeRows = rows.filter(r => String(r.Active).trim().toLowerCase() === "true");
 
-    const ac = allowedClasses || 'ALL';
-    const isAllClasses = ac.trim().toUpperCase() === "ALL";
+    const ac = String(allowedClasses || 'ALL').trim();
+    
+    // Treat generic series names or blank classes as an "ALL classes" pass
+    const genericClasses = ["ALL", "ANY", "GENERAL", "TWILIGHT", "MIXED", "OPEN", ""];
+    const isAllClasses = genericClasses.includes(ac.toUpperCase());
+    
     const allowedArray = ac.split(',').map(c => c.trim().toLowerCase());
 
     const filtered = isAllClasses 
@@ -1141,13 +1145,19 @@ async function getGuests(eventId, className) {
   try {
     // Navigate naturally via Gateway.js leveraging the internal results database natively
     const rows = await fetchSheet("results", "GuestRegistrations");
+    
+    // Ensure generic event names don't overwrite a guest's specific class
+    const ac = String(className || 'ALL').trim().toUpperCase();
+    const genericClasses = ["ALL", "ANY", "GENERAL", "TWILIGHT", "MIXED", "OPEN", ""];
+    const defaultClass = genericClasses.includes(ac) ? '' : className;
+
     GUESTS = rows
       .filter(g => String(g.EventID) === String(eventId))
       .map(g => ({
         id:        'G-' + (g.HexKey ?? g.SailNo),   
         member:    g.CompetitorName,
         sailNo:    String(g.SailNo),
-        className: g.RaceClass || g.Model || ((className === 'Twilight' || className === 'General') ? '' : className),  
+        className: g.RaceClass || g.Model || defaultClass,  
         homeClub:  g.HomeClub || "Guest Club",
         hull:      g.HullColour || g.HullColor || "white",
         isGuest:   true
@@ -1476,7 +1486,7 @@ function computeStandings(entries, races){
       if(r.dnf.includes(e.boatId)) return { race: r.raceNumber, points: n+1, code: 'DNF' };
       return { race: r.raceNumber, points: null, code: 'BYE' };
     });
-    const counted = raceScores.filter(rs => rs.points !== null);
+    const counted = raceScores.filter(rs => rs.points !== null);  
     const totalRaces = counted.length;
     const drops = dropsForRaceCount(totalRaces);
     const sortedDesc = [...counted].sort((a,b) => b.points - a.points);
