@@ -614,8 +614,6 @@ async function refresh() { await loadAll(); if (window.AuditLog) await AuditLog.
 const REG_TYPES = ["Scratch", "Handicap", "Racing", "IOM Format"];
 let editingRgId = null;
 
-let editingRgId = null;
-
 function renderRegList() {
     const q = $("rgSearch").value.trim().toLowerCase();
     const rows = regattas.filter(r => !q || (gv(r, "ID") + " " + gv(r, "SeriesName") + " " + gv(r, "AllowedClasses")).toLowerCase().includes(q));

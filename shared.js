@@ -247,7 +247,7 @@ async function gw(payload, url = GATEWAY_URL) {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ ...payload, token: sessionStorage.getItem(TOKEN_KEY) })
-    });
+    }); 
     const text = await res.text();
     let data; try { data = JSON.parse(text); } catch(e) { throw new Error("Invalid Server Response"); }
     if (data.code === "AUTH" && !["login","requestCode","verifyCode","passwordLogin"].includes(payload.action)) {
