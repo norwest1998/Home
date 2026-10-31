@@ -474,6 +474,7 @@ function discardUi(raw) {
 }
 
 function syncDisc() { $("fThreshWrap").style.display = $("fDiscMode").value === "custom" ? "" : "none"; }
+
 /* ============ LOAD ============ */
 async function loadAll() {
     $("fmtBody").innerHTML = `<tr class="spinner-row"><td colspan="8"><span class="spinner"></span> Loading formats…</td></tr>`;
@@ -483,7 +484,7 @@ async function loadAll() {
         [formats, specs, regattas, classes, entries, events, guestRegs, members] = await Promise.all([
             fetchSheet(R, "RacingFormats"), fetchSheet(R, "RaceSpecs"),
             fetchSheet(R, "Series"), fetchSheet(D, "Classes").catch(() => []),
-            fetchSheet(DOMAIN.requests, "SeriesEntries").catch(() => []),
+            fetchSheet(R, "SeriesEntries").catch(() => []),
             fetchSheet(DOMAIN.calendar, "Event Data").catch(() => []),
             fetchSheet(DOMAIN.results, "GuestRegistrations").catch(() => []),
             fetchSheet(D, "Members").catch(() => [])
@@ -491,7 +492,7 @@ async function loadAll() {
         formats = formats.filter(f => gv(f, "formatId"));
         specs = specs.filter(s => gv(s, "specId"));
         regattas = regattas.filter(r => gv(r, "ID"));
-        classes = classes.filter(c => gv(c, "ClassID"))
+        classes = classes.filter(c => gv(c, "ClassID"));
     } catch (e) {
         $("fmtBody").innerHTML = `<tr class="spinner-row"><td colspan="8" style="color:#ff6b6b;">Failed to load: ${escapeHtml(e.message)}</td></tr>`;
         return;
@@ -640,7 +641,7 @@ function openRgModal(id) {
     const r = id ? regattas.find(r => gv(r, "ID") === id) : null;
     $("rgTitle").textContent = r ? (CAN_WRITE ? "Edit Regatta" : "View Regatta") : "New Regatta";
     const nextNum = Math.max(0, ...regattas.map(x => parseInt(gv(x, "ID").replace(/\D/g, "")) || 0)) + 1;
-    $("gID").value = r ? id : "R" + nextNum; $("gID").disabled = !!r || !CAN_WRITE;   // key is immutable
+    $("gID").value = r ? id : "R" + nextNum; $("gID").disabled = !!r || !CAN_WRITE;   
     $("gName").value = r ? gv(r, "ChampionshipName") : "";
     const cls = r ? gv(r, "Class") : "";
     $("gClass").innerHTML = `<option value="">— Select —</option>` + classes.map(c => {
@@ -648,6 +649,18 @@ function openRgModal(id) {
         + (cls && !classes.some(c => gv(c, "ClassID") === cls) ? `<option value="${escapeHtml(cls)}" selected>${escapeHtml(cls)}</option>` : "");
     const t = r ? gv(r, "RegattaType") : "", tl = !t || REG_TYPES.includes(t) ? REG_TYPES : [...REG_TYPES, t];
     $("gType").innerHTML = `<option value="">—</option>` + tl.map(x => `<option ${x === t ? "selected" : ""}>${escapeHtml(x)}</option>`).join("");
+    
+    // Dynamically inject Coordinator field if not present in HTML
+    if (!$("gCoord")) {
+        $("gType").parentElement.insertAdjacentHTML("afterend", `<div class="form-group"><label>Coordinator</label><select id="gCoord"></select></div>`);
+        $("gType").closest(".form-row").classList.add("triple");
+    }
+    
+    const coord = r ? gv(r, "Coordinator") : "";
+    const names = [...new Set((members || []).filter(isActive).map(m => gv(m, "MemberName")).filter(Boolean))].sort();
+    if (coord && !names.includes(coord)) names.push(coord);
+    $("gCoord").innerHTML = `<option value="">— None —</option>` + names.map(n => `<option value="${escapeHtml(n)}" ${n === coord ? "selected" : ""}>${escapeHtml(n)}</option>`).join("");
+
     $("gWeek").value = r ? gv(r, "WeekofMonth") : "";
     $("gTime").value = r ? gv(r, "Time") : "";
     const fid = r ? gv(r, "formatId") : "";
@@ -656,9 +669,10 @@ function openRgModal(id) {
     $("gHF").value = r ? gv(r, "Hcap Formula") : "";
     ["<4", "<7", "<13", "13+"].forEach((k, i) => $("gB" + (i + 1)).value = r ? gv(r, k) : "");
     $("rgModalStatus").className = "modal-status";
-    ["gName", "gClass", "gType", "gWeek", "gTime", "gFmt", "gHF", "gB1", "gB2", "gB3", "gB4"].forEach(i => $(i).disabled = !CAN_WRITE);
+    ["gName", "gClass", "gType", "gCoord", "gWeek", "gTime", "gFmt", "gHF", "gB1", "gB2", "gB3", "gB4"].forEach(i => { if($(i)) $(i).disabled = !CAN_WRITE; });
     $("rgModal").classList.add("open");
 }
+
 const closeRgModal = () => $("rgModal").classList.remove("open");
 
 async function saveRegatta() {
@@ -667,13 +681,17 @@ async function saveRegatta() {
     if (/\s/.test(id)) return status(st, "ID can't contain spaces.", "error");
     if (!editingRgId && regattas.some(r => gv(r, "ID").toLowerCase() === id.toLowerCase())) return status(st, "ID already exists.", "error");
     if (wk && !/^[1-5](,[1-5])*$/.test(wk)) return status(st, "Week of month must be 1–5, e.g. 2 or 2,4.", "error");
-    const data = { ID: id, ChampionshipName: name, Class: cls, RegattaType: $("gType").value, WeekofMonth: wk, Time: $("gTime").value,
+    const data = { 
+        ID: id, ChampionshipName: name, Class: cls, RegattaType: $("gType").value, 
+        Coordinator: $("gCoord") ? $("gCoord").value : "",
+        WeekofMonth: wk, Time: $("gTime").value,
         formatId: $("gFmt").value, "Hcap Formula": $("gHF").value.trim(),
-        "<4": $("gB1").value.trim(), "<7": $("gB2").value.trim(), "<13": $("gB3").value.trim(), "13+": $("gB4").value.trim() };
+        "<4": $("gB1").value.trim(), "<7": $("gB2").value.trim(), "<13": $("gB3").value.trim(), "13+": $("gB4").value.trim() 
+    };
     const btn = $("rgSave"); btn.disabled = true;
     try {
-        if (editingRgId) await updateSheet(D, "Regattas", editingRgId, data);
-        else await appendSheet(D, "Regattas", { ...data, entryRequired: false });
+        if (editingRgId) await updateSheet(R, "Series", editingRgId, data);
+        else await appendSheet(R, "Series", { ...data, entryRequired: false });
         status(st, "Regatta saved.", "success");
         await refresh(); setTimeout(closeRgModal, 700);
     } catch (e) { status(st, "Error saving: " + e.message, "error"); }
@@ -708,7 +726,6 @@ function openModal(id) {
         $("fScoring").value = f ? (gv(f, "scoringSystem") || "low_point") : "low_point";
         const d = discardUi(f ? gv(f, "discardsRule") : "");
         $("fDiscMode").value = d.mode; $("fThresh").value = d.t; syncDisc();
-        $("fDrop").value = d.drop; $("fAfter").value = d.after;
         $("fActive").value = f ? String(isActive(f)) : "true";
         $("fPart").value = f ? String(isTrue(gv(f, "participationWeighting"))) : "false";
         
@@ -801,8 +818,6 @@ function validate() {
         if (!(Number(s.weight) >= 0) || s.weight === "") return `Spec ${i + 1}: weight must be 0 or more.`;
         if (s.config.trim()) { try { JSON.parse(s.config); } catch { return `Spec ${i + 1}: config is not valid JSON.`; } }
     }
-    const dr = $("fDrop").value, af = $("fAfter").value;
-    if ((dr && !af) || (!dr && af)) return "Set both discard count and 'after N races', or leave both empty.";
     return null;
 }
 
@@ -1037,9 +1052,10 @@ function renderEntries() {
 $("entBody").addEventListener("click", async e => {
     const b = e.target.closest("button[data-e]"); if (!b) return;
     b.disabled = true;
-    try { await updateSheet(DOMAIN.requests, "SeriesEntries", b.dataset.e, { Status: b.dataset.to }); await refresh(); renderEntries(); }
+    try { await updateSheet(R, "SeriesEntries", b.dataset.e, { Status: b.dataset.to }); await refresh(); renderEntries(); }
     catch (err) { status($("entStatus"), "Failed: " + err.message, "error"); b.disabled = false; }
 });
+
 ["entClose", "entDone"].forEach(i => $(i).addEventListener("click", () => $("entModal").classList.remove("open")));
 $("entModal").addEventListener("click", e => { if (e.target === e.currentTarget) $("entModal").classList.remove("open"); });
 
