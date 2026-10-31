@@ -700,7 +700,7 @@ async function saveRegatta() {
     const data = {
         ID: id,
         SeriesName: name,
-        Class: cls,                 // changed from AllowedClasses
+        AllowedClasses: cls,                 // changed from AllowedClasses
         Coordinator: $("gCoord").value,
         WeekofMonth: wk,
         Time: $("gTime").value,
