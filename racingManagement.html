@@ -482,7 +482,7 @@ async function loadAll() {
     try {
         [formats, specs, regattas, classes, entries, events, guestRegs, members] = await Promise.all([
             fetchSheet(R, "RacingFormats"), fetchSheet(R, "RaceSpecs"),
-            fetchSheet(D, "Regattas"), fetchSheet(D, "Classes").catch(() => []),
+            fetchSheet(R, "Series"), fetchSheet(D, "Classes").catch(() => []),
             fetchSheet(DOMAIN.requests, "SeriesEntries").catch(() => []),
             fetchSheet(DOMAIN.calendar, "Event Data").catch(() => []),
             fetchSheet(DOMAIN.results, "GuestRegistrations").catch(() => []),
@@ -686,7 +686,7 @@ $("rgBody").addEventListener("click", async e => {
     if (!btn) return openRgModal(id);
     if (!confirm(`Permanently delete regatta ${id}? Calendar events and results that reference it will be orphaned.`)) return;
     btn.disabled = true;
-    try { await deleteRow(D, "Regattas", id); await refresh(); }
+    try { await deleteRow(R, "Series", id); await refresh(); }
     catch (err) { status($("rgStatus"), "Delete failed: " + err.message, "error"); btn.disabled = false; }
 });
 $("rgSearch").addEventListener("input", renderRegList);
@@ -874,7 +874,7 @@ $("regBody").addEventListener("change", async e => {
     const id = e.target.closest("tr").dataset.id, fid = e.target.value, reg = regattas.find(r => gv(r, "ID") === id);
     if (fid && !classAllowed(reg, fid) && !confirm(`Class "${gv(reg, "Class")}" is not in this format's valid classes. Assign anyway?`)) return renderRegattas();
     e.target.disabled = true;
-    try { await updateSheet(D, "Regattas", id, { formatId: fid }); status($("regStatus"), `${id} updated.`, "success"); await refresh(); }
+    try { await updateSheet(R, "Series", id, { formatId: fid }); status($("regStatus"), `${id} updated.`, "success"); await refresh(); }
     catch (err) { status($("regStatus"), "Failed: " + err.message, "error"); renderRegattas(); }
 });
 
@@ -884,7 +884,7 @@ async function autoAssign() {
     if (!confirm(`Assign formats to ${todo.length} regatta(s) based on their current type?`)) return;
     $("autoAssignBtn").disabled = true;
     try {
-        for (const r of todo) await updateSheet(D, "Regattas", gv(r, "ID"), { formatId: formatForType(gv(r, "RegattaType")) });
+        for (const r of todo) await updateSheet(R, "Series", gv(r, "ID"), { formatId: formatForType(gv(r, "RegattaType")) });
         status($("regStatus"), `${todo.length} regatta(s) assigned.`, "success");
         await refresh();
     } catch (err) { status($("regStatus"), "Failed: " + err.message, "error"); }
@@ -979,7 +979,7 @@ function renderSeries() {
 $("serFilter").addEventListener("change", renderSeries);
 
 async function saveReg(id, fields, msg) {
-    try { await updateSheet(D, "Regattas", id, fields); status($("serStatus"), msg || `${id} updated.`, "success"); await refresh(); }
+    try { await updateSheet(R, "Series", id, fields); status($("serStatus"), msg || `${id} updated.`, "success"); await refresh(); }
     catch (err) { status($("serStatus"), "Failed: " + err.message, "error"); renderSeries(); }
 }
 $("serBody").addEventListener("change", e => {
