@@ -635,21 +635,17 @@ function openRgModal(id) {
     const r = id ? regattas.find(r => gv(r, "ID") === id) : null;
     $("rgTitle").textContent = r ? (CAN_WRITE ? "Edit Series" : "View Series") : "New Series";
     
-    // Automatically suggest 'S' prefix for Series instead of 'R' for Regattas
     const nextNum = Math.max(0, ...regattas.map(x => parseInt(gv(x, "ID").replace(/\D/g, "")) || 0)) + 1;
     $("gID").value = r ? id : "S" + nextNum; 
     $("gID").disabled = !!r || !CAN_WRITE;   
     
-    $("gName").value = r ? gv(r, "ChampionshipName") : "";
+    $("gName").value = r ? gv(r, "SeriesName") : "";
     
-    const cls = r ? gv(r, "Class") : "";
+    const cls = r ? gv(r, "AllowedClasses") : "";
     $("gClass").innerHTML = `<option value="">— Select —</option>` + classes.map(c => {
         const v = gv(c, "ClassID"); return `<option value="${escapeHtml(v)}" ${v === cls ? "selected" : ""}>${escapeHtml(gv(c, "ClassName") || v)}</option>`; }).join("")
         + (cls && !classes.some(c => gv(c, "ClassID") === cls) ? `<option value="${escapeHtml(cls)}" selected>${escapeHtml(cls)}</option>` : "");
         
-    const t = r ? gv(r, "RegattaType") : "", tl = !t || REG_TYPES.includes(t) ? REG_TYPES : [...REG_TYPES, t];
-    $("gType").innerHTML = `<option value="">—</option>` + tl.map(x => `<option ${x === t ? "selected" : ""}>${escapeHtml(x)}</option>`).join("");
-    
     const coord = r ? gv(r, "Coordinator") : "";
     const names = [...new Set((members || []).filter(isActive).map(m => gv(m, "MemberName")).filter(Boolean))].sort();
     if (coord && !names.includes(coord)) names.push(coord);
@@ -657,14 +653,15 @@ function openRgModal(id) {
 
     $("gWeek").value = r ? gv(r, "WeekofMonth") : "";
     $("gTime").value = r ? gv(r, "Time") : "";
-    const fid = r ? gv(r, "formatId") : "";
+    const fid = r ? gv(r, "FormatID") : "";
     $("gFmt").innerHTML = `<option value="">— None —</option>` + formats.filter(f => isActive(f) || gv(f, "formatId") === fid)
         .map(f => `<option value="${escapeHtml(gv(f, "formatId"))}" ${gv(f, "formatId") === fid ? "selected" : ""}>${escapeHtml(gv(f, "name"))}</option>`).join("");
         
-    $("gHF").value = r ? gv(r, "Hcap Formula") : "";
-    ["<4", "<7", "<13", "13+"].forEach((k, i) => $("gB" + (i + 1)).value = r ? gv(r, k) : "");
+    $("gEntryType").value = r ? gv(r, "EntryType") : "";
+    $("gHcapTrack").value = r ? (String(gv(r, "HandicapTracking")).toLowerCase() === "true" ? "true" : "false") : "false";
+
     $("rgModalStatus").className = "modal-status";
-    ["gName", "gClass", "gType", "gCoord", "gWeek", "gTime", "gFmt", "gHF", "gB1", "gB2", "gB3", "gB4"].forEach(i => { if($(i)) $(i).disabled = !CAN_WRITE; });
+    ["gName", "gClass", "gCoord", "gWeek", "gTime", "gFmt", "gEntryType", "gHcapTrack"].forEach(i => { if($(i)) $(i).disabled = !CAN_WRITE; });
     
     $("rgModal").classList.add("open");
 }
