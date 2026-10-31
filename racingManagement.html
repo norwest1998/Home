@@ -659,7 +659,7 @@ function openRgModal(id) {
     $("gName").value = r ? gv(r, "SeriesName") : "";
     
     const cls = r ? gv(r, "AllowedClasses") : "";
-    $("gClass").innerHTML = `<option value="">— Select —</option>` + classes.map(c => {
+    $("gClass").innerHTML = `<option value="">All Classes</option>` + classes.map(c => {
         const v = gv(c, "ClassID"); return `<option value="${escapeHtml(v)}" ${v === cls ? "selected" : ""}>${escapeHtml(gv(c, "ClassName") || v)}</option>`; }).join("")
         + (cls && !classes.some(c => gv(c, "ClassID") === cls) ? `<option value="${escapeHtml(cls)}" selected>${escapeHtml(cls)}</option>` : "");
         
@@ -895,7 +895,7 @@ function renderRegattas() {
                 ${opts.map(f => `<option value="${escapeHtml(gv(f, "formatId"))}" ${gv(f, "formatId") === cur ? "selected" : ""}>${escapeHtml(gv(f, "name"))}${isActive(f) ? "" : " (archived)"}</option>`).join("")}
             </select></td>
             <td>${cur ? escapeHtml(summary(specsFor(cur))) : '<span class="sub">—</span>'}</td></tr>`;
-    }).join("");
+    }).join("");    
     $("regEmpty").style.display = rows.length ? "none" : "block";
 }
 $("regFilter").addEventListener("change", renderRegattas);
