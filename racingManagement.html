@@ -302,14 +302,15 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 
     <div class="modal-overlay" id="rgModal">
         <div class="modal" style="max-width:640px;">
-            <div class="modal-header"><h3 id="rgTitle">New Regatta</h3><button class="modal-close" id="rgClose">✕</button></div>
+            <div class="modal-header"><h3 id="rgTitle">New Series</h3><button class="modal-close" id="rgClose">✕</button></div>
             <div class="form-row">
-                <div class="form-group"><label>ID *</label><input type="text" id="gID" placeholder="e.g. R7"></div>
+                <div class="form-group"><label>ID *</label><input type="text" id="gID" placeholder="e.g. S7"></div>
                 <div class="form-group"><label>Championship name *</label><input type="text" id="gName"></div>
             </div>
-            <div class="form-row">
+            <div class="form-row triple">
                 <div class="form-group"><label>Class *</label><select id="gClass"></select></div>
-                <div class="form-group"><label>Regatta type</label><select id="gType"></select></div>
+                <div class="form-group"><label>Series type</label><select id="gType"></select></div>
+                <div class="form-group"><label>Coordinator</label><select id="gCoord"></select></div>
             </div>
             <div class="form-row triple">
                 <div class="form-group"><label>Week of month</label><input type="text" id="gWeek" placeholder="e.g. 2 or 2,4"></div>
@@ -329,7 +330,7 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
             <div class="modal-footer">
                 <span class="modal-status" id="rgModalStatus"></span>
                 <button class="btn btn-ghost" id="rgCancel">Close</button>
-                <button class="btn btn-primary ro-hide" id="rgSave">Save Regatta</button>
+                <button class="btn btn-primary ro-hide" id="rgSave">Save Series</button>
             </div>
         </div>
     </div>
@@ -639,22 +640,22 @@ function renderRegList() {
 function openRgModal(id) {
     editingRgId = id || null;
     const r = id ? regattas.find(r => gv(r, "ID") === id) : null;
-    $("rgTitle").textContent = r ? (CAN_WRITE ? "Edit Regatta" : "View Regatta") : "New Regatta";
+    $("rgTitle").textContent = r ? (CAN_WRITE ? "Edit Series" : "View Series") : "New Series";
+    
+    // Automatically suggest 'S' prefix for Series instead of 'R' for Regattas
     const nextNum = Math.max(0, ...regattas.map(x => parseInt(gv(x, "ID").replace(/\D/g, "")) || 0)) + 1;
-    $("gID").value = r ? id : "R" + nextNum; $("gID").disabled = !!r || !CAN_WRITE;   
+    $("gID").value = r ? id : "S" + nextNum; 
+    $("gID").disabled = !!r || !CAN_WRITE;   
+    
     $("gName").value = r ? gv(r, "ChampionshipName") : "";
+    
     const cls = r ? gv(r, "Class") : "";
     $("gClass").innerHTML = `<option value="">— Select —</option>` + classes.map(c => {
         const v = gv(c, "ClassID"); return `<option value="${escapeHtml(v)}" ${v === cls ? "selected" : ""}>${escapeHtml(gv(c, "ClassName") || v)}</option>`; }).join("")
         + (cls && !classes.some(c => gv(c, "ClassID") === cls) ? `<option value="${escapeHtml(cls)}" selected>${escapeHtml(cls)}</option>` : "");
+        
     const t = r ? gv(r, "RegattaType") : "", tl = !t || REG_TYPES.includes(t) ? REG_TYPES : [...REG_TYPES, t];
     $("gType").innerHTML = `<option value="">—</option>` + tl.map(x => `<option ${x === t ? "selected" : ""}>${escapeHtml(x)}</option>`).join("");
-    
-    // Dynamically inject Coordinator field if not present in HTML
-    if (!$("gCoord")) {
-        $("gType").parentElement.insertAdjacentHTML("afterend", `<div class="form-group"><label>Coordinator</label><select id="gCoord"></select></div>`);
-        $("gType").closest(".form-row").classList.add("triple");
-    }
     
     const coord = r ? gv(r, "Coordinator") : "";
     const names = [...new Set((members || []).filter(isActive).map(m => gv(m, "MemberName")).filter(Boolean))].sort();
@@ -666,10 +667,12 @@ function openRgModal(id) {
     const fid = r ? gv(r, "formatId") : "";
     $("gFmt").innerHTML = `<option value="">— None —</option>` + formats.filter(f => isActive(f) || gv(f, "formatId") === fid)
         .map(f => `<option value="${escapeHtml(gv(f, "formatId"))}" ${gv(f, "formatId") === fid ? "selected" : ""}>${escapeHtml(gv(f, "name"))}</option>`).join("");
+        
     $("gHF").value = r ? gv(r, "Hcap Formula") : "";
     ["<4", "<7", "<13", "13+"].forEach((k, i) => $("gB" + (i + 1)).value = r ? gv(r, k) : "");
     $("rgModalStatus").className = "modal-status";
     ["gName", "gClass", "gType", "gCoord", "gWeek", "gTime", "gFmt", "gHF", "gB1", "gB2", "gB3", "gB4"].forEach(i => { if($(i)) $(i).disabled = !CAN_WRITE; });
+    
     $("rgModal").classList.add("open");
 }
 
@@ -677,22 +680,33 @@ const closeRgModal = () => $("rgModal").classList.remove("open");
 
 async function saveRegatta() {
     const id = $("gID").value.trim(), name = $("gName").value.trim(), cls = $("gClass").value, wk = $("gWeek").value.replace(/\s/g, ""), st = $("rgModalStatus");
+    
     if (!id || !name || !cls) return status(st, "ID, name and class are required.", "error");
     if (/\s/.test(id)) return status(st, "ID can't contain spaces.", "error");
     if (!editingRgId && regattas.some(r => gv(r, "ID").toLowerCase() === id.toLowerCase())) return status(st, "ID already exists.", "error");
     if (wk && !/^[1-5](,[1-5])*$/.test(wk)) return status(st, "Week of month must be 1–5, e.g. 2 or 2,4.", "error");
+    
     const data = { 
-        ID: id, ChampionshipName: name, Class: cls, RegattaType: $("gType").value, 
-        Coordinator: $("gCoord") ? $("gCoord").value : "",
-        WeekofMonth: wk, Time: $("gTime").value,
-        formatId: $("gFmt").value, "Hcap Formula": $("gHF").value.trim(),
-        "<4": $("gB1").value.trim(), "<7": $("gB2").value.trim(), "<13": $("gB3").value.trim(), "13+": $("gB4").value.trim() 
+        ID: id, 
+        ChampionshipName: name, 
+        Class: cls, 
+        RegattaType: $("gType").value, 
+        Coordinator: $("gCoord").value,
+        WeekofMonth: wk, 
+        Time: $("gTime").value,
+        formatId: $("gFmt").value, 
+        "Hcap Formula": $("gHF").value.trim(),
+        "<4": $("gB1").value.trim(), 
+        "<7": $("gB2").value.trim(), 
+        "<13": $("gB3").value.trim(), 
+        "13+": $("gB4").value.trim() 
     };
+    
     const btn = $("rgSave"); btn.disabled = true;
     try {
         if (editingRgId) await updateSheet(R, "Series", editingRgId, data);
-        else await appendSheet(R, "Series", { ...data, entryRequired: false });
-        status(st, "Regatta saved.", "success");
+        else await appendSheet(R, "Series", { ...data, EntryRequired: false });
+        status(st, "Series saved.", "success");
         await refresh(); setTimeout(closeRgModal, 700);
     } catch (e) { status(st, "Error saving: " + e.message, "error"); }
     finally { btn.disabled = false; }
