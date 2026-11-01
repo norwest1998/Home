@@ -1604,14 +1604,14 @@ const fmtYMD = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")
 const parseYMD = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
 const classImg = c => `images/classes/${INSIGNIA_OVERRIDES[c] || c + ".png"}`;
 
-function fillSeriesOptions(selectedId = "") {
+function fillSeriesOptions(selectedName = "") {
   modalSeries.innerHTML = `<option value="">Select Series...</option>` +
-    seriesList.map(s => `<option value="${escapeHtml(gv(s,"ID"))}">${escapeHtml(gv(s,"SeriesName"))}</option>`).join("");
-  modalSeries.value = selectedId;
+    seriesList.map(s => `<option value="${escapeHtml(gv(s,"SeriesName"))}">${escapeHtml(gv(s,"SeriesName"))}</option>`).join("");
+  modalSeries.value = selectedName;
   applySeries();
 }
 function applySeries() {
-  const s = seriesList.find(r => gv(r,"ID") === modalSeries.value);
+  const s = seriesList.find(r => gv(r,"SeriesName") === modalSeries.value);   // was ID
   const f = s && formatList.find(x => gv(x,"formatId") === gv(s,"FormatID"));
   modalSeriesID.value    = s ? gv(s,"ID") : "";
   modalClass.value       = s ? (gv(s,"AllowedClasses") || "ALL") : "";
@@ -1787,7 +1787,8 @@ eventForm.addEventListener("submit", async (e) => {
   
   if (!isAdd || ["Competition", "Social"].includes(modalEventType.value)) {
     Object.assign(base, { 
-      "SeriesID": modalSeries.value,
+      "SeriesID": modalSeriesID.value,
+      "EventName": modalSeries.value,
       "Class": modalClass.value,
       "Regatta Type": modalRegattaType.value,   // now holds the Racing Format Name
       "Season": modalSeason.value, 
@@ -2124,6 +2125,7 @@ async function loadData() {
     eventData.forEach(e => {
       if (!e.HexKey) e.HexKey = `${e.Date}|${e.Start || ""}|${e.Class || ""}`;
       if (!e.Season) e.Season = inferSeason(e.Date);
+      if (e["Event Name"] !== undefined) e.Event = e["Event Name"];
     });
 
     classes  = await fetchSheet(DOMAIN.members, "Classes");
