@@ -2273,6 +2273,19 @@
     let seriesReg = {};
     const seriesLabel = (id, ev) => (seriesReg[id] && seriesReg[id].name) || (ev && ev.seriesName) || id;
 
+    // Series for an event: backend seriesId if supplied, else match the event name against known series names (longest name wins)
+    function evSeriesId(ev) {
+      if (ev.seriesId) return String(ev.seriesId);
+      const n = String(ev.seriesName || ev.eventName || '').trim().toLowerCase();
+      if (!n) return '';
+      let best = '', len = 0;
+      Object.values(seriesReg).forEach(x => {
+        const sn = String(x.name || '').trim().toLowerCase();
+        if (sn && n.includes(sn) && sn.length > len) { best = x.id; len = sn.length; }
+      });
+      return best;
+    }
+
     function loadSeriesReg() {
       if (typeof apiGet !== 'function') return;
       apiGet('seriesOverview').then(r => {
@@ -2299,7 +2312,7 @@
 
       const seen = new Map();   // seriesId -> first event (for label and class image)
       annualCalendarMonths.forEach(m => (m.events || []).forEach(ev => {
-        if (ev.seriesId && !seen.has(ev.seriesId)) seen.set(ev.seriesId, ev);
+        const sid = evSeriesId(ev); if (sid && !seen.has(sid)) seen.set(sid, ev);
       }));
 
       const allBtn = `
@@ -2334,7 +2347,7 @@
         monthLabel: month.monthLabel,
         events: activeCalendarSeries === 'all'
           ? month.events
-          : (month.events || []).filter(ev => ev.seriesId === activeCalendarSeries)
+          : (month.events || []).filter(ev => evSeriesId(ev) === activeCalendarSeries)
       })).join('');
       if (window.lucide) lucide.createIcons();
     }
@@ -2349,8 +2362,8 @@
                     style="width:30px;height:30px;object-fit:contain;flex-shrink:0;display:block;background:rgba(255,255,255,0.15);border-radius:6px;padding:3px;backdrop-filter:blur(4px);">`
               : `<div style="width:30px;height:30px;flex-shrink:0;"></div>`;
 
-            const rs = ev.seriesId ? regIconState(ev.seriesId) : null;
-            const href = 'seriesRegistration.html?series=' + encodeURIComponent(ev.seriesId || '') +
+            const sid = evSeriesId(ev), rs = sid ? regIconState(sid) : null;
+            const href = 'seriesRegistration.html?series=' + encodeURIComponent(sid || '') +
                          '&event=' + encodeURIComponent(ev.eventId || ev.id || '') +
                          '&date=' + encodeURIComponent(ev.dateLabel || '');
             const regHTML = rs
