@@ -2166,7 +2166,7 @@
         return;
       }
       
-      // Format Event Name: Class + Regatta Type
+      // Event Name 
       const eventName = data.event.eventName || 
         [data.event.className || data.event.boatClass, data.event.regattaType].filter(Boolean).join(' ') || 
         data.event.championship;

@@ -1013,6 +1013,8 @@ async function loadAvgRequests() {
             raceType:   r["Regatta Type"],
             raceDate:   r["Date"],
             conflict:   r["Conflicting Regatta"],
+            confRegId:  r["ConfRegID"],
+            decidedBy:  r["Decision By"],
             submitted:  r["Timestamp"],
             status:     String(r["Status"] || "pending").toLowerCase()
         }));
@@ -1939,7 +1941,7 @@ const _conflictCache = {};
 const normName = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 async function lookupConflictResult(r) {
-    const id = (String(r.conflict || '').match(/\d{4,}/) || [])[0];   // works for "21099" or ".../results/21099"
+    const id = String(r.confRegId || '').match(/\d{4,}/)?.[0];   // works for "21099" or ".../results/21099"
     if (!id) return { published: false };
 
     if (!_conflictCache[id]) {
