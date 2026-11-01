@@ -2026,7 +2026,7 @@
     let memberFilters = { membership: '', active: false, whatsapp: false, committee: false };
     let activeAppStatus = 'all';
     let boatFilters = { class: 'all', active: false, gh: false };
-    let activeCalendarClass = 'all';
+    let activeCalendarSeries = 'all';
 
     // Utilities
     function esc(s) { const d = document.createElement('div'); d.textContent = (s == null) ? '' : String(s); return d.innerHTML; }
@@ -2266,37 +2266,61 @@
     allEvents = calData.allEvents || [];
     renderCalendarFilters();
     renderCalendarGrid();
+    loadSeriesReg();
     }
     
+    // Registration state per series (EntryRequired series only), from the gateway's seriesOverview
+    let seriesReg = {};
+    const seriesLabel = (id, ev) => (seriesReg[id] && seriesReg[id].name) || (ev && ev.seriesName) || id;
+
+    function loadSeriesReg() {
+      if (typeof apiGet !== 'function') return;
+      apiGet('seriesOverview').then(r => {
+        seriesReg = Object.fromEntries((r.values || []).map(x => [x.id, x]));
+        renderCalendarFilters();
+        renderCalendarGrid();
+      }).catch(e => console.warn('seriesOverview failed', e));
+    }
+
+    // glow = open, whatsapp = closes within 3 days, signal = closed
+    function regIconState(seriesId) {
+      const s = seriesReg[seriesId];
+      if (!s) return null;
+      if (!s.open) return { color: 'var(--signal)', tip: 'Registration closed' };
+      const close = s.closesOn ? new Date(s.closesOn) : null;
+      if (close && !isNaN(close) && close - Date.now() <= 3 * 864e5)
+        return { color: 'var(--whatsapp)', tip: 'Registration closes ' + close.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) };
+      return { color: 'var(--glow)', tip: 'Registration open' };
+    }
+
     function renderCalendarFilters() {
       const wrap = document.getElementById('calendarFilters');
       if (!wrap) return;
 
-      const classesPresent = Array.from(new Set(
-        annualCalendarMonths.flatMap(m => (m.events || []).map(ev => ev.boatClass)).filter(Boolean)
-      ));
-      const orderedClasses = Object.keys(CLASS_IMAGE_MAP).filter(c => classesPresent.includes(c));
-      classesPresent.forEach(c => { if (!orderedClasses.includes(c)) orderedClasses.push(c); });
+      const seen = new Map();   // seriesId -> first event (for label and class image)
+      annualCalendarMonths.forEach(m => (m.events || []).forEach(ev => {
+        if (ev.seriesId && !seen.has(ev.seriesId)) seen.set(ev.seriesId, ev);
+      }));
 
       const allBtn = `
-        <button class="cal-filter-btn ${activeCalendarClass === 'all' ? 'active' : ''}" data-class="all">
+        <button class="cal-filter-btn ${activeCalendarSeries === 'all' ? 'active' : ''}" data-series="all">
           <span class="cal-filter-icon--all">★</span>
-          <span>All Classes</span>
+          <span>All Series</span>
         </button>`;
 
-      const classBtns = orderedClasses.map(cls => {
-        const imgUrl = getClassImage(cls);
+      const btns = [...seen].map(([id, ev]) => {
+        const imgUrl = getClassImage(ev.boatClass);
         return `
-          <button class="cal-filter-btn ${activeCalendarClass === cls ? 'active' : ''}" data-class="${esc(cls)}">
-            ${imgUrl ? `<img class="cal-filter-icon" src="${esc(imgUrl)}" alt="${esc(cls)}">` : ''}
-            <span>${esc(cls)}</span>
+          <button class="cal-filter-btn ${activeCalendarSeries === id ? 'active' : ''}" data-series="${esc(id)}">
+            ${imgUrl ? `<img class="cal-filter-icon" src="${esc(imgUrl)}" alt="${esc(ev.boatClass)}">` : ''}
+            <span>${esc(seriesLabel(id, ev))}</span>
           </button>`;
       }).join('');
 
-      wrap.innerHTML = allBtn + classBtns;
+      wrap.innerHTML = allBtn + btns;
       wrap.querySelectorAll('.cal-filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          activeCalendarClass = btn.dataset.class;
+          activeCalendarSeries = btn.dataset.series;
           renderCalendarFilters();
           renderCalendarGrid();
         });
@@ -2308,10 +2332,11 @@
       if (!grid) return;
       grid.innerHTML = annualCalendarMonths.map(month => buildMonthHTML({
         monthLabel: month.monthLabel,
-        events: activeCalendarClass === 'all'
+        events: activeCalendarSeries === 'all'
           ? month.events
-          : (month.events || []).filter(ev => ev.boatClass === activeCalendarClass)
+          : (month.events || []).filter(ev => ev.seriesId === activeCalendarSeries)
       })).join('');
+      if (window.lucide) lucide.createIcons();
     }
 
     function buildMonthHTML(month) {
@@ -2324,6 +2349,15 @@
                     style="width:30px;height:30px;object-fit:contain;flex-shrink:0;display:block;background:rgba(255,255,255,0.15);border-radius:6px;padding:3px;backdrop-filter:blur(4px);">`
               : `<div style="width:30px;height:30px;flex-shrink:0;"></div>`;
 
+            const rs = ev.seriesId ? regIconState(ev.seriesId) : null;
+            const href = 'seriesRegistration.html?series=' + encodeURIComponent(ev.seriesId || '') +
+                         '&event=' + encodeURIComponent(ev.eventId || ev.id || '') +
+                         '&date=' + encodeURIComponent(ev.dateLabel || '');
+            const regHTML = rs
+              ? `<a href="${esc(href)}" title="${esc(rs.tip)}" aria-label="${esc(rs.tip)}"
+                    style="margin-left:auto;flex-shrink:0;display:flex;color:${rs.color};"><i data-lucide="log-in" style="width:18px;height:18px;"></i></a>`
+              : '';
+
             return `
               <div class="cal-event-item" style="display:flex;flex-direction:row;align-items:center;gap:12px;">
                 ${imageHTML}
@@ -2331,9 +2365,10 @@
                   <span class="date">${esc(dateStr)}</span>
                   <span class="name">${esc(ev.eventName)}</span>
                 </div>
+                ${regHTML}
               </div>`;
           }).join('')
-        : `<div class="cal-event-item"><span class="name">${activeCalendarClass === 'all' ? 'No events scheduled' : 'No ' + esc(activeCalendarClass) + ' events this month'}</span></div>`;
+        : `<div class="cal-event-item"><span class="name">${activeCalendarSeries === 'all' ? 'No events scheduled' : 'No ' + esc(seriesLabel(activeCalendarSeries)) + ' events this month'}</span></div>`;
 
       return `<div class="cal-month"><h4>${esc(month.monthLabel)}</h4>${eventsHTML}</div>`;
     }

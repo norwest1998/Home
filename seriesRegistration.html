@@ -78,9 +78,12 @@ function render() {
         const boats = s.boats.map(b => {
             const mine = s.myEntries.find(e => e.boatId === b.boatId && String(e.status).toLowerCase() === "entered");
             const label = `${escapeHtml(b.class)} #${escapeHtml(b.sailNo)} <span class="sub">${escapeHtml(b.model || "")}</span>`;
+            const hasOther = s.type === "By member" && s.myEntries.some(e => String(e.status).toLowerCase() === "entered");
             const btn = mine
                 ? `<span class="badge badge-full">Entered</span> <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" data-act="withdraw" data-entry="${escapeHtml(mine.entryId)}" ${s.open ? "" : "disabled"}>Withdraw</button>`
-                : `<button class="btn btn-primary" style="padding:4px 12px;font-size:12px;" data-act="enter" data-reg="${escapeHtml(s.id)}" data-boat="${escapeHtml(b.boatId)}" ${s.open ? "" : "disabled"}>Enter</button>`;
+                : hasOther
+                    ? `<span class="sub">Already entered</span>`
+                    : `<button class="btn btn-primary" style="padding:4px 12px;font-size:12px;" data-act="enter" data-reg="${escapeHtml(s.id)}" data-boat="${escapeHtml(b.boatId)}" ${s.open ? "" : "disabled"}>Enter</button>`;
             return `<div class="boat-row"><div>${label}</div><div>${btn}</div></div>`;
         }).join("") || `<div class="notice">You have no active ${escapeHtml(s.class)} boat that can enter this series.</div>`;
         return `<div class="glass series-card">
