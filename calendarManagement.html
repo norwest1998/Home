@@ -870,14 +870,17 @@ select.form-input option{background:var(--ocean-mid);color:var(--foam)}   /* fix
           <input type="time" id="modalFinish" class="form-input" required></div>
         <div class="form-group full-field-only"><label for="modalMonth">Month</label>
           <input type="text" id="modalMonth" class="form-input" readonly></div>
-
         <div class="form-section full-field-only">Competition Details</div>
+        <div class="form-group full-field-only"><label for="modalSeries">Series Name</label>
+          <select id="modalSeries" class="form-input"></select></div>
+        <div class="form-group full-field-only"><label for="modalSeriesID">Series ID</label>
+          <input type="text" id="modalSeriesID" class="form-input" readonly></div>
         <div class="form-group full-field-only"><label for="modalClass">Class</label>
-          <select id="modalClass" class="form-input"></select></div>
+          <input type="text" id="modalClass" class="form-input" readonly></div>
         <div class="form-group full-field-only hidden" id="emblemGroup"><label>Emblem</label>
           <div class="emblem-preview"><img id="modalEmblemImg" class="emblem-img" alt="Emblem"></div></div>
-        <div class="form-group full-field-only"><label for="modalRegattaType">Regatta Type</label>
-          <select id="modalRegattaType" class="form-input"></select></div>
+        <div class="form-group full-field-only"><label for="modalRegattaType">Racing Format Name</label>
+          <input type="text" id="modalRegattaType" class="form-input" readonly></div>
         <div class="form-group full-field-only"><label for="modalSeason">Season</label>
           <select id="modalSeason" class="form-input"></select></div>
         <div class="form-group full-field-only"><label for="modalRoundNo">Round No</label>
@@ -1053,6 +1056,11 @@ const modalEvent = document.getElementById("modalEvent");
 const modalEmblemImg = document.getElementById("modalEmblemImg");
 const modalRepeat = document.getElementById("modalRepeat");
 const modalRepeatUntil = document.getElementById("modalRepeatUntil");
+const modalSeries = document.getElementById("modalSeries");
+const modalSeriesID = document.getElementById("modalSeriesID");
+
+let seriesList = [], formatList = [];
+const gv = (row, k) => { const m = Object.keys(row).find(x => x.toLowerCase().trim() === k.toLowerCase()); return m ? String(row[m]).trim() : ""; };
 
 function logAction(msg) {
   const time = new Date().toLocaleTimeString();
@@ -1596,18 +1604,24 @@ const fmtYMD = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")
 const parseYMD = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
 const classImg = c => `images/classes/${INSIGNIA_OVERRIDES[c] || c + ".png"}`;
 
-function fillClassOptions() {
-  modalClass.innerHTML = `<option value="">Select Class...</option>` +
-    classes.filter(c => c.ClassName !== "M")
-           .map(c => `<option value="${escapeHtml(c.ClassName)}">${escapeHtml(c.ClassName)}</option>`).join("");
+function fillSeriesOptions(selectedId = "") {
+  modalSeries.innerHTML = `<option value="">Select Series...</option>` +
+    seriesList.map(s => `<option value="${escapeHtml(gv(s,"ID"))}">${escapeHtml(gv(s,"SeriesName"))}</option>`).join("");
+  modalSeries.value = selectedId;
+  applySeries();
 }
-function fillRegattaTypes(selected = "") {
-  const cls = modalClass.value;
-  const types = [...new Set(regattas.filter(r => !cls || r.Class === cls).map(r => r.RegattaType).filter(Boolean))].sort();
-  modalRegattaType.innerHTML = `<option value="">Select Regatta Type...</option>` +
-    types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
-  modalRegattaType.value = selected;
+function applySeries() {
+  const s = seriesList.find(r => gv(r,"ID") === modalSeries.value);
+  const f = s && formatList.find(x => gv(x,"formatId") === gv(s,"FormatID"));
+  modalSeriesID.value    = s ? gv(s,"ID") : "";
+  modalClass.value       = s ? (gv(s,"AllowedClasses") || "ALL") : "";
+  modalRegattaType.value = f ? gv(f,"name") : "";
+  const c = modalClass.value;
+  document.getElementById("emblemGroup").classList.toggle("hidden", !c || c === "ALL");
+  if (c && c !== "ALL") modalEmblemImg.src = classImg(c);
+  updateAutoEventName();
 }
+modalSeries.addEventListener("change", applySeries);
 function fillSeasons(selected = "") {
   const cur = `${CURRENT_SEASON_START}-${String(CURRENT_SEASON_START + 1).slice(-2)}`;
   const list = [...new Set([cur, ...eventData.map(e => e.Season).filter(Boolean)])]
@@ -1702,7 +1716,7 @@ function openAddEventModal() {
   modalResults.value = "Not Started";
   document.getElementById("emblemGroup").classList.add("hidden");
   document.getElementById("repeatGroup").classList.remove("hidden");
-  fillClassOptions(); fillRegattaTypes(); fillSeasons();
+  fillSeriesOptions(); fillSeasons();  fillSeasons();
   updateRepeatLabels();
   updateModalVisibility();
   eventModal.classList.remove("hidden");
@@ -1727,10 +1741,11 @@ function openEditEventModal(hexKey) {
   modalRoundNo.value = event["Round no"] || "";
   modalResults.value = event.Results || "Not Started";
   modalEvent.value = event.Event || "";
-  fillClassOptions();
-  modalClass.value = event.Class || "";
-  modalClass.dispatchEvent(new Event("change"));
-  fillRegattaTypes(event["Regatta Type"] || event.Competition || "");
+  fillSeriesOptions(event.SeriesID || "");
+  if (!event.SeriesID) {   // legacy events without a series
+    modalClass.value = event.Class || "";
+    modalRegattaType.value = event["Regatta Type"] || event.Competition || "";
+  }
   fillSeasons(event.Season);
   document.getElementById("repeatGroup").classList.add("hidden");
 
@@ -1772,8 +1787,9 @@ eventForm.addEventListener("submit", async (e) => {
   
   if (!isAdd || ["Competition", "Social"].includes(modalEventType.value)) {
     Object.assign(base, { 
-      "Class": modalClass.value, 
-      "Regatta Type": modalRegattaType.value,
+      "SeriesID": modalSeries.value,
+      "Class": modalClass.value,
+      "Regatta Type": modalRegattaType.value,   // now holds the Racing Format Name
       "Season": modalSeason.value, 
       "Round no": modalRoundNo.value 
     });
@@ -1812,15 +1828,6 @@ eventForm.addEventListener("submit", async (e) => {
 /* =========================================================
    ACTION HANDLERS (ADD TO CALENDAR, RESCHEDULE, EDIT)
    ========================================================= */
-/* =========================================================
-   ACTION HANDLERS (ADD TO CALENDAR, RESCHEDULE, EDIT)
-   ========================================================= */
-/* =========================================================
-   ACTION HANDLERS (ADD TO CALENDAR, RESCHEDULE, EDIT)
-   ========================================================= */
-/* =========================================================
-   ACTION HANDLERS (ADD TO CALENDAR, RESCHEDULE, EDIT)
-   ========================================================= */
 async function addToCalendar(hexKey) {
   const event = eventData.find(e => e.HexKey === hexKey);
   if (!event) return;
@@ -1828,20 +1835,11 @@ async function addToCalendar(hexKey) {
   const targetCalName = "Regattas - " + event.Class;
   logAction(`Exporting "${event.Class} - ${event.Event || event["Event Type"]}" to ${targetCalName}...`);
 
-  // 1. Look up the corresponding Regatta from the Regattas sheet data
-  const matchedRegatta = regattas.find(r => 
-    r.Class === event.Class && r.RegattaType === event["Regatta Type"]
-  );
-  
-  // 2. Extract the Regatta ID (handles common header naming variations)
-  const regattaID = matchedRegatta ? (matchedRegatta.RegattaID || matchedRegatta["Regatta ID"] || matchedRegatta.HexKey) : null;
-
   try {
-    // 3. Pass the regattaID in the payload so the backend can add it to the Google Calendar Event
-    const data = await gw({ 
-      action: "exportToCalendar", 
+    const data = await gw({
+      action: "exportToCalendar",
       hexKey: hexKey,
-      regattaID: regattaID // <-- Sent to your Google Apps Script backend!
+      seriesID: event.SeriesID || ""
     }, calWebAppUrl);
     
     if (data.error) throw new Error(data.error);
@@ -1939,7 +1937,7 @@ approveBtn.addEventListener("click", async () => {
       "Event Type": event["Event Type"] || "",
       "Event": event.Event || "", // Ensure the Event Name/Title transfers over too
       "Season": event.Season || "",
-      "RegattaID": event.RegattaID || "" // Carries over the Regatta ID
+      "SeriesID": event.SeriesID || ""
     });
 
     // Update the original event to finalize the "Rescheduled" state
@@ -2130,6 +2128,8 @@ async function loadData() {
 
     classes  = await fetchSheet(DOMAIN.members, "Classes");
     regattas = await fetchSheet(DOMAIN.members, "Regattas");
+    seriesList = (await fetchSheet(DOMAIN.racing, "Series")).filter(r => gv(r,"ID"));
+    formatList = await fetchSheet(DOMAIN.racing, "RacingFormats");
 
     renderSeasonDropdown();
     renderMonthDropdown();
@@ -2139,6 +2139,7 @@ async function loadData() {
     renderTable();
     renderAvailableDates();
     renderSelectedEventDetails();
+
 
     // Deep link from Results Management: ?reschedule=<HexKey> preselects the event
     const pre = new URLSearchParams(location.search).get("reschedule");
