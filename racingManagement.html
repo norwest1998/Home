@@ -40,8 +40,9 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 .rm-table tr.clickable { cursor:pointer; }
 .rm-table tr.clickable:hover td { background:rgba(255,255,255,.04); }
 .rm-table tr.archived td { opacity:.55; }
-.row-actions { display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap; }
-.mini-btn { padding:3px 9px !important; font-size:11px !important; }
+.row-actions { display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:nowrap; }
+.mini-btn { padding:4px 8px !important; font-size:11px !important; display:inline-flex; align-items:center; justify-content:center; }
+.mini-btn [data-lucide] { width:14px; height:14px; }
 .sub { font-size:11px; color:var(--foam-dim); }
 
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:1000; align-items:center; justify-content:center; padding:20px; }
@@ -510,9 +511,9 @@ function renderFormats() {
             <td>${used ? `<span class="badge badge-affiliate">${used} series</span>` : '<span class="sub">—</span>'}</td>
             <td><span class="badge ${act ? "badge-full" : "badge-default"}">${act ? "Active" : "Archived"}</span></td>
             <td><div class="row-actions ro-hide">
-                <button class="btn btn-ghost mini-btn" data-act="clone">Clone</button>
-                <button class="btn btn-ghost mini-btn" data-act="archive">${act ? "Archive" : "Restore"}</button>
-                ${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="In use"' : ""}>Delete</button>` : ""}
+                <button class="btn btn-ghost mini-btn" data-act="clone" title="Clone"><i data-lucide="copy-plus"></i></button>
+                <button class="btn btn-ghost mini-btn" data-act="archive" title="${act ? "Archive" : "Restore"}"><i data-lucide="archive"></i></button>
+                ${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" title="Delete" ${used ? 'disabled title="In use"' : ""}><i data-lucide="trash"></i></button>` : ""}
             </div></td></tr>`;
     }).join("");
     $("fmtEmpty").style.display = rows.length ? "none" : "block";
@@ -540,7 +541,7 @@ async function toggleArchive(id, btn) {
 
 async function cloneFormat(id, btn) {
     const f = formats.find(f => gv(f, "formatId") === id);
-    btn.disabled = true; btn.textContent = "…";
+    btn.disabled = true;
     try {
         const nid = uid("FMT");
         await appendSheet(R, "RacingFormats", {
@@ -1015,6 +1016,7 @@ function renderEntries() {
             <td><span class="badge badge-affiliate">Guest</span></td><td></td></tr>`).join("")
         || `<tr class="spinner-row"><td colspan="6">No entries yet.</td></tr>`;
 }
+$("entBody").innerHTML = "";
 $("entBody").addEventListener("click", async e => {
     const b = e.target.closest("button[data-e]"); if (!b) return;
     b.disabled = true;
