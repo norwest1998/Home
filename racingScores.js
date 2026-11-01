@@ -24,6 +24,11 @@ const RacingScoring = (() => {
   const isDone = m => !!sid(m.winner) && norm(m.status) !== "SCHEDULED";
   const cfgOf = c => { try { return typeof c === "string" ? JSON.parse(c || "{}") : (c || {}); } catch (e) { return {}; } };
 
+  cfgOf(json) {
+    try { return typeof json === "string" ? JSON.parse(json) : (json || null); }
+    catch { return null; }
+  }
+
   // Stored pointsA/B win (history is not rewritten by config edits); otherwise computed. Byes and sail-offs (TB) score 0.
   function matchPoints(m, cfg = {}) {
     if (!isDone(m) || norm(m.status) === "BYE" || norm(m.stage) === "TB") return { a: 0, b: 0 };
