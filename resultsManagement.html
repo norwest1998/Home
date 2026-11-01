@@ -1018,7 +1018,7 @@ async function loadAvgRequests() {
             decidedBy:  r["Decision By"],
             decided:    r["Decision Date"],
             submitted:  r["Timestamp"],
-            status:     String(r["Status"] || "pending").toLowerCase()
+            status:     r["Status"]
         }));
     } catch (err) {
         allAvgRequests = [];
