@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="smmc-domain" content="members">
+<meta name="smmc-domain" content="racing">
 <title>Racing Management — Sydney Maritime Modellers Club</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -119,7 +119,7 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
         <div class="glass stat-card"><div class="stat-val" id="stat-active">—</div><div class="stat-label">Active</div></div>
         <div class="glass stat-card"><div class="stat-val accent" id="stat-inuse">—</div><div class="stat-label">In Use</div></div>
         <div class="glass stat-card"><div class="stat-val" id="stat-specs">—</div><div class="stat-label">Race Specs</div></div>
-        <div class="glass stat-card"><div class="stat-val warn" id="stat-unassigned">—</div><div class="stat-label">Regattas Without Format</div></div>
+        <div class="glass stat-card"><div class="stat-val warn" id="stat-unassigned">—</div><div class="stat-label">Series Without Format</div></div>
         <div class="glass stat-card"><div class="stat-val" id="stat-series">—</div><div class="stat-label">Series Open for Entry</div></div>
     </section>
 
@@ -173,7 +173,7 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
             </div>
             <div class="tbl-wrap">
                 <table class="rm-table">
-                    <thead><tr><th>Insignia</th><th>ID</th><th>Name</th><th>Coordinator</th><th>Restrictions</th><th>Handicap</th><th>Regattas</th><th></th></tr></thead>
+                    <thead><tr><th>Insignia</th><th>ID</th><th>Name</th><th>Coordinator</th><th>Restrictions</th><th>Handicap</th><th>Series</th><th></th></tr></thead>
                     <tbody id="clsBody"></tbody>
                 </table>
             </div>
@@ -181,21 +181,21 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
         </div>
     </div>
 
-    <!-- REGATTAS CRUD -->
+    <!-- SERIES SETUP (CRUD) -->
     <div class="section-head">
-        <h2>Regattas</h2>
-        <p>Create and maintain regattas. Format is chosen in Regatta Assignment; series entry settings are in Series Registration.</p>
+        <h2>Series Setup</h2>
+        <p>Create and maintain series: name, allowed class, coordinator, format, entry type and handicap tracking. Registration and closing settings are in the Series table below.</p>
     </div>
     <div class="panel">
-        <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Regatta Setup</h3></div></div>
+        <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Series Setup</h3></div></div>
         <div class="tab-content active">
             <div class="toolbar">
                 <div class="search-wrap">
                     <i class="nav-icon" data-lucide="search" size="8"></i>
-                    <input class="search-input" id="rgSearch" placeholder="Search regattas…">
+                    <input class="search-input" id="rgSearch" placeholder="Search series…">
                 </div>
                 <span class="modal-status" id="rgStatus"></span>
-                <button class="btn btn-primary ro-hide" id="newRgBtn" style="padding:5px 14px;font-size:12px;">+ New Regatta</button>
+                <button class="btn btn-primary ro-hide" id="newRgBtn" style="padding:5px 14px;font-size:12px;">+ New Series</button>
             </div>
             <div class="tbl-wrap">
                 <table class="rm-table">
@@ -203,58 +203,33 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
                     <tbody id="rgBody"></tbody>
                 </table>
             </div>
-            <div class="empty-state" id="rgEmpty" style="display:none;">No regattas found.</div>
+            <div class="empty-state" id="rgEmpty" style="display:none;">No series found.</div>
         </div>
     </div>
 
-    <!-- REGATTA ASSIGNMENT -->
+    <!-- SERIES -->
     <div class="section-head">
-        <h2>Regatta Assignment</h2>
-        <p>Choose the racing format each regatta uses. The regatta type no longer decides the format.</p>
-    </div>
-    <div class="panel">
-        <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Regattas</h3></div></div>
-        <div class="tab-content active">
-            <div class="toolbar">
-                <select class="glass-select" id="regFilter">
-                    <option value="all">All regattas</option>
-                    <option value="none">Without format</option>
-                </select>
-                <button class="btn btn-ghost ro-hide" id="autoAssignBtn" style="padding:5px 12px;font-size:11px;">Auto-assign from regatta type</button>
-                <span class="modal-status" id="regStatus"></span>
-            </div>
-            <div class="tbl-wrap">
-                <table class="rm-table">
-                    <thead><tr><th>ID</th><th>Series</th><th>Allowed Classes</th><th>Format</th><th>Races</th></tr></thead>
-                    <tbody id="regBody"></tbody>
-                </table>
-            </div>
-            <div class="empty-state" id="regEmpty" style="display:none;">No regattas found.</div>
-        </div>
-    </div>
-
-    <!-- SERIES REGISTRATION -->
-    <div class="section-head">
-        <h2>Series Registration</h2>
-        <p>Members enter a series before it starts. Registration closes after the chosen race. Confirm once enough boats have entered, then freeze the field to fix the eligible starters.</p>
+        <h2>Series</h2>
+        <p>Entry, registration and handicap settings per series. Series that need entry are registered before they start; registration closes after the chosen race. Confirm once enough boats have entered, then freeze the field to fix the eligible starters.</p>
     </div>
     <div class="panel">
         <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Series</h3></div></div>
         <div class="tab-content active">
             <div class="toolbar">
                 <select class="glass-select" id="serFilter">
-                    <option value="all">All regattas</option>
+                    <option value="all">All series</option>
                     <option value="required">Entry required</option>
+                    <option value="noformat">Without a format</option>
                 </select>
                 <span class="modal-status" id="serStatus"></span>
             </div>
             <div class="tbl-wrap">
                 <table class="rm-table">
-                    <thead><tr><th>Regatta</th><th>Entry required</th><th>Min entries</th><th>Close after race</th><th>Entries</th><th>Closes</th><th>Status</th><th></th></tr></thead>
+                    <thead><tr><th>Series</th><th>Format</th><th>Entry required</th><th>Entry by</th><th>Handicap tracking</th><th>Min entries</th><th>Close after race</th><th>Entries</th><th>Closes</th><th>Status</th><th></th></tr></thead>
                     <tbody id="serBody"></tbody>
                 </table>
             </div>
-            <div class="empty-state" id="serEmpty" style="display:none;">No regattas found.</div>
+            <div class="empty-state" id="serEmpty" style="display:none;">No series found.</div>
         </div>
     </div>
 
@@ -308,7 +283,7 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
                 <div class="form-group"><label>Series name *</label><input type="text" id="gName"></div>
             </div>
             <div class="form-row triple">
-                <div class="form-group"><label>Allowed Classes *</label><select id="gClass"></select></div>
+                <div class="form-group"><label>Allowed Classes</label><select id="gClass"></select></div>
                 <div class="form-group"><label>Coordinator</label><select id="gCoord"></select></div>
                 <div class="form-group"><label>Racing format</label><select id="gFmt"></select></div>
             </div>
@@ -371,8 +346,8 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 
             <div class="form-row full">
                 <div class="form-group"><label>Participation weighting</label>
-                    <select id="fPart"><option value="false">Off</option><option value="true">On — points = (competitors ÷ eligible starters) × (eligible − position + 1)</option></select>
-                    <span class="sub">Needs series entry on the regatta. Forces high-point scoring.</span></div>
+                    <select id="fPart"><option value="">Off</option><option value="participation">Participation — points = (competitors ÷ eligible starters) × (eligible − position + 1)</option></select>
+                    <span class="sub">Needs Entry required on the series. Forces high-point scoring.</span></div>
             </div>
             <div class="box" id="ptsBox" style="display:none;">
                 <h4>Points preview</h4>
@@ -428,22 +403,12 @@ const RACE_TYPES = [
     { v: "handicap", l: "Handicap", cfg: '{"method":"start_offset"}' }
 ];
 const SCORING = [{ v: "low_point", l: "Low point" }, { v: "high_point", l: "High point" }];
-// Format for a regatta type: the format whose name matches the type (exact, else a single partial match).
-function formatForType(type) {
-    const t = String(type || "").trim().toLowerCase(); if (!t) return "";
-    const act = formats.filter(isActive);
-    const ex = act.filter(f => gv(f, "name").trim().toLowerCase() === t);
-    if (ex.length === 1) return gv(ex[0], "formatId");
-    const part = act.filter(f => gv(f, "name").toLowerCase().includes(t) || t.includes(gv(f, "name").toLowerCase()));
-    return part.length === 1 ? gv(part[0], "formatId") : "";
-}
-
 const _u = JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}");
 const CAN_WRITE = ["editor", "admin"].includes(_u.role);
 const IS_ADMIN  = _u.role === "admin";
 
 /* ============ STATE ============ */
-let formats = [], specs = [], regattas = [], classes = [], entries = [], events = [], guestRegs = [], members = [];
+let formats = [], specs = [], series = [], classes = [], entries = [], events = [], guestRegs = [], members = [], boats = [];
 const SEASON = (() => { const d = new Date(), y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1; return `${y}-${String(y + 1).slice(2)}`; })();
 let editingId = null, modalSpecs = [], removedSpecs = [];
 
@@ -467,7 +432,8 @@ function specsFor(fid, includeInactive = false) {
     return specs.filter(s => gv(s, "formatId") === fid && (includeInactive || isActive(s)))
                 .sort((a, b) => Number(gv(a, "sequence")) - Number(gv(b, "sequence")));
 }
-function usageFor(fid) { return regattas.filter(r => gv(r, "formatId") === fid).length; }
+function usageFor(fid) { return series.filter(r => gv(r, "FormatID") === fid).length; }
+const isParticipation = f => /particip/i.test(gv(f, "WeightingFormat")) || isTrue(gv(f, "WeightingFormat"));
 function summary(list) {
     if (!list.length) return "—";
     return list.map(s => `${gv(s, "count")}× ${typeLabel(gv(s, "raceType"))}`).join(" + ");
@@ -489,20 +455,21 @@ function syncDisc() { $("fThreshWrap").style.display = $("fDiscMode").value === 
 /* ============ LOAD ============ */
 async function loadAll() {
     $("fmtBody").innerHTML = `<tr class="spinner-row"><td colspan="8"><span class="spinner"></span> Loading formats…</td></tr>`;
-    $("regBody").innerHTML = `<tr class="spinner-row"><td colspan="6"><span class="spinner"></span> Loading regattas…</td></tr>`;
+    $("serBody").innerHTML = `<tr class="spinner-row"><td colspan="11"><span class="spinner"></span> Loading series…</td></tr>`;
     ["formats", "active", "inuse", "specs", "unassigned", "series"].forEach(k => $("stat-" + k).innerHTML = `<span class="spinner"></span>`);
     try {
-        [formats, specs, regattas, classes, entries, events, guestRegs, members] = await Promise.all([
+        [formats, specs, series, classes, entries, events, guestRegs, members, boats] = await Promise.all([
             fetchSheet(R, "RacingFormats"), fetchSheet(R, "RaceSpecs"),
             fetchSheet(R, "Series"), fetchSheet(D, "Classes").catch(() => []),
             fetchSheet(R, "SeriesEntries").catch(() => []),
             fetchSheet(DOMAIN.calendar, "Event Data").catch(() => []),
             fetchSheet(DOMAIN.results, "GuestRegistrations").catch(() => []),
-            fetchSheet(D, "Members").catch(() => [])
+            fetchSheet(D, "Members").catch(() => []),
+            fetchSheet(D, "ClassMembers").catch(() => [])
         ]);
         formats = formats.filter(f => gv(f, "formatId"));
         specs = specs.filter(s => gv(s, "specId"));
-        regattas = regattas.filter(r => gv(r, "ID"));
+        series = series.filter(r => gv(r, "ID"));
         classes = classes.filter(c => gv(c, "ClassID"));
     } catch (e) {
         $("fmtBody").innerHTML = `<tr class="spinner-row"><td colspan="8" style="color:#ff6b6b;">Failed to load: ${escapeHtml(e.message)}</td></tr>`;
@@ -511,7 +478,7 @@ async function loadAll() {
     renderAll();
 }
 
-function renderAll() { renderStats(); renderFormats(); renderClasses(); renderRegList(); renderRegattas(); renderSeries(); if ($("seedBtn")) $("seedBtn").style.display = (!formats.length && CAN_WRITE) ? "" : "none"; if (window.lucide) lucide.createIcons(); }
+function renderAll() { renderStats(); renderFormats(); renderClasses(); renderRegList(); renderSeries(); if ($("seedBtn")) $("seedBtn").style.display = (!formats.length && CAN_WRITE) ? "" : "none"; if (window.lucide) lucide.createIcons(); }
 
 function renderStats() {
     const act = formats.filter(isActive);
@@ -519,8 +486,8 @@ function renderStats() {
     $("stat-active").textContent = act.length;
     $("stat-inuse").textContent = formats.filter(f => usageFor(gv(f, "formatId")) > 0).length;
     $("stat-specs").textContent = specs.filter(isActive).length;
-    $("stat-unassigned").textContent = regattas.filter(r => !gv(r, "formatId")).length;
-    $("stat-series").textContent = regattas.filter(r => isTrue(gv(r, "EntryRequired")) && ["Open", "Confirmed", ""].includes(gv(r, "RegStatus"))).length;
+    $("stat-unassigned").textContent = series.filter(r => !gv(r, "formatId")).length;
+    $("stat-series").textContent = series.filter(r => isTrue(gv(r, "EntryRequired")) && ["Open", "Confirmed", ""].includes(gv(r, "RegStatus"))).length;
 }
 
 /* ============ FORMATS TABLE ============ */
@@ -540,7 +507,7 @@ function renderFormats() {
             <td>${totalRaces(sp)}</td>
             <td>${escapeHtml((SCORING.find(s => s.v === gv(f, "scoringSystem")) || { l: gv(f, "scoringSystem") || "—" }).l)}</td>
             <td>${cls.length ? escapeHtml(cls.map(className).join(", ")) : '<span class="sub">Any</span>'}</td>
-            <td>${used ? `<span class="badge badge-affiliate">${used} regatta${used > 1 ? "s" : ""}</span>` : '<span class="sub">—</span>'}</td>
+            <td>${used ? `<span class="badge badge-affiliate">${used} series</span>` : '<span class="sub">—</span>'}</td>
             <td><span class="badge ${act ? "badge-full" : "badge-default"}">${act ? "Active" : "Archived"}</span></td>
             <td><div class="row-actions ro-hide">
                 <button class="btn btn-ghost mini-btn" data-act="clone">Clone</button>
@@ -565,7 +532,7 @@ $("refreshBtn").addEventListener("click", loadAll);
 /* ============ FORMAT ACTIONS ============ */
 async function toggleArchive(id, btn) {
     const f = formats.find(f => gv(f, "formatId") === id), act = isActive(f), used = usageFor(id);
-    if (act && used && !confirm(`"${gv(f, "name")}" is used by ${used} regatta(s). Archive anyway? Existing regattas keep it.`)) return;
+    if (act && used && !confirm(`"${gv(f, "name")}" is used by ${used} series. Archive anyway? Those series keep it.`)) return;
     btn.disabled = true;
     try { await updateSheet(R, "RacingFormats", id, { active: !act }); await refresh(); }
     catch (err) { alert("Failed: " + err.message); btn.disabled = false; }
@@ -580,7 +547,7 @@ async function cloneFormat(id, btn) {
             formatId: nid, name: gv(f, "name") + " (copy)", description: gv(f, "description"),
             scoringSystem: gv(f, "scoringSystem"), discardsRule: gv(f, "discardsRule"),
             allowedClassIds: gv(f, "allowedClassIds"), active: true,
-            participationWeighting: isTrue(gv(f, "participationWeighting"))
+            WeightingFormat: gv(f, "WeightingFormat")
         });
         for (const s of specsFor(id)) await appendSheet(R, "RaceSpecs", specRow(uid("SPC"), nid, s));
         await refresh();
@@ -593,7 +560,7 @@ const specRow = (specId, fid, s) => ({
 });
 
 async function deleteFormat(id, btn) {
-    if (usageFor(id)) return alert("This format is used by regattas. Reassign them first.");
+    if (usageFor(id)) return alert("This format is used by series. Reassign them first.");
     if (!confirm("Permanently delete this format and its race specs?")) return;
     btn.disabled = true;
     try {
@@ -613,7 +580,7 @@ async function seedDefaults() {
     $("seedBtn").disabled = true;
     try {
         for (const [id, name, description, list] of defs) {
-            await appendSheet(R, "RacingFormats", { formatId: id, name, description, scoringSystem: "low_point", discardsRule: "", allowedClassIds: "", active: true, participationWeighting: false });
+            await appendSheet(R, "RacingFormats", { formatId: id, name, description, scoringSystem: "low_point", discardsRule: "", allowedClassIds: "", active: true, WeightingFormat: "" });
             let n = 1;
             for (const [raceType, count] of list)
                 await appendSheet(R, "RaceSpecs", { specId: `SPC-${id.slice(4)}-${n}`, formatId: id, sequence: n++, raceType, count, weight: 1,
@@ -627,41 +594,42 @@ $("seedBtn").addEventListener("click", seedDefaults);
 
 async function refresh() { await loadAll(); if (window.AuditLog) await AuditLog.load(); }
 
-/* ============ REGATTAS CRUD ============ */
-const REG_TYPES = ["Scratch", "Handicap", "Racing", "IOM Format"];
+/* ============ SERIES SETUP (CRUD) ============ */
 let editingRgId = null;
 
 function renderRegList() {
     const q = $("rgSearch").value.trim().toLowerCase();
-    const rows = regattas.filter(r => !q || (gv(r, "ID") + " " + gv(r, "SeriesName") + " " + gv(r, "AllowedClasses")).toLowerCase().includes(q));
+    const rows = series.filter(r => !q || (gv(r, "ID") + " " + gv(r, "SeriesName") + " " + gv(r, "AllowedClasses")).toLowerCase().includes(q));
     $("rgBody").innerHTML = rows.map(r => {
         const id = gv(r, "ID"), fid = gv(r, "FormatID"), f = formats.find(f => gv(f, "formatId") === fid);
-        const used = entries.some(e => gv(e, "RegattaID") === id);
+        const used = entries.some(e => gv(e, "SeriesID") === id);
         return `<tr class="clickable" data-id="${escapeHtml(id)}">
             <td>${escapeHtml(id)}</td><td><strong>${escapeHtml(gv(r, "SeriesName"))}</strong></td>
             <td>${escapeHtml(gv(r, "AllowedClasses"))}</td>
             <td>${escapeHtml(gv(r, "WeekofMonth")) || "—"}</td><td>${escapeHtml(gv(r, "Time")) || "—"}</td>
             <td>${f ? escapeHtml(gv(f, "name")) : '<span class="sub">—</span>'}</td>
-            <td><div class="row-actions">${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="Has series entries"' : ""}>Delete</button>` : ""}</div></td></tr>`;
+            <td><div class="row-actions">${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="Has entries"' : ""}>Delete</button>` : ""}</div></td></tr>`;
     }).join("");
     $("rgEmpty").style.display = rows.length ? "none" : "block";
 }
 
 function openRgModal(id) {
     editingRgId = id || null;
-    const r = id ? regattas.find(r => gv(r, "ID") === id) : null;
+    const r = id ? series.find(r => gv(r, "ID") === id) : null;
     $("rgTitle").textContent = r ? (CAN_WRITE ? "Edit Series" : "View Series") : "New Series";
     
-    const nextNum = Math.max(0, ...regattas.map(x => parseInt(gv(x, "ID").replace(/\D/g, "")) || 0)) + 1;
+    const nextNum = Math.max(0, ...series.map(x => parseInt(gv(x, "ID").replace(/\D/g, "")) || 0)) + 1;
     $("gID").value = r ? id : "S" + nextNum; 
     $("gID").disabled = !!r || !CAN_WRITE;   
     
     $("gName").value = r ? gv(r, "SeriesName") : "";
     
+    // Stored as the class NAME (as on ClassMembers / the Series sheet, e.g. "Soling"); a blank value = mixed fleet.
     const cls = r ? gv(r, "AllowedClasses") : "";
-    $("gClass").innerHTML = `<option value="">All Classes</option>` + classes.map(c => {
-        const v = gv(c, "ClassID"); return `<option value="${escapeHtml(v)}" ${v === cls ? "selected" : ""}>${escapeHtml(gv(c, "ClassName") || v)}</option>`; }).join("")
-        + (cls && !classes.some(c => gv(c, "ClassID") === cls) ? `<option value="${escapeHtml(cls)}" selected>${escapeHtml(cls)}</option>` : "");
+    const known = classes.find(c => [gv(c, "ClassName"), gv(c, "ClassID")].some(x => x && x.toLowerCase() === cls.toLowerCase()));
+    $("gClass").innerHTML = `<option value="">Mixed fleet (General)</option>` + classes.map(c => {
+        const v = gv(c, "ClassName") || gv(c, "ClassID"); return `<option value="${escapeHtml(v)}" ${known === c ? "selected" : ""}>${escapeHtml(v)}</option>`; }).join("")
+        + (cls && !known ? `<option value="${escapeHtml(cls)}" selected>${escapeHtml(cls)}</option>` : "");
         
     const coord = r ? gv(r, "Coordinator") : "";
     const names = [...new Set((members || []).filter(isActive).map(m => gv(m, "MemberName")).filter(Boolean))].sort();
@@ -674,8 +642,8 @@ function openRgModal(id) {
     $("gFmt").innerHTML = `<option value="">— None —</option>` + formats.filter(f => isActive(f) || gv(f, "formatId") === fid)
         .map(f => `<option value="${escapeHtml(gv(f, "formatId"))}" ${gv(f, "formatId") === fid ? "selected" : ""}>${escapeHtml(gv(f, "name"))}</option>`).join("");
         
-    $("gEntryType").value = r ? gv(r, "EntryType") : "";
-    $("gHcapTrack").value = r ? (String(gv(r, "HandicapTracking")).toLowerCase() === "true" ? "true" : "false") : "false";
+    $("gEntryType").value = r && /boat/i.test(gv(r, "EntryType")) ? "Boat" : "Member";
+    $("gHcapTrack").value = r && /^(series|true)$/i.test(gv(r, "HandicapTracking")) ? "true" : "false";
     $("gEntryRequired").value =
         r ? (String(gv(r, "EntryRequired")).toLowerCase() === "true"
             ? "true"
@@ -694,19 +662,19 @@ async function saveRegatta() {
     
     if (!id || !name) return status(st, "ID and name are required.", "error");
     if (/\s/.test(id)) return status(st, "ID can't contain spaces.", "error");
-    if (!editingRgId && regattas.some(r => gv(r, "ID").toLowerCase() === id.toLowerCase())) return status(st, "ID already exists.", "error");
+    if (!editingRgId && series.some(r => gv(r, "ID").toLowerCase() === id.toLowerCase())) return status(st, "ID already exists.", "error");
     if (wk && !/^[1-5](,[1-5])*$/.test(wk)) return status(st, "Week of month must be 1–5, e.g. 2 or 2,4.", "error");
     
     const data = {
         ID: id,
         SeriesName: name,
-        AllowedClasses: cls,                 // changed from AllowedClasses
+        AllowedClasses: cls,                 // class name; blank = mixed fleet
         Coordinator: $("gCoord").value,
         WeekofMonth: wk,
         Time: $("gTime").value,
         FormatID: $("gFmt").value,
         EntryType: $("gEntryType").value.trim(),
-        HandicapTracking: $("gHcapTrack").value === "true",
+        HandicapTracking: $("gHcapTrack").value === "true" ? "Series" : "",       // "Series" = handicaps tracked in SeriesEntries
         EntryRequired: $("gEntryRequired").value === "true"
     };
     
@@ -724,7 +692,7 @@ $("rgBody").addEventListener("click", async e => {
     const tr = e.target.closest("tr[data-id]"); if (!tr) return;
     const id = tr.dataset.id, btn = e.target.closest("button[data-act]");
     if (!btn) return openRgModal(id);
-    if (!confirm(`Permanently delete regatta ${id}? Calendar events and results that reference it will be orphaned.`)) return;
+    if (!confirm(`Permanently delete series ${id}? Calendar events and results that reference it will be orphaned.`)) return;
     btn.disabled = true;
     try { await deleteRow(R, "Series", id); await refresh(); }
     catch (err) { status($("rgStatus"), "Delete failed: " + err.message, "error"); btn.disabled = false; }
@@ -749,7 +717,7 @@ function openModal(id) {
         const d = discardUi(f ? gv(f, "discardsRule") : "");
         $("fDiscMode").value = d.mode; $("fThresh").value = d.t; syncDisc();
         $("fActive").value = f ? String(isActive(f)) : "true";
-        $("fPart").value = f ? String(isTrue(gv(f, "participationWeighting"))) : "false";
+        $("fPart").value = f && isParticipation(f) ? "participation" : "";
         
         const allowed = f ? splitIds(gv(f, "allowedClassIds")) : [];
         $("classChips").innerHTML = (classes || []).map(c => {
@@ -857,7 +825,7 @@ async function saveFormat() {
             discardsRule: mode === "std" ? "" : JSON.stringify({ thresholds: mode === "none" ? [] : th }),
             allowedClassIds: [...document.querySelectorAll("#classChips input:checked")].map(i => i.value).join(","),
             active: $("fActive").value === "true",
-            participationWeighting: $("fPart").value === "true"
+            WeightingFormat: $("fPart").value
         };
 
         if (editingId) await updateSheet(R, "RacingFormats", fid, fdata); else await appendSheet(R, "RacingFormats", fdata);
@@ -880,59 +848,9 @@ $("newFmtBtn").addEventListener("click", () => openModal(null));
 ["modalClose", "modalCancel"].forEach(i => $(i).addEventListener("click", closeModal));
 $("fmtModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeModal(); });
 
-/* ============ REGATTA ASSIGNMENT ============ */
-function renderRegattas() {
-    const flt = $("regFilter").value;
-    const rows = regattas.filter(r => flt !== "none" || !gv(r, "FormatID"));
-    $("regBody").innerHTML = rows.map(r => {
-        const cur = gv(r, "FormatID");
-        const opts = formats.filter(f => isActive(f) || gv(f, "formatId") === cur);
-        return `<tr data-id="${escapeHtml(gv(r, "ID"))}">
-            <td>${escapeHtml(gv(r, "ID"))}</td><td>${escapeHtml(gv(r, "SeriesName"))}</td>
-            <td>${escapeHtml(gv(r, "AllowedClasses"))}</td>
-            <td><select class="glass-select in-table reg-fmt" ${CAN_WRITE ? "" : "disabled"}>
-                <option value="">All Classes</option>
-                ${opts.map(f => `<option value="${escapeHtml(gv(f, "formatId"))}" ${gv(f, "formatId") === cur ? "selected" : ""}>${escapeHtml(gv(f, "name"))}${isActive(f) ? "" : " (archived)"}</option>`).join("")}
-            </select></td>
-            <td>${cur ? escapeHtml(summary(specsFor(cur))) : '<span class="sub">—</span>'}</td></tr>`;
-    }).join("");    
-    $("regEmpty").style.display = rows.length ? "none" : "block";
-}
-$("regFilter").addEventListener("change", renderRegattas);
-
-function classAllowed(reg, fid) {
-    const f = formats.find(f => gv(f, "formatId") === fid), allowed = splitIds(f && gv(f, "allowedClassIds"));
-    if (!allowed.length) return true;
-    const rc = gv(reg, "AllowedClasses").toLowerCase();
-    const c = classes.find(c => [gv(c, "ClassID"), gv(c, "ClassName")].some(x => x && x.toLowerCase() === rc));
-    return !c || allowed.includes(gv(c, "ClassID"));
-}
-$("regBody").addEventListener("change", async e => {
-    if (!e.target.classList.contains("reg-fmt")) return;
-    const id = e.target.closest("tr").dataset.id, fid = e.target.value, reg = regattas.find(r => gv(r, "ID") === id);
-    if (fid && !classAllowed(reg, fid) && !confirm(`Class "${gv(reg, "Class")}" is not in this format's valid classes. Assign anyway?`)) return renderRegattas();
-    e.target.disabled = true;
-    try { await updateSheet(R, "Series", id, { formatId: fid }); status($("regStatus"), `${id} updated.`, "success"); await refresh(); }
-    catch (err) { status($("regStatus"), "Failed: " + err.message, "error"); renderRegattas(); }
-});
-
-async function autoAssign() {
-    const todo = regattas.filter(r => !gv(r, "formatId") && formatForType(gv(r, "RegattaType")));
-    if (!todo.length) return status($("regStatus"), "Nothing to assign (needs the seeded formats; other types are left for you to pick).", "error");
-    if (!confirm(`Assign formats to ${todo.length} regatta(s) based on their current type?`)) return;
-    $("autoAssignBtn").disabled = true;
-    try {
-        for (const r of todo) await updateSheet(R, "Series", gv(r, "ID"), { formatId: formatForType(gv(r, "RegattaType")) });
-        status($("regStatus"), `${todo.length} regatta(s) assigned.`, "success");
-        await refresh();
-    } catch (err) { status($("regStatus"), "Failed: " + err.message, "error"); }
-    $("autoAssignBtn").disabled = false;
-}
-$("autoAssignBtn").addEventListener("click", autoAssign);
-
 /* ============ PARTICIPATION WEIGHTING ============ */
 function syncPart() {
-    const on = $("fPart").value === "true";
+    const on = $("fPart").value === "participation";
     if (on) $("fScoring").value = "high_point";
     $("fScoring").disabled = on || !CAN_WRITE;
     $("ptsBox").style.display = on ? "" : "none";
@@ -947,63 +865,73 @@ function renderPoints() {
             html += `<span class="pv">P${p}: ${RacingScoring.points({ position: p, competitors: C, eligible: E })}</span>`;
         }
     } else {
-        html = '<span class="sub">Scoring preview unavailable (racingScoring.js missing).</span>';
+        html = '<span class="sub">Scoring preview unavailable (racingScores.js missing).</span>';
     }
     $("ptsRows").innerHTML = html || '<span class="sub">Enter eligible starters and competitors.</span>';
 }
+$("fPart").addEventListener("change", syncPart);
+["pvE", "pvC"].forEach(i => $(i).addEventListener("input", renderPoints));
 
-/* ============ SERIES REGISTRATION ============ */
+/* ============ SERIES: format, entry, registration ============ */
 function parseDate(v) {
     const s = String(v || "").trim(); if (!s) return null;
     const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
     const d = new Date(s.replace(/\//g, "-")); return isNaN(d) ? null : d;
 }
-// Event dates of this regatta's series in the season: by Event Data "RegattaID" if present, else Class + Regatta Type.
-function seriesDates(reg) {
-    const id = gv(reg, "ID");
-    let mine = events.filter(o => gv(o, "RegattaID") && gv(o, "RegattaID") === id);
-    if (!mine.length) mine = events.filter(o => gv(o, "Class").toLowerCase() === gv(reg, "Class").toLowerCase()
-                                              && gv(o, "Regatta Type").toLowerCase() === gv(reg, "RegattaType").toLowerCase());
-    const y = parseInt(SEASON), start = new Date(y, 6, 1), end = new Date(y + 1, 6, 1);
-    return mine.map(o => parseDate(gv(o, "Date"))).filter(d => d && d >= start && d < end).sort((a, b) => a - b);
+const ymd = d => `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+const fmtDay = d => d.toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });
+
+// Event dates of a series this season (Event Data rows carry the SeriesID)
+function seriesDates(s) {
+    const id = gv(s, "ID"), y = parseInt(SEASON), start = new Date(y, 6, 1), end = new Date(y + 1, 6, 1);
+    return events.filter(o => gv(o, "SeriesID") === id)
+        .map(o => parseDate(gv(o, "Date"))).filter(d => d && d >= start && d < end).sort((a, b) => a - b);
 }
-function seriesInfo(reg) {
-    const id = gv(reg, "ID"), after = parseInt(gv(reg, "RegCloseAfterRace"), 10) || 3, st = gv(reg, "RegStatus") || "Open";
-    const ev = seriesDates(reg);
+function seriesInfo(s) {
+    const id = gv(s, "ID"), after = parseInt(gv(s, "RegCloseAfterRace"), 10) || 3, st = gv(s, "RegStatus") || "Open";
+    const ev = seriesDates(s);
     let closes = null; if (ev.length >= after) { closes = new Date(ev[after - 1]); closes.setHours(23, 59, 59, 999); }
-    const list = entries.filter(e => gv(e, "RegattaID") === id && gv(e, "Season") === SEASON);
+    const list = entries.filter(e => gv(e, "SeriesID") === id && gv(e, "Season") === SEASON && gv(e, "Status"));
     const entered = list.filter(e => gv(e, "Status").toLowerCase() === "entered");
-    // Guests registered (Results > Guest Registration) for any event of this series, counted once each
-    const ymd = d => `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
-    const days = new Set(ev.map(ymd)), cls = gv(reg, "Class").toLowerCase(), seen = new Set(), guests = [];
+
+    // Guests registered (Results > Guest Registration) for events of this series, counted once each
+    const days = new Set(ev.map(ymd)), allowed = splitIds(gv(s, "AllowedClasses")).map(c => c.toLowerCase()), seen = new Set(), guests = [];
     guestRegs.forEach(g => {
         if (["cancelled", "withdrawn"].includes(gv(g, "Status").toLowerCase())) return;
         const d = parseDate(gv(g, "EventDate"));
-        if (!d || !days.has(ymd(d)) || gv(g, "RaceClass").toLowerCase() !== cls) return;
+        if (!d || !days.has(ymd(d))) return;
+        if (allowed.length && !allowed.includes(gv(g, "RaceClass").toLowerCase())) return;
         const k = (gv(g, "CompetitorName") + "|" + gv(g, "SailNo")).toLowerCase();
         if (!seen.has(k)) { seen.add(k); guests.push(g); }
     });
-    return { id, after, st, closes, list, entered, guests, min: parseInt(gv(reg, "MinEntries"), 10) || 0, ended: !!closes && new Date() > closes };
+    return { id, after, st, closes, list, entered, guests, min: parseInt(gv(s, "MinEntries"), 10) || 0, ended: !!closes && new Date() > closes };
 }
-const fmtDay = d => d.toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });
 
 function renderSeries() {
-    const rows = regattas.filter(r => $("serFilter").value !== "required" || isTrue(gv(r, "EntryRequired")));
+    const flt = $("serFilter").value;
+    const rows = series.filter(r => flt === "all" || (flt === "required" ? isTrue(gv(r, "EntryRequired")) : !gv(r, "FormatID")));
     $("serBody").innerHTML = rows.map(r => {
-        const req = isTrue(gv(r, "EntryRequired")), i = seriesInfo(r), dis = CAN_WRITE ? "" : "disabled";
+        const req = isTrue(gv(r, "EntryRequired")), i = seriesInfo(r), dis = CAN_WRITE ? "" : "disabled", cur = gv(r, "FormatID");
+        const opts = formats.filter(f => isActive(f) || gv(f, "formatId") === cur);
         const stBadge = !req ? '<span class="sub">—</span>'
             : `<span class="badge ${{ Open: "badge-affiliate", Confirmed: "badge-full", Closed: "badge-default", Cancelled: "badge-expired" }[i.st] || "badge-default"}">${escapeHtml(i.st)}</span>`
               + (i.ended && ["Open", "Confirmed"].includes(i.st) ? ' <span class="badge badge-expired">Window ended</span>' : "");
         const ok = i.entered.length >= i.min;
         const btns = !req || !CAN_WRITE ? "" : `
             ${i.st === "Open" ? '<button class="btn btn-ghost mini-btn" data-s="confirm">Confirm</button>' : ""}
-            ${["Open", "Confirmed"].includes(i.st) ? '<button class="btn btn-ghost mini-btn" data-s="freeze">Freeze field</button>' : ""}
+            ${["Open", "Confirmed"].includes(i.st) ? '<button class="btn btn-ghost mini-btn" data-s="sync" title="Write the current members + guests total to EligibleStarters so scoring can use it">Update field</button><button class="btn btn-ghost mini-btn" data-s="freeze">Freeze field</button>' : ""}
             ${["Closed", "Cancelled", "Confirmed"].includes(i.st) ? '<button class="btn btn-ghost mini-btn" data-s="reopen">Reopen</button>' : ""}
             ${i.st !== "Cancelled" ? '<button class="btn btn-ghost mini-btn" data-s="cancel">Cancel</button>' : ""}`;
+        const allowedNames = splitIds(gv(r, "AllowedClasses")).join(", ") || "Mixed fleet";
+        const isBoat = /boat/i.test(gv(r, "EntryType")), tracked = /^(series|true)$/i.test(gv(r, "HandicapTracking"));
         return `<tr data-id="${escapeHtml(i.id)}">
-            <td><strong>${escapeHtml(gv(r, "ChampionshipName"))}</strong><div class="sub">${escapeHtml(i.id)} · ${escapeHtml(gv(r, "Class"))}</div></td>
+            <td><strong>${escapeHtml(gv(r, "SeriesName"))}</strong><div class="sub">${escapeHtml(i.id)} · ${escapeHtml(allowedNames)}</div></td>
+            <td><select class="glass-select in-table ser-fmt" ${dis}><option value="">— None —</option>
+                ${opts.map(f => `<option value="${escapeHtml(gv(f, "formatId"))}" ${gv(f, "formatId") === cur ? "selected" : ""}>${escapeHtml(gv(f, "name"))}${isActive(f) ? "" : " (archived)"}</option>`).join("")}</select></td>
             <td><input type="checkbox" class="ser-req" ${req ? "checked" : ""} ${dis}></td>
+            <td><select class="glass-select ser-type" ${dis}><option value="Member" ${isBoat ? "" : "selected"}>Member</option><option value="Boat" ${isBoat ? "selected" : ""}>Boat</option></select></td>
+            <td><select class="glass-select ser-hcap" ${dis}><option value="">None</option><option value="Series" ${tracked ? "selected" : ""}>Series</option></select></td>
             <td>${req ? `<input type="number" class="cell-in ser-min" min="0" max="60" value="${i.min || ""}" ${dis}>` : ""}</td>
             <td>${req ? `<input type="number" class="cell-in ser-after" min="1" max="30" value="${i.after}" ${dis}>` : ""}</td>
             <td>${req ? `${i.entered.length}${i.min ? " / " + i.min : ""}${i.guests.length ? ` + ${i.guests.length} guest${i.guests.length > 1 ? "s" : ""}` : ""} <span class="badge ${ok ? "badge-full" : "badge-expired"}">${ok ? "Go" : "Below min"}</span>
@@ -1016,55 +944,70 @@ function renderSeries() {
 }
 $("serFilter").addEventListener("change", renderSeries);
 
-async function saveReg(id, fields, msg) {
+function classAllowed(s, fid) {                 // is each of the series' classes valid for the format?
+    const f = formats.find(f => gv(f, "formatId") === fid), allowed = splitIds(f && gv(f, "allowedClassIds"));
+    if (!allowed.length) return true;
+    return splitIds(gv(s, "AllowedClasses")).every(name => {
+        const c = classes.find(c => [gv(c, "ClassID"), gv(c, "ClassName")].some(x => x && x.toLowerCase() === name.toLowerCase()));
+        return !c || allowed.includes(gv(c, "ClassID"));
+    });
+}
+async function saveSeries(id, fields, msg) {
     try { await updateSheet(R, "Series", id, fields); status($("serStatus"), msg || `${id} updated.`, "success"); await refresh(); }
     catch (err) { status($("serStatus"), "Failed: " + err.message, "error"); renderSeries(); }
 }
 $("serBody").addEventListener("change", e => {
     const tr = e.target.closest("tr[data-id]"); if (!tr) return;
-    const id = tr.dataset.id, reg = regattas.find(r => gv(r, "ID") === id);
-    if (e.target.classList.contains("ser-req")) {
-        const on = e.target.checked;
-        saveReg(id, on ? { EntryRequired: true, RegStatus: gv(reg, "RegStatus") || "Open", RegCloseAfterRace: gv(reg, "RegCloseAfterRace") || 3 }
-                       : { EntryRequired: false });
-    } else if (e.target.classList.contains("ser-min")) saveReg(id, { MinEntries: Math.max(0, parseInt(e.target.value) || 0) });
-    else if (e.target.classList.contains("ser-after")) saveReg(id, { RegCloseAfterRace: Math.max(1, parseInt(e.target.value) || 3) });
+    const id = tr.dataset.id, s = series.find(r => gv(r, "ID") === id), c = e.target.classList;
+    if (c.contains("ser-fmt")) {
+        if (e.target.value && !classAllowed(s, e.target.value) && !confirm("This series' class is not in the format's valid classes. Assign anyway?")) return renderSeries();
+        saveSeries(id, { FormatID: e.target.value });
+    } else if (c.contains("ser-req")) {
+        saveSeries(id, e.target.checked ? { EntryRequired: true, RegStatus: gv(s, "RegStatus") || "Open", RegCloseAfterRace: gv(s, "RegCloseAfterRace") || 3 } : { EntryRequired: false });
+    } else if (c.contains("ser-type")) saveSeries(id, { EntryType: e.target.value });
+    else if (c.contains("ser-hcap")) saveSeries(id, { HandicapTracking: e.target.value });
+    else if (c.contains("ser-min")) saveSeries(id, { MinEntries: Math.max(0, parseInt(e.target.value) || 0) });
+    else if (c.contains("ser-after")) saveSeries(id, { RegCloseAfterRace: Math.max(1, parseInt(e.target.value) || 3) });
 });
 $("serBody").addEventListener("click", e => {
     const b = e.target.closest("button[data-s]"); if (!b) return;
-    const id = b.closest("tr").dataset.id, reg = regattas.find(r => gv(r, "ID") === id), i = seriesInfo(reg), a = b.dataset.s;
+    const id = b.closest("tr").dataset.id, s = series.find(r => gv(r, "ID") === id), i = seriesInfo(s), a = b.dataset.s;
+    const field = i.entered.length + i.guests.length;
     if (a === "entries") return openEntries(id);
     if (a === "confirm") {
         if (i.entered.length < i.min && !confirm(`Only ${i.entered.length} of the minimum ${i.min} boats have entered. Confirm anyway?`)) return;
-        return saveReg(id, { RegStatus: "Confirmed" }, `${id} confirmed.`);
+        return saveSeries(id, { RegStatus: "Confirmed" }, `${id} confirmed.`);
     }
+    if (a === "sync") return saveSeries(id, { EligibleStarters: field }, `${id}: eligible starters set to ${field} (provisional).`);
     if (a === "freeze") {
-        const field = i.entered.length + i.guests.length;
         if (!confirm(`Freeze the field at ${field} eligible starter(s) (${i.entered.length} members + ${i.guests.length} guests)? No further entries or withdrawals will be accepted.${i.ended ? "" : "\nThe registration window has not ended yet."}`)) return;
-        return saveReg(id, { RegStatus: "Closed", EligibleStarters: field }, `${id}: field frozen at ${field}.`);
+        return saveSeries(id, { RegStatus: "Closed", EligibleStarters: field }, `${id}: field frozen at ${field}.`);
     }
     if (a === "reopen") {
         if (!confirm("Reopen registration? Eligible starters will be cleared until the field is frozen again.")) return;
-        return saveReg(id, { RegStatus: "Open", EligibleStarters: "" }, `${id} reopened.`);
+        return saveSeries(id, { RegStatus: "Open", EligibleStarters: "" }, `${id} reopened.`);
     }
-    if (a === "cancel" && confirm(`Cancel the "${gv(reg, "ChampionshipName")}" series?`)) saveReg(id, { RegStatus: "Cancelled" }, `${id} cancelled.`);
+    if (a === "cancel" && confirm(`Cancel the "${gv(s, "SeriesName")}" series?`)) saveSeries(id, { RegStatus: "Cancelled" }, `${id} cancelled.`);
 });
 
-/* ---- entries modal ---- */
-let entRegId = null;
+/* ---- entries modal (merged SeriesEntries: registration + handicaps) ---- */
+let entSeriesId = null;
+const memberName = id => { const m = members.find(m => gv(m, "MemberID", "memberId", "ID") === String(id)); return m ? gv(m, "MemberName", "Member") : String(id); };
+const boatLabel = id => { const b = boats.find(b => gv(b, "BoatID") === String(id)); return b ? `${gv(b, "Class")} #${gv(b, "SailNo")}` : String(id); };
 function openEntries(id) {
-    entRegId = id; renderEntries();
+    entSeriesId = id; renderEntries();
     $("entStatus").className = "modal-status";
     $("entModal").classList.add("open");
 }
 function renderEntries() {
-    const reg = regattas.find(r => gv(r, "ID") === entRegId), i = seriesInfo(reg), locked = i.st === "Closed";
-    $("entTitle").textContent = `${gv(reg, "ChampionshipName")} — entries ${SEASON}`;
+    const s = series.find(r => gv(r, "ID") === entSeriesId), i = seriesInfo(s), locked = i.st === "Closed";
+    $("entTitle").textContent = `${gv(s, "SeriesName")} — entries ${SEASON}`;
     $("entSummary").textContent = `${i.entered.length} members entered${i.min ? ` of a minimum ${i.min}` : ""}, plus ${i.guests.length} registered guest(s). ${locked ? "Field is frozen; entries can't be changed here until the series is reopened." : ""}`;
     $("entBody").innerHTML = i.list.map(e => {
         const on = gv(e, "Status").toLowerCase() === "entered", t = new Date(gv(e, "Timestamp"));
-        return `<tr><td>${escapeHtml(gv(e, "MemberName"))}</td><td>${escapeHtml(gv(e, "Class"))} #${escapeHtml(gv(e, "SailNo"))}</td>
-            <td>${escapeHtml(gv(e, "HandicapSnapshot")) || "—"}</td><td>${isNaN(t) ? "" : fmtDay(t)}</td>
+        const st = gv(e, "StartingHandicap"), cu = gv(e, "CurrentHandicap");
+        return `<tr><td>${escapeHtml(memberName(gv(e, "MemberID")))}</td><td>${escapeHtml(boatLabel(gv(e, "BoatID")))}</td>
+            <td>${st !== "" ? escapeHtml(st) : "—"}${cu !== "" && cu !== st ? ` → ${escapeHtml(cu)}` : ""}</td><td>${isNaN(t) ? "" : fmtDay(t)}</td>
             <td><span class="badge ${on ? "badge-full" : "badge-default"}">${escapeHtml(gv(e, "Status"))}</span></td>
             <td>${CAN_WRITE && !locked ? `<button class="btn btn-ghost mini-btn" data-e="${escapeHtml(gv(e, "EntryID"))}" data-to="${on ? "Withdrawn" : "Entered"}">${on ? "Withdraw" : "Reinstate"}</button>` : ""}</td></tr>`;
     }).join("") + i.guests.map(g => `<tr><td>${escapeHtml(gv(g, "CompetitorName"))}<div class="sub">${escapeHtml(gv(g, "HomeClub"))}</div></td>
@@ -1078,14 +1021,13 @@ $("entBody").addEventListener("click", async e => {
     try { await updateSheet(R, "SeriesEntries", b.dataset.e, { Status: b.dataset.to }); await refresh(); renderEntries(); }
     catch (err) { status($("entStatus"), "Failed: " + err.message, "error"); b.disabled = false; }
 });
-
 ["entClose", "entDone"].forEach(i => $(i).addEventListener("click", () => $("entModal").classList.remove("open")));
 $("entModal").addEventListener("click", e => { if (e.target === e.currentTarget) $("entModal").classList.remove("open"); });
 
 /* ============ CLASSES CRUD ============ */
 const RESTRICTIONS = ["One Design", "Closed Class", "Restricted Class", "Open Class"];
 let editingClsId = null;
-const clsRegattas = c => regattas.filter(r => [gv(c, "ClassID"), gv(c, "ClassName")].some(x => x && x.toLowerCase() === gv(r, "Class").toLowerCase())).length;
+const clsRegattas = c => series.filter(r => splitIds(gv(r, "AllowedClasses")).some(a => [gv(c, "ClassID"), gv(c, "ClassName")].some(x => x && x.toLowerCase() === a.toLowerCase()))).length;
 
 function insigniaCell(v) {
     if (!v) return '<span class="sub">—</span>';
@@ -1103,7 +1045,7 @@ function renderClasses() {
             <td>${escapeHtml(gv(c, "Restrictions")) || '<span class="sub">—</span>'}</td>
             <td>${escapeHtml(gv(c, "Handicap")) || '<span class="sub">—</span>'}</td>
             <td>${used ? `<span class="badge badge-affiliate">${used}</span>` : '<span class="sub">—</span>'}</td>
-            <td><div class="row-actions">${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="Used by regattas"' : ""}>Delete</button>` : ""}</div></td></tr>`;
+            <td><div class="row-actions">${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="Used by series"' : ""}>Delete</button>` : ""}</div></td></tr>`;
     }).join("");
     $("clsEmpty").style.display = rows.length ? "none" : "block";
 }
@@ -1148,7 +1090,7 @@ $("clsBody").addEventListener("click", async e => {
     const id = tr.dataset.id, btn = e.target.closest("button[data-act]");
     if (!btn) return openClsModal(id);
     const c = classes.find(c => gv(c, "ClassID") === id);
-    if (clsRegattas(c)) return alert("This class is used by regattas.");
+    if (clsRegattas(c)) return alert("This class is used by series.");
     if (!confirm(`Permanently delete class "${gv(c, "ClassName")}"?`)) return;
     btn.disabled = true;
     try { await deleteRow(D, "Classes", id); await refresh(); }
