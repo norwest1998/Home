@@ -149,7 +149,7 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
             </div>
             <div class="tbl-wrap">
                 <table class="rm-table">
-                    <thead><tr><th>ID</th><th>Format Name</th><th>Description</th><th>Scoring</th><th>Discard Rule</th><th>Classes</th><th></th></tr></thead>
+                    <thead><tr><th>Name / Description</th><th>Format</th>Races<th></th><th>Scoring</th><th>Classes</th><th>Series</th><th>Status</th></tr></thead>
                     <tbody id="fmtBody"></tbody>
                 </table>
             </div>
@@ -517,13 +517,14 @@ function renderFormats() {
             <td>${used ? `<span class="badge badge-affiliate">${used} series</span>` : '<span class="sub">—</span>'}</td>
             <td><span class="badge ${act ? "badge-full" : "badge-default"}">${act ? "Active" : "Archived"}</span></td>
             <td><div class="row-actions ro-hide">
-                <button class="btn btn-ghost mini-btn" data-act="clone">Clone</button>
-                <button class="btn btn-ghost mini-btn" data-act="archive">${act ? "Archive" : "Restore"}</button>
-                ${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="In use"' : ""}>Delete</button>` : ""}
+                <button class="btn btn-ghost mini-btn" data-act="clone" title="Clone"><i class="inline-icon" data-lucide="copy-plus"></i></button>
+                <button class="btn btn-ghost mini-btn" data-act="archive" title="${act ? "Archive" : "Restore"}"><i class="inline-icon" data-lucide="${act ? "archive" : "archive-restore"}"></i></button>
+                ${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="In use"' : 'title="Delete"'}><i class="inline-icon" data-lucide="trash"></i></button>` : ""}
             </div></td></tr>`;
     }).join("");
     $("fmtEmpty").style.display = rows.length ? "none" : "block";
     if (!CAN_WRITE) document.querySelectorAll("#fmtBody .ro-hide").forEach(e => e.remove());
+    if (window.lucide) lucide.createIcons();
 }
 
 $("fmtBody").addEventListener("click", e => {
@@ -547,7 +548,7 @@ async function toggleArchive(id, btn) {
 
 async function cloneFormat(id, btn) {
     const f = formats.find(f => gv(f, "formatId") === id);
-    btn.disabled = true; btn.textContent = "…";
+    btn.disabled = true;
     try {
         const nid = uid("FMT");
         await appendSheet(R, "RacingFormats", {
@@ -615,9 +616,10 @@ function renderRegList() {
             <td>${escapeHtml(gv(r, "AllowedClasses"))}</td>
             <td>${escapeHtml(gv(r, "WeekofMonth")) || "—"}</td><td>${escapeHtml(gv(r, "Time")) || "—"}</td>
             <td>${f ? escapeHtml(gv(f, "name")) : '<span class="sub">—</span>'}</td>
-            <td><div class="row-actions">${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="Has entries"' : ""}>Delete</button>` : ""}</div></td></tr>`;
+            <td><div class="row-actions">${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="Has entries"' : 'title="Delete"'}><i class="inline-icon" data-lucide="trash"></i></button>` : ""}</div></td></tr>`;
     }).join("");
     $("rgEmpty").style.display = rows.length ? "none" : "block";
+    if (window.lucide) lucide.createIcons();
 }
 
 function openRgModal(id) {
@@ -1062,7 +1064,7 @@ function renderClasses() {
             <td>${escapeHtml(gv(c, "Restrictions")) || '<span class="sub">—</span>'}</td>
             <td>${escapeHtml(gv(c, "Handicap")) || '<span class="sub">—</span>'}</td>
             <td>${used ? `<span class="badge badge-affiliate">${used}</span>` : '<span class="sub">—</span>'}</td>
-            <td><div class="row-actions">${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="Used by series"' : ""}>Delete</button>` : ""}</div></td></tr>`;
+            <td><div class="row-actions">${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="Used by series"' : 'title="Delete"'}><i class="inline-icon" data-lucide="trash"></i></button>` : ""}</div></td></tr>`;
     }).join("");
     $("clsEmpty").style.display = rows.length ? "none" : "block";
 }
