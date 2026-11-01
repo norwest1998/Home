@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="smmc-domain" content="racing">
+<title>Match Racing — Sydney Maritime Modellers Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="theme.css">
+<style>
+.toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+.glass-select { appearance:none; -webkit-appearance:none; background:rgba(255,255,255,.08); border:1px solid var(--glass-border); border-radius:8px; color:var(--foam);
+    font-family:var(--font-body,'Inter',sans-serif); font-size:12px; padding:5px 12px; cursor:pointer; min-width:120px; }
+.glass-select option { background:var(--ocean-mid); }
+.tbl-wrap { max-height:520px; overflow:auto; border-radius:10px; border:1px solid var(--glass-border); margin-bottom:24px; }
+table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+.rm-table th { position:sticky; top:0; background:var(--ocean-mid); text-align:left; padding:8px 10px; font-family:var(--font-data); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--foam-dim); }
+.rm-table td { padding:8px 10px; border-bottom:1px solid var(--glass-border); color:var(--foam); vertical-align:middle; }
+.rm-table tr:last-child td { border-bottom:none; }
+.rm-table tr.grp td { background:rgba(255,255,255,.05); font-family:var(--font-data); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--foam-dim); }
+.rm-table .win { font-weight:700; color:var(--glow); }
+.mini-btn { padding:3px 9px !important; font-size:11px !important; }
+.sub { font-size:11px; color:var(--foam-dim); }
+.cell-in { background:rgba(255,255,255,.06); border:1px solid var(--glass-border); border-radius:8px; color:var(--foam); font-size:12.5px; padding:5px 8px; width:56px; box-sizing:border-box; }
+.note { padding:10px 14px; border-radius:10px; border:1px solid var(--glass-border); background:rgba(255,255,255,.05); font-size:12.5px; margin-bottom:16px; color:var(--foam); }
+.note.warn { border-color:rgba(255,179,71,.4); }
+.note.ok { border-color:rgba(94,234,212,.4); }
+.note.err { border-color:rgba(255,106,61,.5); }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.15); border-top-color:var(--foam); border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; }
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<main class="container">
+
+    <div class="admin-header">
+        <div class="admin-title-group"><h1>Match Racing</h1></div>
+        <a href="racingManagement.html" class="btn btn-ghost" style="flex-shrink:0;">Back to Racing Management</a>
+    </div>
+
+    <div class="toolbar">
+        <select class="glass-select" id="serSel"></select>
+        <button class="btn btn-ghost" id="reloadBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+        <button class="btn btn-ghost ro-hide" id="syncBtn" style="padding:5px 12px;font-size:11px;">Sync series points</button>
+    </div>
+    <div id="msg"></div>
+    <div id="actions" class="toolbar"></div>
+
+    <div class="section-head"><h2>Standings</h2><p id="standSub"></p></div>
+    <div class="tbl-wrap"><table class="rm-table">
+        <thead><tr><th>#</th><th>Skipper</th><th>P</th><th>W</th><th>Round robin pts</th><th>Series pts</th><th></th></tr></thead>
+        <tbody id="standBody"></tbody></table></div>
+
+    <div class="section-head"><h2>Matches</h2><p>Select the result of each match. A forfeit or DNS scores 0 for the absent skipper and the full win points for the opponent.</p></div>
+    <div class="tbl-wrap"><table class="rm-table">
+        <thead><tr><th>Stage</th><th>Skipper A</th><th></th><th>Skipper B</th><th>Result</th><th>Pts A / B</th></tr></thead>
+        <tbody id="matchBody"></tbody></table></div>
+
+    <footer><div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div></footer>
+</main>
+
+<script src="shared.js"></script>
+<script src="nav.js"></script>
+<script src="racingScores.js"></script>
+<script>
+const R = DOMAIN.racing, D = DOMAIN.members, RS = RacingScoring;
+const $ = id => document.getElementById(id);
+const gv = (r, ...keys) => { for (const k of keys) if (r && r[k] != null && r[k] !== "") return String(r[k]); return ""; };
+const isTrue = v => /^(true|yes|1)$/i.test(String(v));
+const uid = p => `${p}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+const _u = JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}");
+const CAN_WRITE = (ROLE_RANK[_u.role] || 0) >= ROLE_RANK.coord;
+const SEASON = (() => { const d = new Date(), y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1; return `${y}-${String(y + 1).slice(2)}`; })();   // same as racingManagement.html
+
+let seriesRows, formats, specs, entries, members, matches, selId;
+let ser, rrCfg, koCfg, ids, overrides, T, busy = false;
+
+const memberName = id => { const m = members.find(m => gv(m, "MemberID", "memberId", "ID") === String(id)); return m ? gv(m, "MemberName", "Member") : (id ? String(id) : "—"); };
+const isDone = m => !!m.winner && m.status.toUpperCase() !== "SCHEDULED";
+const normMatch = m => ({ matchId: gv(m, "matchId"), seriesId: gv(m, "seriesId"), season: gv(m, "season"), stage: gv(m, "stage").toUpperCase(),
+    round: Number(gv(m, "round")) || 1, matchNo: Number(gv(m, "matchNo")) || 0, memberA: gv(m, "memberA"), memberB: gv(m, "memberB"),
+    winner: gv(m, "winner"), status: gv(m, "status") || "scheduled", pointsA: gv(m, "pointsA"), pointsB: gv(m, "pointsB") });
+
+function say(text, cls = "") { $("msg").innerHTML = text ? `<div class="note ${cls}">${text}</div>` : ""; }
+
+/* ---------- load ---------- */
+async function load() {
+    say('<span class="spinner"></span> Loading…');
+    [seriesRows, formats, specs, entries, members, matches] = await Promise.all([
+        fetchSheet(R, "Series"), fetchSheet(R, "RacingFormats"), fetchSheet(R, "RaceSpecs"), fetchSheet(R, "SeriesEntries"),
+        fetchSheet(D, "Members").catch(() => []), fetchSheet(R, "Matches").catch(() => [])
+    ]);
+    const hasRR = fid => specs.some(s => gv(s, "formatId") === fid && gv(s, "raceType") === "round_robin");
+    const list = seriesRows.filter(r => gv(r, "ID") && hasRR(gv(r, "FormatID")));
+    if (!selId) selId = new URLSearchParams(location.search).get("series") || (list[0] && gv(list[0], "ID"));
+    $("serSel").innerHTML = list.map(r => `<option value="${escapeHtml(gv(r, "ID"))}" ${gv(r, "ID") === selId ? "selected" : ""}>${escapeHtml(gv(r, "SeriesName"))}</option>`).join("");
+    if (!list.length) return say("No series use a format with a Round Robin spec. Add one in Racing Management.", "warn");
+    setup(); render();
+}
+
+function setup() {
+    ser = seriesRows.find(r => gv(r, "ID") === selId);
+    const fid = gv(ser, "FormatID");
+    const sp = specs.filter(s => gv(s, "formatId") === fid && (gv(s, "active") === "" || isTrue(gv(s, "active")))).sort((a, b) => Number(gv(a, "sequence")) - Number(gv(b, "sequence")));
+    const cfg = t => { const s = sp.find(x => gv(x, "raceType") === t); return s ? RS.cfgOf(gv(s, "configJson")) : null; };
+    rrCfg = { cycles: 1, win: 10, lose: 0, ...(cfg("round_robin") || {}) };
+    koCfg = cfg("knockout") ? { advance: 8, win: 10, lose: 0, ...cfg("knockout") } : null;
+    const ent = entries.filter(e => gv(e, "SeriesID") === selId && gv(e, "Season") === SEASON && gv(e, "Status").toLowerCase() === "entered");
+    ids = ent.map(e => gv(e, "MemberID"));
+    overrides = Object.fromEntries(ent.map(e => [gv(e, "MemberID"), Number(gv(e, "SeedOverride")) || 0]));
+    matches = matches.map(normMatch).filter(m => m.seriesId === selId && m.season === SEASON);
+}
+
+/* ---------- render ---------- */
+function render() {
+    const rr = matches.filter(m => m.stage === "RR"), tb = matches.filter(m => m.stage === "TB");
+    const ko = matches.filter(m => RS.STAGES.includes(m.stage));
+    const rrDone = rr.length > 0 && rr.every(isDone) && tb.every(isDone);
+    T = RS.roundRobinTable(matches, rrCfg, ids, overrides);
+    const totals = RS.seriesTotals(matches, rrCfg, koCfg || {}), champ = RS.champion(matches);
+    const frozen = gv(ser, "RegStatus") === "Closed";
+
+    // actions
+    const acts = [];
+    if (CAN_WRITE) {
+        if (!rr.length) acts.push(`<button class="btn btn-primary" data-a="genRR" ${frozen && ids.length > 1 ? "" : "disabled"}>Generate round robin (${ids.length > 1 ? RS.rrSchedule(ids, rrCfg.cycles).length : 0} matches)</button>`);
+        if (rrDone && !ko.length && koCfg && !T.unresolved.length) acts.push(`<button class="btn btn-primary" data-a="genKO">Generate knockout (top ${Math.min(koCfg.advance, ids.length)})</button>`);
+        const nx = nextStage(ko); if (nx) acts.push(`<button class="btn btn-primary" data-a="next" data-st="${nx}">Generate ${nx}</button>`);
+        if (champ) acts.push(`<button class="btn btn-primary" data-a="final">Finalise series</button>`);
+    }
+    $("actions").innerHTML = acts.join("");
+
+    // notices
+    let n = "", cls = "";
+    if (!frozen && !rr.length) { n = "Freeze the field (Racing Management → Series → Freeze) before generating the round robin."; cls = "warn"; }
+    else if (rrDone && T.unresolved.length) { n = `${T.unresolved.length} unresolved tie(s) after head-to-head. Add a sail-off match or enter a manual rank, then continue.`; cls = "warn"; }
+    else if (champ) { n = `<strong>${escapeHtml(memberName(champ.winner))}</strong> is series winner (${totals[champ.winner] || 0} pts); runner-up ${escapeHtml(memberName(champ.runnerUp))}.`; cls = "ok"; }
+    else if (rrDone && !ko.length && !koCfg) n = "Round robin complete. This format has no knockout spec.";
+    say(n, cls);
+
+    // standings
+    $("standSub").textContent = `${ids.length} skippers · ${rr.filter(isDone).length}/${rr.length} round-robin matches played`;
+    $("standBody").innerHTML = T.rows.map(r => {
+        const tie = rrDone && r.tied;
+        const grp = tie ? T.unresolved.find(g => g.includes(r.id)) : null;
+        return `<tr><td>${r.rank}</td><td>${escapeHtml(memberName(r.id))}</td><td>${r.played}</td><td>${r.wins}</td><td>${r.points}</td><td><strong>${totals[r.id] || 0}</strong></td>
+            <td>${tie ? `<span class="badge badge-expired">Tied</span> ${CAN_WRITE ? `<input class="cell-in" type="number" min="1" max="${ids.length}" placeholder="rank" data-ov="${escapeHtml(r.id)}" value="${overrides[r.id] || ""}">
+                <button class="btn btn-ghost mini-btn" data-a="sailoff" data-g="${escapeHtml(grp.join(","))}">Sail-off</button>` : ""}` : ""}</td></tr>`;
+    }).join("") || `<tr><td colspan="7" class="sub">No entries for this series.</td></tr>`;
+
+    // matches
+    let html = "";
+    ["RR", "TB", ...RS.STAGES].forEach(st => {
+        const list = matches.filter(m => m.stage === st).sort((a, b) => a.round - b.round || a.matchNo - b.matchNo);
+        if (!list.length) return;
+        let lastRound = null;
+        list.forEach(m => {
+            if (st === "RR" && m.round !== lastRound) { html += `<tr class="grp"><td colspan="6">Round robin — round ${m.round}</td></tr>`; lastRound = m.round; }
+            else if (st !== "RR" && lastRound === null) { html += `<tr class="grp"><td colspan="6">${st === "TB" ? "Sail-off" : st}</td></tr>`; lastRound = 0; }
+            html += matchRow(m);
+        });
+    });
+    $("matchBody").innerHTML = html || `<tr><td colspan="6" class="sub">No matches generated yet.</td></tr>`;
+    document.querySelectorAll(".ro-hide").forEach(e => e.style.display = CAN_WRITE ? "" : "none");
+}
+
+function matchRow(m) {
+    const p = RS.matchPoints(m, m.stage === "RR" ? rrCfg : (koCfg || {}));
+    const st = m.status.toUpperCase(), cell = (id, w) => `<td class="${w ? "win" : ""}">${escapeHtml(memberName(id))}</td>`;
+    if (st === "BYE") return `<tr><td>${m.stage}</td>${cell(m.winner, true)}<td class="sub">bye</td><td></td><td class="sub">advances</td><td>0</td></tr>`;
+    let cur = "";
+    if (m.winner) { const side = m.winner === m.memberA ? "A" : "B", abs = side === "A" ? "B" : "A";
+        cur = st === "COMPLETED" ? "C" + side : (st === "FORFEIT" ? "F" : "D") + abs; }
+    const opts = [["", "— not played —"], ["CA", "A wins"], ["CB", "B wins"], ["FA", "A forfeits"], ["FB", "B forfeits"], ["DA", "A DNS"], ["DB", "B DNS"]];
+    const sel = CAN_WRITE ? `<select class="glass-select" data-m="${escapeHtml(m.matchId)}">${opts.map(([v, l]) => `<option value="${v}" ${v === cur ? "selected" : ""}>${l}</option>`).join("")}</select>`
+        : escapeHtml(cur ? opts.find(o => o[0] === cur)[1] : "—");
+    return `<tr><td>${m.stage}</td>${cell(m.memberA, m.winner === m.memberA)}<td class="sub">v</td>${cell(m.memberB, m.winner === m.memberB)}<td>${sel}</td><td>${isDone(m) ? p.a + " / " + p.b : "—"}</td></tr>`;
+}
+
+const nextStage = ko => {
+    if (!ko.length) return null;
+    const idx = Math.max(...ko.map(m => RS.STAGES.indexOf(m.stage)));
+    if (idx >= RS.STAGES.length - 1) return null;
+    const cur = ko.filter(m => RS.STAGES.indexOf(m.stage) === idx);
+    return cur.every(m => m.winner) ? RS.STAGES[idx + 1] : null;
+};
+
+/* ---------- writes ---------- */
+const COLS = m => ({ matchId: m.matchId, seriesId: selId, season: SEASON, stage: m.stage, round: m.round || 1, matchNo: m.matchNo, memberA: m.memberA, memberB: m.memberB,
+    winner: m.winner || "", status: m.status || "scheduled", pointsA: m.pointsA ?? "", pointsB: m.pointsB ?? "" });
+
+async function addMatches(list) {
+    for (const [i, m] of list.entries()) {
+        say(`<span class="spinner"></span> Creating matches ${i + 1}/${list.length}…`);
+        const row = COLS({ ...m, matchId: uid("MCH") });
+        if (row.status === "bye") { row.pointsA = 0; row.pointsB = 0; }
+        await appendSheet(R, "Matches", row);
+        matches.push(normMatch(row));
+    }
+}
+
+async function run(fn) {
+    if (busy) return; busy = true;
+    try { await fn(); } catch (e) { say("Error: " + escapeHtml(e.message), "err"); busy = false; return; }
+    busy = false; render();
+}
+
+async function setResult(matchId, val) {
+    const m = matches.find(x => x.matchId === matchId);
+    if (RS.STAGES.includes(m.stage) ? matches.some(x => RS.STAGES.indexOf(x.stage) > RS.STAGES.indexOf(m.stage))
+        : m.stage === "RR" && matches.some(x => RS.STAGES.includes(x.stage))) {
+        if (!confirm("Later stages already exist and will NOT be updated by this change. Continue?")) return render();
+    }
+    let winner = "", status = "scheduled";
+    if (val) {
+        const kind = val[0], side = val[1];
+        status = { C: "completed", F: "forfeit", D: "DNS" }[kind];
+        winner = kind === "C" ? (side === "A" ? m.memberA : m.memberB) : (side === "A" ? m.memberB : m.memberA);
+    }
+    const p = RS.matchPoints({ ...m, winner, status, pointsA: "", pointsB: "" }, m.stage === "RR" ? rrCfg : (koCfg || {}));
+    const upd = { winner, status, pointsA: val ? p.a : "", pointsB: val ? p.b : "" };
+    await run(async () => { await updateSheet(R, "Matches", matchId, upd); Object.assign(m, upd); });
+}
+
+async function syncPoints(extra) {
+    const totals = RS.seriesTotals(matches, rrCfg, koCfg || {});
+    const ent = entries.filter(e => gv(e, "SeriesID") === selId && gv(e, "Season") === SEASON && gv(e, "Status").toLowerCase() === "entered");
+    for (const [i, e] of ent.entries()) {
+        say(`<span class="spinner"></span> Updating series points ${i + 1}/${ent.length}…`);
+        await updateSheet(R, "SeriesEntries", gv(e, "EntryID"), { SeriesPoints: totals[gv(e, "MemberID")] || 0 });
+    }
+    if (extra) await updateSheet(R, "Series", selId, extra);
+}
+
+/* ---------- events ---------- */
+$("serSel").addEventListener("change", e => { selId = e.target.value; history.replaceState(null, "", "?series=" + encodeURIComponent(selId)); reload(); });
+$("reloadBtn").addEventListener("click", () => reload());
+async function reload() { await load(); }
+$("syncBtn").addEventListener("click", () => run(async () => { await syncPoints(); say("Series points updated.", "ok"); }));
+
+document.addEventListener("change", e => {
+    if (e.target.dataset.m) setResult(e.target.dataset.m, e.target.value);
+    if (e.target.dataset.ov) {
+        const id = e.target.dataset.ov, v = Number(e.target.value) || 0, ent = entries.find(x => gv(x, "SeriesID") === selId && gv(x, "Season") === SEASON && gv(x, "MemberID") === id);
+        run(async () => { await updateSheet(R, "SeriesEntries", gv(ent, "EntryID"), { SeedOverride: v || "" }); overrides[id] = v; });
+    }
+});
+
+document.addEventListener("click", e => {
+    const b = e.target.closest("button[data-a]"); if (!b) return;
+    const a = b.dataset.a, ko = matches.filter(m => RS.STAGES.includes(m.stage));
+    if (a === "genRR") run(async () => {
+        const sched = RS.rrSchedule(ids, rrCfg.cycles);
+        if (!confirm(`Generate ${sched.length} round-robin matches for ${ids.length} skippers?`)) return;
+        await addMatches(sched.map((s, i) => ({ stage: "RR", round: s.round, matchNo: i + 1, memberA: s.a, memberB: s.b })));
+    });
+    if (a === "genKO") run(async () => {
+        const seeds = T.rows.slice(0, Math.min(koCfg.advance, ids.length)).map(r => r.id);
+        if (!confirm(`Seed the knockout with the top ${seeds.length} skippers?`)) return;
+        await addMatches(RS.knockoutFirstRound(seeds));
+    });
+    if (a === "next") run(async () => {
+        const st = b.dataset.st, prev = RS.STAGES[RS.STAGES.indexOf(st) - 1];
+        await addMatches(RS.knockoutNext(ko.filter(m => m.stage === prev), st));
+    });
+    if (a === "sailoff") run(async () => {
+        const g = b.dataset.g.split(","), pairs = [];
+        for (let x = 0; x < g.length; x++) for (let y = x + 1; y < g.length; y++)
+            if (!matches.some(m => m.stage === "TB" && [m.memberA, m.memberB].sort().join() === [g[x], g[y]].sort().join())) pairs.push({ stage: "TB", round: 1, matchNo: pairs.length + 1, memberA: g[x], memberB: g[y] });
+        if (!pairs.length) return say("Sail-off matches already exist for this group.", "warn");
+        await addMatches(pairs);
+    });
+    if (a === "final") run(async () => {
+        const c = RS.champion(matches), tot = RS.seriesTotals(matches, rrCfg, koCfg || {});
+        if (!confirm(`Record ${memberName(c.winner)} as series winner and write series points?`)) return;
+        await syncPoints({ SeriesWinner: c.winner, RunnerUp: c.runnerUp, WinnerPoints: tot[c.winner] || 0 });
+        say("Series finalised.", "ok");
+    });
+});
+
+if (window.lucide) lucide.createIcons();
+load().catch(e => say("Failed to load: " + escapeHtml(e.message), "err"));
+</script>
+<script>
+fetch('nav.html').then(r => r.text()).then(h => { document.getElementById('nav-placeholder').innerHTML = h; Nav.init(); if (window.lucide) lucide.createIcons(); });
+</script>
+</body>
+</html>

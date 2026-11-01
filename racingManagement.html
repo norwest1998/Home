@@ -40,9 +40,8 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 .rm-table tr.clickable { cursor:pointer; }
 .rm-table tr.clickable:hover td { background:rgba(255,255,255,.04); }
 .rm-table tr.archived td { opacity:.55; }
-.row-actions { display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:nowrap; }
-.mini-btn { padding:4px 8px !important; font-size:11px !important; display:inline-flex; align-items:center; justify-content:center; }
-.mini-btn [data-lucide] { width:14px; height:14px; }
+.row-actions { display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap; }
+.mini-btn { padding:3px 9px !important; font-size:11px !important; }
 .sub { font-size:11px; color:var(--foam-dim); }
 
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:1000; align-items:center; justify-content:center; padding:20px; }
@@ -94,6 +93,8 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 .preview { display:flex; flex-wrap:wrap; gap:6px; }
 .pv { font-size:11px; padding:3px 9px; border-radius:6px; border:1px solid var(--glass-border); color:var(--foam); }
 .pv.scratch { background:rgba(96,165,250,.12); border-color:rgba(96,165,250,.3); }
+.pv.round_robin { background:rgba(94,234,212,.12); border-color:rgba(94,234,212,.35); }
+.pv.knockout { background:rgba(255,106,61,.12); border-color:rgba(255,106,61,.35); }
 .pv.handicap { background:rgba(255,179,71,.12); border-color:rgba(255,179,71,.35); }
 
 .cell-in { background:rgba(255,255,255,.06); border:1px solid var(--glass-border); border-radius:8px; color:var(--foam); font-size:12.5px; padding:5px 8px; width:64px; box-sizing:border-box; }
@@ -148,7 +149,7 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
             </div>
             <div class="tbl-wrap">
                 <table class="rm-table">
-                    <thead><tr><th>Name / Description</th><th>Format</th><th>Races</th><th>Scoring</th><th>Classes</th><th>Series</th><th></th></tr></thead>
+                    <thead><tr><th>ID</th><th>Format Name</th><th>Description</th><th>Scoring</th><th>Discard Rule</th><th>Classes</th><th></th></tr></thead>
                     <tbody id="fmtBody"></tbody>
                 </table>
             </div>
@@ -401,8 +402,12 @@ const D = DOMAIN.members;                       // sheets live in the members sp
 // Add a new race type here (and its scorer on the results side) — no schema change needed.
 const RACE_TYPES = [
     { v: "scratch",  l: "Scratch",  cfg: "" },
-    { v: "handicap", l: "Handicap", cfg: '{"method":"start_offset"}' }
+    { v: "handicap", l: "Handicap", cfg: '{"method":"start_offset"}' },
+    { v: "round_robin", l: "Round Robin", cfg: '{"cycles":1,"win":10,"lose":0,"tiebreak":"head_to_head"}' },
+    { v: "knockout",    l: "Knockout",    cfg: '{"advance":8,"seeding":"round_robin","win":10,"lose":0}' }
 ];
+const MATCH_TYPES = ["round_robin", "knockout"];   // pairwise types: count/weight don't apply (round robin cycles live in config)
+const isMatch = t => MATCH_TYPES.includes(t);
 const SCORING = [{ v: "low_point", l: "Low point" }, { v: "high_point", l: "High point" }];
 const _u = JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}");
 const CAN_WRITE = ["editor", "admin"].includes(_u.role);
@@ -425,6 +430,7 @@ function gv(row, ...keys) {
 const isTrue   = v => v === true || String(v).toUpperCase() === "TRUE";
 const isActive = r => { const a = gv(r, "active"); return a === "" || isTrue(a); };
 const uid = p => p + "-" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
+const hasMatch = fid => !!fid && specs.some(s => gv(s, "formatId") === fid && gv(s, "raceType") === "round_robin" && isActive(s));
 const typeLabel = v => (RACE_TYPES.find(t => t.v === v) || { l: v }).l;
 const splitIds = s => String(s || "").split(",").map(x => x.trim()).filter(Boolean);
 function status(el, msg, type) { el.textContent = msg; el.className = `modal-status visible ${type}`; }
@@ -437,7 +443,7 @@ function usageFor(fid) { return series.filter(r => gv(r, "FormatID") === fid).le
 const isParticipation = f => /particip/i.test(gv(f, "WeightingFormat")) || isTrue(gv(f, "WeightingFormat"));
 function summary(list) {
     if (!list.length) return "—";
-    return list.map(s => `${gv(s, "count")}× ${typeLabel(gv(s, "raceType"))}`).join(" + ");
+    return list.map(s => isMatch(gv(s, "raceType")) ? typeLabel(gv(s, "raceType")) : `${gv(s, "count")}× ${typeLabel(gv(s, "raceType"))}`).join(" + ");
 }
 function totalRaces(list) { return list.reduce((n, s) => n + (Number(gv(s, "count")) || 0), 0); }
 function className(id) {
@@ -511,9 +517,9 @@ function renderFormats() {
             <td>${used ? `<span class="badge badge-affiliate">${used} series</span>` : '<span class="sub">—</span>'}</td>
             <td><span class="badge ${act ? "badge-full" : "badge-default"}">${act ? "Active" : "Archived"}</span></td>
             <td><div class="row-actions ro-hide">
-                <button class="btn btn-ghost mini-btn" data-act="clone" title="Clone"><i data-lucide="copy-plus"></i></button>
-                <button class="btn btn-ghost mini-btn" data-act="archive" title="${act ? "Archive" : "Restore"}"><i data-lucide="archive"></i></button>
-                ${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" title="Delete" ${used ? 'disabled title="In use"' : ""}><i data-lucide="trash"></i></button>` : ""}
+                <button class="btn btn-ghost mini-btn" data-act="clone">Clone</button>
+                <button class="btn btn-ghost mini-btn" data-act="archive">${act ? "Archive" : "Restore"}</button>
+                ${IS_ADMIN ? `<button class="btn btn-ghost mini-btn" data-act="delete" ${used ? 'disabled title="In use"' : ""}>Delete</button>` : ""}
             </div></td></tr>`;
     }).join("");
     $("fmtEmpty").style.display = rows.length ? "none" : "block";
@@ -541,7 +547,7 @@ async function toggleArchive(id, btn) {
 
 async function cloneFormat(id, btn) {
     const f = formats.find(f => gv(f, "formatId") === id);
-    btn.disabled = true;
+    btn.disabled = true; btn.textContent = "…";
     try {
         const nid = uid("FMT");
         await appendSheet(R, "RacingFormats", {
@@ -756,8 +762,8 @@ function renderSpecRows() {
         <div class="spec-row" data-i="${i}">
             <span class="spec-n">${i + 1}</span>
             <select class="sp-type">${RACE_TYPES.map(t => `<option value="${t.v}" ${t.v === s.raceType ? "selected" : ""}>${t.l}</option>`).join("")}</select>
-            <input class="sp-count" type="number" min="1" max="50" value="${escapeHtml(s.count)}">
-            <input class="sp-weight" type="number" min="0" step="0.1" value="${escapeHtml(s.weight)}">
+            <input class="sp-count" type="number" min="1" max="50" value="${isMatch(s.raceType) ? 1 : escapeHtml(s.count)}" ${isMatch(s.raceType) ? "disabled" : ""}>
+            <input class="sp-weight" type="number" min="0" step="0.1" value="${isMatch(s.raceType) ? 1 : escapeHtml(s.weight)}" ${isMatch(s.raceType) ? "disabled" : ""}>
             <input class="sp-config" type="text" placeholder='{"method":"start_offset"}' value="${escapeHtml(s.config)}">
             <div class="spec-ctl">
                 <button data-m="up" title="Move up">↑</button><button data-m="down" title="Move down">↓</button><button data-m="rm" class="rm" title="Remove">✕</button>
@@ -792,12 +798,21 @@ $("classChips").addEventListener("change", e => e.target.closest(".chip").classL
 
 function renderPreview() {
     let n = 0, html = "";
-    modalSpecs.forEach(s => { for (let k = 0; k < (parseInt(s.count) || 0); k++) html += `<span class="pv ${escapeHtml(s.raceType)}">R${++n} ${escapeHtml(typeLabel(s.raceType))}</span>`; });
+    modalSpecs.forEach(s => { for (let k = 0; k < (isMatch(s.raceType) ? 1 : (parseInt(s.count) || 0)); k++) html += `<span class="pv ${escapeHtml(s.raceType)}">R${++n} ${escapeHtml(typeLabel(s.raceType))}</span>`; });
     $("preview").innerHTML = html || '<span class="sub">No races defined.</span>';
     $("pvTotal").textContent = n;
 }
 
 /* ============ SAVE ============ */
+function matchSpecError(s, i) {
+    let c = {}; try { c = s.config.trim() ? JSON.parse(s.config) : {}; } catch { return `Spec ${i + 1}: config is not valid JSON.`; }
+    if (s.raceType === "round_robin" && c.cycles != null && ![1, 2].includes(c.cycles)) return `Spec ${i + 1}: cycles must be 1 or 2.`;
+    if (s.raceType === "knockout") {
+        if (!modalSpecs.slice(0, i).some(x => x.raceType === "round_robin")) return `Spec ${i + 1}: a knockout must come after a round robin.`;
+        if (!(Number.isInteger(c.advance) && c.advance >= 2 && c.advance <= 32)) return `Spec ${i + 1}: config "advance" must be a whole number from 2 to 32.`;
+    }
+    return null;
+}
 function validate() {
     const name = $("fName").value.trim();
     if (!name) return "Name is required.";
@@ -805,6 +820,7 @@ function validate() {
     if ($("fDiscMode").value === "custom" && !parseDiscardRule(JSON.stringify({thresholds: $("fThresh").value.split(",")})).thresholds.length)
         return "Enter at least one race count, e.g. 4,8.";
     for (const [i, s] of modalSpecs.entries()) {
+        if (isMatch(s.raceType)) { const m = matchSpecError(s, i); if (m) return m; continue; }
         const c = Number(s.count);
         if (!Number.isInteger(c) || c < 1 || c > 50) return `Spec ${i + 1}: count must be a whole number from 1 to 50.`;
         if (!(Number(s.weight) >= 0) || s.weight === "") return `Spec ${i + 1}: weight must be 0 or more.`;
@@ -833,7 +849,7 @@ async function saveFormat() {
 
         for (const [i, s] of modalSpecs.entries()) {
             const sd = { specId: s.specId || uid("SPC"), formatId: fid, sequence: i + 1, raceType: s.raceType,
-                count: Number(s.count), weight: Number(s.weight), configJson: s.config.trim(), active: true };
+                count: isMatch(s.raceType) ? 1 : Number(s.count), weight: isMatch(s.raceType) ? 1 : Number(s.weight), configJson: s.config.trim(), active: true };
             if (s.specId) await updateSheet(R, "RaceSpecs", s.specId, sd); else await appendSheet(R, "RaceSpecs", sd);
         }
         for (const sid of removedSpecs) await updateSheet(R, "RaceSpecs", sid, { active: false });   // soft-remove (editors lack delete rights)
@@ -939,7 +955,7 @@ function renderSeries() {
                 ${gv(r, "EligibleStarters") ? `<div class="sub">${escapeHtml(gv(r, "EligibleStarters"))} eligible starters</div>` : ""}` : ""}</td>
             <td>${req ? (i.closes ? fmtDay(i.closes) : '<span class="sub">No calendar dates</span>') : ""}</td>
             <td>${stBadge}</td>
-            <td><div class="row-actions">${req ? '<button class="btn btn-ghost mini-btn" data-s="entries">Entries</button>' : ""}${btns}</div></td></tr>`;
+            <td><div class="row-actions">${hasMatch(cur) ? `<a class="btn btn-ghost mini-btn" href="matchRacing.html?series=${encodeURIComponent(i.id)}">Matches</a>` : ""}${req ? '<button class="btn btn-ghost mini-btn" data-s="entries">Entries</button>' : ""}${btns}</div></td></tr>`;
     }).join("");
     $("serEmpty").style.display = rows.length ? "none" : "block";
 }
@@ -1016,7 +1032,6 @@ function renderEntries() {
             <td><span class="badge badge-affiliate">Guest</span></td><td></td></tr>`).join("")
         || `<tr class="spinner-row"><td colspan="6">No entries yet.</td></tr>`;
 }
-$("entBody").innerHTML = "";
 $("entBody").addEventListener("click", async e => {
     const b = e.target.closest("button[data-e]"); if (!b) return;
     b.disabled = true;
