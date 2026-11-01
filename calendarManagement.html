@@ -890,8 +890,9 @@ select.form-input option{background:var(--ocean-mid);color:var(--foam)}   /* fix
             <option>Not Started</option><option>Processed</option><option>No Score</option>
             <option>Postponed</option><option>Rescheduled</option><option>Cancelled</option>
           </select></div>
-
-        <div class="form-group full-width"><label for="modalEvent" id="modalEventLabel">Event Name</label>
+        <div class="form-group full-field-only"><label for="modalEventName">Event Name</label>
+          <input type="text" id="modalEventName" class="form-input" readonly></div>
+        <div class="form-group full-width"><label for="modalEvent" id="modalEventLabel">Display Name</label>
           <input type="text" id="modalEvent" class="form-input" required></div>
 
         <div id="repeatGroup" style="display:contents">
@@ -968,6 +969,14 @@ function formatDate(dateStr) {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}/${m}/${day}`;
+}
+
+function toHHmm(v) {
+  if (!v) return "";
+  const s = String(v).trim();
+  if (/^\d{1,2}:\d{2}/.test(s)) return s.split(":").map((p,i)=>i<2?p.padStart(2,"0"):"").slice(0,2).join(":");
+  const d = new Date(s);
+  return isNaN(d) ? "" : `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
 }
 
 function formatTime(timeStr) {
@@ -1058,6 +1067,7 @@ const modalRepeat = document.getElementById("modalRepeat");
 const modalRepeatUntil = document.getElementById("modalRepeatUntil");
 const modalSeries = document.getElementById("modalSeries");
 const modalSeriesID = document.getElementById("modalSeriesID");
+const modalEventName = document.getElementById("modalEventName");
 
 let seriesList = [], formatList = [];
 const gv = (row, k) => { const m = Object.keys(row).find(x => x.toLowerCase().trim() === k.toLowerCase()); return m ? String(row[m]).trim() : ""; };
@@ -1616,6 +1626,7 @@ function applySeries() {
   modalSeriesID.value    = s ? gv(s,"ID") : "";
   modalClass.value       = s ? (gv(s,"AllowedClasses") || "ALL") : "";
   modalRegattaType.value = f ? gv(f,"name") : "";
+  modalEventName.value = modalSeries.value;
   const c = modalClass.value;
   document.getElementById("emblemGroup").classList.toggle("hidden", !c || c === "ALL");
   if (c && c !== "ALL") modalEmblemImg.src = classImg(c);
@@ -1735,13 +1746,16 @@ function openEditEventModal(hexKey) {
   modalHexKey.value = event.HexKey || "";
   modalDate.value = fmtYMD(parseLocalDate(event.Date)).replace(/\//g, "-");   // also fixes UTC date-shift
   modalMonth.value = event.Month || "";
-  modalStart.value = event.Start || "";
-  modalFinish.value = event.Finish || "";
+  modalStart.value  = toHHmm(event.Start);
+  modalFinish.value = toHHmm(event.Finish);
+  modalEvent.value  = event["Display Name"] || "";
+  const sid = String(gv(event, "SeriesID")).toLowerCase();
+  const sr  = seriesList.find(r => gv(r,"ID").toLowerCase() === sid);
+  fillSeriesOptions(sr ? gv(sr,"SeriesName") : "");
   modalEventType.value = event["Event Type"] || "Competition";
   modalRoundNo.value = event["Round no"] || "";
   modalResults.value = event.Results || "Not Started";
-  modalEvent.value = event.Event || "";
-  fillSeriesOptions(event.SeriesID || "");
+
   if (!event.SeriesID) {   // legacy events without a series
     modalClass.value = event.Class || "";
     modalRegattaType.value = event["Regatta Type"] || event.Competition || "";
@@ -1788,7 +1802,8 @@ eventForm.addEventListener("submit", async (e) => {
   if (!isAdd || ["Competition", "Social"].includes(modalEventType.value)) {
     Object.assign(base, { 
       "SeriesID": modalSeriesID.value,
-      "EventName": modalSeries.value,
+      "EventName": modalEventName.value,
+      "Event": modalEvent.value,
       "Class": modalClass.value,
       "Regatta Type": modalRegattaType.value,   // now holds the Racing Format Name
       "Season": modalSeason.value, 
