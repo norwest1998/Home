@@ -2275,7 +2275,7 @@
 
     // Series for an event: backend seriesId if supplied, else match the event name against known series names (longest name wins)
     function evSeriesId(ev) {
-      if (ev.seriesId) return String(ev.seriesId);
+      const direct = ev.seriesId || ev.seriesID; if (direct) return String(direct);
       const n = String(ev.seriesName || ev.eventName || '').trim().toLowerCase();
       if (!n) return '';
       let best = '', len = 0;
@@ -2364,7 +2364,7 @@
 
             const sid = evSeriesId(ev), rs = sid ? regIconState(sid) : null;
             const href = 'seriesRegistration.html?series=' + encodeURIComponent(sid || '') +
-                         '&event=' + encodeURIComponent(ev.eventId || ev.id || '') +
+                         '&event=' + encodeURIComponent(ev.eventId || ev.hexKey || ev.id || '') +
                          '&date=' + encodeURIComponent(ev.dateLabel || '');
             const regHTML = rs
               ? `<a href="${esc(href)}" title="${esc(rs.tip)}" aria-label="${esc(rs.tip)}"
