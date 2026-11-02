@@ -2472,37 +2472,66 @@ async function saveAndSend(){
     setTimeout(() => changeEvent(), 1000);
     return;
   }
-  await downloadJSON();
-  state.sent = true;
-  saveState();
-  setTimeout(() => changeEvent(), 800);
-}
-
-async function downloadJSON(){
-  const data = buildExportObject();
-  const json = JSON.stringify(data, null, 2);
-  const filename = `${state.event.id}-${state.event.regattaDate.replace(/\//g,'-')}.json`;
-  try{
-    const downloads = window.claude && await window.claude.use ? await window.claude.use('downloads') : null;
-    if(downloads){
-      await downloads.save({ filename, data: json });
-      showToast('Download started');
-      return;
-    }
-  }catch(e){ /* fall through to blob fallback */ }
-  try{
-    const blob = new Blob([json], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('Downloaded');
-  }catch(e){
-    showToast('Could not download — copy from console');
-    console.log(json);
+  
+  const sendBtn = document.querySelector('[data-download-json]');
+  let idle = '';
+  if (sendBtn) {
+    idle = sendBtn.innerHTML;
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<span class="spinner"></span> Sending...';
   }
-}
+  
+  try {
+    const data = buildExportObject();
+    const json = JSON.stringify(data, null, 2);
+    
+    const ev = state.event;
+    const dateStr = ev.regattaDate || ev.date;
+    
+    // Format Date to YYYY-MM-DD
+    let formattedDate = "";
+    if (dateStr) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const dd = parts[0].padStart(2, '0');
+        const mm = parts[1].padStart(2, '0');
+        const yyyy = parts[2];
+        formattedDate = `${yyyy}/${mm}/${dd}`;
+      } else {
+        formattedDate = dateStr;
+      }
+    }
+    
+    // Construct the requested filename
+    const filename = `${ev.regattaName} - ${formattedDate}.json`;
+    
+    // Push the file directly to the backend
+    await gw({ 
+      action: "uploadFile", 
+      folderKey: "upload", 
+      filename: filename, 
+      content: json 
+    }, RESULTS_GATEWAY_URL);
+    
+    showToast('Results uploaded successfully');
+    state.sent = true;
+    saveState();
+    setTimeout(() => changeEvent(), 800);
+  } catch (e) {
+    console.error(e);
+    // Graceful fallback to local download if networking fails
+    showToast('Upload failed: ' + e.message + '. Falling back to download.');
+    await downloadJSON();
+    state.sent = true;
+    saveState();
+    setTimeout(() => changeEvent(), 800);
+  } finally {
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = idle;
+    }
+  }
+
 
 function changeEvent(){
   state.menuOpen = false;
