@@ -73,7 +73,7 @@ function applyDiscards(scores, rule, racesCompleted, scoringSystem) {
 // READ OPERATIONS -> Switched to POST to avoid Google Apps Script redirecting GETs to HTML Auth Pages
 async function fetchSheet(domain, sheetName, hexKey = null) {
     const action = hexKey ? "display" : "fetch";
-    const data = await gw({ action: action, domain: domain, sheet: sheetName, hexKey: hexKey}); 
+    const data = await g    w({ action: action, domain: domain, sheet: sheetName, hexKey: hexKey}); 
  
     const rows = data.values ?? [];
     if (rows.length > 0) registerSchema(domain, sheetName, rows); // fire-and-forget

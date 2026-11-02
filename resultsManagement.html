@@ -1018,7 +1018,10 @@ async function loadAvgRequests() {
             decidedBy:  r["Decision By"],
             decided:    r["Decision Date"],
             submitted:  r["Timestamp"],
-            status:     r["Status"]
+            status:     r["Status"],
+            boatID:     r["BoatID"],
+            reason:     r["Rejected Reason"],
+            emailsent:  r["Email Sent"]
         }));
     } catch (err) {
         allAvgRequests = [];
