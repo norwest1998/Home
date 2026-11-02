@@ -1933,7 +1933,7 @@ function openAvgReqModal(idx) {
         </div>`;
     document.getElementById('avgReqModal').classList.add('open');
     if (window.lucide) lucide.createIcons();
-    refreshConflictResults(r);
+    if (r.Status === "Pending") refreshConflictResults(r);
 }
 
 function closeAvgReqModal() {
