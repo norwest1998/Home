@@ -74,8 +74,9 @@ const EventFilters = {
   // blank AllowedClasses = open to all classes
   forClass: c => EventFilters.all().filter(s => c === "all" || !s.classes.length || s.classes.includes(c)),
   classImage(name) {
-    const s = this.all().find(s => s.classes.length === 1 && s.classes[0] === name);
-    return s ? s.insignia : DEFAULT_INSIGNIA;
+    const n = String(name || "").trim().toLowerCase();
+    const s = this.all().find(s => s.classes.length === 1 && s.classes[0].toLowerCase() === n);
+     return s ? s.insignia : DEFAULT_INSIGNIA;
   },
 
   set(k, v) {

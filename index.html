@@ -1998,6 +1998,7 @@
         if (el) el.textContent = 'Error loading series configuration.'; 
       }
       renderNavResultsDropdown();
+      setLatestEmblem();
       const list = EventFilters.withResults();
       if (list.length && (!activeClass || !EventFilters.get(activeClass))) activeClass = list[0].key;
     }
@@ -2146,6 +2147,17 @@
     </div>`;
     }
 
+    let latestEvent = null;
+    function setLatestEmblem() {
+      const el = document.getElementById('latestClassEmblem');
+      if (!el || !latestEvent || !EventFilters.all().length) return;   // wait for series data
+      const ev = latestEvent, s = EventFilters.get(ev.seriesId || ev.seriesID);
+      const cls = ev.className || ev.boatClass;
+      el.src = s ? s.insignia : EventFilters.classImage(cls);
+      el.alt = `${(s && s.name) || cls} Emblem`;
+      el.style.display = 'inline-block';
+    }
+
     function renderLatestResults(data) {
       const metaEl = document.getElementById('latestResultsMeta');
       const ribbonEl = document.getElementById('resultsRibbon');
@@ -2164,16 +2176,10 @@
 
       metaEl.textContent = `${data.event.roundLabel} • ${eventName} (Raced ${data.event.racedOn})`;
 
-      const clsName = data.event.className || data.event.boatClass;
-      const emblemUrl = getClassImage(clsName);
+      latestEvent = data.event;
+      setLatestEmblem();
       
       defaultStandingsToLatest(data.event);
-      
-      if (emblemUrl && emblemEl) {
-        emblemEl.src = emblemUrl;
-        emblemEl.alt = `${clsName} Emblem`;
-        emblemEl.style.display = 'inline-block';
-      }
       
       ribbonEl.innerHTML = data.results.length 
         ? data.results.map(chipHTML).join('') 
