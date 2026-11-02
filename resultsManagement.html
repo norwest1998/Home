@@ -2001,7 +2001,7 @@ async function refreshConflictResults(r) {
             openAvgReqModal(allAvgRequests.indexOf(r));        // refresh buttons/badge
         }
     } catch (err) {
-        if (statusEl) statusEl.textContent = 'Awaiting results';
+        if (statusEl) statusEl.textContent = '-';
         console.warn('Conflict lookup failed:', err);
     }
 }
