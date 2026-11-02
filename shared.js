@@ -39,6 +39,60 @@ const DOMAIN = {
     racing:    "racing"  
 };
 
+// ===== Event Filters / Series metadata =====
+const DEFAULT_INSIGNIA = "/Home/images/classes/smmc-logo.png";
+
+const EventFilters = {
+  series: {},            // lowercase ID -> {id,key,name,classes[],insignia,spreadsheetId}
+  classes: [],           // ClassNames that at least one series uses
+  state: JSON.parse(sessionStorage.getItem("SMMC_EVF") || '{"cls":"all","series":"all"}'),
+  _p: null,
+
+  load() {
+    return this._p || (this._p = (async () => {
+      const [cls, ser] = await Promise.all([
+        fetchSheet(DOMAIN.members, "Classes"), fetchSheet(DOMAIN.racing, "Series")]);
+      ser.forEach(s => {
+        const id = String(s.ID || "").trim(); if (!id) return;
+        this.series[id.toLowerCase()] = {
+          id, key: id.toLowerCase(), name: s.SeriesName || id,
+          classes: String(s.AllowedClasses || "").split(",").map(x => x.trim()).filter(Boolean),
+          insignia: s.Insignia || DEFAULT_INSIGNIA,
+          spreadsheetId: String(s.SpreadsheetID || s.SpreadsheetId || "").trim()
+        };
+      });
+      const used = new Set(Object.values(this.series).flatMap(s => s.classes));
+      this.classes = cls.map(c => String(c.ClassName || "").trim()).filter(c => used.has(c));
+      return this;
+    })());
+  },
+
+  get: id => EventFilters.series[String(id || "").toLowerCase()] || null,
+  all: () => Object.values(EventFilters.series),
+  withResults: () => EventFilters.all().filter(s => s.spreadsheetId),
+  // blank AllowedClasses = open to all classes
+  forClass: c => EventFilters.all().filter(s => c === "all" || !s.classes.length || s.classes.includes(c)),
+  classImage(name) {
+    const s = this.all().find(s => s.classes.length === 1 && s.classes[0] === name);
+    return s ? s.insignia : DEFAULT_INSIGNIA;
+  },
+
+  set(k, v) {
+    this.state[k] = v;
+    if (k === "cls" && this.state.series !== "all" &&
+        !this.forClass(v).some(s => s.key === this.state.series)) this.state.series = "all";
+    sessionStorage.setItem("SMMC_EVF", JSON.stringify(this.state));
+  },
+
+  // Events without a seriesId are not sailing events: shown only when unfiltered
+  match(sid) {
+    const { cls, series } = this.state, s = this.get(sid);
+    if (!s) return cls === "all" && series === "all";
+    return (series === "all" || s.key === series) &&
+           (cls === "all" || !s.classes.length || s.classes.includes(cls));
+  }
+};
+
 const STD_DISCARDS = { thresholds: [4, 8, 16, 24], repeat: 8 };
 
 function parseDiscardRule(s) {

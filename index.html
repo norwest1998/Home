@@ -522,34 +522,6 @@
   .cal-event-item .date{ font-family:var(--font-data); font-size:11px; color:var(--signal); }
   .cal-event-item .name{ color:var(--foam); font-weight:500; }
 
-  /* Annual Calendar — class filter buttons (insignia) */
-  .calendar-filters{
-    display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px;
-  }
-  .cal-filter-btn{
-    display:flex; align-items:center; gap:7px;
-    font-family:var(--font-data); font-size:11.5px; letter-spacing:.02em;
-    padding:6px 12px 6px 6px; border-radius:10px; cursor:pointer;
-    background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam-dim);
-    transition:background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-  }
-  .cal-filter-btn:hover{ color:var(--foam); background:var(--glass-fill-hi); }
-  .cal-filter-btn.active{ background:var(--glass-fill-hi); border-color:var(--glow); color:var(--glow); }
-  .cal-filter-btn .cal-filter-icon{
-    width:22px; height:22px; object-fit:contain; border-radius:5px; flex-shrink:0;
-    background:rgba(255,255,255,0.85); padding:3px;
-  }
-.cal-filter-btn .cal-filter-icon {
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
-  border-radius: 5px;
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.15); /* Reduced from 0.85 */
-  padding: 3px;
-  backdrop-filter: blur(4px);
-}
-
   /* =========================================================
   APPS SCRIPT & SHEETS PLACEHOLDERS
   ========================================================= */
@@ -1994,78 +1966,42 @@
         
     
     // Championship Standings (IOM, DF95, etc. - loads separately on demand)
-    let RESULTS_CONFIG = {};
-    let CLASS_IMAGE_MAP = {
-      'General': '/Home/images/classes/smmc-logo.png' // Default fallback
-    };
-    
-    function getClassImage(className) { return CLASS_IMAGE_MAP[className] || CLASS_IMAGE_MAP['General'] || ''; }
+    const getClassImage = n => EventFilters.classImage(n);
 
     function renderNavResultsDropdown() {
       const dropdown = document.getElementById('raceResultsDropdown');
       if (!dropdown) return;
       
       const baseHTML = `<li><a href="https://norwest1998.github.io/Home/captureResults.html" target="_blank" rel="noopener noreferrer">Add Race Result</a></li>`;
-      const keys = Object.keys(RESULTS_CONFIG);
-      
-      if (keys.length === 0) {
+      const list = EventFilters.withResults();
+      if (!list.length) {
         dropdown.innerHTML = baseHTML + `<li><span class="nav-link" style="color:var(--signal); cursor:default;">No Standings Available</span></li>`;
         return;
       }
 
-      const dynamicHTML = keys.map(key => {
-        const config = RESULTS_CONFIG[key];
-        const formattedLabel = config.label.toLowerCase().endsWith('standings') ? config.label : `${config.label} Standings`;
-        return `<li><a href="#race-results-hub" onclick="return selectClass('${key}')">${esc(formattedLabel)}</a></li>`;
+      const dynamicHTML = list.map(s => {
+        const label = s.name.toLowerCase().endsWith('standings') ? s.name : `${s.name} Standings`;
+        return `<li><a href="#race-results-hub" onclick="return selectClass('${s.key}')">${esc(label)}</a></li>`;
       }).join('');
       
       dropdown.innerHTML = baseHTML + dynamicHTML;
     }
 
     async function loadSeriesConfig() {
-      const statusEl = document.getElementById('statusLine');
-      if (statusEl) statusEl.textContent = 'Loading Championship Standings...';
-      
-      try {
-        const seriesData = await fetchSheet(DOMAIN.racing || 'racing', 'Series');
-        
-        if (seriesData && seriesData.length > 0) {
-          seriesData.forEach(s => {
-            const spreadsheetId = s.SpreadsheetID || s.SpreadsheetId;
-            // Ignore series without a spreadsheet completely
-            if (!spreadsheetId || !String(spreadsheetId).trim()) return;
-
-            const key = String(s.ID).toLowerCase();
-            const label = s.SeriesName || s.ID;
-            
-            // If AllowedClasses is a list (e.g. "DF95, DF65"), grab the first one as primary
-            let className = s.AllowedClasses || 'General';
-            if (className.includes(',')) className = className.split(',')[0].trim();
-            
-            const insignia = s.Insignia || CLASS_IMAGE_MAP['General'];
-            
-            RESULTS_CONFIG[key] = { label, className, spreadsheetId, insignia };
-            
-            if (className && insignia) {
-              CLASS_IMAGE_MAP[className] = insignia;
-            }
-          });
-        }
-      } catch (err) {
-        console.error("Failed to load Series sheet for results config:", err);
-        if (statusEl) statusEl.textContent = 'Error loading series configuration.';
+      try { 
+        await EventFilters.load(); 
       }
-      
+      catch (err) { 
+        console.error("Series load failed:", err);
+        const el = document.getElementById('statusLine'); 
+        if (el) el.textContent = 'Error loading series configuration.'; 
+      }
       renderNavResultsDropdown();
-
-      // If activeClass is null, default it to the first available class fetched
-      const keys = Object.keys(RESULTS_CONFIG);
-      if (keys.length > 0 && (!activeClass || !RESULTS_CONFIG[activeClass])) {
-        activeClass = keys[0];
-      }
+      const list = EventFilters.withResults();
+      if (list.length && (!activeClass || !EventFilters.get(activeClass))) activeClass = list[0].key;
     }
 
-    // Shared Global Data States
+    // Shared Global Data States  
     let allMembers = [];
     let allApplications = [];
     let allBoats = [];
@@ -2309,7 +2245,8 @@
     }
 
     // --- Annual Calendar ---
-    function renderAnnualCalendarData(calData) {
+    async function renderAnnualCalendarData(calData) {
+      await EventFilters.load()
     if (!calData.months || calData.months.length === 0) {
         document.getElementById('calendarFilters').innerHTML = '';
         document.querySelector('.calendar-grid').innerHTML = '<p class="cal-empty">No events scheduled for the next 3 months.</p>';
@@ -2323,27 +2260,12 @@
     }
     
     // Registration state per series (EntryRequired series only), from the gateway's seriesOverview
-    let seriesReg = {};
-    const seriesLabel = (id, ev) => (seriesReg[id] && seriesReg[id].name) || (ev && ev.seriesName) || id;
-
-    // Series for an event: backend seriesId if supplied, else match the event name against known series names (longest name wins)
-    function evSeriesId(ev) {
-      const direct = ev.seriesId || ev.seriesID; if (direct) return String(direct);
-      const n = String(ev.seriesName || ev.eventName || '').trim().toLowerCase();
-      if (!n) return '';
-      let best = '', len = 0;
-      Object.values(seriesReg).forEach(x => {
-        const sn = String(x.name || '').trim().toLowerCase();
-        if (sn && n.includes(sn) && sn.length > len) { best = x.id; len = sn.length; }
-      });
-      return best;
-    }
+    const evSeriesId = ev => String(ev.seriesId || ev.seriesID || '');
 
     function loadSeriesReg() {
       if (typeof apiGet !== 'function') return;
       apiGet('seriesOverview').then(r => {
         seriesReg = Object.fromEntries((r.values || []).map(x => [x.id, x]));
-        renderCalendarFilters();
         renderCalendarGrid();
       }).catch(e => console.warn('seriesOverview failed', e));
     }
@@ -2360,37 +2282,22 @@
     }
 
     function renderCalendarFilters() {
-      const wrap = document.getElementById('calendarFilters');
-      if (!wrap) return;
-
-      const seen = new Map();   // seriesId -> first event (for label and class image)
-      annualCalendarMonths.forEach(m => (m.events || []).forEach(ev => {
-        const sid = evSeriesId(ev); if (sid && !seen.has(sid)) seen.set(sid, ev);
-      }));
-
-      const allBtn = `
-        <button class="cal-filter-btn ${activeCalendarSeries === 'all' ? 'active' : ''}" data-series="all">
-          <span class="cal-filter-icon--all">★</span>
-          <span>All Series</span>
-        </button>`;
-
-      const btns = [...seen].map(([id, ev]) => {
-        const imgUrl = getClassImage(ev.boatClass);
-        return `
-          <button class="cal-filter-btn ${activeCalendarSeries === id ? 'active' : ''}" data-series="${esc(id)}">
-            ${imgUrl ? `<img class="cal-filter-icon" src="${esc(imgUrl)}" alt="${esc(ev.boatClass)}">` : ''}
-            <span>${esc(seriesLabel(id, ev))}</span>
-          </button>`;
-      }).join('');
-
-      wrap.innerHTML = allBtn + btns;
-      wrap.querySelectorAll('.cal-filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          activeCalendarSeries = btn.dataset.series;
-          renderCalendarFilters();
-          renderCalendarGrid();
-        });
-      });
+      const wrap = document.getElementById('calendarFilters'); if (!wrap) return;
+      const { cls, series } = EventFilters.state;
+      const chip = (v, img, label) => `
+        <button class="cal-filter-btn ${cls === v ? 'active' : ''}" data-v="${esc(v)}">
+          ${img ? `<img class="cal-filter-icon" src="${esc(img)}" alt="">` : '<span class="cal-filter-icon--all">★</span>'}
+          <span>${esc(label)}</span></button>`;
+      wrap.innerHTML =
+        chip('all', '', 'All Classes') +
+        EventFilters.classes.map(c => chip(c, EventFilters.classImage(c), c)).join('') +
+        `<span class="class-select-wrap"><select class="class-select" id="calSeriesSel">
+          <option value="all">All Series</option>
+          ${EventFilters.forClass(cls).map(s => `<option value="${esc(s.key)}" ${s.key === series ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}
+        </select></span>`;
+      const refresh = () => { renderCalendarFilters(); renderCalendarGrid(); };
+      wrap.querySelectorAll('.cal-filter-btn').forEach(b => b.onclick = () => { EventFilters.set('cls', b.dataset.v); refresh(); });
+      wrap.querySelector('#calSeriesSel').onchange = e => { EventFilters.set('series', e.target.value); refresh(); };
     }
 
     function renderCalendarGrid() {
@@ -2398,9 +2305,7 @@
       if (!grid) return;
       grid.innerHTML = annualCalendarMonths.map(month => buildMonthHTML({
         monthLabel: month.monthLabel,
-        events: activeCalendarSeries === 'all'
-          ? month.events
-          : (month.events || []).filter(ev => evSeriesId(ev) === activeCalendarSeries)
+        events: (month.events || []).filter(ev => EventFilters.match(evSeriesId(ev)))
       })).join('');
       if (window.lucide) lucide.createIcons();
     }
@@ -2409,7 +2314,7 @@
       const eventsHTML = month.events && month.events.length
         ? month.events.map(ev => {
             const dateStr = ev.dateLabel + ' • ' + ev.startTime;
-            const imgUrl  = getClassImage(ev.boatClass);
+            const imgUrl = (EventFilters.get(evSeriesId(ev)) || {}).insignia || '';
             const imageHTML = imgUrl
               ? `<img src="${esc(imgUrl)}" alt="${esc(ev.boatClass)}" title="${esc(ev.boatClass)}"
                     style="width:30px;height:30px;object-fit:contain;flex-shrink:0;display:block;background:rgba(255,255,255,0.15);border-radius:6px;padding:3px;backdrop-filter:blur(4px);">`
@@ -2434,7 +2339,7 @@
                 ${regHTML}
               </div>`;
           }).join('')
-        : `<div class="cal-event-item"><span class="name">${activeCalendarSeries === 'all' ? 'No events scheduled' : 'No ' + esc(seriesLabel(activeCalendarSeries)) + ' events this month'}</span></div>`;
+        : `<div class="cal-event-item"><span class="name">${EventFilters.state.cls === 'all' && EventFilters.state.series === 'all' ? 'No events scheduled' : 'No matching events this month'}</span></div>`;
 
       return `<div class="cal-month"><h4>${esc(month.monthLabel)}</h4>${eventsHTML}</div>`;
     }
@@ -2445,9 +2350,9 @@
     async function getSheetsForClass(classKey){
       if (sheetListCache[classKey]) return sheetListCache[classKey];
 
-      const cls = RESULTS_CONFIG[classKey];
+      const cls = EventFilters.get(classKey);
       if (!cls.spreadsheetId) {
-        throw new Error(`No scoresheets configured for ${cls.label}`);
+        throw new Error(`No scoresheets configured for ${cls.name}`);
       }   
       const res = await fetch(`${DISCOVERY_URL}?ss=${cls.spreadsheetId}`);
       const data = await res.json();
@@ -2464,10 +2369,10 @@
       const imgEl = document.getElementById('classInsignia');
       if (!imgEl) return;
       
-        const cls = RESULTS_CONFIG[classKey];
+      const cls = EventFilters.get(classKey);
       if (cls && cls.insignia) {
         imgEl.src = cls.insignia;
-        imgEl.alt = `${cls.label} Insignia`;
+        imgEl.alt = `${cls.name} Insignia`;
         imgEl.style.display = 'block';
       } else {
         imgEl.style.display = 'none';
@@ -2516,7 +2421,7 @@
         '<tr><td colspan="100%"><div class="empty-state"><div class="spinner"></div></div></td></tr>';
       updateClassInsignia(activeClass);
 
-      const cls = RESULTS_CONFIG[activeClass];
+      const cls = EventFilters.get(activeClass);
       let sheet;
       try{
         const sheets = await getSheetsForClass(activeClass);
@@ -2524,7 +2429,7 @@
         if (!sheet){ document.getElementById('tableBody').innerHTML = ''; statusEl.textContent = 'No sheets found.'; return; }
         const { meta, headers, rows } = await fetchSpreadSheet(cls.spreadsheetId, sheet.name);
         renderTable(meta, headers, rows);
-        statusEl.textContent = `${cls.label} • ${sheet.name} • live from Results Sheets`;
+        statusEl.textContent = `${cls.name} • ${sheet.name} • live from Results Sheets`;
       }catch(err){
         document.getElementById('tableHead').innerHTML = '';
         statusEl.textContent = `Couldn't load results: ${err.message}`;
@@ -2553,9 +2458,7 @@
       container.className = 'class-select-wrap';
       container.innerHTML = `
         <select class="class-select" id="classSelector">
-          ${Object.entries(RESULTS_CONFIG).map(([key, cls]) => 
-            `<option value="${key}" ${key === activeClass ? 'selected' : ''}>${cls.label}</option>`
-          ).join('')}
+          ${EventFilters.withResults().map(s => `<option value="${s.key}" ${s.key === activeClass ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}
         </select>
       `;
       
@@ -2576,13 +2479,14 @@
       const cn  = String(ev.className || ev.boatClass || '').toLowerCase();
       const eventTitle = String(ev.eventName || ev.championship || '').toLowerCase();
       const txt = `${eventTitle} ${cn}`.toLowerCase();
-      const entries = Object.entries(RESULTS_CONFIG).filter(([, c]) => c.spreadsheetId);
+      const entries = EventFilters.withResults().map(s => [s.key, s]);
       
-      let hit = entries.find(([, c]) => txt.includes(c.label.toLowerCase()));
+      let hit = entries.find(([, c]) => txt.includes(c.name.toLowerCase()));
+      
       if (!hit) {
-        const m = entries.filter(([, c]) => c.className.toLowerCase() === cn);
+        const m = entries.filter(([, c]) => c.classes.some(x => x.toLowerCase() === cn));
         const wantH = txt.includes('handicap');
-        hit = m.find(([, c]) => /handicap/i.test(c.label) === wantH) || m[0];
+        hit = m.find(([, c]) => /handicap/i.test(c.name) === wantH) || m[0];
       }
       if (!hit || hit[0] === activeClass) return;
       activeClass = hit[0];
@@ -2597,7 +2501,7 @@
 
     function selectClass(classKey) {
       standingsLocked = true;
-      if (!RESULTS_CONFIG[classKey]) return true; // unknown key, let default nav happen
+      if (!EventFilters.get(classKey)) return true; // unknown key, let default nav happen
       activeClass = classKey;
       activeSheetIndex = 0;
 
@@ -2968,12 +2872,12 @@
     function renderBoatFilters() {
       const wrap = document.getElementById('boatClassFilters');
       if (!wrap) return;
-      const classes = Object.keys(CLASS_IMAGE_MAP).filter(c => c !== 'Social' && c !== 'M');
+      const classes = EventFilters.classes;
       wrap.innerHTML = `
         <div class="filter-row--classes">
           ${classes.map(c => `
             <button class="cal-filter-btn ${boatFilters.class===c?'active':''}" data-class="${esc(c)}">
-              <img class="cal-filter-icon" src="${esc(CLASS_IMAGE_MAP[c])}" alt="${esc(c)}">
+              <img class="cal-filter-icon" src="${esc(EventFilters.classImage(c))}" alt="${esc(c)}">
               <span>${esc(c)}</span>
             </button>`).join('')}
         </div>
@@ -3067,17 +2971,7 @@
 
             <div class="app-row-right">
               ${activePill}
-
-              ${CLASS_IMAGE_MAP[boatClass] ? `
-                <img class="boat-class-icon"
-                    src="${esc(CLASS_IMAGE_MAP[boatClass])}"
-                    alt="${esc(boatClass)}">
-              ` : `
-                <img class="boat-class-icon"
-                    src="${esc(CLASS_IMAGE_MAP["General"])}"
-                    alt="${esc("General")}">
-              `}
-
+              <img class="boat-class-icon" src="${esc(EventFilters.classImage(boatClass))}" alt="${esc(boatClass)}">
               <i data-lucide="chevron-right" class="boat-chevron"></i>
             </div>
           </div>
@@ -4283,7 +4177,7 @@
       await loadSeriesConfig();
 
       // Initialize Championship Standings engine only if sheets exist
-      if (Object.keys(RESULTS_CONFIG).length > 0) {
+      if (EventFilters.withResults().length > 0) {
         renderClassTabs();
         updateClassInsignia(activeClass);
         await renderRoundTabs();
