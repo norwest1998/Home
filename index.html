@@ -2262,6 +2262,7 @@
     }
     
     // Registration state per series (EntryRequired series only), from the gateway's seriesOverview
+    let seriesReg = {};   // registration state per series, from seriesOverview
     const evSeriesId = ev => String(ev.seriesId || ev.seriesID || '');
 
     function loadSeriesReg() {
