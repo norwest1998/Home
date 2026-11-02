@@ -1994,24 +1994,77 @@
         
     
     // Championship Standings (IOM, DF95, etc. - loads separately on demand)
-    const RESULTS_CONFIG = {
-    df95:   { label: 'DF95 Scratch',     className: 'DF95',    spreadsheetId: '1J8CUk1VCDeOYAXfI00acv9YBScgGvH_BrirOBOIfW90', insignia: '/Home/images/classes/DF95.png' },
-    df95h:  { label: 'DF95 Handicap',    className: 'DF95',    spreadsheetId: '1a2cU8sU0I7oTDjo8MTmQRlUxasG-5sjNFnTWpJcJsVg', insignia: '/Home/images/classes/DF95.png' },
-    iom:    { label: 'IOM Racing',       className: 'IOM',     spreadsheetId: '1k3Oe4SBZEMLlrSc1jRaPQkSN6R7RA4OHUtcDn4OZLeQ', insignia: '/Home/images/classes/IOM.png' },
-    soling: { label: 'Soling Scratch',   className: 'Soling',  spreadsheetId: '1WTLfz4EHShQ6G5VFZ8jJwDiTn-4oHK-pk-hYfBIMn38', insignia: '/Home/images/classes/Soling.png' },
-    gh:     { label: 'General Handicap', className: 'General', spreadsheetId: '1xMKT7HapmqEIuqhQQxH1pfPkRWam5x88Pxaah1xayog', insignia: '/Home/images/classes/smmc-logo.png' },
-    df65:   { label: 'DF65 Scratch',     className: 'DF65',    spreadsheetId: '1T5zgrZpJDmQKmkMlnOmnAb_ext18zx733mMuvh4akvg', insignia: '/Home/images/classes/DF65.png' },
-    social: { label: 'Social Sailing',   className: 'Social',  spreadsheetId: '', insignia: '/Home/images/classes/SmileyFace.png' },
-    twilight: { label: 'Twilight Sailing', className: 'Twilight', spreadsheetId: '', insignia: '/Home/images/classes/Twilight.png' }
+    let RESULTS_CONFIG = {};
+    let CLASS_IMAGE_MAP = {
+      'General': '/Home/images/classes/smmc-logo.png' // Default fallback
     };
-
-    const CLASS_IMAGE_MAP = Object.values(RESULTS_CONFIG).reduce((map, cls) => {
-    if (cls.className && cls.insignia && !map[cls.className]) map[cls.className] = cls.insignia;
-    return map;
-    }, {});
     
     function getClassImage(className) { return CLASS_IMAGE_MAP[className] || CLASS_IMAGE_MAP['General'] || ''; }
-    
+
+    function renderNavResultsDropdown() {
+      const dropdown = document.getElementById('raceResultsDropdown');
+      if (!dropdown) return;
+      
+      const baseHTML = `<li><a href="https://norwest1998.github.io/Home/captureResults.html" target="_blank" rel="noopener noreferrer">Add Race Result</a></li>`;
+      const keys = Object.keys(RESULTS_CONFIG);
+      
+      if (keys.length === 0) {
+        dropdown.innerHTML = baseHTML + `<li><span class="nav-link" style="color:var(--signal); cursor:default;">No Standings Available</span></li>`;
+        return;
+      }
+
+      const dynamicHTML = keys.map(key => {
+        const config = RESULTS_CONFIG[key];
+        const formattedLabel = config.label.toLowerCase().endsWith('standings') ? config.label : `${config.label} Standings`;
+        return `<li><a href="#race-results-hub" onclick="return selectClass('${key}')">${esc(formattedLabel)}</a></li>`;
+      }).join('');
+      
+      dropdown.innerHTML = baseHTML + dynamicHTML;
+    }
+
+    async function loadSeriesConfig() {
+      const statusEl = document.getElementById('statusLine');
+      if (statusEl) statusEl.textContent = 'Loading Championship Standings...';
+      
+      try {
+        const seriesData = await fetchSheet(DOMAIN.racing || 'racing', 'Series');
+        
+        if (seriesData && seriesData.length > 0) {
+          seriesData.forEach(s => {
+            const spreadsheetId = s.SpreadsheetID || s.SpreadsheetId;
+            // Ignore series without a spreadsheet completely
+            if (!spreadsheetId || !String(spreadsheetId).trim()) return;
+
+            const key = String(s.ID).toLowerCase();
+            const label = s.SeriesName || s.ID;
+            
+            // If AllowedClasses is a list (e.g. "DF95, DF65"), grab the first one as primary
+            let className = s.AllowedClasses || 'General';
+            if (className.includes(',')) className = className.split(',')[0].trim();
+            
+            const insignia = s.Insignia || CLASS_IMAGE_MAP['General'];
+            
+            RESULTS_CONFIG[key] = { label, className, spreadsheetId, insignia };
+            
+            if (className && insignia) {
+              CLASS_IMAGE_MAP[className] = insignia;
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load Series sheet for results config:", err);
+        if (statusEl) statusEl.textContent = 'Error loading series configuration.';
+      }
+      
+      renderNavResultsDropdown();
+
+      // If activeClass is null, default it to the first available class fetched
+      const keys = Object.keys(RESULTS_CONFIG);
+      if (keys.length > 0 && (!activeClass || !RESULTS_CONFIG[activeClass])) {
+        activeClass = keys[0];
+      }
+    }
+
     // Shared Global Data States
     let allMembers = [];
     let allApplications = [];
@@ -2453,7 +2506,7 @@
         ).join('');
     }
     
-    let activeClass = Object.keys(RESULTS_CONFIG)[0];
+    let activeClass =  null;
     let activeSheetIndex = 0; // index into the discovered sheet list for the active class
     
     async function loadActiveSheet(){
@@ -4226,11 +4279,20 @@
       document.getElementById('boatSearch')?.addEventListener('input', renderBoats);
       initApp();                       // bootstrap + side data (non-blocking)
 
-      // Championship Standings (on-demand sheets via HOME_DATA_API ?ss=)
-      renderClassTabs();
-      updateClassInsignia(activeClass);
-      await renderRoundTabs();
-      loadActiveSheet();
+      // Fetch dynamic Series config from DOMAIN.racing
+      await loadSeriesConfig();
+
+      // Initialize Championship Standings engine only if sheets exist
+      if (Object.keys(RESULTS_CONFIG).length > 0) {
+        renderClassTabs();
+        updateClassInsignia(activeClass);
+        await renderRoundTabs();
+        loadActiveSheet();
+      } else {
+        const statusEl = document.getElementById('statusLine');
+        if(statusEl) statusEl.textContent = 'No championship standings available.';
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="100%"><div class="empty-state">No Series Data available</div></td></tr>';
+      }
     });
 
   </script>
