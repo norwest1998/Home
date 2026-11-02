@@ -979,6 +979,15 @@
   padding: 3px;
   backdrop-filter: blur(4px);
 }
+.calendar-filters{ align-items:center; }
+.calendar-filters .cal-filter-btn{
+  height:38px; box-sizing:border-box; border-radius:12px; padding:0 14px 0 5px;
+}
+.calendar-filters .cal-filter-btn .cal-filter-icon{ width:28px; height:28px; }
+.calendar-filters .class-select-wrap{ margin-bottom:0; display:flex; }
+.calendar-filters .class-select{
+  height:38px; box-sizing:border-box; padding-top:0; padding-bottom:0;
+}
 
   /* =========================================================
     FOOTER

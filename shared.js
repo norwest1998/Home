@@ -50,8 +50,8 @@ const EventFilters = {
 
   load() {
     return this._p || (this._p = (async () => {
-      const [cls, ser] = await Promise.all([
-        fetchSheet(DOMAIN.members, "Classes"), fetchSheet(DOMAIN.racing, "Series")]);
+      const safe = (d, s) => fetchSheet(d, s).catch(e => { console.warn("EventFilters:", s, e); return []; });
+      const [cls, ser] = await Promise.all([safe(DOMAIN.members, "Classes"), safe(DOMAIN.racing, "Series")]);
       ser.forEach(s => {
         const id = String(s.ID || "").trim(); if (!id) return;
         this.series[id.toLowerCase()] = {
@@ -62,9 +62,10 @@ const EventFilters = {
         };
       });
       const used = new Set(Object.values(this.series).flatMap(s => s.classes));
-      this.classes = cls.map(c => String(c.ClassName || "").trim()).filter(c => used.has(c));
+      const names = cls.map(c => String(c.ClassName || "").trim()).filter(c => used.has(c));
+      this.classes = names.length ? names : [...used];
       return this;
-    })());
+    })().catch(e => { this._p = null; throw e; }));   // don't cache a failure
   },
 
   get: id => EventFilters.series[String(id || "").toLowerCase()] || null,
