@@ -2404,7 +2404,7 @@ async function generateAIReport(){
       discards: [...s.discardSet].map(rs => rs.points)
     }));
     
-    // Removed RESULTS_GATEWAY_URL to avoid CORS redirect issues.
+    // Removed FILE_GATEWAY_URL to avoid CORS redirect issues.
     // Using default GATEWAY_URL but supplying the domain to fix the 'Forbidden' error.
     const res = await gw({ 
         action: "genReport", 
@@ -2511,7 +2511,7 @@ async function saveAndSend(){
       folderKey: "upload", 
       filename: filename, 
       content: json 
-    }, RESULTS_GATEWAY_URL);
+    }, FILE_GATEWAY_URL);
     
     showToast('Results uploaded successfully');
     state.sent = true;
