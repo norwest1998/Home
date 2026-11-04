@@ -913,10 +913,9 @@ function renderStats() {
 // ----------------------------------------------------------------
 const CALENDAR_PAGE     = 'calendarManagement.html';
 
-
 let outstandingEvents = [], postponedEvents = [];
 const _t = s => String(s ?? '').trim();
-
+    
 // Handles Date, ISO, "2026/10/10", and "2026/10/30 11:00 AM–01:00 PM"; "Pending <hex>" → null
 function parseCalDate(v) {
     if (!v) return null;
