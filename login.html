@@ -62,8 +62,8 @@ const $ = id => document.getElementById(id);
 const setErr = m => { $("err").textContent = m || ""; };
 
 function finish(d) {
-  localstorage.setItem(TOKEN_KEY, d.token);
-  localstorage.setItem("SMMC_USER", JSON.stringify({ email: d.email, name: d.name, role: d.role, exp: d.exp }));
+  localStorage.setItem(TOKEN_KEY, d.token);
+  localStorage.setItem("SMMC_USER", JSON.stringify({ email: d.email, name: d.name, role: d.role, exp: d.exp }));
   const n = new URLSearchParams(location.search).get("next") || "";
   location.replace(n.startsWith("/") && !n.startsWith("//") ? n : "admin.html");
 }
@@ -91,7 +91,7 @@ $("pwBtn").addEventListener("click", async () => {
   try {
     const d = await gw({ action: "passwordLogin", userId: $("uid").value.trim(), password: $("pw").value });
     if (!d.mustChange) return finish(d);
-    localstorage.setItem(TOKEN_KEY, d.token);          // limited token: only changePassword is accepted
+    localStorage.setItem(TOKEN_KEY, d.token);          // limited token: only changePassword is accepted
     pendingPwd = $("pw").value;
     ["stepPwd","stepEmail","stepCode","googleBtn"].forEach(i => $(i).style.display = "none");
     $("stepChange").style.display = "block";

@@ -409,7 +409,7 @@ const RACE_TYPES = [
 const MATCH_TYPES = ["round_robin", "knockout"];   // pairwise types: count/weight don't apply (round robin cycles live in config)
 const isMatch = t => MATCH_TYPES.includes(t);
 const SCORING = [{ v: "low_point", l: "Low point" }, { v: "high_point", l: "High point" }];
-const _u = JSON.parse(localstorage.getItem("SMMC_USER") || "{}");
+const _u = JSON.parse(localStorage.getItem("SMMC_USER") || "{}");
 const CAN_WRITE = ["editor", "admin"].includes(_u.role);
 const IS_ADMIN  = _u.role === "admin";
 
