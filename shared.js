@@ -24,6 +24,7 @@ const FILE_GATEWAY_URL = "https://script.google.com/macros/s/AKfycbwHYDa3Jg-4poj
 const TEMPLATE_GW_URL = "https://script.google.com/macros/s/AKfycbzXAuRrP7wCHWqaDJ5m-gh0V9MOxOKMFEuKUMGvf5NAh0tgLhtyHDeX8J9CQ-5PSOE2Ng/exec";
 const EMAIL_GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzrdcwjXHalBizwnRw62jKiY34saRkHewG5ueuO3wr3XsjcEtK2yCfX_LvzdOUrlV3g/exec";
 const TRIGGERESULTS_URL = "https://script.google.com/macros/s/AKfycbxNvDM21y1L77uhmd0W5JyygwHke8FrbxM_B3EhcvTGCXzx_BDxFwK1OeuI6Zn-unta/exec";
+const RESULT_PROCESSOR_URL = "https://script.google.com/macros/s/AKfycbxNvDM21y1L77uhmd0W5JyygwHke8FrbxM_B3EhcvTGCXzx_BDxFwK1OeuI6Zn-unta/exec";
 
 const DOMAIN = {
     members:   "members",
@@ -291,7 +292,7 @@ async function fetchDriveFile(fileId) {
 }
 
 async function triggerResultsProcessing() {
-    return (await gwGet({ action: "triggerResults"}, FILE_GATEWAY_URL));
+    return (await gwGet({ action: "triggerResults"}, RESULT_PROCESSOR_URL));
 }
 
 async function apiGet(action, extra = {}) {  
