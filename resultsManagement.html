@@ -306,6 +306,30 @@ select.guest-inline-input option {
     background: var(--ocean-deep);
     color: var(--foam);
 }
+
+/* ── Error file correction ── */
+.ef-row { grid-template-columns: 1fr auto auto; cursor: default; }
+.ef-row:hover { transform: none; background: var(--glass-fill); border-color: var(--glass-border); }
+.ef-reason { font-size: 11.5px; color: var(--signal); margin-top: 3px; word-break: break-word; }
+.ef-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ef-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 14px; }
+.ef-field label { display: block; margin-bottom: 4px; font-family: var(--font-data); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--foam-dim); }
+.ef-input { width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 8px; outline: none;
+    font-family: var(--font-body); font-size: 12.5px; color: var(--foam);
+    background: var(--glass-fill); border: 1px solid var(--glass-border); }
+.ef-input:focus { border-color: var(--glow); }
+.ef-sub { font-size: 12px; color: var(--foam-dim); margin-bottom: 6px; }
+.ef-matrix { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.ef-matrix th { padding: 8px 6px; text-align: center; white-space: nowrap; background: var(--ocean-mid);
+    font-family: var(--font-data); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--glow);
+    border-bottom: 1px solid var(--glass-border); }
+.ef-matrix td { padding: 3px 4px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.ef-id { width: 64px; } .ef-sail { width: 70px; } .ef-name { min-width: 160px; } .ef-cls { width: 80px; }
+.ef-cell { width: 54px; text-align: center; text-transform: uppercase; }
+.ef-bad { border-color: var(--signal) !important; background: rgba(255,106,61,0.14) !important; }
+.ef-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.ef-ul { margin: 6px 0 0 18px; padding: 0; }
 </style>
 </head>
 <body>
@@ -337,6 +361,7 @@ select.guest-inline-input option {
         <span class="badge badge-approved"><span id="statAvgReqApproved">—</span> Requests Approved</span>
         <span id="badgeOutstandingResults" class="badge badge-default"><span id="statOutstandingResults">—</span> Outstanding Results</span>
         <span id="badgePostponed" class="badge badge-default"><span id="statPostponed">—</span> Postponed</span>
+        <span id="badgeErrorFiles" class="badge badge-declined" style="display:none;" data-min-role="editor"><span id="statErrorFiles">—</span> Need Correction</span>
     </div>
 
     <!-- Outstanding Results -->
@@ -440,6 +465,23 @@ select.guest-inline-input option {
             </div>
             <div id="overallSheetRows" style="display:none;"></div><!-- kept for legacy loadOverallSheets ref -->
             <div class="fn-message" id="sheetsMsg"></div>
+        </div>
+    </div>
+
+    <!-- Files Needing Correction -->
+    <div class="section-head" id="error-files" data-min-role="editor">
+        <div>
+            <h2>Files Needing Correction</h2>
+            <p>Results files the processor rejected. They are skipped until fixed: use Fix to correct the file (it is checked with the processor's own rules), then save to re-queue it.</p>
+        </div>
+    </div>
+    <div class="panel" style="margin-bottom:16px;" data-min-role="editor">
+        <div class="panel-header">
+            <div class="panel-title-left"><span class="dot"></span><h3>Rejected Files</h3></div>
+        </div>
+        <div class="tab-content active">
+            <div id="errorFileRows" class="result-rows"><div class="empty-state"><span class="spinner"></span></div></div>
+            <div class="fn-message" id="errorFilesMsg"></div>
         </div>
     </div>
 
@@ -702,6 +744,36 @@ select.guest-inline-input option {
     </div>
 </div>
 
+<!-- ================================================================
+     ERROR FILE EDITOR MODAL (not closed by clicking outside, so edits are not lost)
+     ================================================================ -->
+<div class="modal-overlay" id="efModal">
+    <div class="modal-box" style="max-width:1100px;">
+        <div class="modal-header">
+            <div>
+                <h3 id="efTitle">Correct results file</h3>
+                <div class="modal-header-meta" id="efMeta"></div>
+            </div>
+            <button class="icon-btn" onclick="closeErrorEditor()" title="Close">
+                <i class="inline-icon" data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="efBody"></div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" style="margin-right:auto;" onclick="ef && openFileDrive(ef.fileId)">
+                <i class="inline-icon" data-lucide="external-link"></i> Open in Drive
+            </button>
+            <button type="button" class="btn btn-ghost" onclick="closeErrorEditor()">Close</button>
+            <button type="button" class="btn btn-ghost" id="efValidateBtn" onclick="efSubmit(false)">
+                <i class="inline-icon" data-lucide="check-circle"></i> Check
+            </button>
+            <button type="button" class="btn btn-primary" id="efSaveBtn" onclick="efSubmit(true)">
+                <i class="inline-icon" data-lucide="save"></i> Save &amp; Process
+            </button>
+        </div>
+    </div>
+</div>
+
 <footer>
     <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
 </footer>
@@ -959,6 +1031,7 @@ async function cancelEvent(hexKey) {
 // ----------------------------------------------------------------
 async function loadAll() {
     loadUploadFiles();
+    loadErrorFiles();
     loadProcessedFiles();
     loadOverallSheets();
     loadGuestData();
@@ -2037,9 +2110,10 @@ async function initiateProcessing() {
 async function checkUploadFolder() {
     showMsg('processingMsg', 'Checking upload folder…', false);
     try {
-        await loadUploadFiles();
-        const count = uploadFiles.length;
-        showMsg('processingMsg', count ? `${count} file(s) found. Ready to process.` : 'Upload folder is empty — no file to process.', !count);
+        await Promise.all([loadUploadFiles(), loadErrorFiles()]);
+        const count = uploadFiles.length - efFiles.length;          // files with an error are skipped by the scheduler
+        const note = efFiles.length ? ` ${efFiles.length} file(s) need correction (see Files Needing Correction).` : '';
+        showMsg('processingMsg', (count > 0 ? `${count} file(s) ready to process.` : 'No file ready to process.') + note, count <= 0);
         document.getElementById('statOutstanding').textContent = count;
     } catch (err) {
         showMsg('processingMsg', 'Error: ' + err.message, true);
@@ -2074,6 +2148,317 @@ async function loadLastReminder() {
 // ----------------------------------------------------------------
 function openCaptureModal() {
     window.location.href = 'captureResults.html';
+}
+
+
+// ----------------------------------------------------------------
+// ERROR FILE CORRECTION
+// Files the processor rejected carry "Error: <reason>" in their Drive description and are skipped by the
+// scheduler. Fix -> validate (same rules as the processor) -> save clears the error and re-queues the file.
+// The results matrix: rows = boats, cells = finishing position, or DNS / DNF / RO. Positions stay boatIds in the file.
+// ----------------------------------------------------------------
+let efFiles = [];
+let ef = null;                      // editor state
+const efS    = x => String(x == null ? '' : x).trim();
+const efList = v => Array.isArray(v) ? v : (efS(v) === '' ? [] : [v]);
+const EF_CODES = ['DNS', 'DNF', 'RO'];
+
+async function loadErrorFiles() {
+    const box = document.getElementById('errorFileRows');
+    if (!box) return;
+    try {
+        efFiles = (await gw({ action: 'listErrorFiles' }, FILE_GATEWAY_URL)).files || [];
+    } catch (err) {
+        efFiles = [];
+        showMsg('errorFilesMsg', 'Error: ' + err.message, true);
+    }
+    const stat = document.getElementById('statErrorFiles');
+    if (stat) stat.textContent = efFiles.length;
+    document.getElementById('badgeErrorFiles').style.display = efFiles.length ? '' : 'none';
+    box.innerHTML = efFiles.length ? efFiles.map(f => `
+        <div class="result-row ef-row">
+            <div>
+                <div class="r-name">${escHtml(f.name)}</div>
+                <div class="ef-reason">${escHtml(efReason(f.description))}</div>
+            </div>
+            <span class="r-type">${escHtml(fmtTime(f.created))}</span>
+            <div class="ef-actions">
+                <button type="button" class="btn btn-primary" onclick="openErrorEditor('${escHtml(f.id)}')">Fix</button>
+                <button type="button" class="btn btn-ghost" onclick="requeueErrorFile('${escHtml(f.id)}')">Re-queue</button>
+                <button type="button" class="btn btn-ghost" onclick="openFileDrive('${escHtml(f.id)}')">Drive</button>
+            </div>
+        </div>`).join('') : '<div class="empty-state">No files need correction.</div>';
+}
+
+function efReason(d) {
+    return String(d || '').replace(/^\s*(Failed,\s*error,\s*|Error:\s*)/i, '');
+}
+
+async function requeueErrorFile(fileId) {
+    if (!confirm('Re-queue this file without changes?\n\nUse this only when the failure was not caused by the file itself (e.g. a temporary service problem).')) return;
+    try {
+        await gw({ action: 'requeueFile', fileId }, FILE_GATEWAY_URL);
+        await efAfterQueued('File re-queued.');
+    } catch (err) { showMsg('errorFilesMsg', 'Error: ' + err.message, true); }
+}
+
+async function efAfterQueued(prefix) {
+    let note;
+    try {
+        const m = await triggerResultsProcessing();
+        note = m && typeof m.message === 'string' ? m.message : 'Processing triggered.';
+    } catch (err) { note = 'Could not start processing now (' + err.message + ') - the scheduler will pick the file up.'; }
+    await loadErrorFiles();
+    loadUploadFiles();
+    showMsg('errorFilesMsg', prefix + ' ' + note, false);
+}
+
+// ---------- editor state ----------
+function efBuild(r) {
+    const raw = r.json || {};
+    const hdr = {
+        seriesId: efS(raw.seriesId || raw.series), roundNo: raw.roundNo == null ? '' : raw.roundNo, season: efS(raw.season),
+        regattaDate: efS(raw.regattaDate), regattaName: efS(raw.regattaName), className: efS(raw.className),
+        competitorCount: raw.competitorCount == null ? '' : raw.competitorCount, startTime: efS(raw.startTime), endTime: efS(raw.endTime)
+    };
+    const entries = (raw.entries || []).map(e => ({
+        extra: e, boatId: efS(e.boatId), sailNo: efS(e.sailNo), member: efS(e.member), className: efS(e.className), cells: [] }));
+    const races = raw.races || [];
+
+    // a boatId used in a race but missing from entries becomes a placeholder entry, so nothing is silently dropped
+    const known = new Set(entries.map(e => e.boatId));
+    const placeholders = [];
+    races.forEach(rc => [rc.positions, rc.dns, rc.dnf, rc.raceRO].forEach(l => efList(l).forEach(id => {
+        const k = efS(id);
+        if (!known.has(k)) { known.add(k); placeholders.push(k);
+            entries.push({ extra: {}, boatId: k, sailNo: '', member: '', className: hdr.className, cells: [] }); }
+    })));
+
+    entries.forEach(e => { e.cells = races.map(() => ''); });
+    const byId = {};
+    entries.forEach((e, i) => (byId[e.boatId] = byId[e.boatId] || []).push(i));
+    const warns = [];
+    races.forEach((rc, ri) => {
+        const put = (id, v) => {
+            const list = byId[efS(id)];
+            const i = list.find(k => !entries[k].cells[ri]);
+            if (i === undefined) { warns.push(`Race ${ri + 1}: boat '${efS(id)}' was listed more than once - kept the first`); return; }
+            entries[i].cells[ri] = v;
+        };
+        efList(rc.positions).forEach((id, k) => put(id, String(k + 1)));
+        efList(rc.dns).forEach(id => put(id, 'DNS'));
+        efList(rc.dnf).forEach(id => put(id, 'DNF'));
+        efList(rc.raceRO).forEach(id => put(id, 'RO'));
+    });
+    if (placeholders.length) warns.unshift('These boat IDs are used in races but missing from entries (added at the bottom): ' +
+        placeholders.map(p => p === '' ? '(blank)' : p).join(', '));
+
+    return { fileId: r.fileId, name: r.name, description: r.description || '', updated: r.updated,
+             raw, hdr, entries, nRaces: races.length, warns };
+}
+
+// Checks that can be done in the browser; the server then applies the full rules (roster, round registry ...)
+function efAnalyse() {
+    const issues = [], bad = new Set(), E = ef.entries;
+    for (let r = 0; r < ef.nRaces; r++) {
+        const nums = [];
+        E.forEach((e, i) => {
+            const c = efS(e.cells[r]).toUpperCase();
+            if (/^\d+$/.test(c) && Number(c) > 0) nums.push({ n: Number(c), i });
+            else if (c !== '' && EF_CODES.indexOf(c) < 0) {
+                bad.add(i + ',' + r); issues.push(`Race ${r + 1}: '${c}' is not a position, DNS, DNF or RO`);
+            } else if (c === '' && e.cells.some(x => efS(x) !== '')) {
+                bad.add(i + ',' + r); issues.push(`Race ${r + 1}: ${e.member || 'boat ' + (e.boatId || '(blank)')} has no result - enter DNS if it did not start`);
+            }
+        });
+        nums.sort((a, b) => a.n - b.n);
+        let broken = false;
+        nums.forEach((x, k) => { if (x.n !== k + 1) { broken = true; bad.add(x.i + ',' + r); } });
+        if (broken) issues.push(`Race ${r + 1}: finishing positions must run 1, 2, 3 ... with no gaps or repeats`);
+    }
+    return { issues: Array.from(new Set(issues)), bad };
+}
+
+function efSerialise() {
+    const h = ef.hdr, raw = JSON.parse(JSON.stringify(ef.raw));
+    const num = v => (efS(v) === '' || isNaN(Number(v))) ? v : Number(v);
+    raw.seriesId = h.seriesId;
+    if ('series' in raw) raw.series = h.seriesId;
+    raw.roundNo = num(h.roundNo);
+    raw.season = h.season;
+    raw.regattaDate = h.regattaDate;
+    raw.regattaName = h.regattaName;
+    raw.className = h.className;
+    raw.competitorCount = num(h.competitorCount);
+    raw.startTime = h.startTime;
+    raw.endTime = h.endTime;
+    raw.entries = ef.entries.map(e => ({ ...e.extra, boatId: e.boatId, sailNo: e.sailNo, member: e.member, className: e.className }));
+    const old = ef.raw.races || [];
+    raw.races = Array.from({ length: ef.nRaces }, (_, r) => {
+        const cells = ef.entries.map(e => ({ id: e.boatId, c: efS(e.cells[r]).toUpperCase() }));
+        const ids = code => cells.filter(x => x.c === code).map(x => x.id);
+        const pos = cells.filter(x => /^\d+$/.test(x.c)).sort((a, b) => a.c - b.c).map(x => x.id);
+        const ro = ids('RO');
+        return { ...(old[r] || {}), raceNumber: r + 1, raceRO: ro.length ? ro : '', positions: pos, dnf: ids('DNF'), dns: ids('DNS') };
+    });
+    return raw;
+}
+
+// ---------- editor UI ----------
+async function openErrorEditor(fileId) {
+    ef = null;
+    document.getElementById('efTitle').textContent = 'Correct results file';
+    document.getElementById('efMeta').textContent = '';
+    document.getElementById('efBody').innerHTML = '<div class="empty-state"><span class="spinner"></span> Loading file…</div>';
+    efBusy(true);
+    document.getElementById('efModal').classList.add('open');
+    try {
+        const [r] = await Promise.all([
+            gw({ action: 'getResultsFile', fileId }, FILE_GATEWAY_URL),
+            EventFilters.load().catch(() => null)
+        ]);
+        ef = efBuild(r);
+        document.getElementById('efTitle').textContent = ef.name;
+        document.getElementById('efMeta').textContent = 'Event ' + efS(ef.raw.eventID);
+        efRender();
+        efBusy(false);
+        efSubmit(false);                       // show the current problems straight away
+    } catch (err) {
+        document.getElementById('efBody').innerHTML =
+            `<div class="fn-message visible error">${escHtml(err.message)}</div>`;
+        efBusy(false);
+        document.getElementById('efSaveBtn').disabled = true;
+        document.getElementById('efValidateBtn').disabled = true;
+    }
+}
+
+function closeErrorEditor() {
+    document.getElementById('efModal').classList.remove('open');
+    ef = null;
+}
+
+function efBusy(on) {
+    ['efSaveBtn', 'efValidateBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = on; });
+}
+
+function efField(label, html) {
+    return `<div class="ef-field"><label>${escHtml(label)}</label>${html}</div>`;
+}
+
+function efRender() {
+    const h = ef.hdr, inp = (k, extra = '') =>
+        `<input class="ef-input" ${extra} value="${escHtml(h[k])}" oninput="efH('${k}', this.value)">`;
+    const series = EventFilters.all();
+    const has = series.some(s => s.id.toLowerCase() === h.seriesId.toLowerCase());
+    const opts = [`<option value="">— select —</option>`]
+        .concat(has || !h.seriesId ? [] : [`<option value="${escHtml(h.seriesId)}" selected>${escHtml(h.seriesId)} (unknown)</option>`])
+        .concat(series.map(s => `<option value="${escHtml(s.id)}"${s.id.toLowerCase() === h.seriesId.toLowerCase() ? ' selected' : ''}>${escHtml(s.id)} — ${escHtml(s.name)}</option>`));
+
+    document.getElementById('efBody').innerHTML = `
+        <div class="fn-message visible error"><strong>Why it was rejected:</strong> ${escHtml(efReason(ef.description) || 'No reason recorded.')}</div>
+        <div id="efIssues"></div>
+        ${ef.warns.length ? `<div class="fn-message visible error" style="background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.35);color:#fbbf24;">
+            <strong>Check:</strong><ul class="ef-ul">${ef.warns.map(w => `<li>${escHtml(w)}</li>`).join('')}</ul></div>` : ''}
+        <div class="ef-grid">
+            ${efField('Series', `<select class="ef-input mm-select" onchange="efH('seriesId', this.value)">${opts.join('')}</select>`)}
+            ${efField('Round no', inp('roundNo', 'type="number" min="1"'))}
+            ${efField('Season', inp('season', 'placeholder="2026-27"'))}
+            ${efField('Date (dd/MM/yyyy)', inp('regattaDate', 'placeholder="dd/MM/yyyy"'))}
+            ${efField('Regatta', inp('regattaName'))}
+            ${efField('Class', inp('className'))}
+            ${efField('Competitor count', inp('competitorCount', 'type="number" min="1"'))}
+            ${efField('Start', inp('startTime'))}
+            ${efField('End', inp('endTime'))}
+        </div>
+        <div>
+            <div class="ef-sub">Results — enter the finishing position, or DNS / DNF / RO. Every boat that raced needs a result in every race.</div>
+            <div class="scoresheet-wrap"><div id="efMatrixWrap"></div></div>
+        </div>
+        <div class="ef-tools">
+            <button type="button" class="btn btn-ghost" onclick="efAddEntry()">+ Entry</button>
+            <button type="button" class="btn btn-ghost" onclick="efAddRace()">+ Race</button>
+            <button type="button" class="btn btn-ghost" onclick="efDelRace()">− Last race</button>
+            <button type="button" class="btn btn-ghost" onclick="efFillDNS()">Blanks → DNS</button>
+        </div>`;
+    efRenderMatrix();
+    if (window.lucide) lucide.createIcons();
+}
+
+function efRenderMatrix() {
+    const wrap = document.getElementById('efMatrixWrap');
+    if (!wrap || !ef) return;
+    const races = Array.from({ length: ef.nRaces }, (_, r) => `<th>R${r + 1}</th>`).join('');
+    const rows = ef.entries.map((e, i) => `
+        <tr>
+            <td><input class="ef-input ef-id" value="${escHtml(e.boatId)}" oninput="efE(${i}, 'boatId', this.value)" title="Boat ID"></td>
+            <td><input class="ef-input ef-sail" value="${escHtml(e.sailNo)}" oninput="efE(${i}, 'sailNo', this.value)"></td>
+            <td><input class="ef-input ef-name" value="${escHtml(e.member)}" oninput="efE(${i}, 'member', this.value)"></td>
+            <td><input class="ef-input ef-cls" value="${escHtml(e.className)}" oninput="efE(${i}, 'className', this.value)"></td>
+            ${e.cells.map((c, r) => `<td><input class="ef-input ef-cell" data-i="${i}" data-r="${r}" value="${escHtml(c)}" oninput="efC(${i}, ${r}, this)"></td>`).join('')}
+            <td><button type="button" class="icon-btn" onclick="efDelEntry(${i})" title="Remove entry">✕</button></td>
+        </tr>`).join('');
+    wrap.innerHTML = `<table class="ef-matrix"><thead><tr><th>Boat ID</th><th>Sail #</th><th>Member</th><th>Class</th>${races}<th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    efMarkCells();
+}
+
+function efMarkCells() {
+    const a = efAnalyse();
+    document.querySelectorAll('#efMatrixWrap .ef-cell').forEach(el =>
+        el.classList.toggle('ef-bad', a.bad.has(el.dataset.i + ',' + el.dataset.r)));
+    return a;
+}
+
+function efH(k, v)         { ef.hdr[k] = v; }
+function efE(i, k, v)      { ef.entries[i][k] = v; }
+function efC(i, r, el)     { ef.entries[i].cells[r] = el.value.trim().toUpperCase(); efMarkCells(); }
+function efAddEntry()      { ef.entries.push({ extra: {}, boatId: '', sailNo: '', member: '', className: ef.hdr.className, cells: Array(ef.nRaces).fill('') }); efRenderMatrix(); }
+function efAddRace()       { ef.nRaces++; ef.entries.forEach(e => e.cells.push('')); efRenderMatrix(); }
+function efFillDNS() {
+    ef.entries.forEach(e => { if (e.cells.some(c => efS(c))) e.cells = e.cells.map(c => efS(c) ? c : 'DNS'); });
+    efRenderMatrix();
+}
+function efDelEntry(i) {
+    const e = ef.entries[i];
+    if (e.cells.some(c => efS(c)) && !confirm(`Remove ${e.member || 'this entry'} and all of its results?`)) return;
+    ef.entries.splice(i, 1);
+    efRenderMatrix();
+}
+function efDelRace() {
+    if (ef.nRaces <= 1) return;
+    if (!confirm(`Remove Race ${ef.nRaces} and all of its results?`)) return;
+    ef.nRaces--;
+    ef.entries.forEach(e => e.cells.pop());
+    efRenderMatrix();
+}
+
+function efShow(kind, title, list) {
+    const el = document.getElementById('efIssues');
+    if (!el) return;
+    el.innerHTML = `<div class="fn-message visible ${kind}"><strong>${escHtml(title)}</strong>` +
+        (list && list.length ? `<ul class="ef-ul">${list.map(x => `<li>${escHtml(x)}</li>`).join('')}</ul>` : '') + `</div>`;
+    el.scrollIntoView({ block: 'nearest' });
+}
+
+// save=false: check only.  save=true: server re-validates, writes the file, clears the error, then processing is started.
+async function efSubmit(save) {
+    if (!ef) return;
+    const a = efMarkCells();
+    if (a.issues.length) { efShow('error', 'Fix these first', a.issues); return; }
+    efBusy(true);
+    try {
+        const r = await gw({
+            action: save ? 'saveResultsFile' : 'validateResults',
+            fileId: ef.fileId, expectedUpdated: ef.updated, rawData: efSerialise()
+        }, FILE_GATEWAY_URL);
+        if (!r.ok) { efShow('error', save ? 'Not saved - the file still has problems:' : 'Problems found:', r.errors || []); return; }
+        if (!save) { efShow('success', 'No problems found - ready to save.', []); return; }
+        closeErrorEditor();
+        await efAfterQueued('Saved and queued.');
+    } catch (err) {
+        efShow('error', 'Error: ' + err.message, []);
+    } finally {
+        if (ef) efBusy(false);
+    }
 }
 
 
