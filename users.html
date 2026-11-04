@@ -244,7 +244,7 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 <script src="auditLog.js"></script>
 <script>
 const $ = id => document.getElementById(id);
-const me = JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}");
+const me = JSON.parse(localstorage.getItem("SMMC_USER") || "{}");
 const isAdmin = me.role === "admin";
 const lc = s => String(s || "").trim().toLowerCase();
 

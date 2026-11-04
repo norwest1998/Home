@@ -399,7 +399,7 @@ function getRowVal(row, possibleKeys) {
 
 async function initAdmin() {
     // 1. Instant Cache Load
-    const cachedRaw = sessionStorage.getItem(ADMIN_CACHE_KEY);
+    const cachedRaw = localstorage.getItem(ADMIN_CACHE_KEY);
     if (cachedRaw) {
         try {
             const cachedData = JSON.parse(cachedRaw);
@@ -446,7 +446,7 @@ async function initAdmin() {
         } catch (e) { freshData.users = null; }
 
         // Cache and re-render
-        sessionStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(freshData));
+        localstorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(freshData));
         renderAll(freshData);
 
     } catch (err) {
@@ -764,7 +764,7 @@ function renderGrid(data) {
     const grid = document.getElementById("fnGrid");
     if (!grid) return;
 
-    const user = JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}");
+    const user = JSON.parse(localstorage.getItem("SMMC_USER") || "{}");
     const userRole = user.role || "viewer";
     const userRank = ROLE_RANK[userRole] || 0;
     
@@ -1775,7 +1775,7 @@ function getRowVal(row, possibleKeys) {
 
 async function initAdmin() {
     // 1. Instant Cache Load
-    const cachedRaw = sessionStorage.getItem(ADMIN_CACHE_KEY);
+    const cachedRaw = localstorage.getItem(ADMIN_CACHE_KEY);
     if (cachedRaw) {
         try {
             const cachedData = JSON.parse(cachedRaw);
@@ -1822,7 +1822,7 @@ async function initAdmin() {
         } catch (e) { freshData.users = null; }
 
         // Cache and re-render
-        sessionStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(freshData));
+        localstorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(freshData));
         renderAll(freshData);
 
     } catch (err) {
@@ -2140,7 +2140,7 @@ function renderGrid(data) {
     const grid = document.getElementById("fnGrid");
     if (!grid) return;
 
-    const user = JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}");
+    const user = JSON.parse(localstorage.getItem("SMMC_USER") || "{}");
     const userRole = user.role || "viewer";
     const userRank = ROLE_RANK[userRole] || 0;
     

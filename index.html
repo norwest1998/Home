@@ -2034,7 +2034,7 @@
 
     function readCache() { 
       try { 
-        return sessionStorage.getItem(CACHE_KEY); 
+        return localstorage.getItem(CACHE_KEY); 
       } catch (e) { 
         return null; 
       } 
@@ -2054,7 +2054,7 @@
         // even if the rest of the payload matches the cache identically.
         renderTopDown(data, false); 
         
-        try { sessionStorage.setItem(CACHE_KEY, raw); } catch (e) {}
+        try { localstorage.setItem(CACHE_KEY, raw); } catch (e) {}
         return raw;
       } catch (err) {
         console.error("Bootstrap failed:", err);
@@ -3734,17 +3734,17 @@
         let email = "";
 
         try {
-          const smmcUser = JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}");
+          const smmcUser = JSON.parse(localstorage.getItem("SMMC_USER") || "{}");
           if (smmcUser.name) name = smmcUser.name;
           if (smmcUser.email) email = smmcUser.email;
         } catch(e) {}
 
-        if (!name) name = localStorage.getItem("memberName") || localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
-        if (!email) email = localStorage.getItem("memberEmail") || localStorage.getItem("userEmail") || sessionStorage.getItem("userEmail") || "";
+        if (!name) name = localStorage.getItem("memberName") || localStorage.getItem("userName") || localstorage.getItem("userName") || "";
+        if (!email) email = localStorage.getItem("memberEmail") || localStorage.getItem("userEmail") || localstorage.getItem("userEmail") || "";
 
         if (!name) {
           try {
-            const token = sessionStorage.getItem("SMMC_TOKEN");
+            const token = localstorage.getItem("SMMC_TOKEN");
             if (token && token.includes(".")) {
               const payload = JSON.parse(atob(token.split(".")[0]));
               if (payload.name) name = payload.name;

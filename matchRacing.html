@@ -71,7 +71,7 @@ const $ = id => document.getElementById(id);
 const gv = (r, ...keys) => { for (const k of keys) if (r && r[k] != null && r[k] !== "") return String(r[k]); return ""; };
 const isTrue = v => /^(true|yes|1)$/i.test(String(v));
 const uid = p => `${p}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
-const _u = JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}");
+const _u = JSON.parse(localstorage.getItem("SMMC_USER") || "{}");
 const CAN_WRITE = (ROLE_RANK[_u.role] || 0) >= ROLE_RANK.coord;
 const SEASON = (() => { const d = new Date(), y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1; return `${y}-${String(y + 1).slice(2)}`; })();   // same as racingManagement.html
 

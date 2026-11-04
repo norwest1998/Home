@@ -2132,7 +2132,7 @@ async function loadLastReminder() {
     try {
         const res  = await fetch(EMAIL_GATEWAY_URL, { method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'find', key: 'LATE-RESULTS', token: sessionStorage.getItem(TOKEN_KEY) }) });
+            body: JSON.stringify({ action: 'find', key: 'LATE-RESULTS', token: localstorage.getItem(TOKEN_KEY) }) });
         const data = JSON.parse(await res.text());
         if (!data.success) throw new Error(data.error || 'failed');
         const sent = (data.records || [])

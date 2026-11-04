@@ -1,15 +1,15 @@
 const TOKEN_KEY = "SMMC_TOKEN";
 const PUBLIC_PAGES = ["login.html"];
-if (!PUBLIC_PAGES.some(p => location.pathname.endsWith(p)) && !sessionStorage.getItem(TOKEN_KEY)) {
+if (!PUBLIC_PAGES.some(p => location.pathname.endsWith(p)) && !localstorage.getItem(TOKEN_KEY)) {
     location.replace("login.html?next=" + encodeURIComponent(location.pathname + location.search));
 }
-function logout() { sessionStorage.clear(); location.replace("login.html"); }
+function logout() { localstorage.clear(); location.replace("login.html"); }
 
 const ADMIN_CACHE_KEY = "SMMC_ADMIN_DATA_v2";
 
 function readAdminCache(...keys) {
     try {
-        const all = JSON.parse(sessionStorage.getItem(ADMIN_CACHE_KEY));
+        const all = JSON.parse(localstorage.getItem(ADMIN_CACHE_KEY));
         if (!all) return null;
         if (!keys.length) return all;
         return Object.fromEntries(keys.map(k => [k, all[k]]));
@@ -45,7 +45,7 @@ const DEFAULT_INSIGNIA = "/Home/images/classes/smmc-logo.png";
 const EventFilters = {
   series: {},            // lowercase ID -> {id,key,name,classes[],insignia,spreadsheetId}
   classes: [],           // ClassNames that at least one series uses
-  state: JSON.parse(sessionStorage.getItem("SMMC_EVF") || '{"cls":"all","series":"all"}'),
+  state: JSON.parse(localstorage.getItem("SMMC_EVF") || '{"cls":"all","series":"all"}'),
   _p: null,
 
   load() {
@@ -83,7 +83,7 @@ const EventFilters = {
     this.state[k] = v;
     if (k === "cls" && this.state.series !== "all" &&
         !this.forClass(v).some(s => s.key === this.state.series)) this.state.series = "all";
-    sessionStorage.setItem("SMMC_EVF", JSON.stringify(this.state));
+    localstorage.setItem("SMMC_EVF", JSON.stringify(this.state));
   },
 
   // Events without a seriesId are not sailing events: shown only when unfiltered
@@ -261,7 +261,7 @@ async function deleteRow(domain, sheetName, hexKey) {
 // RESTORED HTTP GET WRAPPER (Used strictly for external endpoints that don't support our POST structure)
 async function gwGet(payload, url) {
     const params = new URLSearchParams(payload);
-    const token = sessionStorage.getItem(TOKEN_KEY);
+    const token = localstorage.getItem(TOKEN_KEY);
     if (token) params.append("token", token);
     
     const res = await fetch(`${url}?${params.toString()}`);
@@ -302,7 +302,7 @@ async function gw(payload, url = GATEWAY_URL) {
     const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ ...payload, token: sessionStorage.getItem(TOKEN_KEY) })
+        body: JSON.stringify({ ...payload, token: localstorage.getItem(TOKEN_KEY) })
     }); 
     const text = await res.text();
     let data; try { data = JSON.parse(text); } catch(e) { throw new Error("Invalid Server Response"); }
@@ -317,7 +317,7 @@ async function gw(payload, url = GATEWAY_URL) {
 // Utilities
 const ROLE_RANK = { viewer: 1, coord: 2,editor: 3, admin: 4 };
 function applyRoles() {
-  const r = ROLE_RANK[(JSON.parse(sessionStorage.getItem("SMMC_USER") || "{}")).role] || 0;
+  const r = ROLE_RANK[(JSON.parse(localstorage.getItem("SMMC_USER") || "{}")).role] || 0;
   document.querySelectorAll("[data-min-role]").forEach(el => { if (r < ROLE_RANK[el.dataset.minRole]) el.style.display = "none"; });
 }
 document.addEventListener("DOMContentLoaded", applyRoles);
@@ -344,7 +344,7 @@ const Account = {
   mount() {
     const hdr = document.querySelector(".nav-glass");
     if (!hdr || hdr.querySelector(".acct")) return;
-    const u = JSON.parse(sessionStorage.getItem("SMMC_USER") || "null");
+    const u = JSON.parse(localstorage.getItem("SMMC_USER") || "null");
     if (!u) return;
     const src = (u.name || u.email || "?").trim();
     const parts = src.split(/[\s@.]+/).filter(Boolean);
