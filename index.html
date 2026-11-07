@@ -1247,21 +1247,52 @@
       box-sizing: border-box;
     }
 
-    #myDetailsDrawer .md-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    @media(max-width:560px){#myDetailsDrawer .md-grid{grid-template-columns:1fr}}
-    #myDetailsDrawer .md-field{display:flex;flex-direction:column;gap:4px}
-    #myDetailsDrawer .md-field label,#myDetailsDrawer .md-h{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--foam-dim)}
-    #myDetailsDrawer .md-field input,#myDetailsDrawer .md-field select{padding:10px 12px;border-radius:10px;background:rgba(10,20,32,.55);border:1px solid var(--glass-border);color:var(--foam);font:inherit;font-size:13px;outline:none;color-scheme:dark}
-    #myDetailsDrawer .md-field input:focus,#myDetailsDrawer .md-field select:focus{border-color:rgba(94,234,212,.45)}
-    #myDetailsDrawer .md-field input:disabled{opacity:.55}
-    #myDetailsDrawer .md-check{display:flex;gap:8px;align-items:center;font-size:13px;padding:10px 12px;border-radius:10px;background:var(--glass-fill);border:1px solid var(--glass-border);cursor:pointer}
-    #myDetailsDrawer .md-check input{accent-color:var(--glow)}
-    #myDetailsDrawer .md-boat{background:var(--glass-fill);border:1px solid var(--glass-border);border-radius:12px;margin-bottom:8px}
-    #myDetailsDrawer .md-boat summary{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;font-size:13px;list-style:none}
-    #myDetailsDrawer .md-boat summary::-webkit-details-marker{display:none}
-    #myDetailsDrawer .md-boat .md-grid{padding:0 12px 12px}
-    #myDetailsDrawer .md-new{background:var(--glass-fill);border:1px solid var(--glass-border);border-radius:12px;padding:12px;display:none}
-    #myStatus{font-size:13px;color:var(--foam-dim);min-height:18px}
+/* ── My Details modal ── */
+.md-overlay{position:fixed;inset:0;background:rgba(7,27,44,.7);backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:28px 16px;z-index:1000}
+.md-card{position:relative;width:100%;max-width:750px;padding:24px;border-radius:20px;background:linear-gradient(155deg,rgba(255,255,255,.12),rgba(255,255,255,.06));border:1px solid var(--glass-border);backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);box-shadow:0 32px 64px rgba(2,10,18,.55)}
+.md-card .drawer-close{position:absolute;top:14px;right:14px}
+.md-head{display:flex;gap:16px;align-items:center;margin-bottom:18px;padding-right:40px}
+.md-head img{width:56px;height:56px;border-radius:20%;border:1px solid var(--glass-border);object-fit:cover}
+.md-head h2{font-size:20px;font-weight:700}
+.md-head p{font-size:13px;color:var(--foam-dim);margin-top:4px}
+.md-sec{background:var(--glass-fill);border:1px solid var(--glass-border);border-radius:16px;padding:18px;margin-bottom:16px}
+.md-sec-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.md-sec h3{font-size:15px;font-weight:600}
+.md-pills{display:flex;gap:6px;flex-wrap:wrap}
+.md-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.md-grid .full{grid-column:1/-1}
+@media(max-width:560px){.md-grid{grid-template-columns:1fr}}
+.md-field{display:flex;flex-direction:column;gap:4px}
+.md-field label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--foam-dim)}
+.md-field input,.md-field select{padding:10px 12px;border-radius:10px;background:rgba(10,20,32,.55);border:1px solid var(--glass-border);color:var(--foam);font:inherit;font-size:13px;outline:none;color-scheme:dark}
+.md-field input:focus,.md-field select:focus{border-color:rgba(94,234,212,.45)}
+.md-field input:disabled{opacity:.55}
+.md-check{display:flex;gap:8px;align-items:center;font-size:13px;padding:10px 12px;border-radius:10px;background:var(--glass-fill);border:1px solid var(--glass-border);cursor:pointer}
+.md-check input{accent-color:var(--glow)}
+.md-boat{background:var(--glass-fill);border:1px solid var(--glass-border);border-radius:12px;margin-bottom:8px}
+.md-boat summary{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;font-size:13px;list-style:none}
+.md-boat summary::-webkit-details-marker{display:none}
+.md-boat .md-arrow{display:inline-block;transition:transform .2s;font-size:10px;margin-left:6px}
+.md-boat[open] .md-arrow{transform:rotate(180deg)}
+.md-boat .md-grid{padding:0 12px 12px}
+.md-new{display:none;margin-top:12px;padding:14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px dashed var(--glass-border)}
+.md-actions{display:flex;gap:8px;margin-top:12px}
+#myDone{text-align:center;padding:24px 8px}
+#myDone h3{font-size:20px;color:var(--glow);margin-bottom:8px}
+
+/* ── Tick-step progress modal ── */
+#myProgress{display:none;position:fixed;inset:0;background:rgba(7,27,44,.75);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:1100}
+.mp-card{width:100%;max-width:380px;padding:28px 32px;border-radius:20px;background:linear-gradient(155deg,rgba(255,255,255,.14),rgba(255,255,255,.07));border:1px solid var(--glass-border);box-shadow:0 32px 64px rgba(2,10,18,.55)}
+.mp-title{font-size:17px;font-weight:700;text-align:center;margin-bottom:20px}
+.mp-list{display:flex;flex-direction:column;gap:14px}
+.mp-step{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--foam-dim);transition:color .2s}
+.mp-step.active{color:var(--foam);font-weight:600}
+.mp-step.completed{color:var(--glow)}
+.mp-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex:none}
+.mp-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3)}
+.mp-spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--glow);border-radius:50%;animation:mpSpin .75s linear infinite}
+@keyframes mpSpin{to{transform:rotate(360deg)}}
+.mp-check{color:var(--glow);font-weight:800}
 </style>
 </head>
 <body>
@@ -1286,7 +1317,7 @@
         <span class="nav-link">Members ▾</span>
         <ul class="dropdown-menu glass">
           <li><a href="#members-list" onclick="return selectMemberTab('members', true)">Members List</a></li>
-          <li><a href="#myDetailsDrawer" onclick="openMyDetails();return false;">My Details</a></li>
+          <li><a href="#myDetails" onclick="openMyDetails();return false;">My Details</a></li>
           <li><a href="#members-list" onclick="return selectMemberTab('applications', true)">Applications</a></li>
           <li><a href="#boat-register">Boat Register</a></li>
           <li><a href="#avg-score-requests">Average Score Requests</a></li>
@@ -1596,16 +1627,6 @@
                 <button class="drawer-close" id="closeMemDrawer">✕</button>
               </div>
               <div class="drawer-body" id="memberDrawerBody"></div>
-            </div>
-          </div>
-
-          <div class="drawer-overlay" id="myDetailsDrawer">
-            <div class="drawer drawer-wide">
-              <div class="drawer-header">
-                <div class="drawer-header-left"><h4>My Details</h4></div>
-                <button class="drawer-close" onclick="closeMyDetails()">✕</button>
-              </div>
-              <div class="drawer-body" id="myDetailsBody"></div>
             </div>
           </div>
           
@@ -4203,58 +4224,117 @@
     })();
 
     let myData = null;
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
     const myBool = v => v === true || /^(true|yes|y)$/i.test(String(v));
-    const MY_FIELDS = [['Phone','Phone'],['Address Line','Address Line'],['Suburb','Suburb'],['PCode','Post Code'],
-      ['Emergency Contact Name','Emergency Contact Name'],['Emergency Contact Number','Emergency Contact Number']];
+    const MY_LOGO = 'https://lh3.googleusercontent.com/d/1jy49r9b2qUZbDY31PIhJPE2QmFngPRNg=w200?authuser=0';
+
+    const MyProgress = {
+      show(title, steps) {
+        let m = document.getElementById('myProgress');
+        if (!m) { m = document.createElement('div'); m.id = 'myProgress'; document.body.appendChild(m); }
+        m.innerHTML = `<div class="mp-card"><div class="mp-title">${esc(title)}</div><div class="mp-list">${steps.map((s, i) =>
+          `<div id="mp-step-${i}" class="mp-step ${i === 0 ? 'active' : ''}"><div class="mp-icon" id="mp-icon-${i}">${i === 0 ? '<div class="mp-spin"></div>' : '<div class="mp-dot"></div>'}</div><span>${esc(s)}</span></div>`).join('')}</div></div>`;
+        m.style.display = 'flex';
+      },
+      tick(done, next) {
+        if (done != null) {
+          const ic = document.getElementById('mp-icon-' + done), st = document.getElementById('mp-step-' + done);
+          if (ic) ic.innerHTML = '<span class="mp-check">✓</span>';
+          if (st) { st.classList.remove('active'); st.classList.add('completed'); }
+        }
+        if (next != null) {
+          const ic = document.getElementById('mp-icon-' + next), st = document.getElementById('mp-step-' + next);
+          if (ic) ic.innerHTML = '<div class="mp-spin"></div>';
+          if (st) st.classList.add('active');
+        }
+      },
+      hide(delay = 0) { setTimeout(() => { const m = document.getElementById('myProgress'); if (m) m.style.display = 'none'; }, delay); }
+    };
 
     async function openMyDetails() {
-      const body = document.getElementById('myDetailsBody');
-      document.getElementById('myDetailsDrawer').classList.add('open');
-      showSpinner(body);
-      try { myData = await gw({ action: 'getMyProfile' }); renderMyDetails(); }
-      catch (e) { showError(body, e.message); }
+      document.querySelector('.nav-links')?.classList.remove('nav-open');
+      MyProgress.show('Loading My Details', ['Verifying your login', 'Loading Member data', 'Loading Boat Registry', 'Loading Sailboat classes', 'Rendering Page']);
+      try {
+        await sleep(250); MyProgress.tick(0, 1);
+        myData = await gw({ action: 'getMyProfile' });
+        MyProgress.tick(1, 2); await sleep(150);
+        MyProgress.tick(2, 3); await sleep(150);
+        MyProgress.tick(3, 4);
+        buildMyModal();
+        MyProgress.tick(4); MyProgress.hide(400);
+      } catch (e) { MyProgress.hide(0); alert('Error loading your details: ' + e.message); }
     }
-    function closeMyDetails() { document.getElementById('myDetailsDrawer').classList.remove('open'); }
-    document.getElementById('myDetailsDrawer').addEventListener('click', e => { if (e.target.id === 'myDetailsDrawer') closeMyDetails(); });
 
-    function renderMyDetails() {
+    function closeMyDetails() {
+      document.getElementById('myDetailsModal')?.remove();
+      document.removeEventListener('keydown', myEsc);
+    }
+    function myEsc(e) { if (e.key === 'Escape' && !document.getElementById('myProgress')?.style.display.includes('flex')) closeMyDetails(); }
+
+    function buildMyModal() {
+      closeMyDetails();
       const m = myData.member, paid = myBool(m['Paid up']), wa = myBool(m['WhatsApp']);
-      document.getElementById('myDetailsBody').innerHTML = `
-        <div class="drawer-name-row">
-          <div class="drawer-avatar">${esc(initials(m.MemberName))}</div>
-          <div class="drawer-name-col">
-            <span class="drawer-name">${esc(m.MemberName)}</span>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              <span class="badge ${membershipBadgeClass(m.Membershiptype)}">${esc(m.Membershiptype || 'Member')}</span>
-              <span class="badge ${paid ? 'badge-full' : 'badge-expired'}">${paid ? 'Financial member' : 'Non-financial member'}</span>
-              ${wa ? '<span class="whatsApp-yes">WhatsApp</span>' : ''}
+      const fld = (id, label, val, dis) => `<div class="md-field"><label>${label}</label><input data-m="${esc(id)}" value="${esc(val || '')}" ${dis ? 'disabled' : ''}></div>`;
+      const o = document.createElement('div');
+      o.id = 'myDetailsModal'; o.className = 'md-overlay';
+      o.addEventListener('mousedown', e => { if (e.target === o) closeMyDetails(); });
+      o.innerHTML = `
+        <div class="md-card">
+          <button class="drawer-close" onclick="closeMyDetails()">✕</button>
+          <div class="md-head">
+            <img src="${MY_LOGO}" alt="Logo">
+            <div><h2>SMMC Member Information</h2>
+            <p>Please review your details below. Update any missing or incorrect information and click save at the bottom when complete.</p></div>
+          </div>
+          <div id="myForm">
+            <div class="md-sec">
+              <div class="md-sec-head"><h3>Personal Profile</h3>
+                <div class="md-pills">
+                  <span class="badge ${membershipBadgeClass(m.Membershiptype)}">${esc(m.Membershiptype || 'Member')}</span>
+                  <span class="badge ${paid ? 'badge-full' : 'badge-expired'}">${paid ? 'Financial member' : 'Non Financial member'}</span>
+                  ${wa ? '<span class="whatsApp-yes">WhatsApp</span>' : ''}
+                </div>
+              </div>
+              <div class="md-grid">
+                ${fld('MemberName', 'Member Name', m.MemberName, true)}
+                ${fld('Phone', 'Phone', m['Phone'])}
+                ${fld('email', 'Email', m.email, true)}
+                ${fld('Address Line', 'Address Line', m['Address Line'])}
+                ${fld('Suburb', 'Suburb', m['Suburb'])}
+                ${fld('PCode', 'Post Code', m['PCode'])}
+                ${fld('Emergency Contact Name', 'Emergency Contact Name', m['Emergency Contact Name'])}
+                ${fld('Emergency Contact Number', 'Emergency Contact Number', m['Emergency Contact Number'])}
+                ${wa ? '' : '<label class="md-check full"><input type="checkbox" id="myWhatsApp"><span>Have you joined the WhatsApp community?</span></label>'}
+              </div>
             </div>
+
+            <div class="md-sec">
+              <div class="md-sec-head"><h3>Registered Boats</h3></div>
+              <div id="myBoats"></div>
+              <button type="button" class="btn btn-ghost" id="myAddBoatBtn" onclick="toggleMyNewBoat(true)">➕ Add Another Boat</button>
+              <div class="md-new" id="myNewBoat">
+                <h4 style="font-size:14px;margin-bottom:12px">Register New Boat</h4>
+                <div class="md-grid">
+                  <div class="md-field"><label>Class</label><select id="nb_Class"><option value="" disabled selected>Select Boat Class...</option>
+                    ${(myData.classes || []).map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
+                  <div class="md-field"><label>Sail No</label><input id="nb_SailNo" placeholder="e.g. 123456"></div>
+                  <div class="md-field"><label>Model</label><input id="nb_Model" placeholder="e.g. Standard"></div>
+                  <div class="md-field"><label>Hull Registration Number</label><input id="nb_HRN" placeholder="e.g. HRN-9988"></div>
+                  <label class="md-check full"><input type="checkbox" id="nb_GH"><span>Used in GH?</span></label>
+                </div>
+                <div class="md-actions">
+                  <button type="button" class="btn btn-primary" onclick="submitMyBoat()">Save New Boat</button>
+                  <button type="button" class="btn btn-ghost" onclick="toggleMyNewBoat(false)">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary" style="width:100%;justify-content:center" onclick="saveMyDetails()">Save &amp; Update All Details</button>
           </div>
-        </div>
-        <div class="md-grid">
-          <div class="md-field"><label>Email (login)</label><input value="${esc(m.email)}" disabled></div>
-          ${MY_FIELDS.map(([k, l]) => `<div class="md-field"><label>${l}</label><input data-m="${esc(k)}" value="${esc(m[k] || '')}"></div>`).join('')}
-        </div>
-        ${wa ? '' : '<label class="md-check"><input type="checkbox" id="myWhatsApp"><span>Have you joined the WhatsApp community?</span></label>'}
-        <div class="md-h">Registered Boats</div>
-        <div id="myBoats"></div>
-        <button class="btn btn-ghost" id="myAddBoatBtn" onclick="toggleMyNewBoat(true)">＋ Add Another Boat</button>
-        <div class="md-new" id="myNewBoat">
-          <div class="md-grid">
-            <div class="md-field"><label>Class</label><select id="nb_Class"><option value="">Select Boat Class…</option>
-              ${(myData.classes || []).map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
-            <div class="md-field"><label>Sail No</label><input id="nb_SailNo"></div>
-            <div class="md-field"><label>Model</label><input id="nb_Model"></div>
-            <div class="md-field"><label>Hull Registration Number</label><input id="nb_HRN"></div>
-            <label class="md-check"><input type="checkbox" id="nb_GH"><span>Used in GH?</span></label>
-          </div>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn btn-primary" onclick="addMyBoat()">Add Boat</button>
-            <button class="btn btn-ghost" onclick="toggleMyNewBoat(false)">Cancel</button>
-          </div>
-        </div>
-        <div id="myStatus"></div>
-        <button class="btn btn-primary" id="mySaveBtn" onclick="saveMyDetails()">Save changes</button>`;
+          <div id="myDone" style="display:none"><h3>Thank you!</h3><p>Your details have been successfully updated in the club records.</p>
+            <button class="btn btn-ghost" style="margin-top:16px" onclick="closeMyDetails()">Close</button></div>
+        </div>`;
+      document.body.appendChild(o);
+      document.addEventListener('keydown', myEsc);
       renderMyBoats();
     }
 
@@ -4264,13 +4344,16 @@
         const gh = myBool(b.GH), act = myBool(b.Active);
         const f = (k, l) => `<div class="md-field"><label>${l}</label><input data-b="${k}" value="${esc(b[k] || '')}"></div>`;
         return `<details class="md-boat" data-id="${esc(b.BoatID)}">
-          <summary><span><span class="badge badge-default">Boat #${i + 1}</span> <strong>${esc(b.Class || 'Unclassed')}</strong>${b.SailNo ? ' • ' + esc(b.SailNo) : ''}</span>
-            <span>${gh ? '<span class="badge badge-affiliate">GH</span> ' : ''}<span class="badge ${act ? 'badge-full' : 'badge-default'}">${act ? 'Active' : 'Inactive'}</span></span></summary>
-          <div class="md-grid">${f('Class','Class')}${f('SailNo','Sail No')}${f('Model','Model')}${f('HRN','Hull Registration Number')}
+          <summary>
+            <span><span class="badge badge-default">Boat #${i + 1}</span> <strong>${esc(b.Class || 'Unclassed')}</strong>${b.SailNo ? ' • ' + esc(b.SailNo) : ''}</span>
+            <span>${gh ? '<span class="badge badge-affiliate">GH</span> ' : ''}<span class="badge ${act ? 'badge-full' : 'badge-default'}">${act ? 'Active' : 'Inactive'}</span><span class="md-arrow">▼</span></span>
+          </summary>
+          <div class="md-grid">
+            ${f('Class', 'Class')}${f('SailNo', 'Sail No')}${f('Model', 'Model')}${f('HRN', 'Hull Registration Number')}
             <label class="md-check"><input type="checkbox" data-b="GH" ${gh ? 'checked' : ''}><span>Used in GH?</span></label>
-            <label class="md-check"><input type="checkbox" data-b="Active" ${act ? 'checked' : ''}><span>Active Boat</span></label></div>
-        </details>`;
-      }).join('') : '<div class="empty-state">No boats registered under your profile.</div>';
+            <label class="md-check"><input type="checkbox" data-b="Active" ${act ? 'checked' : ''}><span>Active Boat</span></label>
+          </div></details>`;
+      }).join('') : '<p style="color:var(--foam-dim);margin-bottom:12px;font-size:13px">No boats registered under your profile.</p>';
     }
 
     function toggleMyNewBoat(on) {
@@ -4278,35 +4361,43 @@
       document.getElementById('myAddBoatBtn').style.display = on ? 'none' : '';
     }
 
-    async function addMyBoat() {
-      const v = id => document.getElementById(id).value.trim(), st = document.getElementById('myStatus');
-      if (!v('nb_Class') && !v('nb_SailNo')) { st.textContent = 'Please select a Class or provide a Sail Number.'; return; }
-      st.textContent = 'Adding boat…';
+    async function submitMyBoat() {
+      const v = id => document.getElementById(id).value.trim();
+      if (!v('nb_Class') && !v('nb_SailNo')) return alert('Please select a Class or provide a Sail Number.');
+      const boat = { Class: v('nb_Class'), SailNo: v('nb_SailNo'), Model: v('nb_Model'), HRN: v('nb_HRN'), GH: document.getElementById('nb_GH').checked };
+      MyProgress.show('Adding New Boat', ['Validating boat details', 'Writing record to Boat Registry', 'Writing audit log entry', 'Refreshing Boat Registry']);
       try {
-        const r = await gw({ action: 'addMyBoat', boat: { Class: v('nb_Class'), SailNo: v('nb_SailNo'), Model: v('nb_Model'),
-          HRN: v('nb_HRN'), GH: document.getElementById('nb_GH').checked } });
-        myData.boats = r.boats; renderMyBoats(); toggleMyNewBoat(false);
-        ['nb_Class','nb_SailNo','nb_Model','nb_HRN'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('nb_GH').checked = false; st.textContent = '✓ Boat added';
-      } catch (e) { st.textContent = '⚠️ ' + e.message; }
+        await sleep(250); MyProgress.tick(0, 1);
+        const r = await gw({ action: 'addMyBoat', boat });
+        MyProgress.tick(1, 2); await sleep(150); MyProgress.tick(2, 3);
+        myData.boats = r.boats; renderMyBoats();
+        MyProgress.tick(3);
+        ['nb_Class', 'nb_SailNo', 'nb_Model', 'nb_HRN'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('nb_GH').checked = false;
+        toggleMyNewBoat(false); MyProgress.hide(400);
+      } catch (e) { MyProgress.hide(0); alert('Error adding boat: ' + e.message); }
     }
 
     async function saveMyDetails() {
-      const btn = document.getElementById('mySaveBtn'), st = document.getElementById('myStatus'), root = document.getElementById('myDetailsBody');
-      const fields = {};
-      root.querySelectorAll('[data-m]').forEach(i => fields[i.dataset.m] = i.value.trim());
+      const root = document.getElementById('myDetailsModal'), fields = {};
+      root.querySelectorAll('[data-m]:not(:disabled)').forEach(i => fields[i.dataset.m] = i.value.trim());
       const wa = document.getElementById('myWhatsApp'); if (wa) fields.WhatsApp = wa.checked;
       const boats = [...root.querySelectorAll('.md-boat')].map(d => {
         const o = { BoatID: d.dataset.id };
         d.querySelectorAll('[data-b]').forEach(i => o[i.dataset.b] = i.type === 'checkbox' ? i.checked : i.value.trim());
         return o;
       });
-      btn.disabled = true; st.textContent = 'Saving…';
+      MyProgress.show('Saving Member Profile', ['Reading profile data', 'Validating form fields', 'Updating Member records', 'Updating Boat records', 'Recording audit log entry']);
       try {
+        await sleep(200); MyProgress.tick(0, 1);
+        await sleep(200); MyProgress.tick(1, 2);
         await gw({ action: 'updateMyProfile', fields, boats });
-        st.textContent = '✓ Your details have been updated.';
-        setTimeout(closeMyDetails, 1200);
-      } catch (e) { st.textContent = '⚠️ ' + e.message; btn.disabled = false; }
+        MyProgress.tick(2, 3); await sleep(200);
+        MyProgress.tick(3, 4); await sleep(300);
+        MyProgress.tick(4); MyProgress.hide(400);
+        document.getElementById('myForm').style.display = 'none';
+        document.getElementById('myDone').style.display = 'block';
+      } catch (e) { MyProgress.hide(0); alert('A server error occurred: ' + e.message); }
     }
 
     // =========================================================
