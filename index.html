@@ -1270,6 +1270,7 @@
         <span class="nav-link">Members ▾</span>
         <ul class="dropdown-menu glass">
           <li><a href="#members-list" onclick="return selectMemberTab('members', true)">Members List</a></li>
+          <li><a href="#UpdateDetails" onclick="openMyDetails();return false;">My Details</a></li>
           <li><a href="#members-list" onclick="return selectMemberTab('applications', true)">Applications</a></li>
           <li><a href="#boat-register">Boat Register</a></li>
           <li><a href="#avg-score-requests">Average Score Requests</a></li>
@@ -4174,6 +4175,61 @@
 
       window.updateHysUserDisplay = updateHysUserDisplay;
     })();
+
+    const MY_FIELDS = [
+      ['Phone','Phone'], ['Address Line','Address'], ['Suburb','Suburb'], ['PCode','Postcode'],
+      ['Emergency Contact Name','Emergency contact'], ['Emergency Contact Number','Emergency number']
+    ];
+
+    async function openMyDetails() {
+      let member;
+      try { ({ member } = await gw({ action: 'getMyProfile' })); }
+      catch (e) { return alert(e.message); }
+
+      const wa = member['WhatsApp'] === true || /^(true|yes)$/i.test(member['WhatsApp']);
+      const div = document.createElement('div');
+      div.id = 'myDetailsOverlay';
+      div.className = 'boat-modal-overlay';
+      div.innerHTML = `
+        <div class="boat-modal-card">
+          <div class="boat-modal-header">
+            <div class="boat-modal-header-info">
+              <div class="boat-modal-title">My Details</div>
+              <div class="boat-modal-subtitle">${esc(member['MemberName'])}</div>
+            </div>
+            <button class="boat-modal-close" onclick="closeMyDetails()">×</button>
+          </div>
+          <div class="boat-modal-body">
+            <div class="boat-detail-grid">
+              ${MY_FIELDS.map(([k, label]) => `
+                <label>${label}
+                  <input type="text" data-key="${esc(k)}" value="${esc(member[k] || '')}" style="width:100%">
+                </label>`).join('')}
+            </div>
+            <label><input type="checkbox" id="myWhatsApp" ${wa ? 'checked' : ''}> Member of WhatsApp group</label>
+            <button class="btn btn-primary" id="mySaveBtn" onclick="saveMyDetails()">Save</button>
+            <div id="myStatus"></div>
+          </div>
+        </div>`;
+      document.body.appendChild(div);
+    }
+
+    function closeMyDetails() {
+      const o = document.getElementById('myDetailsOverlay');
+      if (o) o.remove();
+    }
+
+    async function saveMyDetails() {
+      const btn = document.getElementById('mySaveBtn'), st = document.getElementById('myStatus');
+      const fields = { WhatsApp: document.getElementById('myWhatsApp').checked };
+      document.querySelectorAll('#myDetailsOverlay input[data-key]').forEach(i => fields[i.dataset.key] = i.value.trim());
+      btn.disabled = true; st.textContent = 'Saving…';
+      try {
+        await gw({ action: 'updateMyProfile', fields });
+        st.textContent = '✓ Details updated';
+        setTimeout(closeMyDetails, 900);
+      } catch (e) { st.textContent = '⚠️ ' + e.message; btn.disabled = false; }
+    }
 
     // =========================================================
     // INITIALIZATION
