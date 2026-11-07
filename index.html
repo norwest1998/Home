@@ -1246,6 +1246,22 @@
       min-height: 40px;
       box-sizing: border-box;
     }
+
+    #myDetailsDrawer .md-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:560px){#myDetailsDrawer .md-grid{grid-template-columns:1fr}}
+    #myDetailsDrawer .md-field{display:flex;flex-direction:column;gap:4px}
+    #myDetailsDrawer .md-field label,#myDetailsDrawer .md-h{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--foam-dim)}
+    #myDetailsDrawer .md-field input,#myDetailsDrawer .md-field select{padding:10px 12px;border-radius:10px;background:rgba(10,20,32,.55);border:1px solid var(--glass-border);color:var(--foam);font:inherit;font-size:13px;outline:none;color-scheme:dark}
+    #myDetailsDrawer .md-field input:focus,#myDetailsDrawer .md-field select:focus{border-color:rgba(94,234,212,.45)}
+    #myDetailsDrawer .md-field input:disabled{opacity:.55}
+    #myDetailsDrawer .md-check{display:flex;gap:8px;align-items:center;font-size:13px;padding:10px 12px;border-radius:10px;background:var(--glass-fill);border:1px solid var(--glass-border);cursor:pointer}
+    #myDetailsDrawer .md-check input{accent-color:var(--glow)}
+    #myDetailsDrawer .md-boat{background:var(--glass-fill);border:1px solid var(--glass-border);border-radius:12px;margin-bottom:8px}
+    #myDetailsDrawer .md-boat summary{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;font-size:13px;list-style:none}
+    #myDetailsDrawer .md-boat summary::-webkit-details-marker{display:none}
+    #myDetailsDrawer .md-boat .md-grid{padding:0 12px 12px}
+    #myDetailsDrawer .md-new{background:var(--glass-fill);border:1px solid var(--glass-border);border-radius:12px;padding:12px;display:none}
+    #myStatus{font-size:13px;color:var(--foam-dim);min-height:18px}
 </style>
 </head>
 <body>
@@ -1580,6 +1596,16 @@
                 <button class="drawer-close" id="closeMemDrawer">✕</button>
               </div>
               <div class="drawer-body" id="memberDrawerBody"></div>
+            </div>
+          </div>
+
+          <div class="drawer-overlay" id="myDetailsDrawer">
+            <div class="drawer drawer-wide">
+              <div class="drawer-header">
+                <div class="drawer-header-left"><h4>My Details</h4></div>
+                <button class="drawer-close" onclick="closeMyDetails()">✕</button>
+              </div>
+              <div class="drawer-body" id="myDetailsBody"></div>
             </div>
           </div>
           
@@ -4176,58 +4202,110 @@
       window.updateHysUserDisplay = updateHysUserDisplay;
     })();
 
-    const MY_FIELDS = [
-      ['Phone','Phone'], ['Address Line','Address'], ['Suburb','Suburb'], ['PCode','Postcode'],
-      ['Emergency Contact Name','Emergency contact'], ['Emergency Contact Number','Emergency number']
-    ];
+    let myData = null;
+    const myBool = v => v === true || /^(true|yes|y)$/i.test(String(v));
+    const MY_FIELDS = [['Phone','Phone'],['Address Line','Address Line'],['Suburb','Suburb'],['PCode','Post Code'],
+      ['Emergency Contact Name','Emergency Contact Name'],['Emergency Contact Number','Emergency Contact Number']];
 
     async function openMyDetails() {
-      let member;
-      try { ({ member } = await gw({ action: 'getMyProfile' })); }
-      catch (e) { return alert(e.message); }
+      const body = document.getElementById('myDetailsBody');
+      document.getElementById('myDetailsDrawer').classList.add('open');
+      showSpinner(body);
+      try { myData = await gw({ action: 'getMyProfile' }); renderMyDetails(); }
+      catch (e) { showError(body, e.message); }
+    }
+    function closeMyDetails() { document.getElementById('myDetailsDrawer').classList.remove('open'); }
+    document.getElementById('myDetailsDrawer').addEventListener('click', e => { if (e.target.id === 'myDetailsDrawer') closeMyDetails(); });
 
-      const wa = member['WhatsApp'] === true || /^(true|yes)$/i.test(member['WhatsApp']);
-      const div = document.createElement('div');
-      div.id = 'myDetailsOverlay';
-      div.className = 'boat-modal-overlay';
-      div.innerHTML = `
-        <div class="boat-modal-card">
-          <div class="boat-modal-header">
-            <div class="boat-modal-header-info">
-              <div class="boat-modal-title">My Details</div>
-              <div class="boat-modal-subtitle">${esc(member['MemberName'])}</div>
+    function renderMyDetails() {
+      const m = myData.member, paid = myBool(m['Paid up']), wa = myBool(m['WhatsApp']);
+      document.getElementById('myDetailsBody').innerHTML = `
+        <div class="drawer-name-row">
+          <div class="drawer-avatar">${esc(initials(m.MemberName))}</div>
+          <div class="drawer-name-col">
+            <span class="drawer-name">${esc(m.MemberName)}</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span class="badge ${membershipBadgeClass(m.Membershiptype)}">${esc(m.Membershiptype || 'Member')}</span>
+              <span class="badge ${paid ? 'badge-full' : 'badge-expired'}">${paid ? 'Financial member' : 'Non-financial member'}</span>
+              ${wa ? '<span class="whatsApp-yes">WhatsApp</span>' : ''}
             </div>
-            <button class="boat-modal-close" onclick="closeMyDetails()">×</button>
           </div>
-          <div class="boat-modal-body">
-            <div class="boat-detail-grid">
-              ${MY_FIELDS.map(([k, label]) => `
-                <label>${label}
-                  <input type="text" data-key="${esc(k)}" value="${esc(member[k] || '')}" style="width:100%">
-                </label>`).join('')}
-            </div>
-            <label><input type="checkbox" id="myWhatsApp" ${wa ? 'checked' : ''}> Member of WhatsApp group</label>
-            <button class="btn btn-primary" id="mySaveBtn" onclick="saveMyDetails()">Save</button>
-            <div id="myStatus"></div>
+        </div>
+        <div class="md-grid">
+          <div class="md-field"><label>Email (login)</label><input value="${esc(m.email)}" disabled></div>
+          ${MY_FIELDS.map(([k, l]) => `<div class="md-field"><label>${l}</label><input data-m="${esc(k)}" value="${esc(m[k] || '')}"></div>`).join('')}
+        </div>
+        ${wa ? '' : '<label class="md-check"><input type="checkbox" id="myWhatsApp"><span>Have you joined the WhatsApp community?</span></label>'}
+        <div class="md-h">Registered Boats</div>
+        <div id="myBoats"></div>
+        <button class="btn btn-ghost" id="myAddBoatBtn" onclick="toggleMyNewBoat(true)">＋ Add Another Boat</button>
+        <div class="md-new" id="myNewBoat">
+          <div class="md-grid">
+            <div class="md-field"><label>Class</label><select id="nb_Class"><option value="">Select Boat Class…</option>
+              ${(myData.classes || []).map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
+            <div class="md-field"><label>Sail No</label><input id="nb_SailNo"></div>
+            <div class="md-field"><label>Model</label><input id="nb_Model"></div>
+            <div class="md-field"><label>Hull Registration Number</label><input id="nb_HRN"></div>
+            <label class="md-check"><input type="checkbox" id="nb_GH"><span>Used in GH?</span></label>
           </div>
-        </div>`;
-      document.body.appendChild(div);
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn btn-primary" onclick="addMyBoat()">Add Boat</button>
+            <button class="btn btn-ghost" onclick="toggleMyNewBoat(false)">Cancel</button>
+          </div>
+        </div>
+        <div id="myStatus"></div>
+        <button class="btn btn-primary" id="mySaveBtn" onclick="saveMyDetails()">Save changes</button>`;
+      renderMyBoats();
     }
 
-    function closeMyDetails() {
-      const o = document.getElementById('myDetailsOverlay');
-      if (o) o.remove();
+    function renderMyBoats() {
+      const boats = myData.boats || [];
+      document.getElementById('myBoats').innerHTML = boats.length ? boats.map((b, i) => {
+        const gh = myBool(b.GH), act = myBool(b.Active);
+        const f = (k, l) => `<div class="md-field"><label>${l}</label><input data-b="${k}" value="${esc(b[k] || '')}"></div>`;
+        return `<details class="md-boat" data-id="${esc(b.BoatID)}">
+          <summary><span><span class="badge badge-default">Boat #${i + 1}</span> <strong>${esc(b.Class || 'Unclassed')}</strong>${b.SailNo ? ' • ' + esc(b.SailNo) : ''}</span>
+            <span>${gh ? '<span class="badge badge-affiliate">GH</span> ' : ''}<span class="badge ${act ? 'badge-full' : 'badge-default'}">${act ? 'Active' : 'Inactive'}</span></span></summary>
+          <div class="md-grid">${f('Class','Class')}${f('SailNo','Sail No')}${f('Model','Model')}${f('HRN','Hull Registration Number')}
+            <label class="md-check"><input type="checkbox" data-b="GH" ${gh ? 'checked' : ''}><span>Used in GH?</span></label>
+            <label class="md-check"><input type="checkbox" data-b="Active" ${act ? 'checked' : ''}><span>Active Boat</span></label></div>
+        </details>`;
+      }).join('') : '<div class="empty-state">No boats registered under your profile.</div>';
+    }
+
+    function toggleMyNewBoat(on) {
+      document.getElementById('myNewBoat').style.display = on ? 'block' : 'none';
+      document.getElementById('myAddBoatBtn').style.display = on ? 'none' : '';
+    }
+
+    async function addMyBoat() {
+      const v = id => document.getElementById(id).value.trim(), st = document.getElementById('myStatus');
+      if (!v('nb_Class') && !v('nb_SailNo')) { st.textContent = 'Please select a Class or provide a Sail Number.'; return; }
+      st.textContent = 'Adding boat…';
+      try {
+        const r = await gw({ action: 'addMyBoat', boat: { Class: v('nb_Class'), SailNo: v('nb_SailNo'), Model: v('nb_Model'),
+          HRN: v('nb_HRN'), GH: document.getElementById('nb_GH').checked } });
+        myData.boats = r.boats; renderMyBoats(); toggleMyNewBoat(false);
+        ['nb_Class','nb_SailNo','nb_Model','nb_HRN'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('nb_GH').checked = false; st.textContent = '✓ Boat added';
+      } catch (e) { st.textContent = '⚠️ ' + e.message; }
     }
 
     async function saveMyDetails() {
-      const btn = document.getElementById('mySaveBtn'), st = document.getElementById('myStatus');
-      const fields = { WhatsApp: document.getElementById('myWhatsApp').checked };
-      document.querySelectorAll('#myDetailsOverlay input[data-key]').forEach(i => fields[i.dataset.key] = i.value.trim());
+      const btn = document.getElementById('mySaveBtn'), st = document.getElementById('myStatus'), root = document.getElementById('myDetailsBody');
+      const fields = {};
+      root.querySelectorAll('[data-m]').forEach(i => fields[i.dataset.m] = i.value.trim());
+      const wa = document.getElementById('myWhatsApp'); if (wa) fields.WhatsApp = wa.checked;
+      const boats = [...root.querySelectorAll('.md-boat')].map(d => {
+        const o = { BoatID: d.dataset.id };
+        d.querySelectorAll('[data-b]').forEach(i => o[i.dataset.b] = i.type === 'checkbox' ? i.checked : i.value.trim());
+        return o;
+      });
       btn.disabled = true; st.textContent = 'Saving…';
       try {
-        await gw({ action: 'updateMyProfile', fields });
-        st.textContent = '✓ Details updated';
-        setTimeout(closeMyDetails, 900);
+        await gw({ action: 'updateMyProfile', fields, boats });
+        st.textContent = '✓ Your details have been updated.';
+        setTimeout(closeMyDetails, 1200);
       } catch (e) { st.textContent = '⚠️ ' + e.message; btn.disabled = false; }
     }
 
