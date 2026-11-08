@@ -2236,8 +2236,8 @@ function selectAllToggle(){
   else roster.forEach(m => state.pendingSelection.add(String(m.id)));
   render();
 }
-
-function confirmEntries(){
+async function confirmEntries(){
+  await refreshHcaps();
   const roster = getRoster();   // members AND guests
   const isFirstTime = state.entries.length === 0;
   state.entries = roster.filter(m => state.pendingSelection.has(String(m.id)))
@@ -2659,6 +2659,14 @@ function finishRace(){
   showToast(`Racing complete — ${state.races.length} race${state.races.length===1?'':'s'} captured`);
   state.overlay = 'results';
   render();
+}
+
+async function refreshHcaps(){
+  const ev = state.event;
+  if(!ev || !ev.hcapRule || state.practice) return;
+  if(ev.handicapType === 'Series') await getSeriesHcaps(ev);
+  else await getMembers(ev.className);
+  MEMBERS.forEach(m => m.hcap = hcapFor(m, ev));      // guests keep their typed-in values
 }
 
 /* ---------------- Attach handlers after each render ---------------- */
