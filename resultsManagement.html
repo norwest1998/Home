@@ -984,7 +984,8 @@ function focusOutstandingFromUrl() {
     setTimeout(() => { row.style.boxShadow = ''; }, 4000);
 }
 
-const rowActions = k => `
+const rowActions = (k, capture) => `
+    ${capture ? `<button type="button" class="btn btn-ghost" data-min-role="coord" onclick="goCapture('${escHtml(k)}')">Capture Result</button>` : ''}
     <button type="button" class="btn btn-ghost" data-min-role="editor" onclick="goReschedule('${escHtml(k)}')">Reschedule</button>
     <button type="button" class="btn btn-ghost" data-min-role="editor" onclick="cancelEvent('${escHtml(k)}')">Cancel</button>`;
 
@@ -999,7 +1000,7 @@ function renderOutstanding() {
     setStat('statPostponed', 'badgePostponed', postponedEvents.length, false);
 
     document.getElementById('outstandingRows').innerHTML = outstandingEvents.length
-        ? outstandingEvents.map(e => evtRow(e, rowActions(e.hexKey), true)).join('')
+        ? outstandingEvents.map(e => evtRow(e, rowActions(e.hexKey, true), true)).join('')
         : '<div class="empty-state">No outstanding results 🎉</div>';
 
     document.getElementById('postponedRows').innerHTML = postponedEvents.length
@@ -1013,6 +1014,10 @@ function renderOutstanding() {
 // Opens the calendar page's Reschedule panel with this event selected
 function goReschedule(hexKey) {
     window.location.href = `${CALENDAR_PAGE}?reschedule=${encodeURIComponent(hexKey)}`;
+}
+
+function goCapture(hexKey) {
+    window.location.href = `captureResults.html?event=${encodeURIComponent(hexKey)}`;
 }
 
 async function cancelEvent(hexKey) {

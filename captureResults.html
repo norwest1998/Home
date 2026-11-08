@@ -2788,6 +2788,15 @@ document.getElementById('app-body').innerHTML = '<div style="padding:40px;text-a
 (async () => {
   await getRegattas();
   await getEvents();
+  const key = new URLSearchParams(location.search).get('event');
+  if (key) {
+    history.replaceState(null, '', location.pathname);      // one-shot
+    const ev = EVENTS.find(e => String(e.id) === key);
+    if (ev && ev.status !== 'Processing') { await selectEvent(ev.id); return; }   // → Select Competitors (or resumes capture)
+    render();
+    showToast(ev ? 'That event is already being processed.' : 'Event not found – pick it from the list.');
+    return;
+  }
   render();
 })();
 
