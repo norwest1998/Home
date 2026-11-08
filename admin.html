@@ -296,7 +296,7 @@
             <div class="health-label">Full members</div>
             <div class="health-sub"></div>
         </div>
-        <div class="glass health-stat" id="health-users">
+        <div class="glass health-stat" id="health-users" data-min-role="admin">
             <div class="health-pct"><span class="spinner spinner-lg"></span></div>
             <div class="health-label">Members with a login</div>
             <div class="health-sub"></div>
@@ -441,8 +441,11 @@ async function initAdmin() {
         };
 
         try {
-            freshData.users = (await apiGet("listUsers")).values
-                .map(u => ({ Email: u.Email, Role: u.Role, LockedUntil: u.LockedUntil }));
+            const _role = (JSON.parse(localStorage.getItem("SMMC_USER") || "{}")).role;
+            freshData.users = _role === "admin"
+                ? (await apiGet("listUsers")).values
+                    .map(u => ({ Email: u.Email, Role: u.Role, LockedUntil: u.LockedUntil }))
+                : null;
         } catch (e) { freshData.users = null; }
 
         // Cache and re-render
