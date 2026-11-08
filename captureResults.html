@@ -1174,10 +1174,24 @@ function getRoster() {
 /* ======== HANDICAPS ======== */
 let REGATTAS = [];
 let FORMATS = [], SPECS = [];
+let SERIES_HCAPS = {};
+
 async function getFormats(){
   if(state.practice || SPECS.length) return;
   try{ [FORMATS, SPECS] = await Promise.all([fetchSheet("racing","RacingFormats"), fetchSheet("racing","RaceSpecs")]); }
   catch(e){ console.error(e); }
+}
+
+async function getSeriesHcaps(ev){
+  SERIES_HCAPS = {};
+  if(state.practice || ev.handicapType !== 'Series' || !ev.seriesId) return;
+  try{
+    const rows = await fetchSheet("racing","SeriesEntries");
+    rows.filter(r => String(r.SeriesID) === String(ev.seriesId)).forEach(r => {   // later rows win
+      const h = String(r.CurrentHandicap ?? '').trim() !== '' ? r.CurrentHandicap : r.StartingHandicap;
+      SERIES_HCAPS[String(r.BoatID)] = Number(h) || 0;
+    });
+  }catch(e){ console.error('Failed to load series handicaps:', e); }
 }
 
 function formatIdFor(ev){
@@ -1215,23 +1229,21 @@ async function getRegattas(){
 }
 
 function findHcapRule(ev){
-  const row = REGATTAS.find(r => {
-    // CRITICAL FIX: Add 'ID' and 'id' to the fallback properties
-    const rId = r.ID || r.id || r.SeriesID || r['Series ID'] || r.seriesId || r.RegattaID || r['Regatta ID'];
-    if (rId && ev.seriesId && String(rId) === String(ev.seriesId)) return true;
-    
-    // fallback to checking by name if IDs are unmapped/unavailable
-    const rName = r.SeriesName || r['Series Name'] || r.seriesName || r.RegattaName || r['Regatta Name'];
-    if (!rId && !ev.seriesId && rName && ev.seriesName && String(rName).toLowerCase() === String(ev.seriesName).toLowerCase()) return true;
-    
-    return false;
-  });
-  
-  if(!row || !String(row['Hcap Formula'] ?? '').trim()) return null;
-  const tokens = String(row['Hcap Formula']).replace(/\./g, ',')   // tolerates the "L-2.L-1" typo
-                   .split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-  const col = k => String(row[k] ?? '').split(',').map(s => Number(s.trim()) || 0);
-  return { tokens, cols: { lt4: col('<4'), lt7: col('<7'), lt13: col('<13'), ge13: col('13+') } };
+  const fid = formatIdFor(ev);
+  const spec = SPECS.find(s => fid && s.formatId === fid
+    && String(s.raceType).toLowerCase() === 'handicap'
+    && String(s.active).toLowerCase() !== 'false'
+    && String(s.configJson || '').trim());
+  if(!spec) return null;
+  let c;
+  try { c = typeof spec.configJson === 'string' ? JSON.parse(spec.configJson) : spec.configJson; }
+  catch(e){ console.error('Bad configJson on', spec.specId, e); return null; }
+  if(!c || c.method !== 'start_offset' || !Array.isArray(c.positions) || !c.brackets){
+    console.warn('Unsupported handicap config on', spec.specId); return null;
+  }
+  const col = k => (c.brackets[k] || []).map(v => Number(v) || 0);
+  return { tokens: c.positions.map(p => String(p).trim().toUpperCase()),
+           cols: { lt4: col('<4'), lt7: col('<7'), lt13: col('<13'), ge13: col('13+') } };
 }
 
 function hcapFor(m, ev){
@@ -1240,6 +1252,8 @@ function hcapFor(m, ev){
     return Number(m['GH HCap'] || m.ghHcap) || 0;
   } else if (ev.handicapType === 'Class') {
     return Number(m.Handicap || m.handicap) || 0;
+    } else if (ev.handicapType === 'Series') {
+    return SERIES_HCAPS[String(m.id)] || 0;
   }
   return 0; // Scratch / No Handicap
 }
@@ -2179,7 +2193,7 @@ async function selectEvent(id){
      </div>`;
 
   try {
-        await Promise.all([getMembers(full.className), getGuests(full.id, full.className), getFormats()]);
+        await Promise.all([getMembers(full.className), getGuests(full.id, full.className), getFormats(), getSeriesHcaps(full)]);
   } catch (e) { console.error(e); }
 
   full.hcapRule = findHcapRule(full);
