@@ -1290,9 +1290,9 @@ function fillHTML(id, o){
 }
 
 /* ======== create function to fetch Events ============= */
-async function getEvents() {
+async function getEvents(data) {
   try {
-    const data = await gwGet({ type: "calendar" }, CAL_WEBAPP_URL);
+    data = data || await gwGet({ type: "calendar" }, CAL_WEBAPP_URL);
 
     // Helper to find keys regardless of case or spaces (e.g., 'Format ID' == 'formatid')
     const getVal = (obj, keys) => {
@@ -2787,17 +2787,24 @@ document.getElementById('app-subheader').innerHTML = subHeaderHTML();
 document.getElementById('app-body').innerHTML = '<div style="padding:40px;text-align:center;color:var(--foam-dim)">Loading events…</div>';
 (async () => {
   await getRegattas();
-  await getEvents();
   const key = new URLSearchParams(location.search).get('event');
-  if (key) {
-    history.replaceState(null, '', location.pathname);      // one-shot
-    const ev = EVENTS.find(e => String(e.id) === key);
-    if (ev && ev.status !== 'Processing') { await selectEvent(ev.id); return; }   // → Select Competitors (or resumes capture)
-    render();
-    showToast(ev ? 'That event is already being processed.' : 'Event not found – pick it from the list.');
+  if (!key) { await getEvents(); render(); return; }
+
+  history.replaceState(null, '', location.pathname);          // one-shot
+  let res = null, err = '';
+  try { res = await gw({ action: 'getEvent', event: key }, CAL_WEBAPP_URL); }
+  catch (e) { err = e.message; console.error(e); }
+
+  if (res && res.found) {
+    await getEvents(res);                                      // EVENTS = just this event
+    await selectEvent(EVENTS[0].id);                           // → Select Competitors (or resumes saved capture)
+    getEvents().then(() => { if (state.screen === 'select-event') render(); });   // full list loads in background
     return;
   }
+  await getEvents();
   render();
+  showToast(err ? 'Could not load event: ' + err
+                : `Event is currently in a state of "${(res && res.status) || 'Processing'}"`);
 })();
 
 </script>

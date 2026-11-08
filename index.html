@@ -2656,40 +2656,78 @@
       if (window.lucide) lucide.createIcons();
     }
     
-    function openMemberDrawer(m) {
-      if (!m) return;
-      const body = document.getElementById('memberDrawerBody');
-      body.innerHTML = `
-        <div class="drawer-name-row">
-          <div class="drawer-avatar">${esc(initials(m.name))}</div>
-          <div class="drawer-name-col">
-            <span class="drawer-name">${esc(m.name)}</span>
-            <span class="badge ${membershipBadgeClass(m.membership)}" style="width:fit-content">${esc(m.membership)}</span>
-          </div>
-        </div>
-        <div class="detail-grid">
-          <div class="detail-item">
-            <span class="detail-label">Active</span>
-            <span class="detail-value">${m.active    ? '<span class="committee-yes">Active</span>'  : '—'}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">WhatsApp</span>
-            <span class="detail-value">${m.whatsapp  ? '<span class="committee-yes">Active</span>'  : '—'}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Committee</span>
-            <span class="detail-value">${m.committee ? '<span class="committee-yes">Member</span>'  : '—'}</span>
-          </div>
-        </div>`;
-      document.getElementById('memberDrawer').classList.add('open');
+function formatPhoneForWA(phone) {
+  if (!phone) return "";
+  // Strip everything except numbers
+  let cleaned = String(phone).replace(/\D/g, '');
+  // If it's an Aussie local number starting with 0, replace with 61
+  if (cleaned.startsWith('0')) {
+    cleaned = '61' + cleaned.substring(1);
+  }
+  return cleaned;
+}
 
-      // Filter Registered Boats by selected member
-      const boatSearch = document.getElementById('boatSearch');
-      if (boatSearch) {
-        boatSearch.value = m.name;
-        boatSearch.dispatchEvent(new Event('input'));
-      }
-    }
+function openMemberDrawer(m) {
+  if (!m) return;
+  const body = document.getElementById('memberDrawerBody');
+  
+  // Extract phone number (check your sheet's exact column name)
+  const phone = m.Phone || m.phone || m['Phone #'] || m.phoneNumber || "";
+  const waNumber = formatPhoneForWA(phone);
+  
+  // Create the WhatsApp Button if they have a valid number and the WhatsApp flag
+  let waButtonHtml = '';
+  if (m.whatsapp && waNumber) {
+    const defaultMsg = encodeURIComponent(`Hi ${m.name}, `);
+    waButtonHtml = `
+      <a href="https://wa.me/${waNumber}?text=${defaultMsg}" target="_blank" 
+         class="btn btn-primary" 
+         style="width: 100%; justify-content: center; margin-top: 10px; background: var(--whatsapp); color: #000;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        </svg>
+        Message on WhatsApp
+      </a>
+    `;
+  }
+
+  body.innerHTML = `
+    <div class="drawer-name-row">
+      <div class="drawer-avatar">${esc(initials(m.name))}</div>
+      <div class="drawer-name-col">
+        <span class="drawer-name">${esc(m.name)}</span>
+        <span class="badge ${membershipBadgeClass(m.membership)}" style="width:fit-content">${esc(m.membership)}</span>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item">
+        <span class="detail-label">Active</span>
+        <span class="detail-value">${m.active ? '<span class="committee-yes">Active</span>'  : '—'}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">WhatsApp</span>
+        <span class="detail-value">${m.whatsapp ? '<span class="committee-yes">Active</span>'  : '—'}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Committee</span>
+        <span class="detail-value">${m.committee ? '<span class="committee-yes">Member</span>'  : '—'}</span>
+      </div>
+      ${phone ? `<div class="detail-item full-width">
+        <span class="detail-label">Phone</span>
+        <span class="detail-value">${esc(phone)}</span>
+      </div>` : ''}
+    </div>
+    ${waButtonHtml}
+  `;
+  document.getElementById('memberDrawer').classList.add('open');
+
+  // Filter Registered Boats by selected member
+  const boatSearch = document.getElementById('boatSearch');
+  if (boatSearch) {
+    boatSearch.value = m.name;
+    boatSearch.dispatchEvent(new Event('input'));
+  }
+}
     
     // Filter wiring
     document.getElementById('memberSearch').addEventListener('input', renderMembers);
