@@ -43,7 +43,7 @@ const Nav = {
     _scanSections() {
         return Array.from(document.querySelectorAll('.section-head')).reduce((acc, el) => {
             const h2 = el.querySelector('h2');
-            if (!h2) return acc;
+            if (!h2 || el.closest('[data-min-role]')?.style.display === 'none') return acc;
 
             if (!el.id) {
                 el.id = 'section-' + h2.textContent.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');

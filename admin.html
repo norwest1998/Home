@@ -368,7 +368,7 @@
     </section>
 
     <!-- Sheet Layout monitor-->
-    <div id="systemHealth-placeholder" data-min-role="editor"></div>
+    <div id="systemHealth-placeholder" data-min-role="admin"></div>
 
     <!-- AUDIT LOG -->
     <div id="auditLog-placeholder" data-min-role="editor"></div>
@@ -1365,7 +1365,8 @@ document.addEventListener('DOMContentLoaded', initAdmin);
         if (sysHealthP) sysHealthP.innerHTML = healthHtml;
 
         if (window.AuditLog && typeof AuditLog.init === 'function') AuditLog.init();
-        if (window.SystemHealth && typeof SystemHealth.init === 'function') SystemHealth.init();
+        const _role = (JSON.parse(localStorage.getItem('SMMC_USER') || '{}')).role;
+        if (_role === 'admin' && window.SystemHealth && typeof SystemHealth.init === 'function') SystemHealth.init();
         if (window.Nav && typeof Nav.init === 'function') Nav.init();
 
         if (window.lucide) lucide.createIcons();
