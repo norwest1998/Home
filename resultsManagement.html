@@ -330,6 +330,16 @@ select.guest-inline-input option {
 .ef-bad { border-color: var(--signal) !important; background: rgba(255,106,61,0.14) !important; }
 .ef-tools { display: flex; gap: 8px; flex-wrap: wrap; }
 .ef-ul { margin: 6px 0 0 18px; padding: 0; }
+
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-bottom:20px; }
+.stat-card { display:flex; flex-direction:column; gap:6px; padding:18px; border-radius:14px; text-decoration:none;
+  background:var(--glass-fill); border:1px solid var(--glass-border); color:var(--foam-dim); font-size:13px;
+  transition:transform .15s, border-color .15s; }
+.stat-card:hover { transform:translateY(-2px); border-color:var(--glow); }
+.stat-card h4 { margin:0 0 6px; color:var(--foam); font-size:15px; }
+.stat-card b { font-size:22px; color:var(--foam); margin-right:4px; }
+.stat-card.stat-alert { border-color:rgba(239,68,68,.45); background:rgba(239,68,68,.08); }
+.stat-card.stat-alert h4 { color:#f87171; }
 </style>
 </head>
 <body>
@@ -353,15 +363,31 @@ select.guest-inline-input option {
     </div>
 
     <!-- Stats -->
-    <div id="resultsStats" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-        <span class="badge badge-approved"><span id="statProcessed">—</span> Processed This Season</span>
-        <span class="badge badge-default"><span id="statOutstanding">—</span> Awaiting Processing</span>
-        <span class="badge badge-default"><span id="statAvgReqTotal">—</span> Avg Score Requests</span>
-        <span class="badge" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;"><span id="statAvgReqPending">—</span> Decisions Pending</span>
-        <span class="badge badge-approved"><span id="statAvgReqApproved">—</span> Requests Approved</span>
-        <span id="badgeOutstandingResults" class="badge badge-default"><span id="statOutstandingResults">—</span> Outstanding Results</span>
-        <span id="badgePostponed" class="badge badge-default"><span id="statPostponed">—</span> Postponed</span>
-        <span id="badgeErrorFiles" class="badge badge-declined" style="display:none;" data-min-role="editor"><span id="statErrorFiles">—</span> Need Correction</span>
+
+    <div id="resultsStats" class="stat-grid">
+        <a href="#outstanding-results" id="cardOutstanding" class="stat-card">
+            <h4>Outstanding Results</h4>
+            <div><b id="statOutstandingResults">—</b> Outstanding</div>
+            <div><b id="statPostponed">—</b> Postponed</div>
+        </a>
+        <a href="#processed-results" class="stat-card">
+            <h4>Processed Results</h4>
+            <div><b id="statProcessed">—</b> Processed this season</div>
+        </a>
+        <a href="#error-files" id="cardErrors" class="stat-card" data-min-role="editor">
+            <h4>Files Needing Correction</h4>
+            <div><b id="statErrorFiles">—</b> Files with errors</div>
+        </a>
+        <a href="#admin-actions" class="stat-card" data-min-role="editor">
+            <h4>Admin Actions</h4>
+            <div><b id="statOutstanding">—</b> Awaiting processing</div>
+        </a>
+        <a href="#avg-score-requests" id="cardAvg" class="stat-card">
+            <h4>Average Score Requests</h4>
+            <div><b id="statAvgReqTotal">—</b> Requests</div>
+            <div><b id="statAvgReqPending">—</b> Decisions pending</div>
+            <div><b id="statAvgReqApproved">—</b> Approved</div>
+        </a>
     </div>
 
     <!-- Outstanding Results -->
@@ -901,6 +927,7 @@ function renderStats() {
     const seasonStart = new Date(now.getMonth() >= 6 ? year : year - 1, 6, 1);
 
     const seasonFiles = allProcessedFiles.filter(f => f.date && f.date >= seasonStart);
+    document.getElementById('cardAvg').classList.toggle('stat-alert', allAvgRequests.some(r => r.status === 'pending'));
     document.getElementById('statProcessed').textContent   = seasonFiles.length;
     document.getElementById('statOutstanding').textContent = uploadFiles.length; // requires Drive list of upload folder
     document.getElementById('statAvgReqTotal').textContent    = allAvgRequests.length;
@@ -996,8 +1023,9 @@ function renderOutstanding() {
         b.className = 'badge ' + (red && n ? '' : 'badge-default');
         b.style.cssText = red && n ? 'background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#f87171;' : '';
     };
-    setStat('statOutstandingResults', 'badgeOutstandingResults', outstandingEvents.length, true);
-    setStat('statPostponed', 'badgePostponed', postponedEvents.length, false);
+    document.getElementById('statOutstandingResults').textContent = outstandingEvents.length;
+    document.getElementById('statPostponed').textContent = postponedEvents.length;
+    document.getElementById('cardOutstanding').classList.toggle('stat-alert', outstandingEvents.length > 0);
 
     document.getElementById('outstandingRows').innerHTML = outstandingEvents.length
         ? outstandingEvents.map(e => evtRow(e, rowActions(e.hexKey, true), true)).join('')
@@ -2178,7 +2206,7 @@ async function loadErrorFiles() {
     }
     const stat = document.getElementById('statErrorFiles');
     if (stat) stat.textContent = efFiles.length;
-    document.getElementById('badgeErrorFiles').style.display = efFiles.length ? '' : 'none';
+    document.getElementById('cardErrors').classList.toggle('stat-alert', efFiles.length > 0);
     box.innerHTML = efFiles.length ? efFiles.map(f => `
         <div class="result-row ef-row">
             <div>
