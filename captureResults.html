@@ -1909,7 +1909,12 @@ function backToPreRace(){ state.draft.started = false; render(); }
 
 function renderPreRace(){
   const d = state.draft;
-  const start = hcapStart(d.insertAt ?? state.races.length);          // calculated handicaps, untouched
+  const idx = d.insertAt ?? state.races.length;
+  const start = hcapStart(idx);                                       // calculated handicaps, untouched
+  const pr = state.races[idx-1];
+  const prev = pr && isHcapRace(pr.raceNumber)                        // adjustments made by the previous handicap race
+    ? raceHcaps(pr.positions, hcapStart(idx-1), pr.raceNumber, pr.positions.length) : null;
+  const adjOf = id => { const a = prev && prev[id] ? prev[id].adj : 0; return a > 0 ? `+${a}` : a < 0 ? `${a}` : '&nbsp;'; };
   const lowest = Math.min(...state.entries.map(e => start[e.boatId]));
   const man = d.manualAdj || 0;
   const opts = [`<option value="0" ${man===0?'selected':''}>None</option>`]
@@ -1919,7 +1924,7 @@ function renderPreRace(){
     .sort((a,b) => start[a.boatId] - start[b.boatId] || Number(a.sailNo) - Number(b.sailNo))
     .map(e => `<div class="pos-slot filled"><div class="pos-fill"><div class="hc-row">
         ${sailChip(e.boatId)}<span class="p-name hc-name">${escapeHTML(e.member)}</span>
-        <span class="hc-adj">${start[e.boatId]}</span><span class="hc-new">${start[e.boatId] - lowest - man}</span>
+        <span class="hc-adj">${adjOf(e.boatId)}</span><span class="hc-adj">${start[e.boatId]}</span><span class="hc-new">${start[e.boatId] - lowest - man}</span>
       </div></div></div>`).join('');
   return `
     <div class="race-hero">
@@ -1934,7 +1939,7 @@ function renderPreRace(){
         <select data-manual-adj="1">${opts}</select>
       </div>
       <div class="hc-row" style="font-size:11px;color:var(--foam-dim);margin-bottom:6px">
-        <span class="hc-name">Competitor</span><span class="hc-adj">Hcap</span><span class="hc-new">Race</span>
+        <span class="hc-name">Competitor</span><span class="hc-adj">Adj</span><span class="hc-adj">Hcap</span><span class="hc-new">Race</span>
       </div>
       ${rows}
     </div>
