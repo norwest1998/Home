@@ -1028,7 +1028,6 @@ const rowActions = (k, capture) => `
 function renderOutstanding() {
     setStat('statOutstandingResults', outstandingEvents.length, 'is-signal');
     setStat('statPostponed', postponedEvents.length, 'is-folder');
-    setStat('statOutstanding', count, 'is-signal'); 
 
     document.getElementById('outstandingRows').innerHTML = outstandingEvents.length
         ? outstandingEvents.map(e => evtRow(e, rowActions(e.hexKey, true), true)).join('')
