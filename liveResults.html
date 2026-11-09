@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMMC Live Results</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  .wrap{max-width:900px;margin:0 auto;padding:16px}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  th,td{padding:7px 8px;text-align:center;border-bottom:1px solid rgba(255,255,255,.08);white-space:nowrap}
+  .l{text-align:left}
+  tr.me td{background:rgba(255,255,255,.12);font-weight:700}
+  .adj{font-size:11px;color:var(--glow);margin-left:4px}
+  .muted{color:var(--foam-dim);font-size:12px;margin:8px 0}
+  .picks{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2 id="title">Live results</h2>
+  <div id="picks" class="picks"></div>
+  <div id="table" style="overflow-x:auto"></div>
+  <div id="status" class="muted"></div>
+</div>
+<script src="shared.js"></script>
+<script>
+const CAL_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
+const $ = id => document.getElementById(id);
+const me = String((JSON.parse(localStorage.getItem("SMMC_USER") || "null") || {}).name || "").trim().toLowerCase();
+let key = new URLSearchParams(location.search).get("event");
+const call = (action, x) => gw({ action, ...x }, CAL_WEBAPP_URL);
+const adjTxt = a => a > 0 ? "+" + a : a < 0 ? String(a) : "";
+
+function draw(v, updated) {
+  $("title").textContent = v.title + (v.date ? " – " + v.date : "");
+  const n = v.races, hc = v.handicaps;
+  let h = `<th>Pos</th><th class="l">Sail</th><th class="l">Name</th>` +
+          (n ? `<th>Net</th>` : "") +
+          Array.from({ length: n }, (_, i) => `<th>R${i + 1}</th>`).join("") +
+          (hc ? `<th>${v.status === "sent" ? "Final hcap" : "Next hcap"}</th>` : "");
+  const rows = v.rows.map(r => `<tr class="${me && String(r.member).trim().toLowerCase() === me ? "me" : ""}">
+    <td>${r.pos ?? ""}</td><td class="l">${escapeHtml(String(r.sail))}</td><td class="l">${escapeHtml(r.member)}</td>
+    ${n ? `<td>${r.net}</td>` : ""}
+    ${r.scores.map(s => `<td>${s ?? "–"}</td>`).join("")}
+    ${hc ? `<td>${r.hcap}<span class="adj">${adjTxt(r.adj)}</span></td>` : ""}</tr>`).join("");
+  $("table").innerHTML = `<table><thead><tr>${h}</tr></thead><tbody>${rows}</tbody></table>`;
+  $("status").textContent = (v.status === "sent" ? "Final – results sent. " : n ? `After ${n} race${n > 1 ? "s" : ""}. ` : "Not started. ") +
+    (updated ? "Updated " + new Date(Number(updated)).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + "." : "");
+}
+
+async function load() {
+  try {
+    if (!key) {
+      const { events } = await call("listLive");
+      if (events.length !== 1) {
+        $("table").innerHTML = "";
+        $("picks").innerHTML = events.length
+          ? events.map(e => `<button class="btn btn-ghost" data-k="${e.hexKey}">${escapeHtml(e.title)}</button>`).join("")
+          : "";
+        $("status").textContent = events.length ? "Choose an event." : "No races are in progress right now.";
+        return;
+      }
+      key = events[0].hexKey;
+    }
+    const r = await call("getCaptureView", { hexKey: key });
+    if (!r.found) { key = null; $("status").textContent = "That event is not in progress."; return; }
+    $("picks").innerHTML = "";
+    draw(r.view, r.updated);
+  } catch (e) { $("status").textContent = e.message; }
+}
+
+$("picks").addEventListener("click", e => { const b = e.target.closest("[data-k]"); if (b) { key = b.dataset.k; load(); } });
+load();
+setInterval(load, 20000);
+</script>
+</body>
+</html>

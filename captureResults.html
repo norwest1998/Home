@@ -1450,6 +1450,38 @@ const STORE_PREFIX = 'smmc-race-';
 const PRACTICE_PREFIX = 'smmc-practice-';
 function storageKey(eventId){ return (state.practice ? PRACTICE_PREFIX : STORE_PREFIX) + eventId; }
 
+const SYNC = { rev: 0, t: null, beat: null, takeover: false, lost: false };
+
+function viewSnapshot(){
+  const ev = state.event, n = state.races.length;
+  const st = n ? computeStandings(state.entries, state.races) : [];
+  const hc = ev.hcapRule ? hcapStart(n) : null;                       // handicaps going into the next race
+  const pr = state.races[n-1];
+  const last = hc && pr && isHcapRace(pr.raceNumber)
+    ? raceHcaps(pr.positions, hcapStart(n-1), pr.raceNumber, pr.positions.length) : null;
+  const order = n ? st : state.entries.map(e => ({ boatId:e.boatId, sailNo:e.sailNo, member:e.member, raceScores:[], net:0, pos:null }));
+  return { title: ev.regattaName, date: ev.regattaDate, status: state.sent ? 'sent' : 'live', races: n, handicaps: !!hc,
+    rows: order.map(s => ({ pos:s.pos, sail:s.sailNo, member:s.member, net:n ? s.net : null,
+      scores: s.raceScores.map(r => r.code || r.points), hcap: hc ? hc[s.boatId] : null, adj: last ? last[s.boatId].adj : 0 })) };
+}
+
+async function pushDraft(){
+  if(state.practice || !state.event || SYNC.lost) return;
+  try{
+    const r = await gw({ action:'saveCapture', hexKey: state.event.id, baseRev: SYNC.rev, takeover: SYNC.takeover,
+      state: JSON.stringify({ entries: state.entries, races: state.races, reportText: state.reportText, sent: state.sent || false }),
+      view: viewSnapshot() }, CAL_WEBAPP_URL);
+    if(r.success){ SYNC.rev = r.rev; SYNC.takeover = false; return; }
+    SYNC.lost = true; stopSync();
+    alert(r.locked ? `${r.lockedBy} has taken over this event. Your latest changes were not saved.`
+                   : 'This event was updated elsewhere. Reopen it to continue.');
+    changeEvent();
+  }catch(e){ console.error('sync failed', e); }
+}
+function startSync(){ stopSync(); SYNC.lost = false;
+  SYNC.beat = setInterval(() => { if(state.event && state.entries.length) pushDraft(); }, 60000); }   // keeps the lock alive
+function stopSync(){ clearInterval(SYNC.beat); clearTimeout(SYNC.t); }
+
 function saveState(){
   if(!state.event) return;
   try{
@@ -1458,9 +1490,11 @@ function saveState(){
       entries: state.entries,
       races: state.races,
       reportText: state.reportText,
-      sent: state.sent || false   // add this
+      sent: state.sent || false,
+      rev: SYNC.rev   
     };
     localStorage.setItem(storageKey(state.event.id), JSON.stringify(payload));
+    clearTimeout(SYNC.t); SYNC.t = setTimeout(pushDraft, 800);
   }catch(e){ console.error('save failed', e); }
 }
 
@@ -1946,6 +1980,7 @@ function renderPreRace(){
     <button class="btn btn-primary btn-block" data-start-race="1">Start Race ${d.raceNumber}</button>
     <button class="btn btn-ghost btn-block" style="margin-top:10px" data-cancel-draft="1">Cancel</button>`;
 }
+
 function setManualAdj(v){ state.draft.manualAdj = Number(v) || 0; render(); }
 function startRace(){ state.draft.started = true; render(); }
 
@@ -2207,7 +2242,15 @@ async function selectEvent(id){
     GUESTS.forEach(g => g.hcap = Number(g.hcap) || Number((loadState(id)?.entries || []).find(e => e.boatId === String(g.id))?.hcap) || 0);
   }
 
-  const saved = loadState(id);
+  let saved = loadState(id);
+  if(!state.practice){
+    try{
+      const r = await gw({ action:'loadCapture', hexKey:id }, CAL_WEBAPP_URL);
+      if(r.lockedBy && !confirm(`${r.lockedBy} is currently capturing this event.\n\nTake over?`)){ render(); return; }
+      SYNC.rev = r.rev || 0; SYNC.takeover = !!r.lockedBy;
+      if(r.found && (!saved || r.rev > (saved.rev || 0))) saved = JSON.parse(r.state);
+    }catch(e){ console.error('sync load failed', e); }
+  }
   state.event = full;
   if(saved){
     state.entries = saved.entries || [];
@@ -2224,6 +2267,7 @@ async function selectEvent(id){
   state.draft = null;
   state.viewRaceIdx = null;
   state.screen = state.entries.length > 0 ? 'race-capture' : 'select-competitors';
+  startSync();
   render();
 }
 
@@ -2560,6 +2604,7 @@ function changeEvent(){
   state.screen = 'select-event';
   state.event = null;
   state.overlay = null;
+  stopSync();
   render();
 }
 
