@@ -1123,7 +1123,7 @@ async function loadAvgRequests() {
             decidedBy:  r["Decision By"],
             decided:    r["Decision Date"],
             submitted:  r["Timestamp"],
-            status:     r["Status"],
+            status:     String(r["Status"] || '').trim().toLowerCase(),
             boatID:     r["BoatID"],
             reason:     r["Rejected Reason"],
             emailsent:  r["Email Sent"]
