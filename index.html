@@ -1367,6 +1367,10 @@
         <div class="hero-actions">
           <a href="#next-event" class="btn btn-primary">Next Weekend Race</a>
           <a href="#race-results" class="btn btn-ghost">View Latest Results</a>
+          <a href="liveResults.html" id="btn-live-results" class="btn" style="display: none; background: rgba(255,106,61,0.15); border: 1px solid var(--signal); color: var(--signal); font-weight: 700;">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--signal);box-shadow:0 0 8px var(--signal);animation:pulse 2.4s infinite;"></span>
+            Live Results
+          </a>
         </div>
 
         <div class="conditions">
@@ -2144,8 +2148,28 @@
         showError(document.querySelector('.calendar-grid'), 'Unable to load calendar. Please try again later.'); });
     }
 
+    async function checkLiveResults() {
+      try {
+        const res = await gw({ action: "listLive" }, CALENDAR_URL);
+        if (res && res.events && res.events.length > 0) {
+          const btn = document.getElementById("btn-live-results");
+          if (btn) {
+            btn.style.display = "inline-flex";
+            // Link directly to the event if there's only one live
+            if (res.events.length === 1) {
+              btn.href = "liveResults.html?event=" + encodeURIComponent(res.events[0].hexKey);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Live results check failed:", e);
+      }
+    }
+
     async function initApp() {
       loadSideData();
+      checkLiveResults(); // Fire-and-forget live results check
+      
       const cachedRaw = readCache();
       if (cachedRaw) { 
         try { 
