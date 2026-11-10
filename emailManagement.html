@@ -890,8 +890,8 @@ function mf(m, ...names) {               // case/space-insensitive field lookup
 }
 function getMemberEmail(m) { return mf(m, "Email", "Email Address"); }
 function getMemberName(m)  { return mf(m, "MemberName", "Member Name", "Name") || (mf(m, "FirstName", "First Name") + " " + mf(m, "LastName", "Last Name")).trim(); }
-function getMemberType(m)  { return mf(m, "Membershiptype", "Membership Type", "MemberType"); }
-function isActive(m)       { return isTrue(mf(m, "Active", "Status")); }
+function getMemberType(m)  { return mf(m, "Membership", "Membershiptype", "Membership Type", "MemberType"); }
+function isActive(m)       { const a = mf(m, "Active", "Status"); return a ? isTrue(a) : getMemberType(m).toLowerCase() !== "expired"; }
 function isPaid(m)         { return isTrue(mf(m, "Paid up", "Paid", "Financial")); }
 
 function populateMemberFilters() {
