@@ -765,6 +765,11 @@ async function tFetch(sheet) {
   return d.values || [];
 }
 
+async function eFetch(sheet) {          // email data: Tracking, Dashboard, Drafts, Sent
+  const d = await gw({ action: "fetchEmail", sheet }, EMAIL_GATEWAY_URL);
+  return d.values || [];
+}
+
 async function tPost(payload) {
   if (!TEMPLATE_GW_URL) throw new Error("TEMPLATE_GW_URL not configured.");
   return (await gw(payload, TEMPLATE_GW_URL));
@@ -1037,12 +1042,12 @@ document.querySelectorAll(".compose-tab").forEach(tab => {
    TRACKING DATA
    ================================================================ */
 async function loadDashboard(){
-  dashRows  = await efetch("Dashboard");
+  dashRows  = await eFetch("Dashboard");
   renderDashboard(); 
 }
 
 async function loadTracking(){
-  trackRows = await efetch("Tracking"); 
+  trackRows = await eFetch("Tracking"); 
 
   ;populateBatchFilter();
   renderStats();
@@ -1613,7 +1618,7 @@ const toLocalInput = v => {                     // Sheets may hand back a Date s
 };
 
 async function loadDrafts() {
-  try { drafts = (await efetch("Drafts")).filter(d => d["Draft ID"]).reverse(); }
+  try { drafts = (await eFetch("Drafts")).filter(d => d["Draft ID"]).reverse(); }
   catch (e) { drafts = []; showToast("Error loading drafts: " + e.message, "error"); }
   renderDrafts();
 }
