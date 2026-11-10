@@ -308,7 +308,7 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
   <div class="tab-content active" style="background:none;border:none;padding:16px;">
     <div class="log-table-wrap">
       <table class="log-table">
-        <thead><tr><th>Saved</th><th>Subject</th><th>Template</th><th>Recipients</th><th>Scheduled</th><th></th></tr></thead>
+        <thead><tr><th>Saved</th><th>Subject</th><th>Template</th><th>Recipients</th><th>Scheduled</th><th>Status</th><th></th></tr></thead>
         <tbody id="draftsBody"></tbody>
       </table>
     </div>
@@ -1626,13 +1626,25 @@ function renderDrafts() {
       <td>${escapeHtml(d["Key"] || "—")}</td>
       <td>${n}</td>
       <td>${d["Scheduled"] ? escapeHtml(String(d["Scheduled"]).replace("T"," ")) : "—"}</td>
+      <td>${escapeHtml(String(d["Status"] || "Draft"))}</td>
       <td style="white-space:nowrap;">
-        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="openDraft('${escapeHtml(d["Draft ID"])}')">Load</button>
-        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="removeDraft('${escapeHtml(d["Draft ID"])}')">Delete</button>
+        ${(d["Status"] || "Draft") === "Draft" ? `<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="openDraft('${escapeHtml(d["Draft ID"])}')">Load</button>` : ""}
+        ${d["Status"] === "Scheduled"
+          ? `<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="cancelScheduledDraft('${escapeHtml(d["Draft ID"])}')">Cancel</button>`
+          : `<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="removeDraft('${escapeHtml(d["Draft ID"])}')">Delete</button>`}
       </td></tr>`;
   }).join("");
   document.getElementById("draftsEmpty").style.display = drafts.length ? "none" : "block";
 }
+
+async function cancelScheduledDraft(id) {
+  if (!confirm("Cancel this scheduled email?")) return;
+  try {
+    await gw({ action: "cancelScheduledTrigger", draftId: id }, EMAIL_GATEWAY_URL);
+    showToast("Scheduled email cancelled", "success");
+    await loadDrafts(); loadTracking();
+  } catch (e) { showToast("Error cancelling: " + e.message, "error"); }
+} 
 
 function openDraft(id) {
   const d = drafts.find(x => x["Draft ID"] === id); if (!d) return;
@@ -1731,8 +1743,8 @@ async function sendEmail(){
     const sigHtml=sig?.["Body"]?`<br><hr style="border:none;border-top:1px solid #ddd;margin:16px 0;">${sig["Body"]}`:"";
 
     const recipientPayloads=allTo.map(email=>{
-      const member=members.find(m=>(m["Email"]||m["Email Address"]||"")===email);
-      const name=member?((member["First Name"]||"")+" "+(member["Last Name"]||"")).trim():email;
+      const member=members.find(m=>getMemberEmail(m).toLowerCase()===email.toLowerCase());
+      const name=member?getMemberName(member):email;
       const resolvedBody=resolveVariables(rawBody,member)+sigHtml;
       return{email,name,resolvedBody};
     });
@@ -1741,7 +1753,7 @@ async function sendEmail(){
       const res=await gw({
           action:       "createScheduledTrigger",
           draftId:      batchKey,
-          scheduledAt:  schedTime,
+          scheduledAt:  new Date(schedTime).toISOString(),
           subject:      subject,
           to:           allTo.join(", "),
           cc:           ccList,
@@ -1751,28 +1763,24 @@ async function sendEmail(){
           templateId:   selectedTmplId||"",
           recipients:   recipientPayloads
         },EMAIL_GATEWAY_URL);
-      const result=await res.json();
-      if(!result.success) throw new Error(result.error||"Failed to create trigger.");
+      if(!res.success) throw new Error(res.error||"Failed to create trigger.");
 
       for(const r of recipientPayloads){
-        await gw({
-          action: "append",
-          domain:  TRACKING_DOMAIN,
-          sheet: "Tracking",
-          data: {
+        await appendSheet(TRACKING_DOMAIN, "Tracking", {
             "Batch Key":     batchKey+"-"+r.email,
             "Key":           campaignKey,
             "Contact Name":  r.name,
             "Email Status":  "Scheduled",
             "Date Sent":     schedTime,
-          "Recipient Email":r.email,
-          "Thread ID":     batchKey
-        }},EMAIL_GATEWAY_URL);
+            "Recipient Email":r.email,
+            "Thread ID":     batchKey
+        });
       }
       if(currentDraftId){
         try { await deleteRow(TRACKING_DOMAIN, "Drafts", currentDraftId); } catch(e) { console.warn("Draft cleanup failed:", e); }
         currentDraftId=null; loadDrafts();
       }
+      loadDrafts();
       showToast(`Scheduled for ${new Date(schedTime).toLocaleString()}. Trigger created.`,"success");
 
     } else {
@@ -1781,7 +1789,7 @@ async function sendEmail(){
         allTo.join(", "),ccList,null
       );
       for(const r of recipientPayloads){
-        await gw({action: "append", domain: TRACKING_DOMAIN, sheet: "Tracking", data: {
+       await appendSheet(TRACKING_DOMAIN, "Tracking", {
           "Batch Key":     batchKey+"-"+r.email,
           "Key":           campaignKey,
           "Contact Name":  r.name,
@@ -1789,7 +1797,7 @@ async function sendEmail(){
           "Date Sent":     new Date().toISOString(),
           "Recipient Email":r.email,
           "Thread ID":     sentId
-        }},EMAIL_GATEWAY_URL);
+        });
       }
       if(currentDraftId){
         try { await deleteRow(TRACKING_DOMAIN, "Drafts", currentDraftId); } catch(e) { console.warn("Draft cleanup failed:", e); }
