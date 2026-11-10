@@ -970,6 +970,8 @@ const daysOverdue = e => Math.floor((new Date().setHours(0, 0, 0, 0) - e.date) /
 async function loadOutstanding() {
     try {
         const rows = await fetchSheet(DOMAIN.calendar, "Event Data");
+        const rawResultsKey = Object.keys(rows[0] || {}).find(k => k.trim().toLowerCase() === 'results');
+        if (rawResultsKey) window.RESULTS_COL = rawResultsKey;
         const now = new Date(), y = now.getFullYear();
         const seasonStart = new Date(now.getMonth() >= 6 ? y : y - 1, 6, 1);
         const seasonEnd   = new Date(seasonStart.getFullYear() + 1, 6, 1);
@@ -1054,7 +1056,7 @@ async function cancelEvent(hexKey) {
     const e = [...outstandingEvents, ...postponedEvents].find(x => x.hexKey === hexKey);
     if (!e || !confirm(`Cancel "${e.raceClass} ${e.regattaType}"? It will leave these lists.`)) return;
     try {
-        await updateSheet(DOMAIN.calendar || "calendar", "Event Data", hexKey, { "Results": "Cancelled" });
+        await updateSheet(DOMAIN.calendar || "calendar", "Event Data", hexKey,{ [window.RESULTS_COL || "Results"]: "Cancelled" });
         showMsg('outstandingMsg', 'Event cancelled.', false);
         loadOutstanding();
     } catch (err) { showMsg('outstandingMsg', 'Error: ' + err.message, true); }
