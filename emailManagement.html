@@ -1037,12 +1037,12 @@ document.querySelectorAll(".compose-tab").forEach(tab => {
    TRACKING DATA
    ================================================================ */
 async function loadDashboard(){
-  dashRows  = await fetchSheet(TRACKING_DOMAIN, "Dashboard"); 
+  dashRows  = await efetch("Dashboard");
   renderDashboard(); 
 }
 
 async function loadTracking(){
-  trackRows = await fetchSheet(TRACKING_DOMAIN, "Tracking"); 
+  trackRows = await efetch("Tracking"); 
 
   ;populateBatchFilter();
   renderStats();
@@ -1095,9 +1095,10 @@ function renderDashboard(){
 }
 
 function populateBatchFilter(){
-  const keys=[...new Set(trackRows.map(r=>r["Key"]).filter(Boolean))];
+  const keys=[...new Set(trackRows.map(r=>r["Batch Key"]).filter(Boolean))];
+  const lbl=k=>(dashRows.find(d=>d["Key"]===k)||{})["Communication Title"]||k;
   const sel=document.getElementById("filterBatch"),cur=sel.value;
-  sel.innerHTML=`<option value="">All Batches</option>`+keys.map(k=>`<option value="${escapeHtml(k)}"${k===cur?" selected":""}>${escapeHtml(k)}</option>`).join("");
+  sel.innerHTML=`<option value="">All Batches</option>`+keys.map(k=>`<option value="${escapeHtml(k)}"${k===cur?" selected":""}>${escapeHtml(lbl(k))}</option>`).join("");
 }
 
 function renderTracking(){
@@ -1107,12 +1108,12 @@ function renderTracking(){
   const reminder=document.getElementById("filterReminder").value;
   let rows=trackRows;
   if(status) rows=rows.filter(r=>(r["Email Status"]||"")===status);
-  if(batch)  rows=rows.filter(r=>(r["Key"]||"")===batch);
+  if(batch)  rows=rows.filter(r=>(r["Batch Key"]||"")===batch);
   if(reminder)rows=rows.filter(r=>(r["Reminder Sent"]||"")===reminder);
   if(q) rows=rows.filter(r=>["Contact Name","Recipient Email","Email Status","Comments","Email Response"].some(k=>String(r[k]||"").toLowerCase().includes(q)));
   document.getElementById("trackEmpty").style.display=rows.length?"none":"block";
   document.getElementById("trackBody").innerHTML=rows.map(r=>`
-    <tr class="clickable" data-record-key="${escapeHtml(r['Batch Key']||'')}" data-record-type="tracking">
+    <tr class="clickable" data-record-key="${escapeHtml(r['Key']||'')}" data-record-type="tracking">
       <td>${escapeHtml(r["Contact Name"]||"—")}</td>
       <td style="font-size:11px;">${escapeHtml(r["Recipient Email"]||"—")}</td>
       <td>${statusBadge(r["Email Status"])}</td>
@@ -1144,9 +1145,9 @@ function openRecordModal(key, isBatch) {
     document.getElementById("rResponse").value="";document.getElementById("rComments").value="";
   } else {
     const decoded=decodeURIComponent(key);
-    const r=trackRows.find(row=>(row["Batch Key"]||"")===decoded||(row["Batch Key"]||"")===key);
+    const r=trackRows.find(row=>(row["Key"]||"")===decoded||(row["Key"]||"")===key);
     if(!r) return;
-    editingKey=r["Batch Key"];
+    editingKey=r["Key"];
     document.getElementById("recordModalTitle").textContent=r["Contact Name"]||"Record";
     document.getElementById("rContact").textContent=r["Contact Name"]||"—";
     document.getElementById("rEmail").textContent=r["Recipient Email"]||"—";
@@ -1171,7 +1172,7 @@ async function saveRecord(){
   try{
     const updates={"Email Status":document.getElementById("rStatus").value,"Reminder Sent":document.getElementById("rReminder").value,"Email Response":document.getElementById("rResponse").value,"Comments":document.getElementById("rComments").value.trim(),"Date Updated":new Date().toISOString()};
     await updateSheet(TRACKING_DOMAIN,"Tracking",editingKey,updates);
-    const idx=trackRows.findIndex(r=>r["Batch Key"]===editingKey);
+    const idx=trackRows.findIndex(r=>r["Key"]===editingKey);
     if(idx>-1)Object.assign(trackRows[idx],updates);
     renderTracking();renderStats();AuditLog.load();
     const msg=document.getElementById("recordModalStatus");msg.textContent="Saved.";msg.className="modal-status visible success";
@@ -1612,7 +1613,7 @@ const toLocalInput = v => {                     // Sheets may hand back a Date s
 };
 
 async function loadDrafts() {
-  try { drafts = (await fetchSheet(TRACKING_DOMAIN, "Drafts")).filter(d => d["Draft ID"]).reverse(); }
+  try { drafts = (await efetch("Drafts")).filter(d => d["Draft ID"]).reverse(); }
   catch (e) { drafts = []; showToast("Error loading drafts: " + e.message, "error"); }
   renderDrafts();
 }
@@ -1625,7 +1626,7 @@ function renderDrafts() {
       <td>${escapeHtml(d["Subject"] || "(no subject)")}</td>
       <td>${escapeHtml(d["Key"] || "—")}</td>
       <td>${n}</td>
-      <td>${d["Scheduled"] ? escapeHtml(String(d["Scheduled"]).replace("T"," ")) : "—"}</td>
+      <td>${d["Scheduled"] ? fmtTime(d["Scheduled"]) : "—"}</td>
       <td>${escapeHtml(String(d["Status"] || "Draft"))}</td>
       <td style="white-space:nowrap;">
         ${(d["Status"] || "Draft") === "Draft" ? `<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="openDraft('${escapeHtml(d["Draft ID"])}')">Load</button>` : ""}
@@ -1744,69 +1745,43 @@ async function sendEmail(){
 
     const recipientPayloads=allTo.map(email=>{
       const member=members.find(m=>getMemberEmail(m).toLowerCase()===email.toLowerCase());
-      const name=member?getMemberName(member):email;
-      const resolvedBody=resolveVariables(rawBody,member)+sigHtml;
-      return{email,name,resolvedBody};
+      return{email,name:member?getMemberName(member):email,key:batchKey+"-"+uid(),resolvedBody:resolveVariables(rawBody,member)+sigHtml};
     });
-
+    const trackRow=(r,status,x={})=>({
+      "Batch Key":batchKey,"Club":"","Contact Name":r.name,"Contact Role":"","Email Status":status,"Key":r.key,
+      "Date Sent":x.dateSent||new Date().toISOString(),"Reminder Sent":"No","Comments":x.comments||"",
+      "Thread ID":x.threadId||"","Recipient Email":r.email,"Open Count":0});
+    
+    let okSent = 0
     if(isScheduled){
-      const res=await gw({
-          action:       "createScheduledTrigger",
-          draftId:      batchKey,
-          scheduledAt:  new Date(schedTime).toISOString(),
-          subject:      subject,
-          to:           allTo.join(", "),
-          cc:           ccList,
-          bcc:          bccList,
-          body:         rawBody+sigHtml,
-          key:          campaignKey,
-          templateId:   selectedTmplId||"",
-          recipients:   recipientPayloads
-        },EMAIL_GATEWAY_URL);
-      if(!res.success) throw new Error(res.error||"Failed to create trigger.");
-
-      for(const r of recipientPayloads){
-        await appendSheet(TRACKING_DOMAIN, "Tracking", {
-            "Batch Key":     batchKey+"-"+r.email,
-            "Key":           campaignKey,
-            "Contact Name":  r.name,
-            "Email Status":  "Scheduled",
-            "Date Sent":     schedTime,
-            "Recipient Email":r.email,
-            "Thread ID":     batchKey
-        });
-      }
-      if(currentDraftId){
-        try { await deleteRow(TRACKING_DOMAIN, "Drafts", currentDraftId); } catch(e) { console.warn("Draft cleanup failed:", e); }
-        currentDraftId=null; loadDrafts();
-      }
-      loadDrafts();
-      showToast(`Scheduled for ${new Date(schedTime).toLocaleString()}. Trigger created.`,"success");
-
+      await gw({action:"createScheduledTrigger",draftId:batchKey,scheduledAt:new Date(schedTime).toISOString(),
+        subject,to:allTo.join(", "),cc:ccList,bcc:bccList,body:rawBody+sigHtml,key:campaignKey,
+        templateId:selectedTmplId||"",recipients:recipientPayloads},EMAIL_GATEWAY_URL);
+      for(const r of recipientPayloads) await appendSheet(TRACKING_DOMAIN,"Tracking",trackRow(r,"Scheduled",{dateSent:new Date(schedTime).toISOString()}));
+      await gw({action:"refreshDashboard",batchKey,title:subject},EMAIL_GATEWAY_URL);
+      showToast(`Scheduled for ${new Date(schedTime).toLocaleString()}.`,"success");
     } else {
-      const sentId=await recordSentEmail(
-        batchKey,campaignKey,subject,rawBody+sigHtml,
-        allTo.join(", "),ccList,null
-      );
+      const res=await gw({action:"sendNow",batchKey,subject,cc:ccList,bcc:bccList,recipients:recipientPayloads},EMAIL_GATEWAY_URL);
+      const by=Object.fromEntries(res.results.map(x=>[x.email,x]));
+      const okN=res.results.filter(x=>x.ok).length;
+      okSent = okN;
+      if(!okN) throw new Error("No emails were sent: "+(res.results[0]?.error||"unknown error"));
       for(const r of recipientPayloads){
-       await appendSheet(TRACKING_DOMAIN, "Tracking", {
-          "Batch Key":     batchKey+"-"+r.email,
-          "Key":           campaignKey,
-          "Contact Name":  r.name,
-          "Email Status":  "Sent",
-          "Date Sent":     new Date().toISOString(),
-          "Recipient Email":r.email,
-          "Thread ID":     sentId
-        });
+        const x=by[r.email]||{};
+        await appendSheet(TRACKING_DOMAIN,"Tracking",trackRow(r,x.ok?"Sent":"Failed",{threadId:x.threadId,comments:x.ok?"":x.error}));
       }
-      if(currentDraftId){
-        try { await deleteRow(TRACKING_DOMAIN, "Drafts", currentDraftId); } catch(e) { console.warn("Draft cleanup failed:", e); }
-        currentDraftId=null; loadDrafts();
-      }
-      showToast(`Sent to ${allTo.length} recipient${allTo.length>1?"s":""}!`,"success");
-      await loadTracking(); AuditLog.load();
-      setTimeout(()=>{ resetCompose(); },900);
+      await recordSentEmail(batchKey,campaignKey,subject,rawBody+sigHtml,allTo.join(", "),ccList,null);
+      await gw({action:"refreshDashboard",batchKey,title:subject},EMAIL_GATEWAY_URL);
+      if(okN<res.results.length) showToast(`${res.results.length-okN} email(s) failed, see Tracking`,"error");
     }
+    if(currentDraftId){
+      try{await deleteRow(TRACKING_DOMAIN,"Drafts",currentDraftId);}catch(e){console.warn("Draft cleanup failed:",e);}
+      currentDraftId=null;
+    }
+
+    if(!isScheduled) showToast(`Sent to ${okSent} recipient(s)`,"success");
+    await Promise.all([loadTracking(),loadDashboard(),loadDrafts()]); AuditLog.load();
+    setTimeout(()=>{ resetCompose(); },900);
     s.className="status-msg"; s.textContent="";
 
   }catch(e){
