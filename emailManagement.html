@@ -811,7 +811,17 @@ function initEmoji() {
    MEMBER AC & CHIPS
    ================================================================ */
 async function loadMembers(){
-  members = await fetchSheet(DOMAIN.members,"Members");
+  const [mem, boats] = await Promise.all([
+    fetchSheet(DOMAIN.members,"Members"),
+    fetchSheet(DOMAIN.members,"ClassMembers").catch(()=>[])
+  ]);
+  const byName = {};
+  boats.filter(b => b.Active === undefined || isTrue(b.Active)).forEach(b => {
+    if (b.Member && b.Class) (byName[_norm(b.Member)] = byName[_norm(b.Member)] || new Set()).add(String(b.Class).trim());
+  });
+  members = mem;
+  members.forEach(m => m._classes = [...(byName[_norm(getMemberName(m))] || [])]);
+  console.log("Member fields:", Object.keys(members[0] || {}));   // remove once confi
   populateMemberFilters();
   renderMembersList();
 }
@@ -869,16 +879,26 @@ let recipientsTo,recipientsCC,recipientsBCC;
    ================================================================ */
 let selectedMemberEmails = new Set();
 
-function getMemberEmail(m) { return (m["Email"]||m["Email Address"]||"").trim(); }
-function getMemberName(m) { return ((m["First Name"]||"")+" "+(m["Last Name"]||"")).trim(); }
-function getMemberClass(m) { return (m["Class"]||m["Class Name"]||m["Boat Class"]||"").trim(); }
+const _norm = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
+const isTrue = v => v === true || /^(true|yes|y|1|active|current|paid)$/i.test(String(v).trim());
+function mf(m, ...names) {               // case/space-insensitive field lookup
+  for (const n of names) {
+    const k = Object.keys(m).find(k => _norm(k) === _norm(n));
+    if (k && String(m[k] ?? "").trim() !== "") return String(m[k]).trim();
+  }
+  return "";
+}
+function getMemberEmail(m) { return mf(m, "Email", "Email Address"); }
+function getMemberName(m)  { return mf(m, "MemberName", "Member Name", "Name") || (mf(m, "FirstName", "First Name") + " " + mf(m, "LastName", "Last Name")).trim(); }
+function getMemberType(m)  { return mf(m, "Membershiptype", "Membership Type", "MemberType"); }
+function isActive(m)       { return isTrue(mf(m, "Active", "Status")); }
+function isPaid(m)         { return isTrue(mf(m, "Paid up", "Paid", "Financial")); }
 
 function populateMemberFilters() {
   const types = new Set(), classes = new Set();
   members.forEach(m => {
-    if(m["Membership Type"]) types.add(m["Membership Type"].trim());
-    const cls = getMemberClass(m);
-    if(cls) classes.add(cls);
+    if(getMemberType(m)) types.add(getMemberType(m));
+        (m._classes||[]).forEach(c => classes.add(c));
   });
   const tSel = document.getElementById("fltType");
   tSel.innerHTML = `<option value="">All Types</option>` + Array.from(types).sort().map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
@@ -899,21 +919,19 @@ function getFilteredMembers() {
     const name = getMemberName(m).toLowerCase();
     
     if(s && !name.includes(s) && !email.toLowerCase().includes(s)) return false;
-    if(t && m["Membership Type"] !== t) return false;
+    if(t && getMemberType(m) !== t) return false;
     if(st) {
-       const isActive = (m["Active"]===true||m["Active"]==="true"||m["Active"]==="TRUE");
-       if(st==="active" && !isActive) return false;
-       if(st==="inactive" && isActive) return false;
+       if(st==="active" && !isActive(m)) return false;
+       if(st==="inactive" && isActive(m)) return false;
     }
     if(fin) {
-       const isPaid = (m["Paid up"]===true||m["Paid up"]==="true"||m["Paid up"]==="TRUE");
-       if(fin==="paid" && !isPaid) return false;
-       if(fin==="unpaid" && isPaid) return false;
+       if(fin==="paid" && !isPaid(m)) return false;
+       if(fin==="unpaid" && isPaid(m)) return false;
     }
-    if(cls && getMemberClass(m) !== cls) return false;
+    if(cls && !(m._classes||[]).includes(cls)) return false;
     if(miss) {
        if(miss==="no-email" && email) return false;
-       if(miss==="no-phone" && !(m["Phone"]||m["Mobile"])) return false;
+       if(miss==="no-phone" && !mf(m,"Phone","Mobile")) return false;
     }
     return true;
   });
@@ -931,8 +949,8 @@ function renderMembersList() {
   listEl.innerHTML = filtered.map(m => {
     const email = getMemberEmail(m);
     const name = getMemberName(m) || "Unknown Name";
-    const type = m["Membership Type"] || "No Type";
-    const cls = getMemberClass(m);
+    const type = getMemberType(m) || "No Type";
+    const cls = (m._classes||[]).join(", ");
     const noEmail = !email;
     const checked = !noEmail && selectedMemberEmails.has(email.toLowerCase()) ? "checked" : "";
     
@@ -1406,10 +1424,10 @@ async function applyTemplateToCompose(id){
   selectedMemberEmails.clear();
   if(t["GroupKey"]) {
      const fm={
-       all_active: m => m["Active"]===true||m["Active"]==="true"||m["Active"]==="TRUE",
-       full: m => (m["Membership Type"]||"").toLowerCase()==="full",
-       affiliate: m => (m["Membership Type"]||"").toLowerCase()==="affiliate",
-       financial: m => m["Paid up"]===true||m["Paid up"]==="true",
+       all_active: isActive,
+       full: m => getMemberType(m).toLowerCase()==="full",
+       affiliate: m => getMemberType(m).toLowerCase()==="affiliate",
+       financial: isPaid,
        committee: m => !!(m["Role"]||m["Committee Role"])
      };
      const filterFn = fm[t["GroupKey"]];
@@ -1480,12 +1498,11 @@ function resolveVariables(html, member){
     const spaced = cleaned.replace(/-/g," ").replace(/ \w/g,c=>c.toUpperCase());
     if(member[spaced] !== undefined) return member[spaced]||"";
     const aliases = {
-      "member-name":   ((member["First Name"]||"")+" "+(member["Last Name"]||"")).trim(),
-      "first-name":    member["First Name"]||"",
-      "last-name":     member["Last Name"]||"",
-      "email":         member["Email"]||member["Email Address"]||"",
-      "phone":         member["Phone"]||member["Mobile"]||"",
-      "membership-type": member["Membership Type"]||"",
+      "member-name":   getMemberName(member),
+      "first-name":    mf(member,"FirstName","First Name") || getMemberName(member).split(" ")[0],
+      "last-name":     mf(member,"LastName","Last Name"),
+      "email":         getMemberEmail(member),
+      "membership-type": getMemberType(member),
       "subscription-fees": member["Subscription Fees"]||member["Fees"]||"",
       "boat-name":     member["Boat Name"]||"",
       "class-name":    member["Class"]||member["Class Name"]||"",
