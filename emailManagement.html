@@ -1049,7 +1049,7 @@ async function loadDashboard(){
 async function loadTracking(){
   trackRows = await eFetch("Tracking"); 
 
-  ;populateBatchFilter();
+  populateBatchFilter();
   renderStats();
   renderTracking();
 }
