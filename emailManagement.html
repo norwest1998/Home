@@ -1645,7 +1645,7 @@ async function sendEmail(){
           key:          campaignKey,
           templateId:   selectedTmplId||"",
           recipients:   recipientPayloads
-        },EMAIL_GATEWAY);
+        },EMAIL_GATEWAY_URL);
       const result=await res.json();
       if(!result.success) throw new Error(result.error||"Failed to create trigger.");
 
@@ -1662,7 +1662,7 @@ async function sendEmail(){
             "Date Sent":     schedTime,
           "Recipient Email":r.email,
           "Thread ID":     batchKey
-        }},EMAIL_GATEWAY);
+        }},EMAIL_GATEWAY_URL);
       }
       currentDraftId=batchKey;
       showToast(`Scheduled for ${new Date(schedTime).toLocaleString()}. Trigger created.`,"success");
@@ -1681,7 +1681,7 @@ async function sendEmail(){
           "Date Sent":     new Date().toISOString(),
           "Recipient Email":r.email,
           "Thread ID":     sentId
-        }},EMAIL_GATEWAY);
+        }},EMAIL_GATEWAY_URL);
       }
       if(currentDraftId){
         await gw({action: "deleteRow", domain: TRACKING_DOMAIN, sheet: "Drafts", hexKey: currentDraftId});
