@@ -293,6 +293,30 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 </div>
 
 <!-- ══════════════════════════════════════════════════════
+     Draft EMAILs
+     ══════════════════════════════════════════════════════ -->
+
+<div class="section-head" id="drafts">
+  <h2>Drafts</h2>
+  <p>Load a saved draft into Compose, or delete it.</p>
+</div>
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title-left"><span class="dot"></span><h3>Saved Drafts</h3></div>
+    <button class="btn btn-ghost" id="refreshDraftsBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
+  </div>
+  <div class="tab-content active" style="background:none;border:none;padding:16px;">
+    <div class="log-table-wrap">
+      <table class="log-table">
+        <thead><tr><th>Saved</th><th>Subject</th><th>Template</th><th>Recipients</th><th>Scheduled</th><th></th></tr></thead>
+        <tbody id="draftsBody"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="draftsEmpty" style="display:none;">No saved drafts.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
      SECTION 3 — COMPOSE EMAIL (Grid Layout)
      ══════════════════════════════════════════════════════ -->
 <div class="section-head" id="compose-email">
@@ -1571,11 +1595,92 @@ async function saveDraft(){
       currentDraftId=draftId;
     }
     showToast("Draft saved","success");
+    loadDrafts();
   }catch(e){
     showToast("Error saving draft: "+e.message,"error");
   }finally{
     btn.disabled=false;
   }
+}
+
+let drafts = [];
+const toLocalInput = v => {                     // Sheets may hand back a Date string
+  if (!v) return "";
+  const d = new Date(v); if (isNaN(d)) return String(v);
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
+async function loadDrafts() {
+  try { drafts = (await fetchSheet(TRACKING_DOMAIN, "Drafts")).filter(d => d["Draft ID"]).reverse(); }
+  catch (e) { drafts = []; showToast("Error loading drafts: " + e.message, "error"); }
+  renderDrafts();
+}
+
+function renderDrafts() {
+  document.getElementById("draftsBody").innerHTML = drafts.map(d => {
+    const n = String(d["To"] || "").split(",").filter(Boolean).length;
+    return `<tr>
+      <td style="white-space:nowrap;">${fmtTime(d["Saved At"])}</td>
+      <td>${escapeHtml(d["Subject"] || "(no subject)")}</td>
+      <td>${escapeHtml(d["Key"] || "—")}</td>
+      <td>${n}</td>
+      <td>${d["Scheduled"] ? escapeHtml(String(d["Scheduled"]).replace("T"," ")) : "—"}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="openDraft('${escapeHtml(d["Draft ID"])}')">Load</button>
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="removeDraft('${escapeHtml(d["Draft ID"])}')">Delete</button>
+      </td></tr>`;
+  }).join("");
+  document.getElementById("draftsEmpty").style.display = drafts.length ? "none" : "block";
+}
+
+function openDraft(id) {
+  const d = drafts.find(x => x["Draft ID"] === id); if (!d) return;
+  resetCompose();
+  currentDraftId = id;
+
+  // subject: split a known prefix back into the prefix dropdown
+  let subj = String(d["Subject"] || "");
+  const pSel = document.getElementById("subjectPrefix");
+  const hit = [...pSel.options].find(o => o.value && subj.startsWith(o.value + " "));
+  if (hit) { pSel.value = hit.value; subj = subj.slice(hit.value.length + 1); }
+  document.getElementById("emailSubject").value = subj;
+
+  // template / body / signature
+  selectedTmplId = d["Template ID"] || null;
+  document.getElementById("composeTemplate").value = selectedTmplId || "";
+  quillBody.root.innerHTML = d["Body"] || "";
+  document.getElementById("sigSelect").value = d["Signature ID"] || "";
+  updateSigPreview();
+
+  // schedule
+  const sched = toLocalInput(d["Scheduled"]);
+  document.getElementById("scheduleType").value = sched ? "scheduled" : "now";
+  document.getElementById("scheduleDateTime").value = sched;
+  document.getElementById("scheduleDateRow").style.display = sched ? "" : "none";
+
+  // recipients: known members -> checked in the list, others -> To chips
+  const known = new Set(members.map(m => getMemberEmail(m).toLowerCase()).filter(Boolean));
+  String(d["To"] || "").split(",").map(e => e.trim()).filter(Boolean).forEach(e => {
+    known.has(e.toLowerCase()) ? selectedMemberEmails.add(e.toLowerCase()) : recipientsTo.addValue({ email: e, name: "" });
+  });
+  String(d["CC"]  || "").split(",").map(e => e.trim()).filter(Boolean).forEach(e => recipientsCC.addValue({ email: e, name: "" }));
+  String(d["BCC"] || "").split(",").map(e => e.trim()).filter(Boolean).forEach(e => recipientsBCC.addValue({ email: e, name: "" }));
+  renderMembersList(); updateRecipientCount();
+
+  document.getElementById("compose-email").scrollIntoView({ behavior: "smooth" });
+  showToast("Draft loaded", "success");
+}
+
+async function removeDraft(id) {
+  const d = drafts.find(x => x["Draft ID"] === id);
+  if (!confirm(`Delete draft "${d?.["Subject"] || id}"?`)) return;
+  try {
+    await deleteRow(TRACKING_DOMAIN, "Drafts", id);
+    if (currentDraftId === id) currentDraftId = null;
+    showToast("Draft deleted", "success");
+    await loadDrafts();
+  } catch (e) { showToast("Error deleting draft: " + e.message, "error"); }
 }
 
 /* ── Toast notification ────────────────────────────────── */
@@ -1664,7 +1769,10 @@ async function sendEmail(){
           "Thread ID":     batchKey
         }},EMAIL_GATEWAY_URL);
       }
-      currentDraftId=batchKey;
+      if(currentDraftId){
+        try { await deleteRow(TRACKING_DOMAIN, "Drafts", currentDraftId); } catch(e) { console.warn("Draft cleanup failed:", e); }
+        currentDraftId=null; loadDrafts();
+      }
       showToast(`Scheduled for ${new Date(schedTime).toLocaleString()}. Trigger created.`,"success");
 
     } else {
@@ -1684,8 +1792,8 @@ async function sendEmail(){
         }},EMAIL_GATEWAY_URL);
       }
       if(currentDraftId){
-        await gw({action: "deleteRow", domain: TRACKING_DOMAIN, sheet: "Drafts", hexKey: currentDraftId});
-        currentDraftId=null;
+        try { await deleteRow(TRACKING_DOMAIN, "Drafts", currentDraftId); } catch(e) { console.warn("Draft cleanup failed:", e); }
+        currentDraftId=null; loadDrafts();
       }
       showToast(`Sent to ${allTo.length} recipient${allTo.length>1?"s":""}!`,"success");
       await loadTracking(); AuditLog.load();
@@ -1786,7 +1894,7 @@ document.getElementById("togglePreviewBtn").addEventListener("click", () => {
 document.getElementById("sendEmailBtn").addEventListener("click",sendEmail);
 document.getElementById("saveDraftBtn").addEventListener("click",saveDraft);
 document.getElementById("resetComposeBtn").addEventListener("click",resetCompose);
-
+document.getElementById("refreshDraftsBtn").addEventListener("click", loadDrafts);
 
 // Initialization
 initQuills();
@@ -1795,7 +1903,7 @@ recipientsTo  = setupChipInput("toInput","toChips","toAC", updateRecipientCount)
 recipientsCC  = setupChipInput("ccInput","ccChips","ccAC");
 recipientsBCC = setupChipInput("bccInput","bccChips","bccAC");
 
-Promise.all([loadDashboard(),loadTracking(),loadTemplates(),loadSignatures(),loadMembers()])
+Promise.all([loadDashboard(),loadTracking(),loadTemplates(),loadSignatures(),loadMembers(),loadDrafts()])
 .then(()=>{loadVarFields();if(window.lucide)lucide.createIcons();});
 
 </script>
