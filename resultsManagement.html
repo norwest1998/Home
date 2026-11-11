@@ -1028,11 +1028,13 @@ function focusOutstandingFromUrl() {
 const iconBtn = (icon, title, role, onclick) =>
     `<button type="button" class="icon-btn" title="${title}" data-min-role="${role}" onclick="${onclick}"><i data-lucide="${icon}"></i></button>`;
 
-const rowActions = (k, { capture = false, cancel = true } = {}) => {
+const rowActions = (k, opts = {}) => {
+    const { capture = opts === true, cancel = true } = opts === true ? {} : opts;
     const key = escHtml(k);
     return (capture ? iconBtn('clipboard-pen-line', 'Capture Results', 'coord', `goCapture('${key}')`) : '')
          + iconBtn('calendar-arrow-right', 'Reschedule', 'editor', `goReschedule('${key}')`)
          + (cancel ? iconBtn('calendar-x', 'Cancel', 'editor', `cancelEvent('${key}', this)`) : '');
+};
 };
 function renderOutstanding() {
     setStat('statOutstandingResults', outstandingEvents.length, 'is-signal');
