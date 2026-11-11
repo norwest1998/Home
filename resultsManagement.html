@@ -1035,7 +1035,7 @@ const rowActions = (k, opts = {}) => {
          + iconBtn('calendar-arrow-right', 'Reschedule', 'editor', `goReschedule('${key}')`)
          + (cancel ? iconBtn('calendar-x', 'Cancel', 'editor', `cancelEvent('${key}', this)`) : '');
 };
-};
+
 function renderOutstanding() {
     setStat('statOutstandingResults', outstandingEvents.length, 'is-signal');
     setStat('statPostponed', postponedEvents.length, 'is-folder');
