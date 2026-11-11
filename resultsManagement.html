@@ -372,6 +372,7 @@ select.guest-inline-input option {
             <h4>Outstanding Results</h4>
             <div><b id="statOutstandingResults">—</b> Outstanding</div>
             <div><b id="statPostponed">—</b> Postponed</div>
+            <div><b id="statCancelled">—</b> Cancelled</div>
         </a>
         <a href="#processed-results" class="stat-card">
             <h4>Processed Results</h4>
@@ -397,7 +398,7 @@ select.guest-inline-input option {
     <div class="section-head" id="outstanding-results">
         <div>
             <h2>Outstanding Results</h2>
-            <p>Past competition events this season that haven't been scored, plus postponed events.</p>
+            <p>Past competition events this season that haven't been scored. Late, postponed and cancelled events.</p>
             <p id="lastReminder" style="font-size:12px;color:var(--foam-dim);margin:4px 0 0;"></p>
         </div>
     </div>
@@ -406,6 +407,8 @@ select.guest-inline-input option {
         <div id="outstandingRows" class="result-rows"></div>
         <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Postponed</h3></div></div>
         <div id="postponedRows" class="result-rows"></div>
+        <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Cancelled</h3></div></div>
+        <div id="cancelledRows" class="result-rows"></div>
         <div class="fn-message" id="outstandingMsg"></div>
     </div>
 
@@ -949,7 +952,7 @@ function renderStats() {
 // ----------------------------------------------------------------
 const CALENDAR_PAGE     = 'calendarManagement.html';
 
-let outstandingEvents = [], postponedEvents = [];
+let outstandingEvents = [], postponedEvents = [], cancelledEvents = [];
 const _t = s => String(s ?? '').trim();
     
 // Handles Date, ISO, "2026/10/10", and "2026/10/30 11:00 AM–01:00 PM"; "Pending <hex>" → null
@@ -987,8 +990,9 @@ async function loadOutstanding() {
 
         outstandingEvents = ev.filter(e => e.results === 'not started' && e.date < today).sort((a, b) => a.date - b.date);
         postponedEvents   = ev.filter(e => e.results === 'postponed').sort((a, b) => a.date - b.date);
+        cancelledEvents   = ev.filter(e => e.results === 'cancelled').sort((a, b) => a.date - b.date);
     } catch (err) {
-        outstandingEvents = postponedEvents = [];
+        outstandingEvents = postponedEvents = cancelledEvents = [];
         showMsg('outstandingMsg', 'Error loading events: ' + err.message, true);
     }
     renderOutstanding();
@@ -1005,7 +1009,6 @@ function evtRow(e, actions, showAge) {
         ${img ? `<img class="row-insignia" src="${escHtml(img)}" alt="">` : '<div class="row-insignia-placeholder"></div>'}
         <div><div class="r-name">${escHtml(name)}</div>
         <div class="r-meta">${e.resched ? 'Rescheduled' : 'Scheduled'}: ${dmy}${showAge ? ` · <span style="color:${col}">${age}d overdue</span>` : ''}</div></div>
-        <div class="r-date">${dmy}</div>
         <div class="row-actions">${actions}</div></div>`;
 }
 
@@ -1022,14 +1025,19 @@ function focusOutstandingFromUrl() {
     setTimeout(() => { row.style.boxShadow = ''; }, 4000);
 }
 
-const rowActions = (k, capture) => `
-    ${capture ? `<button type="button" class="btn btn-ghost" data-min-role="coord" onclick="goCapture('${escHtml(k)}')">Capture Result</button>` : ''}
-    <button type="button" class="btn btn-ghost" data-min-role="editor" onclick="goReschedule('${escHtml(k)}')">Reschedule</button>
-    <button type="button" class="btn btn-ghost" data-min-role="editor" onclick="cancelEvent('${escHtml(k)}')">Cancel</button>`;
+const iconBtn = (icon, title, role, onclick) =>
+    `<button type="button" class="icon-btn" title="${title}" data-min-role="${role}" onclick="${onclick}"><i data-lucide="${icon}"></i></button>`;
 
+const rowActions = (k, { capture = false, cancel = true } = {}) => {
+    const key = escHtml(k);
+    return (capture ? iconBtn('clipboard-pen-line', 'Capture Results', 'coord', `goCapture('${key}')`) : '')
+         + iconBtn('calendar-arrow-right', 'Reschedule', 'editor', `goReschedule('${key}')`)
+         + (cancel ? iconBtn('calendar-x', 'Cancel', 'editor', `cancelEvent('${key}', this)`) : '');
+};
 function renderOutstanding() {
     setStat('statOutstandingResults', outstandingEvents.length, 'is-signal');
     setStat('statPostponed', postponedEvents.length, 'is-folder');
+    setStat('statCancelled', cancelledEvents.length, 'is-folder');
 
     document.getElementById('outstandingRows').innerHTML = outstandingEvents.length
         ? outstandingEvents.map(e => evtRow(e, rowActions(e.hexKey, true), true)).join('')
@@ -1038,6 +1046,10 @@ function renderOutstanding() {
     document.getElementById('postponedRows').innerHTML = postponedEvents.length
         ? postponedEvents.map(e => evtRow(e, rowActions(e.hexKey), false)).join('')
         : '<div class="empty-state">No postponed events</div>';
+
+    document.getElementById('cancelledRows').innerHTML = cancelledEvents.length
+            ? cancelledEvents.map(e => evtRow(e, rowActions(e.hexKey, { cancel: false }), false)).join('')
+            : '<div class="empty-state">No cancelled events</div>';
 
     applyRoles();                       // shared.js: hide data-min-role buttons rendered after page load
     if (window.lucide) lucide.createIcons();
@@ -1052,14 +1064,21 @@ function goCapture(hexKey) {
     window.location.href = `captureResults.html?event=${encodeURIComponent(hexKey)}`;
 }
 
-async function cancelEvent(hexKey) {
+async function cancelEvent(hexKey, btn) {
     const e = [...outstandingEvents, ...postponedEvents].find(x => x.hexKey === hexKey);
-    if (!e || !confirm(`Cancel "${e.class} ${e.regattaType}"? It will leave these lists.`)) return;
+    if (!e || !confirm(`Cancel "${e.raceClass} ${e.regattaType}"? It will move to the Cancelled list.`)) return;
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="margin:0"></span>';
     try {
-        await updateSheet(DOMAIN.calendar, "Event Data", hexKey,{ "Results": "Cancelled" });
+        await updateSheet(DOMAIN.calendar, "Event Data", hexKey, { "Results": "Cancelled" });
+        await loadOutstanding();                     // re-renders, so the spinner button is replaced
         showMsg('outstandingMsg', 'Event cancelled.', false);
-        loadOutstanding();
-    } catch (err) { showMsg('outstandingMsg', 'Error: ' + err.message, true); }
+    } catch (err) {
+        btn.disabled = false; btn.innerHTML = orig;
+        if (window.lucide) lucide.createIcons();
+        showMsg('outstandingMsg', 'Error: ' + err.message, true);
+    }
 }
 
 // ----------------------------------------------------------------
