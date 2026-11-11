@@ -1056,7 +1056,7 @@ async function cancelEvent(hexKey) {
     const e = [...outstandingEvents, ...postponedEvents].find(x => x.hexKey === hexKey);
     if (!e || !confirm(`Cancel "${e.raceClass} ${e.regattaType}"? It will leave these lists.`)) return;
     try {
-        await updateSheet(DOMAIN.calendar || "calendar", "Event Data", hexKey,{ [window.RESULTS_COL || "Results"]: "Cancelled" });
+        await updateSheet(DOMAIN.calendar || "calendar", "Event Data", hexKey,{ "Results": "Cancelled" });
         showMsg('outstandingMsg', 'Event cancelled.', false);
         loadOutstanding();
     } catch (err) { showMsg('outstandingMsg', 'Error: ' + err.message, true); }
