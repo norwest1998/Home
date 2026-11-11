@@ -1106,7 +1106,7 @@ async function loadAll() {
     loadOverallSheets();
     loadGuestData();
     loadAvgRequests();
-    loadOutstanding();
+    await loadOutstanding();
     loadLastReminder();
 }
 
