@@ -1020,7 +1020,7 @@ function evtRow(e, actions, showAge) {
     return `<div class="result-row" id="evt-${escHtml(e.hexKey)}">
         ${img ? `<img class="row-insignia" src="${escHtml(img)}" alt="">` : '<div class="row-insignia-placeholder"></div>'}
         <div><div class="r-name">${escHtml(name)}</div>
-        <div class="r-meta">${e.resched ? 'Rescheduled' : 'Scheduled'}: ${dmy}${showAge && e.coordinator ? ` · ${escHtml(e.coordinator)}` : ''}${showAge ? ` · <span style="color:${col}">${age}d overdue</span>` : ''}</div></div>
+        <div class="r-meta">${e.resched ? 'Rescheduled' : 'Scheduled'}: ${dmy}${showAge && e.coordinator ? ` · ${escHtml(e.coordinator)}` : ''}${showAge && e.reminders ? ` · ${e.reminders} reminder${e.reminders === 1 ? '' : 's'}` : ''}${showAge ? ` · <span style="color:${col}">${age}d overdue</span>` : ''}</div></div>
         <div class="r-date">${dmy}</div>
         <div class="row-actions">${actions}</div></div>`;
 }
@@ -1565,7 +1565,6 @@ function renderGuestEventsList() {
                 <div class="r-date">${escHtml(dmy)}</div>
                     
                 <div class="guest-entries-pill" onclick="event.stopPropagation(); openRegisteredGuestsModal('${escHtml(evtId)}')">
-                    <i class="inline-icon" data-lucide="user-plus"></i>
                     <span>${count} ${count === 1 ? 'Guest' : 'Guests'}</span>
                 </div>
 
@@ -2205,11 +2204,12 @@ async function loadLastReminder() {
             body: JSON.stringify({ action: 'find', key: k, token: localStorage.getItem(TOKEN_KEY) }) })
             .then(r => r.text()).then(t => JSON.parse(t));
         const res = await Promise.all(outstandingEvents.map(e => find('LATE-' + e.hexKey)));
+        outstandingEvents.forEach((e, i) => { e.reminders = res[i].success ? (res[i].records || []).length : 0; });
         const sent = res.flatMap(d => d.success ? (d.records || []) : [])
-            .map(r => new Date(r['Date Sent'])).filter(d => !isNaN(d)).sort((a, b) => b - a);
         el.textContent = sent.length
             ? 'Last reminder email sent: ' + sent[0].toLocaleString('en-AU')
             : 'No reminder emails recorded yet.';
+        renderOutstanding();
     } catch (e) { el.textContent = ''; }
 }
 
