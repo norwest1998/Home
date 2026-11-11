@@ -2205,10 +2205,18 @@ async function loadLastReminder() {
             .then(r => r.text()).then(t => JSON.parse(t));
         const res = await Promise.all(outstandingEvents.map(e => find('LATE-' + e.hexKey)));
         outstandingEvents.forEach((e, i) => { e.reminders = res[i].success ? (res[i].records || []).length : 0; });
-        const sent = res.flatMap(d => d.success ? (d.records || []) : [])
-        el.textContent = sent.length
-            ? 'Last reminder email sent: ' + sent[0].toLocaleString('en-AU')
-            : 'No reminder emails recorded yet.';
+        const sent = res.flatMap(d => d.success ? (d.records || []) : []);
+        
+        if (sent.length > 0) {
+            // Sort by Date Sent descending to ensure we format the latest
+            sent.sort((a, b) => new Date(b['Date Sent']) - new Date(a['Date Sent']));
+            const latestDate = new Date(sent[0]['Date Sent']);
+            
+            el.textContent = 'Last reminder email sent: ' + latestDate.toLocaleString('en-AU');
+        } else {
+            el.textContent = 'No reminder emails recorded yet.';
+        }
+        
         renderOutstanding();
     } catch (e) { el.textContent = ''; }
 }
