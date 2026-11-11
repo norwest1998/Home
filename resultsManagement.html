@@ -38,7 +38,7 @@
     border-radius: 10px; cursor: pointer;
     transition: background 0.15s, border-color 0.15s, transform 0.12s;
 }
-.result-row[id^="evt-"] .row-actions { grid-column: 4 / -1; justify-self: end; }
+.result-row[id^="evt-"] .row-actions { grid-column: 4 / -1; }
 .result-row:hover {
     background: var(--glass-fill-hi);
     border-color: rgba(94,234,212,0.3);
@@ -73,8 +73,7 @@
     flex-shrink: 0;
 }
 .icon-btn:hover { background: var(--glass-fill-hi); color: var(--foam); }
-
-.row-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; flex-wrap: nowrap; }
+.row-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; flex-wrap: nowrap; justify-self: end; }
 
 /* ── Feedback message ── */
 .fn-message {
@@ -1017,11 +1016,12 @@ function evtRow(e, actions, showAge) {
     const dmy  = formatDateYYYYMMDD(e.date).split('/').reverse().join('/');
     const age  = showAge ? daysOverdue(e) : 0;
     const col  = age > 14 ? '#f87171' : age > 7 ? '#fbbf24' : 'inherit';
+    const res = e.results ? e.results.charAt(0).toUpperCase() + e.results.slice(1) : 'Not Started';
     return `<div class="result-row" id="evt-${escHtml(e.hexKey)}">
         ${img ? `<img class="row-insignia" src="${escHtml(img)}" alt="">` : '<div class="row-insignia-placeholder"></div>'}
         <div><div class="r-name">${escHtml(name)}</div>
         <div class="r-meta">${e.resched ? 'Rescheduled' : 'Scheduled'}: ${dmy}${showAge && e.coordinator ? ` · ${escHtml(e.coordinator)}` : ''}${showAge && e.reminders ? ` · ${e.reminders} reminder${e.reminders === 1 ? '' : 's'}` : ''}${showAge ? ` · <span style="color:${col}">${age}d overdue</span>` : ''}</div></div>
-        <div class="r-date">${dmy}</div>
+        <div class="r-date">${escHtml(res)}</div>
         <div class="row-actions">${actions}</div></div>`;
 }
 
