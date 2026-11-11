@@ -973,7 +973,17 @@ const daysOverdue = e => Math.floor((new Date().setHours(0, 0, 0, 0) - e.date) /
 
 async function loadOutstanding() {
     try {
-        const rows = await fetchSheet(DOMAIN.calendar, "Event Data");
+        const [rows, classes, members] = await Promise.all([
+            fetchSheet(DOMAIN.calendar, "Event Data"),
+            fetchSheet(DOMAIN.members, "Classes").catch(() => []),
+            fetchSheet(DOMAIN.members, "Members").catch(() => [])
+        ]);
+        const nameById = Object.fromEntries(members.map(m =>
+            [_t(m.MemberID), `${_t(m.FirstName)} ${_t(m.LastName)}`.trim()]));
+        const coordByClass = Object.fromEntries(classes.map(c => {
+            const id = _t(c.Coordinator);
+            return [_t(c.ClassName).toLowerCase(), nameById[id] || id];   // falls back to raw value if not an ID
+        }));
         const rawResultsKey = Object.keys(rows[0] || {}).find(k => k.trim().toLowerCase() === 'results');
         if (rawResultsKey) window.RESULTS_COL = rawResultsKey;
         const now = new Date(), y = now.getFullYear();
@@ -986,6 +996,7 @@ async function loadOutstanding() {
             const orig = parseCalDate(o["Date"]), resched = parseCalDate(o["Rescheduled Date"]);
             return { hexKey: _t(o.HexKey), raceClass: _t(o.Class), regattaType: _t(o["Regatta Type"]),
                      round: _t(o["Round no"]), type: _t(o["Event Type"]),
+                     coordinator: coordByClass[_t(o.Class).toLowerCase()] || '',
                      results: _t(o.Results).toLowerCase(), resched, date: resched || orig };
         }).filter(e => e.hexKey && e.type === 'Competition' && e.date && e.date >= seasonStart && e.date < seasonEnd);
 
@@ -1009,7 +1020,7 @@ function evtRow(e, actions, showAge) {
     return `<div class="result-row" id="evt-${escHtml(e.hexKey)}">
         ${img ? `<img class="row-insignia" src="${escHtml(img)}" alt="">` : '<div class="row-insignia-placeholder"></div>'}
         <div><div class="r-name">${escHtml(name)}</div>
-        <div class="r-meta">${e.resched ? 'Rescheduled' : 'Scheduled'}: ${dmy}${showAge ? ` · <span style="color:${col}">${age}d overdue</span>` : ''}</div></div>
+        <div class="r-meta">${e.resched ? 'Rescheduled' : 'Scheduled'}: ${dmy}${showAge && e.coordinator ? ` · ${escHtml(e.coordinator)}` : ''}${showAge ? ` · <span style="color:${col}">${age}d overdue</span>` : ''}</div>
         <div class="row-actions">${actions}</div></div>`;
 }
 
