@@ -2200,13 +2200,12 @@ async function loadLastReminder() {
     const el = document.getElementById('lastReminder');
     if (!el) return;
     try {
-        const res  = await fetch(EMAIL_GATEWAY_URL, { method: 'POST',
+        const find = k => fetch(EMAIL_GATEWAY_URL, { method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'find', key: 'LATE-RESULTS', token: localStorage.getItem(TOKEN_KEY) }) });
-        const data = JSON.parse(await res.text());
-        console.log('LATE-RESULTS find:', JSON.stringify(data));
-        if (!data.success) throw new Error(data.error || 'failed');
-        const sent = (data.records || [])
+            body: JSON.stringify({ action: 'find', key: k, token: localStorage.getItem(TOKEN_KEY) }) })
+            .then(r => r.text()).then(t => JSON.parse(t));
+        const res = await Promise.all(outstandingEvents.map(e => find('LATE-' + e.hexKey)));
+        const sent = res.flatMap(d => d.success ? (d.records || []) : [])
             .map(r => new Date(r['Date Sent'])).filter(d => !isNaN(d)).sort((a, b) => b - a);
         el.textContent = sent.length
             ? 'Last reminder email sent: ' + sent[0].toLocaleString('en-AU')
