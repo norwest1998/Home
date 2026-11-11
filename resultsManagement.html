@@ -1018,9 +1018,10 @@ function evtRow(e, actions, showAge) {
     const age  = showAge ? daysOverdue(e) : 0;
     const col  = age > 14 ? '#f87171' : age > 7 ? '#fbbf24' : 'inherit';
     return `<div class="result-row" id="evt-${escHtml(e.hexKey)}">
-        ${img ? `<img class="row-insignia" src="${escHtml(img)}" alt="">` : '<div class="row-insignia-placeholder"></div>'}
-        <div><div class="r-name">${escHtml(name)}</div>
-        <div class="r-meta">${e.resched ? 'Rescheduled' : 'Scheduled'}: ${dmy}${showAge && e.coordinator ? ` · ${escHtml(e.coordinator)}` : ''}${showAge ? ` · <span style="color:${col}">${age}d overdue</span>` : ''}</div>
+        ${img ? `<img ...>` : '<div class="row-insignia-placeholder"></div>'}
+        <div><div class="r-name">...</div>
+        <div class="r-meta">...</div></div>
+        <div class="r-date">${dmy}</div>
         <div class="row-actions">${actions}</div></div>`;
 }
 
