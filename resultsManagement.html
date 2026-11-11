@@ -2220,7 +2220,8 @@ async function loadLastReminder() {
         } else {
             el.textContent = 'No reminder emails recorded yet.';
         }
-        
+        console.log("Outstanding Events Data:", outstandingEvents.map(e => ({ name: e.eventName, hex: e.hexKey, reminders: e.reminders })));
+        console.log("Raw Sent Array:", sent);
         renderOutstanding();
     } catch (e) { 
         el.textContent = ''; 
