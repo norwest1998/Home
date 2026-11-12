@@ -42,10 +42,10 @@ select.mm-select.mm-select-inline { min-width: 160px; }
 
 .badge-whatsapp { background: color-mix(in srgb, var(--whatsapp) 15%, transparent);
                   border: 1px solid color-mix(in srgb, var(--whatsapp) 40%, transparent); color: var(--whatsapp); }
-.class-pill { width: 26px; height: 26px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex;
+.class-pill { width: 28px; height: 28px; padding: 6px; box-sizing: border-box; border-radius: 50%;
+              display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
               border: 1px solid var(--glass-border); background: rgba(255,255,255,0.15); }
-.class-pill { padding: 3px; box-sizing: border-box; }
-.class-pill img { object-fit: contain; }
+.class-pill img { width: 100%; height: 100%; object-fit: contain; }
 
 .member-rows { display: flex; flex-direction: column; gap: 8px; }
 .member-row {
@@ -622,7 +622,7 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
                     <span class="badge ${isPaid ? 'badge-full' : 'badge-expired'}">${isPaid ? 'Paid' : 'Unpaid'}</span>
                     <span class="badge ${isActive ? 'badge-full' : 'badge-default'}">${isActive ? 'Active' : 'Inactive'}</span>
                     <span class="badge ${parseBoolLike(m.whatsapp) ? 'badge-whatsapp' : 'badge-default'}">${parseBoolLike(m.whatsapp) ? 'WhatsApp' : ''}</span>
-                    <span class="badge badge-default">${getMemberClassList(m.name).map(c => `<span class="class-pill" title="${escapeHtml(c)}"><img src="${escapeHtml(EventFilters.classImage(c))}" alt="${escapeHtml(c)}"></span>`).join('')}</span>
+                    <span ${getMemberClassList(m.name).map(c => `<span class="class-pill" title="${escapeHtml(c)}"><img src="${escapeHtml(EventFilters.classImage(c))}" alt="${escapeHtml(c)}"></span>`).join('')}</span>
                 </div>
                 <div class="m-right">
                     <div class="row-actions">
