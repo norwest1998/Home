@@ -620,6 +620,34 @@ table.em-table,table.dash-table{width:100%;border-collapse:collapse;font-size:12
 </div>
 
 <!-- ══════════════════════════════════════════════════════
+     SENT DETAILS & RESEND MODAL
+     ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="sentDetailsModal">
+  <div class="modal large-modal">
+    <div class="modal-header">
+      <h3 id="sentModalTitle">Sent Email Details</h3>
+      <button class="modal-close" id="sentModalClose">✕</button>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><span class="detail-label">Subject</span><span class="detail-value" id="sDetailSubject"></span></div>
+      <div class="detail-item"><span class="detail-label">Sent At</span><span class="detail-value" id="sDetailSentAt"></span></div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item full"><span class="detail-label">Recipient</span><span class="detail-value" id="sDetailRecipient"></span></div>
+    </div>
+    <div class="detail-item full" style="margin-top:10px;">
+      <span class="detail-label">Email Body</span>
+      <div class="detail-value" id="sDetailBody" style="max-height:250px; overflow-y:auto; background:rgba(255,255,255,0.04); padding:12px; font-family:Arial,sans-serif; color:#111; border-radius:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <span class="modal-status" id="sentModalStatus"></span>
+      <button class="btn btn-ghost" id="sentModalCloseBtn">Close</button>
+      <button class="btn btn-primary" id="resendBtn">Resend Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
      TEMPLATE MODAL
      ══════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="tmplModal">
@@ -1132,6 +1160,9 @@ function fmtDateMMM(v) {
   return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
 }
 
+let activeResendRecord = null;
+let activeResendSentRec = null;
+
 function renderTracking(){
   const q=document.getElementById("trackSearch").value.trim().toLowerCase();
   const status=document.getElementById("filterStatus").value;
@@ -1149,7 +1180,7 @@ function renderTracking(){
     const formattedResponse = fmtDateMMM(r["Email Response"]);
 
     return `
-    <tr class="clickable" data-record-key="${escapeHtml(r['Key']||'')}" data-record-type="tracking">
+    <tr class="clickable" data-record-key="${escapeHtml(r['Key']||'')}">
       <td>${escapeHtml(r["Contact Name"]||"—")}</td>
       <td style="font-size:11px;">${escapeHtml(r["Recipient Email"]||"—")}</td>
       <td>${statusBadge(r["Email Status"])}</td>
@@ -1162,7 +1193,149 @@ function renderTracking(){
       <td style="max-width:140px;font-size:11px;color:var(--foam-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(r['Comments']||'')}">${escapeHtml(r["Comments"]||"—")}</td>
     </tr>`;
   }).join("")||`<tr class="spinner-row"><td colspan="10">No records match filters.</td></tr>`;
+
+  // Attach click listener with row spinner and sent details loading
+  document.getElementById("trackBody").querySelectorAll("tr[data-record-key]").forEach(tr=>{
+    tr.addEventListener("click", async () => {
+      const key = tr.dataset.recordKey;
+      const r = trackRows.find(row => (row["Key"] || "") === key);
+      if (!r) return;
+
+      // Display a Spinner in the Row status cell while loading
+      const statusCell = tr.cells[2];
+      const originalStatusHTML = statusCell.innerHTML;
+      statusCell.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span>`;
+
+      try {
+        const sentRows = await eFetch("Sent");
+        const sentRec = sentRows.find(s => s["Sent ID"] === r["Batch Key"] || s["Sent ID"] === r["Key"] || s["Key"] === r["Batch Key"]) || sentRows[0];
+
+        openSentDetailsModal(r, sentRec);
+      } catch (e) {
+        showToast("Error loading sent details: " + e.message, "error");
+      } finally {
+        statusCell.innerHTML = originalStatusHTML;
+      }
+    });
+  });
 }
+
+function openSentDetailsModal(r, sentRec) {
+  activeResendRecord = r;
+  activeResendSentRec = sentRec;
+
+  document.getElementById("sDetailSubject").textContent = sentRec?.["Subject"] || r?.["Key"] || "—";
+  document.getElementById("sDetailSentAt").textContent = fmtDate(sentRec?.["Sent At"] || r?.["Date Sent"]);
+  document.getElementById("sDetailRecipient").textContent = `${r["Contact Name"] || "—"} (${r["Recipient Email"] || "—"})`;
+  document.getElementById("sDetailBody").innerHTML = sentRec?.["Body"] || "<em style='color:#777;'>No body content found.</em>";
+
+  const msg = document.getElementById("sentModalStatus");
+  msg.textContent = ""; msg.className = "modal-status";
+
+  document.getElementById("sentDetailsModal").classList.add("open");
+}
+
+function closeSentDetailsModal() {
+  document.getElementById("sentDetailsModal").classList.remove("open");
+  activeResendRecord = null;
+  activeResendSentRec = null;
+}
+
+async function handleResend() {
+  if (!activeResendRecord) return;
+  const btn = document.getElementById("resendBtn");
+  const statusEl = document.getElementById("sentModalStatus");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span> Resending…`;
+
+  try {
+    const r = activeResendRecord;
+    const sentRec = activeResendSentRec;
+    const batchKey = r["Batch Key"] || uid();
+    const subject = sentRec?.["Subject"] || "Resend Email";
+    const bodyHtml = sentRec?.["Body"] || "";
+    const email = r["Recipient Email"];
+    const name = r["Contact Name"] || email;
+
+    if (!email) throw new Error("No recipient email address found.");
+
+    const recipientPayloads = [{
+      email: email,
+      name: name,
+      key: batchKey + "-" + uid(),
+      resolvedBody: bodyHtml
+    }];
+
+    // 1. Send via Gateway
+    const res = await gw({
+      action: "sendNow",
+      batchKey: batchKey,
+      subject: subject,
+      cc: sentRec?.["CC"] || "",
+      bcc: sentRec?.["BCC"] || "",
+      recipients: recipientPayloads
+    }, EMAIL_GATEWAY_URL);
+
+    const x = res.results?.[0] || {};
+    if (!x.ok) throw new Error(x.error || "Failed to send email");
+
+    // 2. Append Sent Record
+    const newSentRecord = {
+      "Sent ID": batchKey,
+      "Key": sentRec?.["Key"] || "RESEND",
+      "Subject": subject,
+      "To": email,
+      "CC": sentRec?.["CC"] || "",
+      "Sent At": new Date().toISOString(),
+      "Body": bodyHtml,
+      "Template ID": sentRec?.["Template ID"] || "",
+      "Recipient Count": 1
+    };
+    await appendSheet(TRACKING_DOMAIN, "Sent", newSentRecord);
+
+    // 3. Update Tracking Record Status
+    const trackingUpdates = {
+      "Email Status": "Sent",
+      "Date Sent": new Date().toISOString(),
+      "Date Updated": new Date().toISOString(),
+      "Thread ID": x.threadId || "",
+      "Comments": "Resent successfully"
+    };
+    if (r["Key"]) {
+      await updateSheet(TRACKING_DOMAIN, "Tracking", r["Key"], trackingUpdates);
+    }
+
+    // 4. Refresh Dashboard, Tracking & Audit Log
+    await gw({ action: "refreshDashboard", batchKey: batchKey, title: subject }, EMAIL_GATEWAY_URL);
+    await Promise.all([loadTracking(), loadDashboard()]);
+    if (typeof AuditLog !== "undefined" && AuditLog.load) AuditLog.load();
+
+    statusEl.textContent = "Email resent successfully!";
+    statusEl.className = "modal-status visible success";
+    showToast("Email resent successfully", "success");
+
+    // Close Modal on completion
+    setTimeout(() => {
+      closeSentDetailsModal();
+    }, 800);
+
+  } catch (e) {
+    statusEl.textContent = "Error: " + e.message;
+    statusEl.className = "modal-status visible error";
+    showToast("Resend failed: " + e.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Resend Email";
+  }
+}
+
+// Wire up Sent Details Modal buttons
+document.getElementById("sentModalClose").addEventListener("click", closeSentDetailsModal);
+document.getElementById("sentModalCloseBtn").addEventListener("click", closeSentDetailsModal);
+document.getElementById("resendBtn").addEventListener("click", handleResend);
+document.getElementById("sentDetailsModal").addEventListener("click", e => {
+  if (e.target === e.currentTarget) closeSentDetailsModal();
+});
 
 /* ── Record modal ── */
 function openRecordModal(key, isBatch) {
