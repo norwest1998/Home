@@ -40,6 +40,12 @@ select.mm-select.mm-select-inline { min-width: 160px; }
 
 .inline-icon { width: 15px; height: 15px; flex-shrink: 0; vertical-align: -3px; }
 
+.badge-whatsapp { background: color-mix(in srgb, var(--whatsapp) 15%, transparent);
+                  border: 1px solid color-mix(in srgb, var(--whatsapp) 40%, transparent); color: var(--whatsapp); }
+.class-pill { width: 26px; height: 26px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex;
+              border: 1px solid var(--glass-border); background: rgba(255,255,255,0.15); }
+.class-pill img { width: 100%; height: 100%; object-fit: cover; }
+
 .member-rows { display: flex; flex-direction: column; gap: 8px; }
 .member-row {
     display: flex; justify-content: space-between; align-items: center; gap: 12px;
@@ -251,6 +257,9 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
                         oninput="filterMemberDirectory()"
                     >
                 </div>
+                <select id="memberClassFilter" class="mm-select mm-select-inline">
+                    <option value="all">All Classes</option>
+                </select>
                 <select id="memberStatusFilter" class="mm-select mm-select-inline">
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -420,16 +429,24 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
         return s === 'true' || s === 'yes' || s === 'active' || s === '1';
     }
 
-    function getMemberClasses(name) {
+    function getMemberClassList(name) {
         const n = String(name || '').trim().toLowerCase();
-        const classes = (allBoats || [])
+        return [...new Set((allBoats || [])
             .filter(b => String(b.member || '').trim().toLowerCase() === n && b.active)
-            .map(b => b.class).filter(Boolean);
-        return classes.length ? classes.join(', ') : '—';
+            .map(b => b.class).filter(Boolean))];
+    }
+
+    function populateClassFilterOptions() {
+        const sel = document.getElementById('memberClassFilter'), cur = sel.value || 'all';
+        const classes = [...new Set(allBoats.filter(b => b.active).map(b => b.class).filter(Boolean))].sort();
+        sel.innerHTML = '<option value="all">All Classes</option>' +
+            classes.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        sel.value = classes.includes(cur) ? cur : 'all';
     }
 
     async function loadMembers() {
         try {
+            await EventFilters.load();
             const [membersRaw, boatsRaw] = await Promise.all([
                 fetchSheet(DOMAIN.members, "Members"),
                 fetchSheet(DOMAIN.members, "ClassMembers")
@@ -477,6 +494,7 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
             updateAdminCache("members", allMembers);
             updateAdminCache("members", allBoats);
             populateMembershipFilterOptions();
+            populateClassFilterOptions();
             filterMemberDirectory();
             renderMemberStats();
         } catch (err) {
@@ -489,7 +507,8 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
         const q = document.getElementById('memberListSearch').value.trim();
         const statusVal = document.getElementById('memberStatusFilter').value;
         const membershipVal = document.getElementById('memberMembershipFilter').value;
-        return !!q || statusVal !== 'all' || membershipVal !== 'all';
+        const classVal = document.getElementById('memberClassFilter').value;
+        return !!q || statusVal !== 'all' || membershipVal !== 'all' || classVal !== 'all';
     }
 
     function populateMembershipFilterOptions() {
@@ -540,6 +559,10 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
         if (membershipVal !== 'all') {
             filtered = filtered.filter(m => (m.membershipType || '') === membershipVal);
         }
+        const classVal = document.getElementById('memberClassFilter').value;
+        if (classVal !== 'all') {
+            filtered = filtered.filter(m => getMemberClassList(m.name).includes(classVal));
+        }
         renderMemberDirectory(filtered, false);
     }, 150);
 
@@ -569,6 +592,7 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
 
     document.getElementById('memberStatusFilter').addEventListener('change', filterMemberDirectory);
     document.getElementById('memberMembershipFilter').addEventListener('change', filterMemberDirectory);
+    document.getElementById('memberClassFilter').addEventListener('change', filterMemberDirectory);
 
     function renderMemberDirectory(members, isQuery = false) {
         const container = document.getElementById('memberListsResults');
@@ -588,7 +612,6 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
             const isPaid = !!m.isPaid;
             const isActive = isActiveStatus(m.status);
             const membershipClass = getMembershipBadgeClass(m.membershipType);
-            const classesStr = getMemberClasses(m.name);
             const checked = selectedMemberRows.has(m.row) ? 'checked' : '';
             return `
             <div class="member-row clickable" onclick="handleRowClick(${m.row})">
@@ -597,7 +620,8 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
                     <span class="badge ${membershipClass}">${escapeHtml(m.membershipType || '—')}</span>
                     <span class="badge ${isPaid ? 'badge-full' : 'badge-expired'}">${isPaid ? 'Paid' : 'Unpaid'}</span>
                     <span class="badge ${isActive ? 'badge-full' : 'badge-default'}">${isActive ? 'Active' : 'Inactive'}</span>
-                    <span class="badge badge-default">${escapeHtml(classesStr)}</span>
+                    <span class="badge ${parseBoolLike(m.whatsapp) ? 'badge-whatsapp' : 'badge-default'}">${parseBoolLike(m.whatsapp) ? 'WhatsApp' : ''}</span>
+                    <span class="badge badge-default">${getMemberClassList(m.name).map(c => `<span class="class-pill" title="${escapeHtml(c)}"><img src="${escapeHtml(EventFilters.classImage(c))}" alt="${escapeHtml(c)}"></span>`).join('')}</span>
                 </div>
                 <div class="m-right">
                     <div class="row-actions">
@@ -687,6 +711,7 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
         document.getElementById('memberListSearch').value = '';
         document.getElementById('memberStatusFilter').value = 'all';
         document.getElementById('memberMembershipFilter').value = 'all';
+        document.getElementById('memberClassFilter').value = 'all';
         lastSearchValue = '';
 
         const msgEl = document.getElementById('memberActionsMsg');
