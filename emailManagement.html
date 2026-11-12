@@ -1083,17 +1083,15 @@ function renderDashboard(){
     const sent = Number(r["Requests sent"] || 0);
     const responded = Number(r["Responded"] || 0);
 
-    // Determine opened count (fallback to computing from trackRows if missing/invalid)
     let openedNum = Number(r["Emails Opened"]);
     if (isNaN(openedNum) || (typeof r["Emails Opened"] === "string" && (r["Emails Opened"].includes("-") || r["Emails Opened"].includes("/")))) {
       openedNum = trackRows.filter(tr => (tr["Batch Key"] || "") === (r["Key"] || "") && Number(tr["Open Count"]) > 0).length;
     }
 
-    // Safely calculate percentages to avoid NaN and correct ratio scaling
     const rp = sent > 0 ? Math.round((responded / sent) * 100) : 0;
     const op = sent > 0 ? Math.round((openedNum / sent) * 100) : 0;
 
-    return`<tr class="clickable" data-record-key="${escapeHtml(r['Key']||'')}" data-record-type="batch">
+    return`<tr class="clickable" data-record-key="${escapeHtml(r['Key']||'')}">
       <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(r["Key"]||"—")}</td>
       <td style="font-weight:500;">${escapeHtml(r["Communication Title"]||"—")}</td>
       <td>${fmtDate(r["Date sent"])}</td>
@@ -1105,8 +1103,17 @@ function renderDashboard(){
       <td style="text-align:center;">${escapeHtml(String(r["Avg Response Days"]||"—"))}</td>
     </tr>`;
   }).join("")||`<tr class="spinner-row"><td colspan="9">No batches found.</td></tr>`;
+
+  // Filter Tracking Records by Batch Key on click and scroll into view
   document.getElementById("dashBody").querySelectorAll("tr[data-record-key]").forEach(tr=>{
-    tr.addEventListener("click",()=>openRecordModal(tr.dataset.recordKey, tr.dataset.recordType==="batch"));
+    tr.addEventListener("click",()=>{
+      const batchKey = tr.dataset.recordKey;
+      if(!batchKey) return;
+      const filterBatchSel = document.getElementById("filterBatch");
+      filterBatchSel.value = batchKey;
+      renderTracking();
+      document.getElementById("email-tracking").scrollIntoView({behavior:"smooth"});
+    });
   });
 }
 
@@ -1855,8 +1862,29 @@ function resetCompose(){
    EVENT WIRING
    ================================================================ */
 // Tracking
-document.getElementById("refreshDashBtn").addEventListener("click",async()=>{const btn=document.getElementById("refreshDashBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span>`;await Promise.all([loadDashboard(),loadTracking()]);btn.disabled=false;btn.textContent="Refresh";});
-document.getElementById("refreshTrackBtn").addEventListener("click",async()=>{const btn=document.getElementById("refreshTrackBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span>`;await loadTracking();btn.disabled=false;btn.textContent="Refresh";});
+document.getElementById("refreshDashBtn").addEventListener("click",async()=>{
+  const btn=document.getElementById("refreshDashBtn");
+  btn.disabled=true;
+  btn.innerHTML=`<span class="spinner"></span>`;
+
+  await Promise.all([loadDashboard(),loadTracking()]);
+  
+  btn.disabled=false;
+  btn.textContent="Refresh";
+});
+document.getElementById("refreshTrackBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("refreshTrackBtn");
+  btn.disabled = true; 
+  btn.innerHTML = `<span class="spinner"></span>`;
+  
+  // Reset the batch filter to display all tracking records again
+  document.getElementById("filterBatch").value = "";
+  
+  await loadTracking();
+  
+  btn.disabled = false; 
+  btn.textContent = "Refresh";
+});
 document.getElementById("trackSearch").addEventListener("input",renderTracking);
 document.getElementById("filterStatus").addEventListener("change",renderTracking);
 document.getElementById("filterBatch").addEventListener("change",renderTracking);
