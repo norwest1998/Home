@@ -766,7 +766,7 @@ async function tFetch(sheet) {
 }
 
 async function eFetch(sheet) {          // email data: Tracking, Dashboard, Drafts, Sent
-  const d = await gw({ action: "fetchEmail", sheet }, EMAIL_GATEWAY_URL);
+  const d = await gw({ action: "fetchEmail", sheet: sheet }, EMAIL_GATEWAY_URL);
   return d.values || [];
 }
 
