@@ -1080,21 +1080,25 @@ function renderDashboard(){
   const rows=dashRows;
   document.getElementById("dashEmpty").style.display=rows.length?"none":"block";
   document.getElementById("dashBody").innerHTML=rows.map(r=>{
-    const rp=r["% Response"]?Math.round(Number(r["% Response"])):0;
-    const op=r["% Opened"]?Math.round(Number(r["% Opened"])):0;
-    
-    // Ensure opened displays only a number (fallback to computing from trackRows if date/string)
+    const sent = Number(r["Requests sent"] || 0);
+    const responded = Number(r["Responded"] || 0);
+
+    // Determine opened count (fallback to computing from trackRows if missing/invalid)
     let openedNum = Number(r["Emails Opened"]);
     if (isNaN(openedNum) || (typeof r["Emails Opened"] === "string" && (r["Emails Opened"].includes("-") || r["Emails Opened"].includes("/")))) {
       openedNum = trackRows.filter(tr => (tr["Batch Key"] || "") === (r["Key"] || "") && Number(tr["Open Count"]) > 0).length;
     }
 
+    // Safely calculate percentages to avoid NaN and correct ratio scaling
+    const rp = sent > 0 ? Math.round((responded / sent) * 100) : 0;
+    const op = sent > 0 ? Math.round((openedNum / sent) * 100) : 0;
+
     return`<tr class="clickable" data-record-key="${escapeHtml(r['Key']||'')}" data-record-type="batch">
       <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(r["Key"]||"—")}</td>
       <td style="font-weight:500;">${escapeHtml(r["Communication Title"]||"—")}</td>
       <td>${fmtDate(r["Date sent"])}</td>
-      <td style="text-align:center;">${escapeHtml(String(r["Requests sent"]||0))}</td>
-      <td style="text-align:center;">${escapeHtml(String(r["Responded"]||0))}</td>
+      <td style="text-align:center;">${escapeHtml(String(sent))}</td>
+      <td style="text-align:center;">${escapeHtml(String(responded))}</td>
       <td style="text-align:center;">${rp}%</td>
       <td style="text-align:center;">${escapeHtml(String(openedNum))}</td>
       <td style="text-align:center;">${op}%</td>
@@ -1105,6 +1109,7 @@ function renderDashboard(){
     tr.addEventListener("click",()=>openRecordModal(tr.dataset.recordKey, tr.dataset.recordType==="batch"));
   });
 }
+
 function populateBatchFilter(){
   const keys=[...new Set(trackRows.map(r=>r["Batch Key"]).filter(Boolean))];
   const lbl=k=>(dashRows.find(d=>d["Key"]===k)||{})["Communication Title"]||k;
