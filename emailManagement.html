@@ -1227,7 +1227,7 @@ function openSentDetailsModal(r, sentRec) {
   document.getElementById("sDetailSubject").textContent = sentRec?.["Subject"] || r?.["Key"] || "—";
   document.getElementById("sDetailSentAt").textContent = fmtDate(sentRec?.["Sent At"] || r?.["Date Sent"]);
   document.getElementById("sDetailRecipient").textContent = `${r["Contact Name"] || "—"} (${r["Recipient Email"] || "—"})`;
-  document.getElementById("sDetailBody").innerHTML = sentRec?.["Body"] || "<em style='color:#777;'>No body content found.</em>";
+  document.getElementById("sDetailBody").innerHTML = sentRec?.["Body HTML"] || r?.["Body HTML"] || "<em style='color:#777;'>No body content found.</em>";
 
   const msg = document.getElementById("sentModalStatus");
   msg.textContent = ""; msg.className = "modal-status";
