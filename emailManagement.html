@@ -1112,6 +1112,14 @@ function populateBatchFilter(){
   sel.innerHTML=`<option value="">All Batches</option>`+keys.map(k=>`<option value="${escapeHtml(k)}"${k===cur?" selected":""}>${escapeHtml(lbl(k))}</option>`).join("");
 }
 
+function fmtDateMMM(v) {
+  if (!v) return "—";
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return v;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
+}
+
 function renderTracking(){
   const q=document.getElementById("trackSearch").value.trim().toLowerCase();
   const status=document.getElementById("filterStatus").value;
@@ -1123,19 +1131,25 @@ function renderTracking(){
   if(reminder)rows=rows.filter(r=>(r["Reminder Sent"]||"")===reminder);
   if(q) rows=rows.filter(r=>["Contact Name","Recipient Email","Email Status","Comments","Email Response"].some(k=>String(r[k]||"").toLowerCase().includes(q)));
   document.getElementById("trackEmpty").style.display=rows.length?"none":"block";
-  document.getElementById("trackBody").innerHTML=rows.map(r=>`
+  document.getElementById("trackBody").innerHTML=rows.map(r=> {
+    const daysVal = r["Response Days"];
+    const formattedDays = (daysVal !== undefined && daysVal !== null && daysVal !== "" && !isNaN(Number(daysVal))) ? Math.round(Number(daysVal)) : "—";
+    const formattedResponse = fmtDateMMM(r["Email Response"]);
+
+    return `
     <tr class="clickable" data-record-key="${escapeHtml(r['Key']||'')}" data-record-type="tracking">
       <td>${escapeHtml(r["Contact Name"]||"—")}</td>
       <td style="font-size:11px;">${escapeHtml(r["Recipient Email"]||"—")}</td>
       <td>${statusBadge(r["Email Status"])}</td>
       <td style="white-space:nowrap;">${fmtDate(r["Date Sent"])}</td>
       <td style="white-space:nowrap;">${fmtDate(r["Date Updated"])}</td>
-      <td>${escapeHtml(r["Email Response"]||"—")}</td>
-      <td style="text-align:center;">${escapeHtml(String(r["Response Days"]||"—"))}</td>
+      <td>${escapeHtml(formattedResponse)}</td>
+      <td style="text-align:center;">${escapeHtml(String(formattedDays))}</td>
       <td style="text-align:center;">${escapeHtml(String(r["Open Count"]||0))}</td>
       <td style="text-align:center;">${r["Reminder Sent"]==="Yes"?`<span class="badge badge-renewal">Yes</span>`:`<span style="color:var(--foam-dim);font-size:11px;">—</span>`}</td>
       <td style="max-width:140px;font-size:11px;color:var(--foam-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(r['Comments']||'')}">${escapeHtml(r["Comments"]||"—")}</td>
-    </tr>`).join("")||`<tr class="spinner-row"><td colspan="10">No records match filters.</td></tr>`;
+    </tr>`;
+  }).join("")||`<tr class="spinner-row"><td colspan="10">No records match filters.</td></tr>`;
 }
 
 /* ── Record modal ── */
