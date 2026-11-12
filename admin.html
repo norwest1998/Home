@@ -42,6 +42,7 @@
 .health-stat .health-pct.glow { color: var(--glow); }
 .health-stat .health-pct.amber { color: var(--foam-dim); }
 .health-stat .health-pct.signal { color: var(--signal); }
+.health-stat .health-pct.folder { color: var(--folder); }
 .health-stat .health-label {
     font-family: var(--font-data);
     font-size: 11px;
@@ -837,10 +838,11 @@ function renderGrid(data) {
 MEMBER HEALTH BOARD
 ============================================================ */
 function pctClass(pct){
+    if (pct < 85)   return "signal";
+    if (pct < 92)   return "folder";
     if (pct === 100) return "whatsapp";
     if (pct >= 96)  return "glow";
-    if (pct >= 80)  return "amber";
-    return "signal";
+    return "amber";   // 92–95
 }
 
 function renderMemberHealth(membersData) {
