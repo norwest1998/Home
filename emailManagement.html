@@ -1082,15 +1082,22 @@ function renderDashboard(){
   document.getElementById("dashBody").innerHTML=rows.map(r=>{
     const rp=r["% Response"]?Math.round(Number(r["% Response"])):0;
     const op=r["% Opened"]?Math.round(Number(r["% Opened"])):0;
+    
+    // Ensure opened displays only a number (fallback to computing from trackRows if date/string)
+    let openedNum = Number(r["Emails Opened"]);
+    if (isNaN(openedNum) || (typeof r["Emails Opened"] === "string" && (r["Emails Opened"].includes("-") || r["Emails Opened"].includes("/")))) {
+      openedNum = trackRows.filter(tr => (tr["Batch Key"] || "") === (r["Key"] || "") && Number(tr["Open Count"]) > 0).length;
+    }
+
     return`<tr class="clickable" data-record-key="${escapeHtml(r['Key']||'')}" data-record-type="batch">
       <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(r["Key"]||"—")}</td>
       <td style="font-weight:500;">${escapeHtml(r["Communication Title"]||"—")}</td>
       <td>${fmtDate(r["Date sent"])}</td>
       <td style="text-align:center;">${escapeHtml(String(r["Requests sent"]||0))}</td>
       <td style="text-align:center;">${escapeHtml(String(r["Responded"]||0))}</td>
-      <td><div style="display:flex;align-items:center;gap:8px;"><div class="progress-bar-wrap" style="flex:1;min-width:50px;"><div class="progress-bar ${rp<40?"bad":rp<70?"warn":""}" style="width:${rp}%"></div></div><span style="font-size:11px;">${rp}%</span></div></td>
-      <td style="text-align:center;">${escapeHtml(String(r["Emails Opened"]||0))}</td>
-      <td><div style="display:flex;align-items:center;gap:8px;"><div class="progress-bar-wrap" style="flex:1;min-width:50px;"><div class="progress-bar ${op<40?"bad":op<70?"warn":""}" style="width:${op}%"></div></div><span style="font-size:11px;">${op}%</span></div></td>
+      <td style="text-align:center;">${rp}%</td>
+      <td style="text-align:center;">${escapeHtml(String(openedNum))}</td>
+      <td style="text-align:center;">${op}%</td>
       <td style="text-align:center;">${escapeHtml(String(r["Avg Response Days"]||"—"))}</td>
     </tr>`;
   }).join("")||`<tr class="spinner-row"><td colspan="9">No batches found.</td></tr>`;
@@ -1098,7 +1105,6 @@ function renderDashboard(){
     tr.addEventListener("click",()=>openRecordModal(tr.dataset.recordKey, tr.dataset.recordType==="batch"));
   });
 }
-
 function populateBatchFilter(){
   const keys=[...new Set(trackRows.map(r=>r["Batch Key"]).filter(Boolean))];
   const lbl=k=>(dashRows.find(d=>d["Key"]===k)||{})["Communication Title"]||k;
