@@ -427,7 +427,7 @@ function fileToBase64(file) {
 async function driveUploadNew(file) {
     const data = await fileToBase64(file);
     const d = await gw({ action: "uploadNew", folder: "documents", name: file.name, data,
-                         mimeType: file.type || "application/octet-stream" }, DOC_CONFIG.docWebAppUrl);
+                         mimeType: file.type || "application/octet-stream" }, FILE_GATEWAY_URL);
     return { fileId: d.fileId, link: d.link };
 }
 
@@ -439,7 +439,7 @@ async function driveUpdateContent(fileId, file) {
         r.readAsDataURL(file);
     });
     return gw({ action: "updateFile", fileId, data,
-                mimeType: file.type || "application/octet-stream" }, DOC_CONFIG.docWebAppUrl);
+                mimeType: file.type || "application/octet-stream" }, FILE_GATEWAY_URL);
 }
 
 /* ---------- State + rendering ---------- */
@@ -670,7 +670,7 @@ document.getElementById("statusFilter").addEventListener("change", renderGrid);
 document.getElementById("visibilityFilter").addEventListener("change", renderGrid);
 
 async function fetchDriveFolderContents(folderId) {
-    const d = await gwGet({ action: "listChildren", folderId }, DOC_CONFIG.docWebAppUrl);
+    const d = await gwGet({ action: "listChildren", folderId }, FILE_GATEWAY_URL);
     return d.files || [];
 }
 
@@ -809,7 +809,7 @@ document.getElementById("driveFileArchiveBtn").addEventListener("click", async (
         await logDocumentAction(currentDriveFile.id, currentDriveFile.name, "Archive Document");
 
         // FIXED: Hit the document gateway
-        await gw({ action: "archiveFile", fileId: currentDriveFile.id }, DOC_CONFIG.docWebAppUrl);
+        await gw({ action: "archiveFile", fileId: currentDriveFile.id }, FILE_GATEWAY_URL);
 
         const matchedDoc = DOCS.find(d => d.DriveFileId === currentDriveFile.id);
         if (matchedDoc) {
@@ -839,7 +839,7 @@ let currentDriveFile = null;
 async function selectDriveDocument(fileId) {
     try {
         // FIXED: Use gwGet and hit the correct document gateway
-        const file = await gwGet({ action: "fileMeta", fileId }, DOC_CONFIG.docWebAppUrl);
+        const file = await gwGet({ action: "fileMeta", fileId }, FILE_GATEWAY_URL);
 
         currentDriveFile = file;
         await logDocumentAction(file.id, file.name, "View Document Details");
@@ -1104,7 +1104,7 @@ document.getElementById("syncCloseBtn").addEventListener("click", () => {
 
 async function fetchAllDriveFilesRecursively(folderId, updateScanStatus) {
     if (updateScanStatus) updateScanStatus("Scanning Drive folders...");
-    const d = await gwGet({ action: "listRecursive", folderId }, DOC_CONFIG.docWebAppUrl);
+    const d = await gwGet({ action: "listRecursive", folderId }, FILE_GATEWAY_URL);
     return d.files || [];
 }
 
