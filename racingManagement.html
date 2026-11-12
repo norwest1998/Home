@@ -201,7 +201,7 @@ table.rm-table { width:100%; border-collapse:collapse; font-size:12.5px; }
             </div>
             <div class="tbl-wrap">
                 <table class="rm-table">
-                    <thead><tr><th>ID</th><th>Series Name</th><th>Allowed Classes</th><th>WeekofMonth</th><th>Time</th><th>Format</th></tr></thead>                  
+                    <thead><tr><th>ID</th><th>Series Name</th><th>Coordinator</th><th>Allowed Classes</th><th>WeekofMonth</th><th>Time</th><th>Format</th></tr></thead>                  
                     <tbody id="rgBody"></tbody>
                 </table>
             </div>
@@ -607,12 +607,13 @@ let editingRgId = null;
 
 function renderRegList() {
     const q = $("rgSearch").value.trim().toLowerCase();
-    const rows = series.filter(r => !q || (gv(r, "ID") + " " + gv(r, "SeriesName") + " " + gv(r, "AllowedClasses")).toLowerCase().includes(q));
+    const rows = series.filter(r => !q || (gv(r, "ID") + " " + gv(r, "SeriesName") + " " + gv(r, "Coordinator") + " " + gv(r, "AllowedClasses")).toLowerCase().includes(q));
     $("rgBody").innerHTML = rows.map(r => {
         const id = gv(r, "ID"), fid = gv(r, "FormatID"), f = formats.find(f => gv(f, "formatId") === fid);
         const used = entries.some(e => gv(e, "SeriesID") === id);
         return `<tr class="clickable" data-id="${escapeHtml(id)}">
             <td>${escapeHtml(id)}</td><td><strong>${escapeHtml(gv(r, "SeriesName"))}</strong></td>
+            <td>${escapeHtml(gv(r, "Coordinator")) || '<span class="sub">—</span>'}</td>
             <td>${escapeHtml(gv(r, "AllowedClasses"))}</td>
             <td>${escapeHtml(gv(r, "WeekofMonth")) || "—"}</td><td>${escapeHtml(gv(r, "Time")) || "—"}</td>
             <td>${f ? escapeHtml(gv(f, "name")) : '<span class="sub">—</span>'}</td>
