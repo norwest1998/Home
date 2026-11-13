@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="smmc-domain" content="audit">
-<title>Users &amp; System Activity — Sydney Maritime Modellers Club</title>
+<title>Users &amp; Access Log — Sydney Maritime Modellers Club</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -48,7 +48,7 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12px; }
 
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:1000; align-items:center; justify-content:center; padding:20px; }
 .modal-overlay.open { display:flex; }
-.modal { background:var(--ocean-mid); border:1px solid var(--glass-border); border-radius:16px; width:100%; max-width:520px;
+.modal { background:var(--ocean-mid); border:1px solid var(--glass-border); border-radius:16px; width:100%; max-width:540px;
     max-height:90vh; overflow-y:auto; padding:28px; display:flex; flex-direction:column; gap:18px; }
 .modal-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .modal-header h3 { font-size:18px; color:var(--foam); }
@@ -85,7 +85,7 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12px; }
 <main class="container">
 
     <div class="admin-header">
-        <div class="admin-title-group"><h1>User Management &amp; Access Telemetry</h1></div>
+        <div class="admin-title-group"><h1>User Management &amp; Access Log</h1></div>
         <a href="admin.html" class="btn btn-ghost" style="flex-shrink:0;">Back to Dashboard</a>
     </div>
 
@@ -103,12 +103,12 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12px; }
     <!-- Main Workspace with Tabs -->
     <div class="panel">
         <div class="panel-header panel-header--tabbed">
-            <div class="panel-title-left"><span class="dot"></span><h3>System Access &amp; Adoption</h3></div>
+            <div class="panel-title-left"><span class="dot"></span><h3>Directory &amp; Access Logs</h3></div>
             <div class="tab-row-wrap">
                 <div class="tab-row">
                     <button class="tab active" data-tab="tabUsers">Users Directory</button>
-                    <button class="tab" data-tab="tabLogins">Login History</button>
-                    <button class="tab" data-tab="tabTraffic">Page Traffic</button>
+                    <button class="tab" data-tab="tabLogins" id="tabLoginsBtn">Login Log</button>
+                    <button class="tab" data-tab="tabTraffic" id="tabTrafficBtn">Page Traffic</button>
                 </div>
             </div>
         </div>
@@ -148,7 +148,7 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12px; }
             <div class="empty-state" id="usersEmpty" style="display:none;">No users found.</div>
         </div>
 
-        <!-- TAB 2: LOGIN HISTORY & AUDIT -->
+        <!-- TAB 2: LOGIN LOG VIEW (ADMIN ONLY) -->
         <div class="tab-content" id="tabLogins">
             <div class="users-toolbar">
                 <div class="search-wrap">
@@ -157,6 +157,9 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12px; }
                 </div>
                 <button class="btn btn-ghost" id="refreshLoginsBtn" style="padding:5px 12px;font-size:11px;">Refresh Log</button>
             </div>
+            <p style="font-size:12px;color:var(--foam-dim);margin-bottom:10px;">
+                <i class="inline-icon" data-lucide="info"></i> Click any row below to view page telemetry and views for that session.
+            </p>
             <div class="users-table-wrap">
                 <table class="users-table">
                     <thead><tr>
@@ -165,7 +168,7 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12px; }
                     <tbody id="loginsBody"></tbody>
                 </table>
             </div>
-            <div class="empty-state" id="loginsEmpty" style="display:none;">No login logs recorded yet.</div>
+            <div class="empty-state" id="loginsEmpty" style="display:none;">No login activity recorded yet.</div>
         </div>
 
         <!-- TAB 3: PAGE TRAFFIC BREAKDOWN -->
@@ -173,6 +176,64 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12px; }
             <p style="font-size:13px;color:var(--foam-dim);">Deduplicated 15-minute beacons showing system feature usage across all members.</p>
             <div class="traffic-pill-grid" id="trafficGrid">
                 <div class="traffic-pill"><span>Loading traffic…</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== SESSION PAGE VIEWS MODAL ===================== -->
+    <div class="modal-overlay" id="sessionModal">
+        <div class="modal" style="max-width:620px;">
+            <div class="modal-header">
+                <div>
+                    <h3 id="sessionModalTitle">Session Activity</h3>
+                    <span class="hint" id="sessionModalSub" style="display:block;margin-top:2px;"></span>
+                </div>
+                <button class="modal-close" id="sessionModalClose" title="Close">✕</button>
+            </div>
+            
+            <div class="detail-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;">
+                <div class="detail-item">
+                    <span class="detail-label">Session ID</span>
+                    <span class="detail-value" id="smSid" style="font-family:var(--font-data);font-size:11.5px;color:var(--glow);">—</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Auth Method</span>
+                    <span class="detail-value" id="smMethod">—</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Outcome</span>
+                    <span class="detail-value" id="smStatus">—</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Login Time</span>
+                    <span class="detail-value" id="smTime" style="font-size:11px;">—</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Client User-Agent</label>
+                <div id="smUserAgent" style="font-size:11px;color:var(--foam-dim);word-break:break-word;background:rgba(0,0,0,0.25);padding:8px 10px;border-radius:8px;border:1px solid var(--glass-border);">—</div>
+            </div>
+
+            <div>
+                <label style="font-family:var(--font-data);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--foam-dim);margin-bottom:6px;display:block;">Page Views In This Session</label>
+                <div class="users-table-wrap" style="max-height:240px;">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Page Visited</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sessionPagesBody"></tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="sessionPagesEmpty" style="display:none;padding:20px;">No page views recorded for this session.</div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-ghost" id="sessionModalDone">Close</button>
             </div>
         </div>
     </div>
@@ -346,9 +407,10 @@ async function loadAll() {
 }
 
 async function loadLogins() {
-    $("loginsBody").innerHTML = `<tr class="spinner-row"><td colspan="6"><span class="spinner"></span> Loading access logs…</td></tr>`;
+    if (!isAdmin) return;
+    $("loginsBody").innerHTML = `<tr class="spinner-row"><td colspan="6"><span class="spinner"></span> Loading login logs…</td></tr>`;
     try {
-        const res = await apiGet("getLoginLogs", { limit: 120 });
+        const res = await apiGet("getLoginLogs", { limit: 150 });
         loginLogs = res.values || [];
         renderLogins();
     } catch(e) {
@@ -357,6 +419,7 @@ async function loadLogins() {
 }
 
 async function loadTraffic() {
+    if (!isAdmin) return;
     $("trafficGrid").innerHTML = `<div class="traffic-pill"><span><span class="spinner"></span> Loading usage metrics…</span></div>`;
     try {
         const summary = await apiGet("getUsageSummary");
@@ -394,7 +457,7 @@ function renderStats() {
     $("stat-nologin").textContent = availableMembers().length;
 }
 
-/* ---------- RENDER TABLES ---------- */
+/* ---------- RENDER USERS ---------- */
 function renderTable() {
     const q = lc($("userSearch").value), role = $("filterRole").value, lt = $("filterLogin").value;
     const rows = users.filter(u =>
@@ -418,17 +481,18 @@ function renderTable() {
     $("usersEmpty").style.display = rows.length ? "none" : "block";
 }
 
+/* ---------- RENDER LOGINS ---------- */
 function renderLogins() {
     const q = lc($("loginSearch").value);
     const rows = loginLogs.filter(l =>
         !q || lc(l.Email).includes(q) || lc(l.Status).includes(q) || lc(l.Reason).includes(q) || lc(l.SessionID).includes(q)
     );
-    $("loginsBody").innerHTML = rows.map(l => {
+    $("loginsBody").innerHTML = rows.map((l, idx) => {
         const isOk = String(l.Status).toUpperCase() === "SUCCESS";
         const isFail = String(l.Status).toUpperCase().includes("FAIL") || String(l.Status).toUpperCase() === "LOCKED";
         const badgeCls = isOk ? "badge-full" : (isFail ? "badge-expired" : "badge-default");
         return `
-        <tr>
+        <tr class="clickable" data-idx="${idx}">
             <td style="white-space:nowrap;font-size:11px;">${escapeHtml(fmtDT(l.Timestamp))}</td>
             <td><strong>${escapeHtml(l.Email)}</strong></td>
             <td><span class="badge badge-default">${escapeHtml(l.Method || "—")}</span></td>
@@ -439,6 +503,61 @@ function renderLogins() {
     }).join("");
     $("loginsEmpty").style.display = rows.length ? "none" : "block";
 }
+
+/* ---------- SESSION PAGE VIEWS MODAL ---------- */
+async function openSessionModal(loginRec) {
+    if (!isAdmin) return;
+    $("sessionModalTitle").textContent = "Session: " + (loginRec.Email || "Unknown");
+    $("sessionModalSub").textContent = "Login attempted at " + fmtDT(loginRec.Timestamp);
+    $("smSid").textContent = loginRec.SessionID || "None";
+    $("smMethod").textContent = loginRec.Method || "—";
+    
+    const isOk = String(loginRec.Status).toUpperCase() === "SUCCESS";
+    $("smStatus").innerHTML = `<span class="badge ${isOk ? 'badge-full' : 'badge-expired'}">${escapeHtml(loginRec.Status || '—')}</span>`;
+    $("smTime").textContent = fmtDT(loginRec.Timestamp);
+    $("smUserAgent").textContent = loginRec.UserAgent || "No User-Agent provided";
+
+    $("sessionPagesBody").innerHTML = `<tr class="spinner-row"><td colspan="3"><span class="spinner"></span> Loading session page views…</td></tr>`;
+    $("sessionPagesEmpty").style.display = "none";
+    $("sessionModal").classList.add("open");
+
+    try {
+        const res = await apiGet("getSessionPageViews", {
+            sessionId: loginRec.SessionID || "",
+            email: loginRec.Email || ""
+        });
+        const views = res.values || [];
+        if (!views.length) {
+            $("sessionPagesBody").innerHTML = "";
+            $("sessionPagesEmpty").style.display = "block";
+            return;
+        }
+
+        $("sessionPagesBody").innerHTML = views.map(v => `
+            <tr>
+                <td style="white-space:nowrap;font-size:11px;">${escapeHtml(fmtDT(v.Timestamp))}</td>
+                <td><strong style="color:var(--glow);">${escapeHtml(v.Page || "index.html")}</strong></td>
+                <td style="font-size:11px;color:var(--foam-dim);">${escapeHtml(v.Email || "—")}</td>
+            </tr>
+        `).join("");
+        $("sessionPagesEmpty").style.display = "none";
+    } catch (err) {
+        $("sessionPagesBody").innerHTML = `<tr><td colspan="3" style="color:#ff6b6b;padding:12px;">Failed to load page views: ${escapeHtml(err.message)}</td></tr>`;
+    }
+}
+
+$("loginsBody").addEventListener("click", e => {
+    if (!isAdmin) return;
+    const tr = e.target.closest("tr.clickable");
+    if (!tr) return;
+    const idx = Number(tr.dataset.idx);
+    const loginRec = loginLogs[idx];
+    if (loginRec) openSessionModal(loginRec);
+});
+
+$("sessionModalClose").addEventListener("click", () => $("sessionModal").classList.remove("open"));
+$("sessionModalDone").addEventListener("click", () => $("sessionModal").classList.remove("open"));
+$("sessionModal").addEventListener("click", e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove("open"); });
 
 /* ---------- CREATE ---------- */
 function openCreate() {
@@ -527,9 +646,16 @@ $("refreshBtn").addEventListener("click", async () => {
 });
 $("refreshLoginsBtn").addEventListener("click", loadLogins);
 
-if (isAdmin) loadAll();
-else document.querySelector(".stats-grid").insertAdjacentHTML("beforebegin",
-    `<div class="glass" style="padding:24px;margin-bottom:24px;">Administrator access is required to view system usage and telemetry.</div>`);
+// ADMIN ACCESS GATE
+if (isAdmin) {
+    loadAll();
+} else {
+    document.querySelector(".stats-grid").insertAdjacentHTML("beforebegin",
+        `<div class="glass" style="padding:24px;margin-bottom:24px;">Administrator access is required to view user management and access logs.</div>`);
+    $("tabLoginsBtn").style.display = "none";
+    $("tabTrafficBtn").style.display = "none";
+    $("newUserBtn").style.display = "none";
+}
 if (window.lucide) lucide.createIcons();
 </script>
 <script>
