@@ -30,6 +30,7 @@
     color: var(--foam);
     line-height: 1;
 }
+.stat-card .stat-val.draft { color: #93c5fd; }
 .stat-card .stat-val.warn { color: #ffb347; }
 .stat-card .stat-val.accent { color: #ff6b6b; }
 .stat-card .stat-label {
@@ -119,7 +120,7 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
     font-size: 13px; padding: 8px 12px; width: 100%; box-sizing: border-box;
 }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--foam); }
-.form-group textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
+.form-group textarea { min-height: 140px; resize: vertical; line-height: 1.5; }
 
 .modal-footer { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; padding-top: 4px; }
 .modal-status { font-size: 12px; display: none; }
@@ -128,7 +129,6 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .modal-status.error   { color: #ff6b6b; }
 
 .err-box { background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); padding: 10px; border-radius: 6px; color: #ff6b6b; font-size: 12px; display: none; }
-
 </style>
 </head>
 <body>
@@ -145,16 +145,16 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
     <!-- Stats board -->
     <section class="stats-grid" id="statsGrid">
         <div class="glass stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-label">Total Posts</div></div>
-        <div class="glass stat-card"><div class="stat-val" id="stat-posted">—</div><div class="stat-label">Successfully Posted</div></div>
+        <div class="glass stat-card"><div class="stat-val draft" id="stat-draft">—</div><div class="stat-label">Draft Reviews</div></div>
         <div class="glass stat-card"><div class="stat-val warn" id="stat-pending">—</div><div class="stat-label">Pending / Queue</div></div>
+        <div class="glass stat-card"><div class="stat-val" id="stat-posted">—</div><div class="stat-label">Successfully Posted</div></div>
         <div class="glass stat-card"><div class="stat-val accent" id="stat-failed">—</div><div class="stat-label">Failed</div></div>
-        <div class="glass stat-card"><div class="stat-val" id="stat-month">—</div><div class="stat-label">Posts This Month</div></div>
     </section>
 
     <!-- Queue Table -->
     <div class="section-head">
         <h2>Posting Queue & History</h2>
-        <p>Review automatic race reports, manually edit content, or requeue failed posts.</p>
+        <p>Review automatic race reports and event notices, manually edit copy, or requeue posts.</p>
     </div>
 
     <div class="panel">
@@ -197,7 +197,7 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
                             <th>Status</th>
                             <th>Class / Regatta</th>
                             <th>Race Date</th>
-                            <th>Report Snippet</th>
+                            <th>Report / Caption Snippet</th>
                             <th>Post Link / ID</th>
                         </tr>
                     </thead>
@@ -208,7 +208,7 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
         </div>
     </div>
 
-    <!-- ===================== POST MODAL ===================== -->
+    <!-- ===================== UNIFIED POST MODAL ===================== -->
     <div class="modal-overlay" id="postModal">
         <div class="modal">
             <div class="modal-header">
@@ -239,7 +239,7 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
                 </div>
             </div>
 
-            <!-- Dynamic Notice Controls (Visible only for Event Notices) -->
+            <!-- Dynamic Event Notice Controls -->
             <div id="noticeControls" style="display:none; flex-direction:column; gap:14px;">
                 <div class="form-row">
                     <div class="form-group">
@@ -259,86 +259,8 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
                 </div>
             </div>
 
-            <div class="form-row full">
-                <div class="form-group">
-                    <label>Facebook Caption Text</label>
-                    <textarea id="fReport" placeholder="The caption text that will be posted to Facebook..."></textarea>
-                </div>
-            </div>
-            
-            <!-- Live Image Preview -->
-            <div class="form-row full">
-                <div class="form-group">
-                    <label>Graphic Preview</label>
-                    <div id="pngPreviewContainer" style="background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); border-radius:8px; padding:10px; text-align:center; min-height:100px; overflow:auto;">
-                        <span style="color:var(--foam-dim); font-size:12px;">Image preview will load here...</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-footer" style="justify-content: space-between;">
-                <button class="btn btn-ghost" id="modalDeletePost" style="color:#ff6b6b;">Delete</button>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <span class="modal-status" id="modalStatus"></span>
-                    <button class="btn btn-ghost" id="modalCancel">Cancel</button>
-                    <button class="btn btn-ghost" id="modalSave" style="border-color:var(--foam-dim);">Save Draft</button>
-                    <button class="btn btn-primary" id="modalApprove" style="background:var(--glow); color:var(--ocean-deep);">Approve &amp; Queue</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- AUDIT LOG -->
-    <div id="auditLog-placeholder"></div>
-
-    <!-- ===================== POST MODAL ===================== -->
-    <div class="modal-overlay" id="postModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Edit Post Data</h3>
-                <button class="modal-close" id="modalClose">✕</button>
-            </div>
-
-            <div class="err-box" id="modalErrorBox"></div>
-
-            <div class="form-row triple">
-                <div class="form-group">
-                    <label>Status</label>
-                    <select id="fStatus" disabled>
-                        <option value="POSTED">POSTED</option>
-                        <option value="PENDING">PENDING</option>
-                        <option value="PROCESSING">PROCESSING</option>
-                        <option value="FAILED">FAILED</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Regatta / Class</label>
-                    <input type="text" id="fRegatta">
-                </div>
-                <div class="form-group">
-                    <label>Race Date</label>
-                    <input type="text" id="fRaceDate" placeholder="dd/mm/yyyy or yyyy-mm-dd">
-                </div>
-            </div>
-
-            <div class="form-row full">
-                <div class="form-group">
-                    <label>Race Report Caption</label>
-                    <textarea id="fReport" placeholder="The caption text that will be posted to Facebook..."></textarea>
-                </div>
-            </div>
-            
-            <!-- NEW: Results Image Preview -->
-            <div class="form-row full">
-                <div class="form-group">
-                    <label>Results Image Preview</label>
-                    <div id="pngPreviewContainer" style="background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); border-radius:8px; padding:10px; text-align:center; min-height:100px; overflow:auto;">
-                        <span style="color:var(--foam-dim); font-size:12px;">Image preview will load here...</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-row">
+            <!-- Dynamic Results Sheet Controls -->
+            <div id="resultsControls" style="display:none;" class="form-row">
                 <div class="form-group">
                     <label>Source Spreadsheet ID (Readonly)</label>
                     <input type="text" id="fSpreadsheetId" readonly style="opacity:0.7">
@@ -349,11 +271,25 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
                 </div>
             </div>
 
+            <div class="form-row full">
+                <div class="form-group">
+                    <label id="captionLabel">Facebook Caption Text</label>
+                    <textarea id="fReport" placeholder="The caption text that will be posted to Facebook..."></textarea>
+                </div>
+            </div>
+            
+            <!-- Graphic / Sheet Preview -->
+            <div class="form-row full">
+                <div class="form-group">
+                    <label>Graphic Preview</label>
+                    <div id="pngPreviewContainer" style="background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); border-radius:8px; padding:10px; text-align:center; min-height:100px; overflow:auto;">
+                        <span style="color:var(--foam-dim); font-size:12px;">Image preview will load here...</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="modal-footer" style="justify-content: space-between;">
-                <!-- Left side -->
                 <button class="btn btn-ghost" id="modalDeletePost" style="color:#ff6b6b;">Delete Post</button>
-                
-                <!-- Right side -->
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <span class="modal-status" id="modalStatus"></span>
                     <button class="btn btn-ghost" id="modalCancel">Cancel</button>
@@ -367,6 +303,10 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
             </div>
         </div>
     </div>
+
+    <!-- AUDIT LOG -->
+    <div id="auditLog-placeholder"></div>
+
     <footer>
         <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
     </footer>
@@ -377,18 +317,15 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 <script src="auditLog.js"></script>
 
 <script>
-/* Configuration - Adjust if Queue sheet is hosted elsewhere */
 const QUEUE_DOMAIN = DOMAIN.media;
 const QUEUE_SHEET  = "Queue";
 
 let posts = [];
 let editingPostKey = null;
 
-/* Robust Date Parser for mixed formats (dd/mm/yyyy or yyyy-mm-dd) */
 function parseRobustDate(dStr) {
     if (!dStr) return new Date(NaN);
     const s = String(dStr).trim();
-    // Match DD/MM/YYYY
     let m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
     if (m) return new Date(`${m[3]}-${m[2]}-${m[1]}T12:00:00Z`);
     return new Date(s);
@@ -409,7 +346,10 @@ async function loadAll() {
     const body = document.getElementById("queueBody");
     body.innerHTML = `<tr class="spinner-row"><td colspan="5" style="text-align:center;padding:24px;"><span class="spinner"></span> Loading media queue…</td></tr>`;
     document.getElementById("queueEmpty").style.display = "none";
-    ["stat-total","stat-posted","stat-pending","stat-failed","stat-month"].forEach(id => document.getElementById(id).innerHTML = `<span class="spinner"></span>`);
+    ["stat-total","stat-draft","stat-posted","stat-pending","stat-failed"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = `<span class="spinner"></span>`;
+    });
 
     try {
         posts = await fetchSheet(QUEUE_DOMAIN, QUEUE_SHEET);
@@ -425,26 +365,21 @@ async function loadAll() {
 }
 
 function renderStats() {
-    const now = new Date();
-    let posted = 0, pending = 0, failed = 0, thisMonth = 0;
+    let posted = 0, pending = 0, failed = 0, draft = 0;
 
     posts.forEach(p => {
         const st = gv(p, "Status").toUpperCase();
         if (st === "POSTED") posted++;
         else if (st === "FAILED") failed++;
+        else if (st === "DRAFT") draft++;
         else if (st === "PENDING" || st === "PROCESSING") pending++;
-
-        const d = parseRobustDate(gv(p, "Created", "RaceDate"));
-        if (!isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) {
-            thisMonth++;
-        }
     });
 
     document.getElementById("stat-total").textContent = posts.length;
+    document.getElementById("stat-draft").textContent = draft;
     document.getElementById("stat-posted").textContent = posted;
     document.getElementById("stat-pending").textContent = pending;
     document.getElementById("stat-failed").textContent = failed;
-    document.getElementById("stat-month").textContent = thisMonth;
 }
 
 function renderDropdowns() {
@@ -452,7 +387,7 @@ function renderDropdowns() {
     const monthSet = new Set();
 
     posts.forEach(p => {
-            const c = gv(p, "RegattaName", "Class");
+        const c = gv(p, "RegattaName", "Class");
         if (c) classSet.add(c);
 
         const d = parseRobustDate(gv(p, "Created", "RaceDate"));
@@ -478,6 +413,7 @@ function renderDropdowns() {
 
 function renderTable() {
     const q = document.getElementById("searchQueue").value.trim().toLowerCase();
+    const typeF = document.getElementById("filterType").value;
     const statF = document.getElementById("filterStatus").value;
     const clsF = document.getElementById("filterClass").value;
     const monF = document.getElementById("filterMonth").value;
@@ -489,6 +425,7 @@ function renderTable() {
         gv(p,"RaceReport").toLowerCase().includes(q) ||
         gv(p,"Status").toLowerCase().includes(q)
     );
+    if (typeF) rows = rows.filter(p => (gv(p,"PostType") || "RESULTS").toUpperCase() === typeF);
     if (statF) rows = rows.filter(p => gv(p,"Status").toUpperCase() === statF || (statF==='PENDING' && gv(p,"Status").toUpperCase() === 'PROCESSING'));
     if (clsF) rows = rows.filter(p => gv(p,"RegattaName") === clsF);
     if (monF) rows = rows.filter(p => {
@@ -497,39 +434,40 @@ function renderTable() {
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` === monF;
     });
 
-    // Sort by Created / RaceDate Descending
     rows.sort((a,b) => parseRobustDate(gv(b,"Created","RaceDate")) - parseRobustDate(gv(a,"Created","RaceDate")));
 
     const body = document.getElementById("queueBody");
     const empty = document.getElementById("queueEmpty");
 
     body.innerHTML = rows.map((p, idx) => {
-            const status = gv(p, "Status").toUpperCase();
-            const type = gv(p, "PostType") || "RESULTS";
-            
-            let badge = "badge-default";
-            if (status === "POSTED") badge = "badge-full";
-            else if (status === "FAILED") badge = "badge-expired";
-            else if (status === "PENDING") badge = "badge-renewal";
-            else if (status === "DRAFT") badge = "badge-affiliate"; // Amber/blue draft pill
+        const status = gv(p, "Status").toUpperCase();
+        const type = gv(p, "PostType") || "RESULTS";
+        
+        let badge = "badge-default";
+        if (status === "POSTED") badge = "badge-full";
+        else if (status === "FAILED") badge = "badge-expired";
+        else if (status === "PENDING" || status === "PROCESSING") badge = "badge-renewal";
+        else if (status === "DRAFT") badge = "badge-affiliate";
 
-            const typePill = type === "EVENT_NOTICE" 
-                ? `<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(94,234,212,0.15); color:var(--glow); margin-right:6px;">NOTICE</span>`
-                : `<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.08); color:var(--foam-dim); margin-right:6px;">RESULTS</span>`;
+        const typePill = type === "EVENT_NOTICE" 
+            ? `<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(94,234,212,0.15); color:var(--glow); margin-right:6px;">NOTICE</span>`
+            : `<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.08); color:var(--foam-dim); margin-right:6px;">RESULTS</span>`;
 
-            const rowKey = gv(p, "HexKey", "QueueID", "Key", "PostID") || idx;
+        const postID = gv(p, "PostID");
+        const link = postID ? `<a href="https://facebook.com/${postID}" target="_blank" onclick="event.stopPropagation();" style="color:var(--glow);text-decoration:none;"><i data-lucide="external-link" size="14"></i> View</a>` : `<span style="color:var(--foam-dim)">—</span>`;
+        const rowKey = gv(p, "HexKey", "QueueID", "Key", "PostID") || idx;
 
-            return `<tr class="clickable" onclick="openModal('${escapeHtml(rowKey)}')">
-                <td><span class="badge ${badge}">${status || 'UNKNOWN'}</span></td>
-                <td>${typePill} <strong style="color:var(--foam);">${escapeHtml(gv(p,"RegattaName"))}</strong></td>
-                <td>${fmtDate(gv(p,"RaceDate"))}</td>
-                <td><div class="report-preview">${escapeHtml(gv(p,"RaceReport")) || '<i style="opacity:0.5">No report</i>'}</div></td>
-                <td>${link}</td>
-            </tr>`;
-        }).join("");
+        return `<tr class="clickable" onclick="openModal('${escapeHtml(rowKey)}')">
+            <td><span class="badge ${badge}">${status || 'UNKNOWN'}</span></td>
+            <td>${typePill} <strong style="color:var(--foam);">${escapeHtml(gv(p,"RegattaName"))}</strong></td>
+            <td>${fmtDate(gv(p,"RaceDate"))}</td>
+            <td><div class="report-preview">${escapeHtml(gv(p,"RaceReport")) || '<i style="opacity:0.5">No caption</i>'}</div></td>
+            <td>${link}</td>
+        </tr>`;
+    }).join("");
 
     empty.style.display = rows.length ? "none" : "block";
-    if(window.lucide) lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 }
 
 async function openModal(keyOrIdx) {
@@ -538,51 +476,83 @@ async function openModal(keyOrIdx) {
     if (!post) return;
 
     const currentStatus = gv(post, "Status").toUpperCase();
-    const actionBtn = document.getElementById("modalActionBtn");
-    const saveBtn = document.getElementById("modalSave");
+    const isNotice = (gv(post, "PostType") || "RESULTS").toUpperCase() === "EVENT_NOTICE";
 
-    if (currentStatus === "DRAFT") {
-        actionBtn.innerHTML = `<i data-lucide="check-circle" size="14"></i> Approve & Queue`;
-        actionBtn.title = "Approve notice and set to PENDING for automatic posting";
-        saveBtn.textContent = "Save Draft";
-    } else {
-        actionBtn.innerHTML = `<i data-lucide="refresh-cw" size="14"></i> Save & Re-queue`;
-        actionBtn.title = "Resets post status to PENDING and clears previous run errors/post IDs";
-        saveBtn.textContent = "Save Data Only";
-    }
-    if (window.lucide) lucide.createIcons();
-
-    const isNotice = gv(post, "PostType") === "EVENT_NOTICE";
     document.getElementById("modalHeading").textContent = isNotice ? "Review Event Notice" : "Edit Results Post";
     document.getElementById("noticeControls").style.display = isNotice ? "flex" : "none";
+    document.getElementById("resultsControls").style.display = isNotice ? "none" : "grid";
 
-    document.getElementById("fStatus").value = gv(post, "Status") || "DRAFT";
+    document.getElementById("fStatus").value = currentStatus || (isNotice ? "DRAFT" : "PENDING");
     document.getElementById("fRegatta").value = gv(post, "RegattaName");
     document.getElementById("fRaceDate").value = gv(post, "RaceDate");
     document.getElementById("fReport").value = gv(post, "RaceReport");
 
+    const errBox = document.getElementById("modalErrorBox");
+    const errMsg = gv(post, "Error");
+    if (errMsg && currentStatus === "FAILED") {
+        errBox.textContent = `Failure Reason: ${errMsg}`;
+        errBox.style.display = "block";
+    } else {
+        errBox.style.display = "none";
+    }
+
+    const actionBtn = document.getElementById("modalActionBtn");
+    const saveBtn = document.getElementById("modalSave");
+
+    if (currentStatus === "DRAFT") {
+        actionBtn.innerHTML = `<i data-lucide="check-circle" size="14"></i> Approve &amp; Queue`;
+        actionBtn.title = "Approve notice and set to PENDING for automatic posting";
+        saveBtn.textContent = "Save Draft Only";
+    } else {
+        actionBtn.innerHTML = `<i data-lucide="refresh-cw" size="14"></i> Save &amp; Re-queue`;
+        actionBtn.title = "Resets post status to PENDING and clears previous run errors/post IDs";
+        saveBtn.textContent = "Save Data Only";
+    }
+
+    const previewBox = document.getElementById("pngPreviewContainer");
+
     if (isNotice) {
         document.getElementById("fWeatherSnippet").value = gv(post, "WeatherSnippet");
-        document.getElementById("fTagline").value = gv(post, "Tagline");
+        document.getElementById("fTagline").value = gv(post, "TagLine", "Tagline");
 
-        // Load Drive background image options
         const bgSelect = document.getElementById("fBgImageSelect");
         bgSelect.innerHTML = `<option value="">Default Background</option>`;
         try {
             const bgList = await apiGet("listBackgroundImages");
-            bgList.forEach(img => {
+            (bgList || []).forEach(img => {
                 const opt = document.createElement("option");
                 opt.value = img.id;
                 opt.textContent = img.name;
-                if (img.id === gv(post, "BackgroundImageId")) opt.selected = true;
+                if (img.id === gv(post, "BackgroundImgID", "BackgroundImageId")) opt.selected = true;
                 bgSelect.appendChild(opt);
             });
-        } catch(e) { console.warn("Could not populate backgrounds:", e); }
+        } catch(e) { console.warn("Backgrounds fetch:", e); }
+
+        previewBox.innerHTML = `<span style="font-size:12px;color:var(--foam-dim);"><i data-lucide="image" size="14"></i> Notice graphic will composite dynamically on export.</span>`;
+    } else {
+        const ssId = gv(post, "SpreadsheetId");
+        const shId = gv(post, "SheetId");
+        document.getElementById("fSpreadsheetId").value = ssId;
+        document.getElementById("fSheetId").value = shId;
+
+        previewBox.innerHTML = `<span class="spinner"></span> <span style="font-size:12px;color:var(--foam-dim);">Generating live preview...</span>`;
+        apiGet("previewFacebookImage", { spreadsheetId: ssId, sheetId: shId })
+            .then(res => {
+                if (res && res.imageBase64) {
+                    previewBox.innerHTML = `<img src="${res.imageBase64}" style="max-width:100%; border-radius:4px; border:1px solid rgba(255,255,255,0.1);">`;
+                } else {
+                    previewBox.innerHTML = `<span style="color:var(--foam-dim); font-size:12px;">No preview available.</span>`;
+                }
+            })
+            .catch(err => {
+                previewBox.innerHTML = `<span style="color:#ff6b6b; font-size:12px;">Failed to load preview: ${err.message}</span>`;
+            });
     }
 
-    // Modal buttons
-    document.getElementById("modalApprove").textContent = (gv(post, "Status") === "DRAFT") ? "Approve & Queue" : "Save & Re-queue";
+    document.getElementById("modalStatus").className = "modal-status";
+    document.getElementById("modalStatus").textContent = "";
     document.getElementById("postModal").classList.add("open");
+    if (window.lucide) lucide.createIcons();
 }
 
 function closeModal() {
@@ -609,32 +579,27 @@ async function savePost(isQueueAction) {
             RaceReport: document.getElementById("fReport").value
         };
 
-        // Event Notice specific fields (if present)
         const weatherEl = document.getElementById("fWeatherSnippet");
         if (weatherEl) updates.WeatherSnippet = weatherEl.value;
 
         const taglineEl = document.getElementById("fTagline");
-        if (taglineEl) updates.Tagline = taglineEl.value;
+        if (taglineEl) updates.TagLine = taglineEl.value;
 
         const bgEl = document.getElementById("fBgImageSelect");
-        if (bgEl && bgEl.value) updates.BackgroundImageId = bgEl.value;
+        if (bgEl && bgEl.value) updates.BackgroundImgID = bgEl.value;
 
         if (isQueueAction) {
-            // Set to PENDING so it enters the posting queue
             updates.Status = "PENDING";
 
-            // FULL RESET: If this was already POSTED, FAILED, or PROCESSING, clear all run metadata
             if (currentStatus !== "DRAFT") {
-                updates.Started = "";   // Clear started timestamp
-                updates.Completed = ""; // Clear completed timestamp
-                updates.PostID = "";    // Clear old Facebook Post ID
-                updates.Error = "";     // Clear previous failure messages
+                updates.Started = "";
+                updates.Completed = "";
+                updates.PostID = "";
+                updates.Error = "";
             }
 
-            // Save updates to Google Sheet
             await updateSheet(QUEUE_DOMAIN, QUEUE_SHEET, editingPostKey, updates);
 
-            // If user explicitly re-queues an already failed/posted item, optionally run the processor
             if (currentStatus === "FAILED") {
                 await apiGet("processFacebookQueue");
             }
@@ -642,12 +607,11 @@ async function savePost(isQueueAction) {
             const msg = currentStatus === "DRAFT" ? "Notice approved and queued!" : "Post reset and re-queued!";
             showModalStatus(msg, "success");
         } else {
-            // Save data only without altering PENDING/POSTED state
             await updateSheet(QUEUE_DOMAIN, QUEUE_SHEET, editingPostKey, updates);
             showModalStatus("Changes saved.", "success");
         }
 
-        await loadAll(); // Refresh table view
+        await loadAll();
         setTimeout(closeModal, 800);
     } catch (e) {
         showModalStatus("Update failed: " + e.message, "error");
@@ -658,18 +622,66 @@ async function savePost(isQueueAction) {
     }
 }
 
+function showModalStatus(msg, type) {
+    const el = document.getElementById("modalStatus");
+    el.textContent = msg; el.className = `modal-status visible ${type}`;
+}
+
+// Process Queue Button listener
+document.getElementById("processQueueBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("processQueueBtn");
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Processing...`;
+
+    try {
+        await apiGet("processFacebookQueue");
+        await loadAll();
+    } catch (e) {
+        alert("Error processing queue: " + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        if (window.lucide) lucide.createIcons();
+    }
+});
+
+// Delete Post listener
+document.getElementById("modalDeletePost").addEventListener("click", async () => {
+    if (!editingPostKey) return;
+    if (!confirm("Are you sure you want to delete this post from the queue? This cannot be undone.")) return;
+
+    const btn = document.getElementById("modalDeletePost");
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Deleting...`;
+
+    try {
+        await deleteRow(QUEUE_DOMAIN, QUEUE_SHEET, editingPostKey);
+        showModalStatus("Post deleted successfully.", "success");
+        await loadAll();
+        setTimeout(closeModal, 800);
+    } catch (e) {
+        showModalStatus("Delete failed: " + e.message, "error");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+});
+
 /* Event Listeners */
 document.getElementById("searchQueue").addEventListener("input", renderTable);
+document.getElementById("filterType").addEventListener("change", renderTable);
 document.getElementById("filterStatus").addEventListener("change", renderTable);
 document.getElementById("filterClass").addEventListener("change", renderTable);
 document.getElementById("filterMonth").addEventListener("change", renderTable);
-document.getElementById("modalActionBtn").addEventListener("click", () => savePost(true));    
+
 document.getElementById("refreshBtn").addEventListener("click", loadAll);
 document.getElementById("modalClose").addEventListener("click", closeModal);
 document.getElementById("modalCancel").addEventListener("click", closeModal);
 document.getElementById("modalSave").addEventListener("click", () => savePost(false));
-document.getElementById("modalRepost").addEventListener("click", () => savePost(true));
-document.getElementById("postModal").addEventListener("click", e => { if(e.target===e.currentTarget) closeModal(); });
+document.getElementById("modalActionBtn").addEventListener("click", () => savePost(true));
+document.getElementById("postModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeModal(); });
 
 /* Init */
 Promise.all([
