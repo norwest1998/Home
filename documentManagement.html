@@ -954,12 +954,13 @@ function resetProgress() {
 let uploadTargetDocId = null;
 function openUploadModal(docId) {
     const visEl = document.getElementById("visibilityInput");
+    const doc = docId ? DOCS.find(d => d.RowID === docId) : null;
     visEl.value = doc ? (doc.Visibility || "Internal") : "Internal";
     // Unlock Public if doc is Signed Off or Published
     const canBePublic = doc && ["Signed Off","Published"].includes(doc.Status);
     visEl.querySelector('option[value="Public"]').disabled = !canBePublic;
     uploadTargetDocId = docId || null;
-    const doc = docId ? DOCS.find(d => d.RowID === docId) : null;
+
     document.getElementById("uploadModalTitle").textContent = doc ? `New version — ${doc.Title}` : "Upload Document";
     document.getElementById("titleInput").value = doc ? doc.Title : "";
     document.getElementById("titleInput").disabled = !!doc;
