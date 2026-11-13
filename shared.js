@@ -299,10 +299,15 @@ async function apiGet(action, extra = {}) {
 }
 
 async function gw(payload, url = GATEWAY_URL) {
+    const clientPayload = {
+        userAgent: navigator.userAgent.slice(0, 200),
+        ...payload,
+        token: localStorage.getItem(TOKEN_KEY)
+    };
     const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ ...payload, token: localStorage.getItem(TOKEN_KEY) })
+        body: JSON.stringify(clientPayload)
     }); 
     const text = await res.text();
     let data; try { data = JSON.parse(text); } catch(e) { throw new Error("Invalid Server Response"); }
@@ -313,6 +318,25 @@ async function gw(payload, url = GATEWAY_URL) {
     if (data.error) throw new Error(data.error);
     return data;
 }
+
+// Level 2: Throttled Page-View Beacon
+function initPageTelemetry() {
+    const token = localStorage.getItem(TOKEN_KEY);
+    const path = location.pathname.split("/").pop() || "index.html";
+    if (!token || PUBLIC_PAGES.some(p => path.endsWith(p))) return;
+
+    const key = "SMMC_PV_" + path;
+    const last = Number(sessionStorage.getItem(key) || 0);
+    const now = Date.now();
+    
+    // Client-side debounce: at most 1 beacon per page every 15 minutes
+    if (now - last < 15 * 60 * 1000) return;
+
+    sessionStorage.setItem(key, String(now));
+    // Fire-and-forget: silently captures telemetry without hindering user execution
+    gw({ action: "trackPageView", page: path }).catch(() => {});
+}
+document.addEventListener("DOMContentLoaded", initPageTelemetry);
 
 // Utilities
 const ROLE_RANK = { viewer: 1, coord: 2,editor: 3, admin: 4 };

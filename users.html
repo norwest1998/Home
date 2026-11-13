@@ -4,18 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="smmc-domain" content="audit">
-<title>Users — Sydney Maritime Modellers Club</title>
+<title>Users &amp; System Activity — Sydney Maritime Modellers Club</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <link rel="stylesheet" href="theme.css">
 <style>
-/* USERS PAGE — same conventions as notes.html */
-.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:32px; }
-.stat-card { padding:20px 18px; text-align:center; display:flex; flex-direction:column; gap:5px; }
-.stat-card .stat-val { font-family:var(--font-display); font-size:32px; color:var(--foam); line-height:1; }
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:16px; margin-bottom:28px; }
+.stat-card { padding:18px 16px; text-align:center; display:flex; flex-direction:column; gap:5px; }
+.stat-card .stat-val { font-family:var(--font-display); font-size:30px; color:var(--foam); line-height:1; }
 .stat-card .stat-val.warn { color:#ffb347; }
 .stat-card .stat-val.accent { color:var(--signal); }
+.stat-card .stat-val.glow { color:var(--glow); }
 .stat-card .stat-label { font-family:var(--font-data); font-size:10px; letter-spacing:.06em; color:var(--foam-dim); text-transform:uppercase; }
 
 .users-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
@@ -32,15 +32,19 @@
 .glass-select option { background:#0f2535; color:var(--foam); }
 
 .users-table-wrap { max-height:520px; overflow:auto; border-radius:10px; border:1px solid var(--glass-border); }
-table.users-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+table.users-table { width:100%; border-collapse:collapse; font-size:12px; }
 .users-table th { position:sticky; top:0; background:var(--ocean-mid); text-align:left; padding:8px 10px;
     font-family:var(--font-data); font-size:10px; letter-spacing:.06em; text-transform:uppercase;
-    color:var(--foam-dim); border-bottom:1px solid var(--glass-border); }
+    color:var(--foam-dim); border-bottom:1px solid var(--glass-border); white-space:nowrap; }
 .users-table td { padding:8px 10px; border-bottom:1px solid var(--glass-border); color:var(--foam); vertical-align:middle; }
 .users-table tr:last-child td { border-bottom:none; }
 .users-table tr.clickable { cursor:pointer; }
 .users-table tr.clickable:hover td { background:rgba(255,255,255,0.04); }
-.users-table .badge { margin-right:4px; }
+
+.traffic-pill-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-top:14px; }
+.traffic-pill { background:var(--glass-fill); border:1px solid var(--glass-border); border-radius:10px; padding:12px; display:flex; justify-content:space-between; align-items:center; }
+.traffic-pill strong { font-size:13px; color:var(--foam); }
+.traffic-pill span { font-size:12px; color:var(--glow); font-family:var(--font-data); }
 
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:1000; align-items:center; justify-content:center; padding:20px; }
 .modal-overlay.open { display:flex; }
@@ -81,31 +85,36 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 <main class="container">
 
     <div class="admin-header">
-        <div class="admin-title-group"><h1>User Management Console</h1></div>
+        <div class="admin-title-group"><h1>User Management &amp; Access Telemetry</h1></div>
         <a href="admin.html" class="btn btn-ghost" style="flex-shrink:0;">Back to Dashboard</a>
     </div>
 
     <!-- Stats board -->
     <section class="stats-grid" id="statsGrid">
         <div class="glass stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-label">Total Users</div></div>
+        <div class="glass stat-card"><div class="stat-val glow" id="stat-active30">—</div><div class="stat-label">Active (30d)</div></div>
         <div class="glass stat-card"><div class="stat-val accent" id="stat-admin">—</div><div class="stat-label">Admins</div></div>
-        <div class="glass stat-card"><div class="stat-val" id="stat-editor">—</div><div class="stat-label">Editors</div></div>
         <div class="glass stat-card"><div class="stat-val" id="stat-coord">—</div><div class="stat-label">Coordinators</div></div>
         <div class="glass stat-card"><div class="stat-val" id="stat-viewer">—</div><div class="stat-label">Viewers</div></div>
         <div class="glass stat-card"><div class="stat-val warn" id="stat-locked">—</div><div class="stat-label">Locked</div></div>
         <div class="glass stat-card"><div class="stat-val" id="stat-nologin">—</div><div class="stat-label">Members w/o Login</div></div>
     </section>
 
-    <div class="section-head">
-        <h2>All Users</h2>
-        <p>Click a row to change role, login type, email or clear a lock.</p>
-    </div>
-
+    <!-- Main Workspace with Tabs -->
     <div class="panel">
-        <div class="panel-header">
-            <div class="panel-title-left"><span class="dot"></span><h3>Users</h3></div>
+        <div class="panel-header panel-header--tabbed">
+            <div class="panel-title-left"><span class="dot"></span><h3>System Access &amp; Adoption</h3></div>
+            <div class="tab-row-wrap">
+                <div class="tab-row">
+                    <button class="tab active" data-tab="tabUsers">Users Directory</button>
+                    <button class="tab" data-tab="tabLogins">Login History</button>
+                    <button class="tab" data-tab="tabTraffic">Page Traffic</button>
+                </div>
+            </div>
         </div>
-        <div class="tab-content active">
+
+        <!-- TAB 1: USERS DIRECTORY -->
+        <div class="tab-content active" id="tabUsers">
             <div class="users-toolbar">
                 <div class="search-wrap">
                     <i class="nav-icon" data-lucide="search" size="8"></i>
@@ -129,11 +138,42 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12.5px; }
             </div>
             <div class="users-table-wrap">
                 <table class="users-table">
-                    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Login Type</th><th>Password</th><th>Lock</th></tr></thead>
+                    <thead><tr>
+                        <th>Name</th><th>Email</th><th>Role</th><th>Login Type</th>
+                        <th>Last Login</th><th>Last Active</th><th>Password</th><th>Lock</th>
+                    </tr></thead>
                     <tbody id="usersBody"></tbody>
                 </table>
             </div>
             <div class="empty-state" id="usersEmpty" style="display:none;">No users found.</div>
+        </div>
+
+        <!-- TAB 2: LOGIN HISTORY & AUDIT -->
+        <div class="tab-content" id="tabLogins">
+            <div class="users-toolbar">
+                <div class="search-wrap">
+                    <i class="nav-icon" data-lucide="search" size="8"></i>
+                    <input class="search-input" id="loginSearch" placeholder="Search email, status, session…">
+                </div>
+                <button class="btn btn-ghost" id="refreshLoginsBtn" style="padding:5px 12px;font-size:11px;">Refresh Log</button>
+            </div>
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <thead><tr>
+                        <th>Time</th><th>User / Email</th><th>Method</th><th>Status</th><th>Reason</th><th>Session ID</th>
+                    </tr></thead>
+                    <tbody id="loginsBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="loginsEmpty" style="display:none;">No login logs recorded yet.</div>
+        </div>
+
+        <!-- TAB 3: PAGE TRAFFIC BREAKDOWN -->
+        <div class="tab-content" id="tabTraffic">
+            <p style="font-size:13px;color:var(--foam-dim);">Deduplicated 15-minute beacons showing system feature usage across all members.</p>
+            <div class="traffic-pill-grid" id="trafficGrid">
+                <div class="traffic-pill"><span>Loading traffic…</span></div>
+            </div>
         </div>
     </div>
 
@@ -248,7 +288,7 @@ const me = JSON.parse(localStorage.getItem("SMMC_USER") || "{}");
 const isAdmin = me.role === "admin";
 const lc = s => String(s || "").trim().toLowerCase();
 
-let users = [], members = [], editing = null, clearLock = false;
+let users = [], members = [], loginLogs = [], editing = null, clearLock = false;
 
 function mv(m, ...keys) {
     for (const k of keys) {
@@ -258,20 +298,41 @@ function mv(m, ...keys) {
     return "";
 }
 const defaultLT = email => /@gmail\.com$/i.test(email) ? ["google", "code"] : ["code"];
-const fmtDT = v => { const d = new Date(v); return isNaN(d) ? String(v) : d.toLocaleString("en-AU", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" }); };
+const fmtDT = v => {
+    if (!v) return "—";
+    const d = new Date(v);
+    return isNaN(d) ? String(v) : d.toLocaleString("en-AU", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
+};
 const isLocked = u => u.LockedUntil && (isNaN(new Date(u.LockedUntil)) || new Date(u.LockedUntil) > new Date());
+const isRecent = iso => {
+    if (!iso) return false;
+    const d = new Date(iso);
+    return !isNaN(d) && (Date.now() - d.getTime()) <= 30 * 24 * 60 * 60 * 1000;
+};
 
 function getLT(wrapId) { return [...$(wrapId).querySelectorAll("input:checked")].map(i => i.value); }
 function setLT(wrapId, arr) { $(wrapId).querySelectorAll("input").forEach(i => i.checked = arr.includes(i.value)); }
 function status(id, msg, type) { const el = $(id); el.textContent = msg; el.className = "modal-status visible " + type; }
 
-/* ---------- LOAD ---------- */
+/* ---------- TAB ROUTING ---------- */
+document.querySelectorAll(".tab[data-tab]").forEach(tabBtn => {
+    tabBtn.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+        tabBtn.classList.add("active");
+        $(tabBtn.dataset.tab).classList.add("active");
+        if (tabBtn.dataset.tab === "tabLogins" && !loginLogs.length) loadLogins();
+        if (tabBtn.dataset.tab === "tabTraffic") loadTraffic();
+    });
+});
+
+/* ---------- LOAD DATA ---------- */
 async function loadAll() {
-    $("usersBody").innerHTML = `<tr class="spinner-row"><td colspan="6"><span class="spinner"></span> Loading users…</td></tr>`;
-    ["total","admin","editor","coord","viewer","locked","nologin"].forEach(k => $("stat-" + k).innerHTML = `<span class="spinner"></span>`);
+    $("usersBody").innerHTML = `<tr class="spinner-row"><td colspan="8"><span class="spinner"></span> Loading users…</td></tr>`;
+    ["total","active30","admin","coord","viewer","locked","nologin"].forEach(k => $("stat-" + k).innerHTML = `<span class="spinner"></span>`);
     try {
         const [u, m] = await Promise.all([
-            apiGet("listUsers"),                                        // admin-only action; never returns hashes
+            apiGet("listUsers"),
             fetchSheet(DOMAIN.members, "Members").catch(() => [])
         ]);
         users = Array.isArray(u.values) ? u.values : null;
@@ -280,11 +341,42 @@ async function loadAll() {
         renderStats();
         renderTable();
     } catch (e) {
-        $("usersBody").innerHTML = `<tr><td colspan="6" style="color:#ff6b6b;padding:16px;">Error: ${escapeHtml(e.message)}</td></tr>`;
+        $("usersBody").innerHTML = `<tr><td colspan="8" style="color:#ff6b6b;padding:16px;">Error: ${escapeHtml(e.message)}</td></tr>`;
     }
 }
 
-/* Active members with an email and no user yet */
+async function loadLogins() {
+    $("loginsBody").innerHTML = `<tr class="spinner-row"><td colspan="6"><span class="spinner"></span> Loading access logs…</td></tr>`;
+    try {
+        const res = await apiGet("getLoginLogs", { limit: 120 });
+        loginLogs = res.values || [];
+        renderLogins();
+    } catch(e) {
+        $("loginsBody").innerHTML = `<tr><td colspan="6" style="color:#ff6b6b;padding:16px;">Error: ${escapeHtml(e.message)}</td></tr>`;
+    }
+}
+
+async function loadTraffic() {
+    $("trafficGrid").innerHTML = `<div class="traffic-pill"><span><span class="spinner"></span> Loading usage metrics…</span></div>`;
+    try {
+        const summary = await apiGet("getUsageSummary");
+        const pages = summary.pageCounts || {};
+        const entries = Object.entries(pages).sort((a,b) => b[1] - a[1]);
+        if (!entries.length) {
+            $("trafficGrid").innerHTML = `<div class="empty-state">No traffic recorded yet.</div>`;
+            return;
+        }
+        $("trafficGrid").innerHTML = entries.map(([pg, count]) => `
+            <div class="traffic-pill">
+                <strong>${escapeHtml(pg)}</strong>
+                <span>${count} visits</span>
+            </div>
+        `).join("");
+    } catch(e) {
+        $("trafficGrid").innerHTML = `<div style="color:#ff6b6b;">Error: ${escapeHtml(e.message)}</div>`;
+    }
+}
+
 function availableMembers() {
     const have = new Set(users.map(u => lc(u.Email)));
     return members.filter(m => lc(mv(m, "Active")) === "true" && mv(m, "email", "Email") && !have.has(lc(mv(m, "email", "Email"))))
@@ -293,16 +385,16 @@ function availableMembers() {
 
 function renderStats() {
     const n = r => users.filter(u => u.Role === r).length;
-    $("stat-total").textContent  = users.length;
-    $("stat-admin").textContent  = n("admin");
-    $("stat-editor").textContent = n("editor");
-    $("stat-coord").textContent = n("coord");
-    $("stat-viewer").textContent = n("viewer");
-    $("stat-locked").textContent = users.filter(isLocked).length;
+    $("stat-total").textContent   = users.length;
+    $("stat-active30").textContent = users.filter(u => isRecent(u.LastActiveAt) || isRecent(u.LastLoginAt)).length;
+    $("stat-admin").textContent   = n("admin");
+    $("stat-coord").textContent   = n("coord");
+    $("stat-viewer").textContent  = n("viewer");
+    $("stat-locked").textContent  = users.filter(isLocked).length;
     $("stat-nologin").textContent = availableMembers().length;
 }
 
-/* ---------- TABLE ---------- */
+/* ---------- RENDER TABLES ---------- */
 function renderTable() {
     const q = lc($("userSearch").value), role = $("filterRole").value, lt = $("filterLogin").value;
     const rows = users.filter(u =>
@@ -314,14 +406,38 @@ function renderTable() {
     const roleBadge = { admin: "badge-admin", editor: "badge-affiliate", coord: "badge-affiliate", viewer: "badge-default" };
     $("usersBody").innerHTML = rows.map(u => `
         <tr class="clickable" data-email="${escapeHtml(u.Email)}">
-            <td>${escapeHtml(u.Name)}</td>
+            <td><strong>${escapeHtml(u.Name)}</strong></td>
             <td>${escapeHtml(u.Email)}</td>
             <td><span class="badge ${roleBadge[u.Role] || "badge-default"}">${escapeHtml(u.Role)}</span></td>
             <td>${String(u.LoginType).split(",").map(s => s.trim()).filter(Boolean).map(s => `<span class="badge badge-default">${escapeHtml(s)}</span>`).join("")}</td>
+            <td>${u.LastLoginAt ? `<span style="font-size:11px;">${escapeHtml(fmtDT(u.LastLoginAt))}</span>` : `<span style="opacity:.4">Never</span>`}</td>
+            <td>${u.LastActiveAt ? `<span style="font-size:11px;color:var(--glow);">${escapeHtml(fmtDT(u.LastActiveAt))}</span> <span style="opacity:.5;font-size:10px;">(${escapeHtml(u.LastPage || "")})</span>` : `<span style="opacity:.4">—</span>`}</td>
             <td>${u.HasPassword ? `<span class="badge badge-full">Set</span>` : `<span style="opacity:.4">—</span>`}${u.MustChange ? ` <span class="badge badge-expired">Must change</span>` : ""}</td>
             <td>${u.LockedUntil ? `<span class="badge ${isLocked(u) ? "badge-expired" : "badge-default"}">${escapeHtml(fmtDT(u.LockedUntil))}</span>` : `<span style="opacity:.4">—</span>`}</td>
         </tr>`).join("");
     $("usersEmpty").style.display = rows.length ? "none" : "block";
+}
+
+function renderLogins() {
+    const q = lc($("loginSearch").value);
+    const rows = loginLogs.filter(l =>
+        !q || lc(l.Email).includes(q) || lc(l.Status).includes(q) || lc(l.Reason).includes(q) || lc(l.SessionID).includes(q)
+    );
+    $("loginsBody").innerHTML = rows.map(l => {
+        const isOk = String(l.Status).toUpperCase() === "SUCCESS";
+        const isFail = String(l.Status).toUpperCase().includes("FAIL") || String(l.Status).toUpperCase() === "LOCKED";
+        const badgeCls = isOk ? "badge-full" : (isFail ? "badge-expired" : "badge-default");
+        return `
+        <tr>
+            <td style="white-space:nowrap;font-size:11px;">${escapeHtml(fmtDT(l.Timestamp))}</td>
+            <td><strong>${escapeHtml(l.Email)}</strong></td>
+            <td><span class="badge badge-default">${escapeHtml(l.Method || "—")}</span></td>
+            <td><span class="badge ${badgeCls}">${escapeHtml(l.Status || "—")}</span></td>
+            <td style="font-size:11.5px;color:${isFail ? '#ff6b6b' : 'inherit'}">${escapeHtml(l.Reason || "—")}</td>
+            <td style="font-family:var(--font-data);font-size:11px;color:var(--glow);">${escapeHtml(l.SessionID || "—")}</td>
+        </tr>`;
+    }).join("");
+    $("loginsEmpty").style.display = rows.length ? "none" : "block";
 }
 
 /* ---------- CREATE ---------- */
@@ -402,16 +518,18 @@ $("editSave").addEventListener("click", saveEdit);
 $("createModal").addEventListener("click", e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove("open"); });
 $("editModal").addEventListener("click", e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove("open"); });
 $("userSearch").addEventListener("input", renderTable);
+$("loginSearch").addEventListener("input", renderLogins);
 $("filterRole").addEventListener("change", renderTable);
 $("filterLogin").addEventListener("change", renderTable);
 $("refreshBtn").addEventListener("click", async () => {
     const b = $("refreshBtn"); b.disabled = true; b.innerHTML = `<span class="spinner"></span>`;
     await loadAll(); b.disabled = false; b.textContent = "Refresh";
 });
+$("refreshLoginsBtn").addEventListener("click", loadLogins);
 
 if (isAdmin) loadAll();
 else document.querySelector(".stats-grid").insertAdjacentHTML("beforebegin",
-    `<div class="glass" style="padding:24px;margin-bottom:24px;">Administrator access is required to manage users.</div>`);
+    `<div class="glass" style="padding:24px;margin-bottom:24px;">Administrator access is required to view system usage and telemetry.</div>`);
 if (window.lucide) lucide.createIcons();
 </script>
 <script>

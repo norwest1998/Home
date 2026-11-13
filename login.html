@@ -101,14 +101,14 @@ function showOnly(id) {
 function finish(d) {
   leaving = true;
   localStorage.setItem(TOKEN_KEY, d.token);
-  localStorage.setItem("SMMC_USER", JSON.stringify({ email: d.email, name: d.name, role: d.role, exp: d.exp }));
+  localStorage.setItem("SMMC_USER", JSON.stringify({ email: d.email, name: d.name, role: d.role, exp: d.exp, sid: d.sid }));
   const n = d.next || NEXT;
   location.replace(n.startsWith("/") && !n.startsWith("//") ? n : "admin.html");
 }
 
 // --- Google ---
 async function onGoogle(resp) {
-  busy("Signing you in with Google…", async () => finish(await gw({ action: "login", idToken: resp.credential })));
+  busy("Signing you in with Google…", async () => finish(await gw({ action: "login", idToken: resp.credential, userAgent: navigator.userAgent })));
 }
 
 window.addEventListener("load", () => {
@@ -124,9 +124,9 @@ window.addEventListener("load", () => {
 // --- Emailed code ---
 let pendingPwd = "";
 $("pwBtn").addEventListener("click", () => busy("Signing you in…", async () => {
-  const d = await gw({ action: "passwordLogin", userId: $("uid").value.trim(), password: $("pw").value });
+  const d = await gw({ action: "passwordLogin", userId: $("uid").value.trim(), password: $("pw").value, userAgent: navigator.userAgent });
   if (!d.mustChange) return finish(d);
-  localStorage.setItem(TOKEN_KEY, d.token);          // limited token: only changePassword is accepted
+  localStorage.setItem(TOKEN_KEY, d.token);
   pendingPwd = $("pw").value;
   showOnly("stepChange");
 }));
@@ -138,14 +138,14 @@ $("chBtn").addEventListener("click", () => busy("Saving password…", async () =
 $("sendBtn").addEventListener("click", () => busy("Sending code…", async () => {
   const email = $("em").value.trim();
   if (!email) throw new Error("Enter your email address.");
-  await gw({ action: "requestCode", email });
+  await gw({ action: "requestCode", email, userAgent: navigator.userAgent });
   $("stepEmail").style.display = "none";
   $("stepCode").style.display = "block";
   $("msg").textContent = "If that email is registered, a code was sent. It expires in 10 minutes.";
   $("cd").focus();
 }));
 $("checkBtn").addEventListener("click", () => busy("Verifying code…", async () =>
-  finish(await gw({ action: "verifyCode", email: $("em").value.trim(), code: $("cd").value.trim() }))));
+  finish(await gw({ action: "verifyCode", email: $("em").value.trim(), code: $("cd").value.trim(), userAgent: navigator.userAgent }))));
 $("cd").addEventListener("keydown", e => { if (e.key === "Enter") $("checkBtn").click(); });
 $("em").addEventListener("keydown", e => { if (e.key === "Enter") $("sendBtn").click(); });
 
