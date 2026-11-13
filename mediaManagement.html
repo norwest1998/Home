@@ -159,7 +159,14 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 
     <div class="panel">
         <div class="panel-header">
-            <div class="panel-title-left"><span class="dot"></span><h3>Social Media Queue</h3></div>
+            <div class="panel-title-left">
+                <span class="dot"></span>
+                <h3>Social Media Queue</h3>
+            </div>
+            <!-- Moved to top right: hidden by default until items are detected -->
+            <button class="btn btn-primary" id="processQueueBtn" style="display:none; padding:7px 14px; font-size:12px; background:var(--glow); color:var(--ocean-deep); flex-shrink:0;">
+                <i data-lucide="play" size="14"></i> Process Queue Now
+            </button>
         </div>
         <div class="tab-content active">
             <div class="media-toolbar">
@@ -186,9 +193,6 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
                     <option value="">All Time</option>
                 </select>
                 <button class="btn btn-ghost" id="refreshBtn" style="padding:5px 12px;font-size:11px;">Refresh</button>
-                <button class="btn btn-primary" id="processQueueBtn" style="padding:5px 12px;font-size:11px;background:var(--glow);color:var(--ocean-deep);">
-                    <i data-lucide="play" size="14"></i> Process Queue Now
-                </button>
             </div>
             <div class="media-table-wrap">
                 <table class="media-table">
@@ -380,6 +384,13 @@ function renderStats() {
     document.getElementById("stat-posted").textContent = posted;
     document.getElementById("stat-pending").textContent = pending;
     document.getElementById("stat-failed").textContent = failed;
+
+    // Only display "Process Queue Now" when there is at least one PENDING/PROCESSING post
+    const procBtn = document.getElementById("processQueueBtn");
+    if (procBtn) {
+        procBtn.style.display = pending > 0 ? "inline-flex" : "none";
+        if (window.lucide) lucide.createIcons();
+    }
 }
 
 function renderDropdowns() {
