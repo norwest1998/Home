@@ -2575,7 +2575,7 @@ async function saveAndSend(){
       action: "uploadNew", 
       folder: "upload",                                   // was folderKey
       name: filename,                                     // was filename
-      data: btoa(unescape(encodeURIComponent(json))),     // was content; base64, UTF-8 safe
+      data: btoa(String.fromCharCode(...new Uint8Array(new TextEncoder().encode(json)))),     // Unicode-safe base64 encoding
       mimeType: "application/json"
     }, FILE_GATEWAY_URL);
     
