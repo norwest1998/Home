@@ -2150,16 +2150,41 @@
 
     async function checkLiveResults() {
       try {
-        const res = await gw({ action: "listLive" }, CALENDAR_URL);
-        if (res && res.events && res.events.length > 0) {
-          const btn = document.getElementById("btn-live-results");
-          if (btn) {
-            btn.style.display = "inline-flex";
-            // Link directly to the event if there's only one live
-            if (res.events.length === 1) {
-              btn.href = "liveResults.html?event=" + encodeURIComponent(res.events[0].hexKey);
-            }
+        let liveEvent = null;
+
+        // 1. Try searchSheet for efficiency
+        try {
+          const matches = await searchSheet(DOMAIN.calendar, "Event Data", [
+            { field: "Results", value: "In Progress" }
+          ]);
+          if (matches && matches.length > 0) {
+            liveEvent = matches[0];
           }
+        } catch (_) {}
+
+        // 2. Fallback to fetchSheet with case/whitespace-insensitive column matching
+        if (!liveEvent) {
+          const events = await fetchSheet(DOMAIN.calendar, "Event Data");
+          liveEvent = (events || []).find(e => {
+            const val = Object.entries(e).find(([k]) => k.trim().toLowerCase() === "results")?.[1];
+            return String(val || "").trim().toLowerCase() === "in progress";
+          });
+        }
+
+        const btn = document.getElementById("btn-live-results");
+        if (!btn) return;
+
+        if (liveEvent) {
+          btn.style.display = "inline-flex";
+          
+          // Extract unique identifier for the live event (hexKey, eventId, etc.)
+          const eventKey = liveEvent.hexKey || liveEvent.HexKey || liveEvent.eventId || liveEvent.EventId || liveEvent.EventID || liveEvent.id || "";
+          btn.href = eventKey ? `liveResults.html?event=${encodeURIComponent(eventKey)}` : "liveResults.html";
+
+          const eventName = liveEvent.eventName || liveEvent["Event Name"] || liveEvent.eventNameFull || "";
+          if (eventName) btn.title = `Live: ${eventName}`;
+        } else {
+          btn.style.display = "none";
         }
       } catch (e) {
         console.warn("Live results check failed:", e);
