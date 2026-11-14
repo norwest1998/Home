@@ -1386,7 +1386,8 @@ async function syncResultsStatus(){
   const want = state.races.length ? 'In Progress' : 'Not Started';
   if (ev.status === want) return;
   try {
-    await updateSheet('calendar', 'Event Data', ev.id, { Results: want });
+    const r = await gw({ action: 'setResults', hexKey: ev.id, results: want }, CAL_WEBAPP_URL);
+    if (r && r.skipped) return;
     ev.status = want;
   } catch (e) { console.warn('Results status update failed', e); }
 }
