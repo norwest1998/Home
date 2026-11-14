@@ -655,14 +655,18 @@
   }
  
   /* Loading spinner */
-  .spinner {
+ .spinner {
+    display: inline-block;
+    vertical-align: middle;
+    box-sizing: border-box;
     width: 20px; height: 20px;
     border: 2px solid var(--glass-border);
     border-top-color: var(--glow);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
-    margin: 0 auto 8px;
   }
+  .spinner-lg { display: block; width: 32px; height: 32px; border-width: 3px; margin: 0 auto; }
+  button .spinner { width: 14px; height: 14px; margin-right: 6px; }
 
   .tile-grid {
     display: grid;
@@ -2855,9 +2859,10 @@ function resetPractice(){
 }
 
 /* ============ BOOT ============ */
+document.getElementById('app-body').innerHTML = '<div style="padding:40px;text-align:center;color:var(--foam-dim)"><span class="spinner spinner-lg"></span><div style="margin-top:12px">Loading events…</div></div>';
 document.getElementById('app-header').innerHTML = headerHTML();
 document.getElementById('app-subheader').innerHTML = subHeaderHTML();
-document.getElementById('app-body').innerHTML = '<div style="padding:40px;text-align:center;color:var(--foam-dim)">Loading events…</div>';
+
 (async () => {
   await getRegattas();
   const key = new URLSearchParams(location.search).get('event');
