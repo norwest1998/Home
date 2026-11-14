@@ -2585,12 +2585,11 @@ async function saveAndSend(){
     setTimeout(() => changeEvent(), 800);
   } catch (e) {
     console.error(e);
-    // Graceful fallback to local download if networking fails
-    showToast('Upload failed: ' + e.message + '. Falling back to download.');
-    await downloadJSON();
-    state.sent = true;
-    saveState();
-    setTimeout(() => changeEvent(), 800);
+    showToast('Upload failed: ' + e.message + '.');
+    // await downloadJSON();
+    // state.sent = true;
+    // saveState();
+    // setTimeout(() => changeEvent(), 800);
   } finally {
     if (sendBtn) {
       sendBtn.disabled = false;
