@@ -1378,6 +1378,18 @@ async function getEvents(data) {
     EVENTS = [];
   }
 }
+
+async function syncResultsStatus(){
+  if (state.practice || !state.event) return;
+  const ev = EVENTS.find(e => e.id === state.event.id);
+  if (!ev || !['Not Started','In Progress'].includes(ev.status)) return;   // never touch Processing/Processed
+  const want = state.races.length ? 'In Progress' : 'Not Started';
+  if (ev.status === want) return;
+  try {
+    await updateSheet('calendar', 'Event Data', ev.id, { Results: want });
+    ev.status = want;
+  } catch (e) { console.warn('Results status update failed', e); }
+}
     
 const CLASS_ABBR = { 'DF65':'65', 'DF95':'95', 'IOM':'IOM', 'Soling':'SOL', 'General':'GEN', 'Marblehead':'MB' };
 const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1726,7 +1738,8 @@ function renderEventSelect(){
   }))].sort();
 
   // Calendar only ever shows future/today events
-  let list = EVENTS.map(e => ({...e, _dt: parseDMY(e.date)})).filter(e => e._dt >= today);
+  let list = EVENTS.map(e => ({...e, _dt: parseDMY(e.date)}))
+  .filter(e => e._dt >= today && ['Not Started','In Progress'].includes(e.status));
 
   if(state.selectedClass !== 'ALL'){
     list = list.filter(e => (e.allowedClasses || '').includes(state.selectedClass));
@@ -1749,6 +1762,8 @@ function renderEventSelect(){
     if(!selectable){
       const cls = e.status === 'Processed' ? 'pill-sent' : 'pill-inprogress';
       pill = `<span class="event-status-pill ${cls}">${e.status}</span>`;
+    } else if(e.status === 'In Progress' && !saved){
+      pill = `<span class="event-status-pill pill-inprogress">In progress</span>`;
     } else if(saved){
       if(st.sent)                    pill = `<span class="event-status-pill pill-sent">Processing</span>`;
       else if(st.races?.length > 0)  pill = `<span class="event-status-pill pill-inprogress">In progress</span>`;
@@ -2272,6 +2287,7 @@ async function selectEvent(id){
   state.viewRaceIdx = null;
   state.screen = state.entries.length > 0 ? 'race-capture' : 'select-competitors';
   startSync();
+  syncResultsStatus();
   render();
 }
 
@@ -2338,6 +2354,7 @@ function deleteRace(idx){
     else if(state.viewRaceIdx > idx) state.viewRaceIdx -= 1;
   }
   saveState();
+  syncResultsStatus();
   showToast('Race deleted — remaining races renumbered');
   render();
 }
@@ -2408,6 +2425,7 @@ function completeRace(){
   renumberRaces();
   state.draft = null;
   saveState();
+  syncResultsStatus();
 }
 
 function completeAndNext(){
