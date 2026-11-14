@@ -1364,7 +1364,7 @@ async function getEvents(data) {
           allowedClasses: sClasses,
           formatId: sFormat,
           handicapType: sHcap,
-          roun  d: String(e.roundNum ?? e['Round no'] ?? e.round ?? ''),
+          round: String(e.roundNum ?? e['Round no'] ?? e.round ?? ''),
           season: e.season || '',
           status: (e.results && e.results !== 'Not Started') ? e.results : 'Not Started'
         };
