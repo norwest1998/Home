@@ -310,7 +310,12 @@ async function gw(payload, url = GATEWAY_URL) {
         body: JSON.stringify(clientPayload)
     }); 
     const text = await res.text();
-    let data; try { data = JSON.parse(text); } catch(e) { throw new Error("Invalid Server Response"); }
+    let data; 
+    try { 
+        data = JSON.parse(text); 
+    } catch(e) { 
+        throw new Error("Invalid Server Response"); 
+    }
     if (data.code === "AUTH" && !["login","requestCode","verifyCode","passwordLogin"].includes(payload.action)) {
         logout(); 
         throw new Error("Session expired");

@@ -2573,9 +2573,10 @@ async function saveAndSend(){
     // Push the file directly to the backend
     await gw({ 
       action: "uploadNew", 
-      folderKey: "upload", 
-      filename: filename, 
-      content: json 
+      folder: "upload",                                   // was folderKey
+      name: filename,                                     // was filename
+      data: btoa(unescape(encodeURIComponent(json))),     // was content; base64, UTF-8 safe
+      mimeType: "application/json"
     }, FILE_GATEWAY_URL);
     
     showToast('Results uploaded successfully');
