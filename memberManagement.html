@@ -369,733 +369,732 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
 
 <script>
 
-    // config.js  (or inline in a shared include)
-    const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
-    let allMembers = [];
-    let allBoats = [];
+// config.js  (or inline in a shared include)
+const CLB_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwvTsLbXwjZzJJj4BqKdG_QIea-iDnLVfPf0zx7doRZ2RwcIwmEzdm_C_Xxt7g6lo-J/exec";
+let allMembers = [];
+let allBoats = [];
 
-    async function apiPost(action, payload) {
-        // Route Gateway write actions through updateSheet/appendSheet/deleteRow
-        if (action === "update") {
-            return updateSheet(payload.domain, payload.sheet, payload.hexKey, payload.updates);
-        }
-        if (action === "append") {
-            return appendSheet(payload.domain, payload.sheet, payload.rowData);
-        }
-        if (action === "delete") {
-            return deleteRow(payload.domain, payload.sheet, payload.hexKey);
-        }
-        // All other actions (emails, queries, etc.) go to CLB_WEBAPP_URL
-        const res = await fetch(CLB_WEBAPP_URL, {
-            method: "POST",
-            body: JSON.stringify({ action, ...payload })
-        });
-        if (!res.ok) throw new Error(`Server error (${res.status})`);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return data;
+async function apiPost(action, payload) {
+    // Route Gateway write actions through updateSheet/appendSheet/deleteRow
+    if (action === "update") {
+        return updateSheet(payload.domain, payload.sheet, payload.hexKey, payload.updates);
     }
-     
-    function escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+    if (action === "append") {
+        return appendSheet(payload.domain, payload.sheet, payload.rowData);
     }
-
-    function debounce(fn, delay = 150) {
-        let t;
-        return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+    if (action === "delete") {
+        return deleteRow(payload.domain, payload.sheet, payload.hexKey);
     }
-
-    function showMsg(elId, text, isError) {
-        const el = document.getElementById(elId);
-        el.textContent = text;
-        el.className = "fn-message visible " + (isError ? "error" : "success");
-    }
-
-    let selectedMemberRows = new Set();
-    let activeModalMember = null;
-    let lastSearchValue = '';
-
-    const ACTION_LABELS = {
-        requestUpdate: 'Request Update',
-        markPaid: 'Mark Paid',
-        inactivate: 'Inactivate',
-        expire: 'Expire'
-    };
-
-    function parseBoolLike(v) {
-        if (v === true) return true;
-        if (v === false || v === undefined || v === null || v === '') return false;
-        const s = String(v).trim().toLowerCase();
-        return s === 'true' || s === 'yes' || s === 'active' || s === '1';
-    }
-
-    function getMemberClassList(name) {
-        const n = String(name || '').trim().toLowerCase();
-        return [...new Set((allBoats || [])
-            .filter(b => String(b.member || '').trim().toLowerCase() === n && b.active)
-            .map(b => b.class).filter(Boolean))];
-    }
-
-    function populateClassFilterOptions() {
-        const sel = document.getElementById('memberClassFilter'), cur = sel.value || 'all';
-        const classes = [...new Set(allBoats.filter(b => b.active).map(b => b.class).filter(Boolean))].sort();
-        sel.innerHTML = '<option value="all">All Classes</option>' +
-            classes.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-        sel.value = classes.includes(cur) ? cur : 'all';
-    }
-
-    async function loadMembers() {
-        try {
-            await EventFilters.load();
-            const [membersRaw, boatsRaw] = await Promise.all([
-                fetchSheet(DOMAIN.members, "Members"),
-                fetchSheet(DOMAIN.members, "ClassMembers")
-            ]);
-
-            // fetchSheet already returns array of objects — filter out any header-echo rows
-            allMembers = membersRaw
-                .filter(r => r['ID'] && String(r['ID']).trim().toLowerCase() !== 'id')
-                .map((r, i) => ({
-                row: i + 2,
-                id: r['ID'] ?? '',
-                status: r['Active'] ?? '',
-                name: r['MemberName'] ?? '',
-                membershipType: r['Membership'] ?? '',
-                startDate: r['Start Date'] ?? '',
-                endDate: r['End Date'] ?? '',
-                isPaid: parseBoolLike(r['Paid up'] ?? ''),
-                phone: r['Phone']?? '',
-                email: r['email'] ?? '',
-                whatsapp: r['WhatsApp'] ?? '',
-                duplicate: r['Duplicate'] ?? r['duplicate'] ?? '',
-                addressLine: r['AddressLine'] ?? '',
-                suburb: r['Suburb'] ?? '',
-                postcode: r['PCode'] ?? '',
-                emergencyContactName: r['Emergency Contact Name'] ?? '',
-                emergencyContactNumber: r['Emergency Contact Number'] ?? '',
-                calendarSubscription: r['Calendar Subscription'] ?? '',
-                homeClub: r['Home Club'] ?? '',
-                committee: r['Committee'] ?? ''
-            }));
-
-            allBoats = boatsRaw.map(r => ({
-                boatId: r['BoatID']?? '',
-                active: parseBoolLike(r['Active']?? ''),
-                member: r['Member'] ?? '',
-                class: r['Class'] ??'',
-                sailNo: r['SailNo']?? '',
-                model: r['Model'] ??'',
-                handicap: r['Handicap'] ?? '',
-                hrn: r['HRN'] ?? '',
-                gh: r['GH'] ?? '',
-                ghHcap: r['GH Hcap'] ?? '',
-                hull: r['Hull Colour']
-            }));
-            updateAdminCache("members", allMembers);
-            updateAdminCache("members", allBoats);
-            populateMembershipFilterOptions();
-            populateClassFilterOptions();
-            filterMemberDirectory();
-            renderMemberStats();
-        } catch (err) {
-            document.getElementById('memberListsResults').innerHTML =
-                `<div class="empty-state">Error loading members: ${escapeHtml(err.message)}</div>`;
-        }
-    }
-
-    function hasMemberListActivity() {
-        const q = document.getElementById('memberListSearch').value.trim();
-        const statusVal = document.getElementById('memberStatusFilter').value;
-        const membershipVal = document.getElementById('memberMembershipFilter').value;
-        const classVal = document.getElementById('memberClassFilter').value;
-        return !!q || statusVal !== 'all' || membershipVal !== 'all' || classVal !== 'all';
-    }
-
-    function populateMembershipFilterOptions() {
-        const select = document.getElementById('memberMembershipFilter');
-        const current = select.value || 'all';
-        const types = [...new Set(allMembers.map(m => m.membershipType).filter(Boolean))].sort();
-        select.innerHTML = '<option value="all">All Membership Types</option>' +
-            types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
-        if (types.includes(current)) select.value = current;
-    }
-
-    function isActiveStatus(status) {
-        if (status === true) return true;
-        if (status === false || status === undefined || status === null || status === '') return false;
-        const s = String(status).trim().toLowerCase();
-        return s === 'true' || s === 'yes' || s === 'active';
-    }
-
-    function getMembershipBadgeClass(type) {
-        const t = String(type || '').trim().toLowerCase();
-        if (t.includes('full')) return 'badge-full';
-        if (t.includes('affiliate')) return 'badge-affiliate';
-        if (t.includes('renewal')) return 'badge-renewal';
-        if (t.includes('expired')) return 'badge-expired';
-        return 'badge-default';
-    }
-
-    const filterMemberDirectory = debounce(function filterMemberDirectoryImpl() {
-        const searchInput = document.getElementById('memberListSearch');
-        lastSearchValue = searchInput.value;
-
-        if (!hasMemberListActivity()) {
-            document.getElementById('memberListsResults').innerHTML =
-                '<div class="empty-state">Type a name above or choose a filter to see members.</div>';
-            document.getElementById('memberActionsHeader').style.display = 'none';
-            return;
-        }
-
-        const q = searchInput.value.trim().toLowerCase();
-        const statusVal = document.getElementById('memberStatusFilter').value;
-        const membershipVal = document.getElementById('memberMembershipFilter').value;
-
-        let filtered = allMembers.filter(m => (m.name || '').toLowerCase().includes(q));
-        if (statusVal !== 'all') {
-            const wantActive = statusVal === 'active';
-            filtered = filtered.filter(m => isActiveStatus(m.status) === wantActive);
-        }
-        if (membershipVal !== 'all') {
-            filtered = filtered.filter(m => (m.membershipType || '') === membershipVal);
-        }
-        const classVal = document.getElementById('memberClassFilter').value;
-        if (classVal !== 'all') {
-            filtered = filtered.filter(m => getMemberClassList(m.name).includes(classVal));
-        }
-        renderMemberDirectory(filtered, false);
-    }, 150);
-
-    function handleQueryKeyDown(event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            const currentSearch = document.getElementById('memberListSearch').value;
-            if (currentSearch !== lastSearchValue) {
-                filterMemberDirectory();
-            }
-        }
-    }
-
-    function renderMemberStats() {
-        console.log("allmembers: " + allMembers);
-        const REQUIRED_FIELDS = ['name','email','phone','membershipType','startDate','endDate','addressLine','suburb','postcode','emergencyContactName','emergencyContactNumber'];
-        const active = allMembers.filter(m => isActiveStatus(m.status));
-        const paid = allMembers.filter(m => m.isPaid);
-        const complete = allMembers.filter(m => REQUIRED_FIELDS.every(f => m[f] && String(m[f]).trim() !== ''));
-        const affiliate = allMembers.filter(m => String(m.membershipType || '').toLowerCase().includes('affiliate'));
-        document.getElementById('statActive').textContent = active.length;
-        document.getElementById('statPaid').textContent = paid.length;
-        document.getElementById('statComplete').textContent = complete.length;
-        document.getElementById('statAffiliate').textContent = affiliate.length;
-        document.getElementById('statTotal').textContent = allMembers.length;
-    }
-
-    document.getElementById('memberStatusFilter').addEventListener('change', filterMemberDirectory);
-    document.getElementById('memberMembershipFilter').addEventListener('change', filterMemberDirectory);
-    document.getElementById('memberClassFilter').addEventListener('change', filterMemberDirectory);
-
-    function renderMemberDirectory(members, isQuery = false) {
-        const container = document.getElementById('memberListsResults');
-        const header = document.getElementById('memberActionsHeader');
-
-        if (!members.length) {
-            const emptyMsg = isQuery ? 'Query found no results' : 'No members found.';
-            container.innerHTML = `<div class="empty-state">${escapeHtml(emptyMsg)}</div>`;
-            header.style.display = 'none';
-            return;
-        }
-
-        header.style.display = 'flex';
-        document.getElementById('selectAllMembers').checked = members.every(m => selectedMemberRows.has(m.row));
-
-        container.innerHTML = members.map(m => {
-            const isPaid = !!m.isPaid;
-            const isActive = isActiveStatus(m.status);
-            const membershipClass = getMembershipBadgeClass(m.membershipType);
-            const checked = selectedMemberRows.has(m.row) ? 'checked' : '';
-            return `
-            <div class="member-row clickable" onclick="handleRowClick(${m.row})">
-                <div class="m-left">
-                    <div class="m-name">${escapeHtml(m.name)}</div>
-                    <span class="badge ${membershipClass}">${escapeHtml(m.membershipType || '—')}</span>
-                    <span class="badge ${isPaid ? 'badge-full' : 'badge-expired'}">${isPaid ? 'Paid' : 'Unpaid'}</span>
-                    <span class="badge ${isActive ? 'badge-full' : 'badge-default'}">${isActive ? 'Active' : 'Inactive'}</span>
-                    <span class="badge ${parseBoolLike(m.whatsapp) ? 'badge-whatsapp' : 'badge-default'}">${parseBoolLike(m.whatsapp) ? 'WhatsApp' : ''}</span>
-                    <span ${getMemberClassList(m.name).map(c => `<span class="class-pill" title="${escapeHtml(c)}"><img src="${escapeHtml(EventFilters.classImage(c))}" alt="${escapeHtml(c)}"></span>`).join('')}</span>
-                </div>
-                <div class="m-right">
-                    <div class="row-actions">
-                        <button type="button" class="icon-btn" title="Request update" onclick="event.stopPropagation(); handleMemberAction('requestUpdate', ${m.row})"><i class="inline-icon" data-lucide="mail-plus"></i></button>
-                        <button type="button" class="icon-btn" title="Mark paid" onclick="event.stopPropagation(); handleMemberAction('markPaid', ${m.row})"><i class="inline-icon" data-lucide="dollar-sign"></i></button>
-                        <button type="button" class="icon-btn" title="Inactivate" onclick="event.stopPropagation(); handleMemberAction('inactivate', ${m.row})"><i class="inline-icon" data-lucide="user-x"></i></button>
-                        <button type="button" class="icon-btn" title="Expire" onclick="event.stopPropagation(); handleMemberAction('expire', ${m.row})"><i class="inline-icon" data-lucide="shield-off"></i></button>
-                    </div>
-                    <label class="checkbox-inline row-select" onclick="event.stopPropagation()">
-                        <input type="checkbox" class="member-select-chk" data-row="${m.row}" ${checked} onchange="toggleMemberSelect(${m.row}, this.checked)">
-                    </label>
-                </div>
-            </div>`;
-        }).join('');
-
-        if (window.lucide) lucide.createIcons();
-    }
-
-    function handleRowClick(row) {
-        const member = allMembers.find(m => m.row === row);
-        if (member) openMemberModal(member);
-    }
-
-    function toggleMemberSelect(row, checked) {
-        if (checked) selectedMemberRows.add(row); else selectedMemberRows.delete(row);
-        const boxes = [...document.querySelectorAll('.member-select-chk')];
-        document.getElementById('selectAllMembers').checked = boxes.length > 0 && boxes.every(c => c.checked);
-    }
-
-    function toggleSelectAllMembers(chk) {
-        document.querySelectorAll('.member-select-chk').forEach(c => {
-            c.checked = chk.checked;
-            const row = parseInt(c.dataset.row, 10);
-            if (chk.checked) selectedMemberRows.add(row); else selectedMemberRows.delete(row);
-        });
-    }
-
-    async function runMemberActionApi(action, member) {
-        switch (action) {
-            case 'requestUpdate':   return apiPost('sendUpdateRequest', { member });
-            case 'markPaid':        return apiPost('markPaid', { row: member.row, isPaid: true, name: member.name });
-            case 'inactivate':      return apiPost('setActive', { row: member.row, isActive: false, name: member.name });
-            case 'expire':          return apiPost('setMembershipStatus', { row: member.row, status: 'Expired', name: member.name });
-        }
-    }
-
-    async function handleMemberAction(action, row) {
-        const member = allMembers.find(m => m.row === row);
-        if (!member) return;
-        if (!confirm(`${ACTION_LABELS[action]}: ${member.name}?`)) return;
-        try {
-            await runMemberActionApi(action, member);
-            showMsg('memberActionsMsg', `${ACTION_LABELS[action]} completed for ${member.name}.`, false);
-            await loadMembers();
-            if (activeModalMember && activeModalMember.row === row) {
-                const refreshed = allMembers.find(m => m.row === row) || member;
-                await openMemberModal(refreshed, true);
-            }
-        } catch (err) {
-            showMsg('memberActionsMsg', 'Error: ' + err.message, true);
-        }
-    }
-
-    async function handleBulkAction(action) {
-        const members = allMembers.filter(m => selectedMemberRows.has(m.row));
-        if (!members.length) {
-            showMsg('memberActionsMsg', `No members selected to perform ${ACTION_LABELS[action]} action.`, true);
-            return;
-        }
-        if (!confirm(`${ACTION_LABELS[action]}: ${members.length} selected member(s)?`)) return;
-        try {
-            await Promise.all(members.map(m => runMemberActionApi(action, m)));
-            showMsg('memberActionsMsg', `${ACTION_LABELS[action]} completed for ${members.length} member(s).`, false);
-            selectedMemberRows.clear();
-            await loadMembers();
-        } catch (err) {
-            showMsg('memberActionsMsg', 'Error: ' + err.message, true);
-        }
-    }
-
-    async function runMemberQuery() {
-        const queryInput = document.getElementById('memberQuery');
-        const query = queryInput.value.trim();
-        if (!query) return;
-
-        // Reset searchbar, dropdown filters, and action messages
-        document.getElementById('memberListSearch').value = '';
-        document.getElementById('memberStatusFilter').value = 'all';
-        document.getElementById('memberMembershipFilter').value = 'all';
-        document.getElementById('memberClassFilter').value = 'all';
-        lastSearchValue = '';
-
-        const msgEl = document.getElementById('memberActionsMsg');
-        if (msgEl) {
-            msgEl.textContent = '';
-            msgEl.className = 'fn-message';
-        }
-
-        const container = document.getElementById('memberListsResults');
-        container.innerHTML = '<div class="empty-state">Generating list...</div>';
-
-        try {
-            const result = await apiPost('query', { query: query });
-            renderMemberDirectory(result.members || [], true);
-        } catch (err) {
-            container.innerHTML = `<div class="empty-state">Error: ${escapeHtml(err.message)}</div>`;
-        }
-    }
-
-    function copyPhoneList() {
-        const scoped = selectedMemberRows.size ? allMembers.filter(m => selectedMemberRows.has(m.row)) : allMembers;
-        const phones = scoped.map(m => m.phone).filter(Boolean);
-        navigator.clipboard.writeText(phones.join(', '))
-            .then(() => showMsg('memberActionsMsg', `Copied ${phones.length} phone number(s).`, false))
-            .catch(err => showMsg('memberActionsMsg', 'Copy failed: ' + err.message, true));
-    }
-
-    function copyEmailList() {
-        const scoped = selectedMemberRows.size ? allMembers.filter(m => selectedMemberRows.has(m.row)) : allMembers;
-        const emails = scoped.map(m => m.email).filter(Boolean);
-        navigator.clipboard.writeText(emails.join(', '))
-            .then(() => showMsg('memberActionsMsg', `Copied ${emails.length} email address(es).`, false))
-            .catch(err => showMsg('memberActionsMsg', 'Copy failed: ' + err.message, true));
-    }
-
-    /* ============================================================
-    SECTIONED MEMBER MODAL LOGIC
-    ============================================================ */
-    const MODAL_SECTIONS = [
-        {
-            title: 'Membership & Status',
-            fields: [
-                { key: 'id', label: 'Member ID' },
-                { key: 'membershipType', label: 'Membership Type' },
-                { key: 'status', label: 'Active Status', type: 'status' },
-                { key: 'isPaid', label: 'Paid Up', type: 'boolean' },
-                { key: 'startDate', label: 'Start Date', type: 'date' },
-                { key: 'endDate', label: 'End Date', type: 'date' },
-                { key: 'homeClub', label: 'Home Club' },
-                { key: 'committee', label: 'Committee', type: 'boolean' }
-            ]
-        },
-        {
-            title: 'Contact Details',
-            fields: [
-                { key: 'email', label: 'Email' },
-                { key: 'phone', label: 'Phone' },
-                { key: 'whatsapp', label: 'WhatsApp', type: 'boolean' },
-                { key: 'calendarSubscription', label: 'Calendar Subscription', type: 'boolean' }
-            ]
-        },
-        {
-            title: 'Address Information',
-            fields: [
-                { key: 'addressLine', label: 'Address' },
-                { key: 'suburb', label: 'Suburb' },
-                { key: 'postcode', label: 'Postcode' }
-            ]
-        },
-        {
-            title: 'Emergency Contact',
-            fields: [
-                { key: 'emergencyContactName', label: 'Contact Name' },
-                { key: 'emergencyContactNumber', label: 'Contact Phone' }
-            ]
-        }
-    ];
-
-    function renderModalFieldInput(member, field) {
-        const rawVal = member[field.key];
-        const val = rawVal === null || rawVal === undefined ? '' : rawVal;
-        
-        if (field.type === 'status') {
-            const isActive = isActiveStatus(val);
-            return `
-                <select class="modal-input modal-field-input" data-key="${field.key}" data-label="${escapeHtml(field.label)}" data-type="status">
-                    <option value="Active" ${isActive ? 'selected' : ''}>Active</option>
-                    <option value="Inactive" ${!isActive ? 'selected' : ''}>Inactive</option>
-                </select>`;
-        }
-        
-        if (field.type === 'boolean') {
-            const isTrue = parseBoolLike(val);
-            return `
-                <select class="modal-input modal-field-input" data-key="${field.key}" data-label="${escapeHtml(field.label)}" data-type="boolean">
-                    <option value="true" ${isTrue ? 'selected' : ''}>Yes</option>
-                    <option value="false" ${!isTrue ? 'selected' : ''}>No</option>
-                </select>`;
-        }
-
-        if (field.type === 'date') {
-            let dateStr = '';
-            if (val) {
-                const d = new Date(val);
-                if (!isNaN(d.getTime())) {
-                    dateStr = d.toISOString().split('T')[0];
-                } else {
-                    dateStr = val;
-                }
-            }
-            return `<input type="date" class="modal-input modal-field-input" data-key="${field.key}" data-label="${escapeHtml(field.label)}" data-type="date" value="${escapeHtml(dateStr)}">`;
-        }
-
-        return `<input type="text" class="modal-input modal-field-input" data-key="${field.key}" data-label="${escapeHtml(field.label)}" data-type="text" value="${escapeHtml(val)}">`;
-    }
-
-    function checkModalChanges() {
-        if (!activeModalMember) return;
-        const inputs = document.querySelectorAll('.modal-field-input');
-        let hasChanges = false;
-
-        inputs.forEach(input => {
-            const key = input.dataset.key;
-            const type = input.dataset.type;
-            let val = input.value;
-
-            if (type === 'boolean') {
-                val = parseBoolLike(val);
-            }
-
-            const oldVal = activeModalMember[key];
-            const normalizedOld = oldVal !== undefined && oldVal !== null ? String(oldVal) : '';
-            const normalizedNew = String(val);
-
-            if (normalizedNew !== normalizedOld) {
-                hasChanges = true;
-            }
-        });
-
-        const btn = document.getElementById('saveMemberBtn');
-        if (btn) {
-            btn.style.display = hasChanges ? 'inline-flex' : 'none';
-        }
-    }
-
-    function openMemberModal(member, silentRefresh) {
-        activeModalMember = member;
-        document.getElementById('modalMemberName').textContent = member.name || '—';
-        document.getElementById('modalMemberSub').textContent = member.email || '';
-
-        const fieldsContainer = document.getElementById('modalMemberFields');
-        fieldsContainer.innerHTML = MODAL_SECTIONS.map(sec => `
-            <div class="modal-section">
-                <div class="modal-section-title">${escapeHtml(sec.title)}</div>
-                <div class="modal-field-grid">
-                    ${sec.fields.map(f => `
-                        <div class="modal-field">
-                            <span>${escapeHtml(f.label)}</span>
-                            ${renderModalFieldInput(member, f)}
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `).join('');
-
-        const inputs = fieldsContainer.querySelectorAll('.modal-field-input');
-        inputs.forEach(input => {
-            input.addEventListener('input', checkModalChanges);
-            input.addEventListener('change', checkModalChanges);
-        });
-
-        checkModalChanges();
-
-        if (!silentRefresh) {
-            document.getElementById('modalMsg').className = 'fn-message';
-            document.getElementById('memberModalOverlay').classList.add('visible');
-        }
-
-        const memberBoats = allBoats.filter(b =>
-            String(b.member || '').trim().toLowerCase() === String(member.name || '').trim().toLowerCase()
-        );
-        renderModalBoats(memberBoats);
-
-        if (window.lucide) lucide.createIcons();
-    }
-
-    async function saveMemberDetails() {
-        if (!activeModalMember) return;
-        const btn = document.getElementById('saveMemberBtn');
-        btn.disabled = true;
-        btn.textContent = 'Saving…';
-
-        const inputs = document.querySelectorAll('.modal-field-input');
-        const changes = [];
-        const updatedData = { ...activeModalMember };
-
-        inputs.forEach(input => {
-            const key = input.dataset.key;
-            const label = input.dataset.label;
-            const type = input.dataset.type;
-            let val = input.value;
-
-            if (type === 'boolean') {
-                val = parseBoolLike(val);
-            }
-
-            const oldVal = activeModalMember[key];
-            
-            if (String(val) !== String(oldVal !== undefined && oldVal !== null ? oldVal : '')) {
-                changes.push({
-                    field: label || key,
-                    key: key,
-                    before: oldVal,
-                    after: val
-                });
-                updatedData[key] = val;
-            }
-        });
-
-        if (changes.length === 0) {
-            showMsg('modalMsg', 'No changes detected to save.', false);
-            btn.disabled = false;
-            checkModalChanges();
-            if (window.lucide) lucide.createIcons();
-            return;
-        }
-
-        try {
-            // Build updates keyed by registry header names (matching MODAL_SECTIONS field keys → sheet headers)
-            const updates = {};
-            const KEY_MAP = {
-                id: 'ID', status: 'Active', name: 'MemberName', membershipType: 'Membership',
-                startDate: 'Start Date', endDate: 'End Date', isPaid: 'Paid up',
-                phone: 'Phone', email: 'email', whatsapp: 'WhatsApp',
-                addressLine: 'Address Line', suburb: 'Suburb', postcode: 'PCode',
-                emergencyContactName: 'Emergency Contact Name', emergencyContactNumber: 'Emergency Contact Number',
-                calendarSubscription: 'Calendar Subscription', homeClub: 'Home Club', committee: 'Committee'
-            };
-            changes.forEach(c => {
-                const sheetKey = KEY_MAP[c.key] || c.key;
-                updates[sheetKey] = c.after;
-            });
-            await updateSheet(DOMAIN.members, "Members", activeModalMember.id, updates);
-
-            showMsg('modalMsg', `Saved ${changes.length} change(s) successfully.`, false);
-            await loadMembers();
-            await AuditLog.load();
-
-            const refreshed = allMembers.find(m => m.row === activeModalMember.row) || updatedData;
-            await openMemberModal(refreshed, true);
-        } catch (err) {
-            showMsg('modalMsg', 'Error saving changes: ' + err.message, true);
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="inline-icon" data-lucide="save"></i> Save Changes';
-            checkModalChanges();
-            if (window.lucide) lucide.createIcons();
-        }
-    }
-
-    function renderModalBoats(boats) {
-        const el = document.getElementById('modalBoats');
-        if (!boats.length) { el.innerHTML = '<div class="empty-state">No boats on record.</div>'; return; }
-        el.innerHTML = `
-            <table class="boat-table">
-                <thead><tr><th>Class</th><th>Sail No</th><th>Model</th><th>Handicap</th><th>HRN</th><th>GH</th><th>GH HCap</th><th>Active</th></tr></thead>
-                <tbody>
-                    ${boats.map(b => `
-                        <tr>
-                            <td>${escapeHtml(b.class)}</td>
-                            <td>${escapeHtml(b.sailNo)}</td>
-                            <td>${escapeHtml(b.model)}</td>
-                            <td>${escapeHtml(b.handicap)}</td>
-                            <td>${escapeHtml(b.hrn)}</td>
-                            <td>${escapeHtml(b.gh)}</td>
-                            <td>${escapeHtml(b.ghHcap)}</td>
-                            <td>${b.active ? 'Yes' : 'No'}</td>
-                        </tr>`).join('')}
-                </tbody>
-            </table>`;
-    }
-
-    function closeMemberModal() {
-        document.getElementById('memberModalOverlay').classList.remove('visible');
-        activeModalMember = null;
-    }
-
-    async function handleModalAction(action) {
-        if (!activeModalMember) return;
-        if (!confirm(`${ACTION_LABELS[action]}: ${activeModalMember.name}?`)) return;
-        try {
-            await runMemberActionApi(action, activeModalMember);
-            showMsg('modalMsg', `${ACTION_LABELS[action]} completed.`, false);
-            await loadMembers();
-            const refreshed = allMembers.find(m => m.row === activeModalMember.row) || activeModalMember;
-            await openMemberModal(refreshed, true);
-        } catch (err) {
-            showMsg('modalMsg', 'Error: ' + err.message, true);
-        }
-    }
-
-    /* ============================================================
-    BULK COMMUNICATIONS
-    ============================================================ */
-    const BULK_LABELS = {
-        requestAllUpdates: "Request Members Update",
-        sendRenewals: "Send Membership Renewal Emails"
-    };
-
-    async function sendBulkAction(action, btn) {
-        if (!confirm(`${BULK_LABELS[action]} will be sent to ALL active members. Continue?`)) return;
-        btn.disabled = true;
-        const originalText = btn.textContent;
-        btn.textContent = 'Sending…';
-        try {
-            await apiPost(action, {});
-            showMsg(`msg-${action}`, 'Sent to all active members.', false);
-            await AuditLog.load();
-        } catch (err) {
-            showMsg(`msg-${action}`, 'Error: ' + err.message, true);
-        } finally {
-            btn.disabled = false;
-            btn.textContent = originalText;
-        }
-    }
-
-    function checkModalChanges() {
-        if (!activeModalMember) return;
-        const inputs = document.querySelectorAll('.modal-field-input');
-        let hasChanges = false;
-
-        inputs.forEach(input => {
-            const key = input.dataset.key;
-            const type = input.dataset.type;
-            let newVal = input.value;
-            let rawOld = activeModalMember[key];
-
-            let normalizedOld = '';
-            let normalizedNew = String(newVal);
-
-            if (type === 'status') {
-                normalizedOld = isActiveStatus(rawOld) ? 'Active' : 'Inactive';
-            } else if (type === 'boolean') {
-                normalizedOld = String(parseBoolLike(rawOld));
-                normalizedNew = String(parseBoolLike(newVal));
-            } else if (type === 'date') {
-                if (rawOld) {
-                    const d = new Date(rawOld);
-                    normalizedOld = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : String(rawOld);
-                }
-            } else {
-                normalizedOld = rawOld !== undefined && rawOld !== null ? String(rawOld) : '';
-            }
-
-            if (normalizedNew !== normalizedOld) {
-                hasChanges = true;
-            }
-        });
-
-        const btn = document.getElementById('saveMemberBtn');
-        if (btn) {
-            btn.style.display = hasChanges ? 'inline-flex' : 'none';
-        }
-    }
-
-    function updateAdminCache(key, value) {
-        const all = readAdminCache() || {};
-        all[key] = value;
-        localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(all));
-    }
-
-    const cached = readAdminCache("members");
-    if (cached?.members) {
-        allMembers = cached.members || [];
-        allBoats = cached.boats || [];
-        renderMemberStats();
+    // All other actions (emails, queries, etc.) go to CLB_WEBAPP_URL
+    const res = await fetch(CLB_WEBAPP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action, ...payload })
+    });
+    if (!res.ok) throw new Error(`Server error (${res.status})`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data;
+}
+    
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
+function debounce(fn, delay = 150) {
+    let t;
+    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+}
+
+function showMsg(elId, text, isError) {
+    const el = document.getElementById(elId);
+    el.textContent = text;
+    el.className = "fn-message visible " + (isError ? "error" : "success");
+}
+
+let selectedMemberRows = new Set();
+let activeModalMember = null;
+let lastSearchValue = '';
+
+const ACTION_LABELS = {
+    requestUpdate: 'Request Update',
+    markPaid: 'Mark Paid',
+    inactivate: 'Inactivate',
+    expire: 'Expire'
+};
+
+function parseBoolLike(v) {
+    if (v === true) return true;
+    if (v === false || v === undefined || v === null || v === '') return false;
+    const s = String(v).trim().toLowerCase();
+    return s === 'true' || s === 'yes' || s === 'active' || s === '1';
+}
+
+function getMemberClassList(name) {
+    const n = String(name || '').trim().toLowerCase();
+    return [...new Set((allBoats || [])
+        .filter(b => String(b.member || '').trim().toLowerCase() === n && b.active)
+        .map(b => b.class).filter(Boolean))];
+}
+
+function populateClassFilterOptions() {
+    const sel = document.getElementById('memberClassFilter'), cur = sel.value || 'all';
+    const classes = [...new Set(allBoats.filter(b => b.active).map(b => b.class).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="all">All Classes</option>' +
+        classes.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    sel.value = classes.includes(cur) ? cur : 'all';
+}
+
+async function loadMembers() {
+    try {
+        await EventFilters.load();
+        const [membersRaw, boatsRaw] = await Promise.all([
+            fetchSheet(DOMAIN.members, "Members"),
+            fetchSheet(DOMAIN.members, "ClassMembers")
+        ]);
+
+        // fetchSheet already returns array of objects — filter out any header-echo rows
+        allMembers = membersRaw
+            .filter(r => r['ID'] && String(r['ID']).trim().toLowerCase() !== 'id')
+            .map((r, i) => ({
+            row: i + 2,
+            id: r['ID'] ?? '',
+            status: r['Active'] ?? '',
+            name: r['MemberName'] ?? '',
+            membershipType: r['Membership'] ?? '',
+            startDate: r['Start Date'] ?? '',
+            endDate: r['End Date'] ?? '',
+            isPaid: parseBoolLike(r['Paid up'] ?? ''),
+            phone: r['Phone']?? '',
+            email: r['email'] ?? '',
+            whatsapp: r['WhatsApp'] ?? '',
+            duplicate: r['Duplicate'] ?? r['duplicate'] ?? '',
+            addressLine: r['AddressLine'] ?? '',
+            suburb: r['Suburb'] ?? '',
+            postcode: r['PCode'] ?? '',
+            emergencyContactName: r['Emergency Contact Name'] ?? '',
+            emergencyContactNumber: r['Emergency Contact Number'] ?? '',
+            calendarSubscription: r['Calendar Subscription'] ?? '',
+            homeClub: r['Home Club'] ?? '',
+            committee: r['Committee'] ?? ''
+        }));
+
+        allBoats = boatsRaw.map(r => ({
+            boatId: r['BoatID']?? '',
+            active: parseBoolLike(r['Active']?? ''),
+            member: r['Member'] ?? '',
+            class: r['Class'] ??'',
+            sailNo: r['SailNo']?? '',
+            model: r['Model'] ??'',
+            handicap: r['Handicap'] ?? '',
+            hrn: r['HRN'] ?? '',
+            gh: r['GH'] ?? '',
+            ghHcap: r['GH Hcap'] ?? '',
+            hull: r['Hull Colour']
+        }));
+        updateAdminCache("members", allMembers);
+        updateAdminCache("members", allBoats);
         populateMembershipFilterOptions();
+        populateClassFilterOptions();
         filterMemberDirectory();
+        renderMemberStats();
+    } catch (err) {
+        document.getElementById('memberListsResults').innerHTML =
+            `<div class="empty-state">Error loading members: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function hasMemberListActivity() {
+    const q = document.getElementById('memberListSearch').value.trim();
+    const statusVal = document.getElementById('memberStatusFilter').value;
+    const membershipVal = document.getElementById('memberMembershipFilter').value;
+    const classVal = document.getElementById('memberClassFilter').value;
+    return !!q || statusVal !== 'all' || membershipVal !== 'all' || classVal !== 'all';
+}
+
+function populateMembershipFilterOptions() {
+    const select = document.getElementById('memberMembershipFilter');
+    const current = select.value || 'all';
+    const types = [...new Set(allMembers.map(m => m.membershipType).filter(Boolean))].sort();
+    select.innerHTML = '<option value="all">All Membership Types</option>' +
+        types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+    if (types.includes(current)) select.value = current;
+}
+
+function isActiveStatus(status) {
+    if (status === true) return true;
+    if (status === false || status === undefined || status === null || status === '') return false;
+    const s = String(status).trim().toLowerCase();
+    return s === 'true' || s === 'yes' || s === 'active';
+}
+
+function getMembershipBadgeClass(type) {
+    const t = String(type || '').trim().toLowerCase();
+    if (t.includes('full')) return 'badge-full';
+    if (t.includes('affiliate')) return 'badge-affiliate';
+    if (t.includes('renewal')) return 'badge-renewal';
+    if (t.includes('expired')) return 'badge-expired';
+    return 'badge-default';
+}
+
+const filterMemberDirectory = debounce(function filterMemberDirectoryImpl() {
+    const searchInput = document.getElementById('memberListSearch');
+    lastSearchValue = searchInput.value;
+
+    if (!hasMemberListActivity()) {
+        document.getElementById('memberListsResults').innerHTML =
+            '<div class="empty-state">Type a name above or choose a filter to see members.</div>';
+        document.getElementById('memberActionsHeader').style.display = 'none';
+        return;
     }
 
-    loadMembers();
-    if (window.lucide) lucide.createIcons();
+    const q = searchInput.value.trim().toLowerCase();
+    const statusVal = document.getElementById('memberStatusFilter').value;
+    const membershipVal = document.getElementById('memberMembershipFilter').value;
 
+    let filtered = allMembers.filter(m => (m.name || '').toLowerCase().includes(q));
+    if (statusVal !== 'all') {
+        const wantActive = statusVal === 'active';
+        filtered = filtered.filter(m => isActiveStatus(m.status) === wantActive);
+    }
+    if (membershipVal !== 'all') {
+        filtered = filtered.filter(m => (m.membershipType || '') === membershipVal);
+    }
+    const classVal = document.getElementById('memberClassFilter').value;
+    if (classVal !== 'all') {
+        filtered = filtered.filter(m => getMemberClassList(m.name).includes(classVal));
+    }
+    renderMemberDirectory(filtered, false);
+}, 150);
+
+function handleQueryKeyDown(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        const currentSearch = document.getElementById('memberListSearch').value;
+        if (currentSearch !== lastSearchValue) {
+            filterMemberDirectory();
+        }
+    }
+}
+
+function renderMemberStats() {
+    console.log("allmembers: " + allMembers);
+    const REQUIRED_FIELDS = ['name','email','phone','membershipType','startDate','endDate','addressLine','suburb','postcode','emergencyContactName','emergencyContactNumber'];
+    const active = allMembers.filter(m => isActiveStatus(m.status));
+    const paid = allMembers.filter(m => m.isPaid);
+    const complete = allMembers.filter(m => REQUIRED_FIELDS.every(f => m[f] && String(m[f]).trim() !== ''));
+    const affiliate = allMembers.filter(m => String(m.membershipType || '').toLowerCase().includes('affiliate'));
+    document.getElementById('statActive').textContent = active.length;
+    document.getElementById('statPaid').textContent = paid.length;
+    document.getElementById('statComplete').textContent = complete.length;
+    document.getElementById('statAffiliate').textContent = affiliate.length;
+    document.getElementById('statTotal').textContent = allMembers.length;
+}
+
+document.getElementById('memberStatusFilter').addEventListener('change', filterMemberDirectory);
+document.getElementById('memberMembershipFilter').addEventListener('change', filterMemberDirectory);
+document.getElementById('memberClassFilter').addEventListener('change', filterMemberDirectory);
+
+function renderMemberDirectory(members, isQuery = false) {
+    const container = document.getElementById('memberListsResults');
+    const header = document.getElementById('memberActionsHeader');
+
+    if (!members.length) {
+        const emptyMsg = isQuery ? 'Query found no results' : 'No members found.';
+        container.innerHTML = `<div class="empty-state">${escapeHtml(emptyMsg)}</div>`;
+        header.style.display = 'none';
+        return;
+    }
+
+    header.style.display = 'flex';
+    document.getElementById('selectAllMembers').checked = members.every(m => selectedMemberRows.has(m.row));
+
+    container.innerHTML = members.map(m => {
+        const isPaid = !!m.isPaid;
+        const isActive = isActiveStatus(m.status);
+        const membershipClass = getMembershipBadgeClass(m.membershipType);
+        const checked = selectedMemberRows.has(m.row) ? 'checked' : '';
+        return `
+        <div class="member-row clickable" onclick="handleRowClick(${m.row})">
+            <div class="m-left">
+                <div class="m-name">${escapeHtml(m.name)}</div>
+                <span class="badge ${membershipClass}">${escapeHtml(m.membershipType || '—')}</span>
+                <span class="badge ${isPaid ? 'badge-full' : 'badge-expired'}">${isPaid ? 'Paid' : 'Unpaid'}</span>
+                <span class="badge ${isActive ? 'badge-full' : 'badge-default'}">${isActive ? 'Active' : 'Inactive'}</span>
+                <span class="badge ${parseBoolLike(m.whatsapp) ? 'badge-whatsapp' : 'badge-default'}">${parseBoolLike(m.whatsapp) ? 'WhatsApp' : ''}</span>
+                <span ${getMemberClassList(m.name).map(c => `<span class="class-pill" title="${escapeHtml(c)}"><img src="${escapeHtml(EventFilters.classImage(c))}" alt="${escapeHtml(c)}"></span>`).join('')}</span>
+            </div>
+            <div class="m-right">
+                <div class="row-actions">
+                    <button type="button" class="icon-btn" title="Request update" onclick="event.stopPropagation(); handleMemberAction('requestUpdate', ${m.row})"><i class="inline-icon" data-lucide="mail-plus"></i></button>
+                    <button type="button" class="icon-btn" title="Mark paid" onclick="event.stopPropagation(); handleMemberAction('markPaid', ${m.row})"><i class="inline-icon" data-lucide="dollar-sign"></i></button>
+                    <button type="button" class="icon-btn" title="Inactivate" onclick="event.stopPropagation(); handleMemberAction('inactivate', ${m.row})"><i class="inline-icon" data-lucide="user-x"></i></button>
+                    <button type="button" class="icon-btn" title="Expire" onclick="event.stopPropagation(); handleMemberAction('expire', ${m.row})"><i class="inline-icon" data-lucide="shield-off"></i></button>
+                </div>
+                <label class="checkbox-inline row-select" onclick="event.stopPropagation()">
+                    <input type="checkbox" class="member-select-chk" data-row="${m.row}" ${checked} onchange="toggleMemberSelect(${m.row}, this.checked)">
+                </label>
+            </div>
+        </div>`;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+}
+
+function handleRowClick(row) {
+    const member = allMembers.find(m => m.row === row);
+    if (member) openMemberModal(member);
+}
+
+function toggleMemberSelect(row, checked) {
+    if (checked) selectedMemberRows.add(row); else selectedMemberRows.delete(row);
+    const boxes = [...document.querySelectorAll('.member-select-chk')];
+    document.getElementById('selectAllMembers').checked = boxes.length > 0 && boxes.every(c => c.checked);
+}
+
+function toggleSelectAllMembers(chk) {
+    document.querySelectorAll('.member-select-chk').forEach(c => {
+        c.checked = chk.checked;
+        const row = parseInt(c.dataset.row, 10);
+        if (chk.checked) selectedMemberRows.add(row); else selectedMemberRows.delete(row);
+    });
+}
+
+async function runMemberActionApi(action, member) {
+    switch (action) {
+        case 'requestUpdate':   return apiPost('sendUpdateRequest', { row: member.row });
+        case 'markPaid':        return apiPost('markPaid', { row: member.row, isPaid: true, name: member.name });
+        case 'inactivate':      return apiPost('setActive', { row: member.row, isActive: false, name: member.name });
+        case 'expire':          return apiPost('setMembershipStatus', { row: member.row, status: 'Expired', name: member.name });
+    }
+}
+
+async function handleMemberAction(action, row) {
+    const member = allMembers.find(m => m.row === row);
+    if (!member) return;
+    if (!confirm(`${ACTION_LABELS[action]}: ${member.name}?`)) return;
+    try {
+        await runMemberActionApi(action, member);
+        showMsg('memberActionsMsg', `${ACTION_LABELS[action]} completed for ${member.name}.`, false);
+        await loadMembers();
+        if (activeModalMember && activeModalMember.row === row) {
+            const refreshed = allMembers.find(m => m.row === row) || member;
+            await openMemberModal(refreshed, true);
+        }
+    } catch (err) {
+        showMsg('memberActionsMsg', 'Error: ' + err.message, true);
+    }
+}
+
+async function handleBulkAction(action) {
+    const members = allMembers.filter(m => selectedMemberRows.has(m.row));
+    if (!members.length) {
+        showMsg('memberActionsMsg', `No members selected to perform ${ACTION_LABELS[action]} action.`, true);
+        return;
+    }
+    if (!confirm(`${ACTION_LABELS[action]}: ${members.length} selected member(s)?`)) return;
+    try {
+        await Promise.all(members.map(m => runMemberActionApi(action, m)));
+        showMsg('memberActionsMsg', `${ACTION_LABELS[action]} completed for ${members.length} member(s).`, false);
+        selectedMemberRows.clear();
+        await loadMembers();
+    } catch (err) {
+        showMsg('memberActionsMsg', 'Error: ' + err.message, true);
+    }
+}
+
+async function runMemberQuery() {
+    const queryInput = document.getElementById('memberQuery');
+    const query = queryInput.value.trim();
+    if (!query) return;
+
+    // Reset searchbar, dropdown filters, and action messages
+    document.getElementById('memberListSearch').value = '';
+    document.getElementById('memberStatusFilter').value = 'all';
+    document.getElementById('memberMembershipFilter').value = 'all';
+    document.getElementById('memberClassFilter').value = 'all';
+    lastSearchValue = '';
+
+    const msgEl = document.getElementById('memberActionsMsg');
+    if (msgEl) {
+        msgEl.textContent = '';
+        msgEl.className = 'fn-message';
+    }
+
+    const container = document.getElementById('memberListsResults');
+    container.innerHTML = '<div class="empty-state">Generating list...</div>';
+
+    try {
+        const result = await apiPost('query', { query: query });
+        renderMemberDirectory(result.members || [], true);
+    } catch (err) {
+        container.innerHTML = `<div class="empty-state">Error: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function copyPhoneList() {
+    const scoped = selectedMemberRows.size ? allMembers.filter(m => selectedMemberRows.has(m.row)) : allMembers;
+    const phones = scoped.map(m => m.phone).filter(Boolean);
+    navigator.clipboard.writeText(phones.join(', '))
+        .then(() => showMsg('memberActionsMsg', `Copied ${phones.length} phone number(s).`, false))
+        .catch(err => showMsg('memberActionsMsg', 'Copy failed: ' + err.message, true));
+}
+
+function copyEmailList() {
+    const scoped = selectedMemberRows.size ? allMembers.filter(m => selectedMemberRows.has(m.row)) : allMembers;
+    const emails = scoped.map(m => m.email).filter(Boolean);
+    navigator.clipboard.writeText(emails.join(', '))
+        .then(() => showMsg('memberActionsMsg', `Copied ${emails.length} email address(es).`, false))
+        .catch(err => showMsg('memberActionsMsg', 'Copy failed: ' + err.message, true));
+}
+
+/* ============================================================
+SECTIONED MEMBER MODAL LOGIC
+============================================================ */
+const MODAL_SECTIONS = [
+    {
+        title: 'Membership & Status',
+        fields: [
+            { key: 'id', label: 'Member ID' },
+            { key: 'membershipType', label: 'Membership Type' },
+            { key: 'status', label: 'Active Status', type: 'status' },
+            { key: 'isPaid', label: 'Paid Up', type: 'boolean' },
+            { key: 'startDate', label: 'Start Date', type: 'date' },
+            { key: 'endDate', label: 'End Date', type: 'date' },
+            { key: 'homeClub', label: 'Home Club' },
+            { key: 'committee', label: 'Committee', type: 'boolean' }
+        ]
+    },
+    {
+        title: 'Contact Details',
+        fields: [
+            { key: 'email', label: 'Email' },
+            { key: 'phone', label: 'Phone' },
+            { key: 'whatsapp', label: 'WhatsApp', type: 'boolean' },
+            { key: 'calendarSubscription', label: 'Calendar Subscription', type: 'boolean' }
+        ]
+    },
+    {
+        title: 'Address Information',
+        fields: [
+            { key: 'addressLine', label: 'Address' },
+            { key: 'suburb', label: 'Suburb' },
+            { key: 'postcode', label: 'Postcode' }
+        ]
+    },
+    {
+        title: 'Emergency Contact',
+        fields: [
+            { key: 'emergencyContactName', label: 'Contact Name' },
+            { key: 'emergencyContactNumber', label: 'Contact Phone' }
+        ]
+    }
+];
+
+function renderModalFieldInput(member, field) {
+    const rawVal = member[field.key];
+    const val = rawVal === null || rawVal === undefined ? '' : rawVal;
+    
+    if (field.type === 'status') {
+        const isActive = isActiveStatus(val);
+        return `
+            <select class="modal-input modal-field-input" data-key="${field.key}" data-label="${escapeHtml(field.label)}" data-type="status">
+                <option value="Active" ${isActive ? 'selected' : ''}>Active</option>
+                <option value="Inactive" ${!isActive ? 'selected' : ''}>Inactive</option>
+            </select>`;
+    }
+    
+    if (field.type === 'boolean') {
+        const isTrue = parseBoolLike(val);
+        return `
+            <select class="modal-input modal-field-input" data-key="${field.key}" data-label="${escapeHtml(field.label)}" data-type="boolean">
+                <option value="true" ${isTrue ? 'selected' : ''}>Yes</option>
+                <option value="false" ${!isTrue ? 'selected' : ''}>No</option>
+            </select>`;
+    }
+
+    if (field.type === 'date') {
+        let dateStr = '';
+        if (val) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) {
+                dateStr = d.toISOString().split('T')[0];
+            } else {
+                dateStr = val;
+            }
+        }
+        return `<input type="date" class="modal-input modal-field-input" data-key="${field.key}" data-label="${escapeHtml(field.label)}" data-type="date" value="${escapeHtml(dateStr)}">`;
+    }
+
+    return `<input type="text" class="modal-input modal-field-input" data-key="${field.key}" data-label="${escapeHtml(field.label)}" data-type="text" value="${escapeHtml(val)}">`;
+}
+
+function checkModalChanges() {
+    if (!activeModalMember) return;
+    const inputs = document.querySelectorAll('.modal-field-input');
+    let hasChanges = false;
+
+    inputs.forEach(input => {
+        const key = input.dataset.key;
+        const type = input.dataset.type;
+        let val = input.value;
+
+        if (type === 'boolean') {
+            val = parseBoolLike(val);
+        }
+
+        const oldVal = activeModalMember[key];
+        const normalizedOld = oldVal !== undefined && oldVal !== null ? String(oldVal) : '';
+        const normalizedNew = String(val);
+
+        if (normalizedNew !== normalizedOld) {
+            hasChanges = true;
+        }
+    });
+
+    const btn = document.getElementById('saveMemberBtn');
+    if (btn) {
+        btn.style.display = hasChanges ? 'inline-flex' : 'none';
+    }
+}
+
+function openMemberModal(member, silentRefresh) {
+    activeModalMember = member;
+    document.getElementById('modalMemberName').textContent = member.name || '—';
+    document.getElementById('modalMemberSub').textContent = member.email || '';
+
+    const fieldsContainer = document.getElementById('modalMemberFields');
+    fieldsContainer.innerHTML = MODAL_SECTIONS.map(sec => `
+        <div class="modal-section">
+            <div class="modal-section-title">${escapeHtml(sec.title)}</div>
+            <div class="modal-field-grid">
+                ${sec.fields.map(f => `
+                    <div class="modal-field">
+                        <span>${escapeHtml(f.label)}</span>
+                        ${renderModalFieldInput(member, f)}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `).join('');
+
+    const inputs = fieldsContainer.querySelectorAll('.modal-field-input');
+    inputs.forEach(input => {
+        input.addEventListener('input', checkModalChanges);
+        input.addEventListener('change', checkModalChanges);
+    });
+
+    checkModalChanges();
+
+    if (!silentRefresh) {
+        document.getElementById('modalMsg').className = 'fn-message';
+        document.getElementById('memberModalOverlay').classList.add('visible');
+    }
+
+    const memberBoats = allBoats.filter(b =>
+        String(b.member || '').trim().toLowerCase() === String(member.name || '').trim().toLowerCase()
+    );
+    renderModalBoats(memberBoats);
+
+    if (window.lucide) lucide.createIcons();
+}
+
+async function saveMemberDetails() {
+    if (!activeModalMember) return;
+    const btn = document.getElementById('saveMemberBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    const inputs = document.querySelectorAll('.modal-field-input');
+    const changes = [];
+    const updatedData = { ...activeModalMember };
+
+    inputs.forEach(input => {
+        const key = input.dataset.key;
+        const label = input.dataset.label;
+        const type = input.dataset.type;
+        let val = input.value;
+
+        if (type === 'boolean') {
+            val = parseBoolLike(val);
+        }
+
+        const oldVal = activeModalMember[key];
+        
+        if (String(val) !== String(oldVal !== undefined && oldVal !== null ? oldVal : '')) {
+            changes.push({
+                field: label || key,
+                key: key,
+                before: oldVal,
+                after: val
+            });
+            updatedData[key] = val;
+        }
+    });
+
+    if (changes.length === 0) {
+        showMsg('modalMsg', 'No changes detected to save.', false);
+        btn.disabled = false;
+        checkModalChanges();
+        if (window.lucide) lucide.createIcons();
+        return;
+    }
+
+    try {
+        // Build updates keyed by registry header names (matching MODAL_SECTIONS field keys → sheet headers)
+        const updates = {};
+        const KEY_MAP = {
+            id: 'ID', status: 'Active', name: 'MemberName', membershipType: 'Membership',
+            startDate: 'Start Date', endDate: 'End Date', isPaid: 'Paid up',
+            phone: 'Phone', email: 'email', whatsapp: 'WhatsApp',
+            addressLine: 'Address Line', suburb: 'Suburb', postcode: 'PCode',
+            emergencyContactName: 'Emergency Contact Name', emergencyContactNumber: 'Emergency Contact Number',
+            calendarSubscription: 'Calendar Subscription', homeClub: 'Home Club', committee: 'Committee'
+        };
+        changes.forEach(c => {
+            const sheetKey = KEY_MAP[c.key] || c.key;
+            updates[sheetKey] = c.after;
+        });
+        await updateSheet(DOMAIN.members, "Members", activeModalMember.id, updates);
+
+        showMsg('modalMsg', `Saved ${changes.length} change(s) successfully.`, false);
+        await loadMembers();
+        await AuditLog.load();
+
+        const refreshed = allMembers.find(m => m.row === activeModalMember.row) || updatedData;
+        await openMemberModal(refreshed, true);
+    } catch (err) {
+        showMsg('modalMsg', 'Error saving changes: ' + err.message, true);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="inline-icon" data-lucide="save"></i> Save Changes';
+        checkModalChanges();
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function renderModalBoats(boats) {
+    const el = document.getElementById('modalBoats');
+    if (!boats.length) { el.innerHTML = '<div class="empty-state">No boats on record.</div>'; return; }
+    el.innerHTML = `
+        <table class="boat-table">
+            <thead><tr><th>Class</th><th>Sail No</th><th>Model</th><th>Handicap</th><th>HRN</th><th>GH</th><th>GH HCap</th><th>Active</th></tr></thead>
+            <tbody>
+                ${boats.map(b => `
+                    <tr>
+                        <td>${escapeHtml(b.class)}</td>
+                        <td>${escapeHtml(b.sailNo)}</td>
+                        <td>${escapeHtml(b.model)}</td>
+                        <td>${escapeHtml(b.handicap)}</td>
+                        <td>${escapeHtml(b.hrn)}</td>
+                        <td>${escapeHtml(b.gh)}</td>
+                        <td>${escapeHtml(b.ghHcap)}</td>
+                        <td>${b.active ? 'Yes' : 'No'}</td>
+                    </tr>`).join('')}
+            </tbody>
+        </table>`;
+}
+
+function closeMemberModal() {
+    document.getElementById('memberModalOverlay').classList.remove('visible');
+    activeModalMember = null;
+}
+
+async function handleModalAction(action) {
+    if (!activeModalMember) return;
+    if (!confirm(`${ACTION_LABELS[action]}: ${activeModalMember.name}?`)) return;
+    try {
+        await runMemberActionApi(action, activeModalMember);
+        showMsg('modalMsg', `${ACTION_LABELS[action]} completed.`, false);
+        await loadMembers();
+        const refreshed = allMembers.find(m => m.row === activeModalMember.row) || activeModalMember;
+        await openMemberModal(refreshed, true);
+    } catch (err) {
+        showMsg('modalMsg', 'Error: ' + err.message, true);
+    }
+}
+
+/* ============================================================
+BULK COMMUNICATIONS
+============================================================ */
+const BULK_LABELS = {
+    requestAllUpdates: "Request Members Update",
+    sendRenewals: "Send Membership Renewal Emails"
+};
+
+async function sendBulkAction(action, btn) {
+    if (!confirm(`${BULK_LABELS[action]} will be sent to ALL active members. Continue?`)) return;
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = 'Sending…';
+    try {
+        await apiPost(action, {});
+        showMsg(`msg-${action}`, 'Sent to all active members.', false);
+        await AuditLog.load();
+    } catch (err) {
+        showMsg(`msg-${action}`, 'Error: ' + err.message, true);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
+function checkModalChanges() {
+    if (!activeModalMember) return;
+    const inputs = document.querySelectorAll('.modal-field-input');
+    let hasChanges = false;
+
+    inputs.forEach(input => {
+        const key = input.dataset.key;
+        const type = input.dataset.type;
+        let newVal = input.value;
+        let rawOld = activeModalMember[key];
+
+        let normalizedOld = '';
+        let normalizedNew = String(newVal);
+
+        if (type === 'status') {
+            normalizedOld = isActiveStatus(rawOld) ? 'Active' : 'Inactive';
+        } else if (type === 'boolean') {
+            normalizedOld = String(parseBoolLike(rawOld));
+            normalizedNew = String(parseBoolLike(newVal));
+        } else if (type === 'date') {
+            if (rawOld) {
+                const d = new Date(rawOld);
+                normalizedOld = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : String(rawOld);
+            }
+        } else {
+            normalizedOld = rawOld !== undefined && rawOld !== null ? String(rawOld) : '';
+        }
+
+        if (normalizedNew !== normalizedOld) {
+            hasChanges = true;
+        }
+    });
+
+    const btn = document.getElementById('saveMemberBtn');
+    if (btn) {
+        btn.style.display = hasChanges ? 'inline-flex' : 'none';
+    }
+}
+
+function updateAdminCache(key, value) {
+    const all = readAdminCache() || {};
+    all[key] = value;
+    localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(all));
+}
+
+const cached = readAdminCache("members");
+if (cached?.members) {
+    allMembers = cached.members || [];
+    allBoats = cached.boats || [];
+    renderMemberStats();
+    populateMembershipFilterOptions();
+    filterMemberDirectory();
+}
+
+loadMembers();
+if (window.lucide) lucide.createIcons();
 
 
 </script>

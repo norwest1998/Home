@@ -36,7 +36,8 @@ const DOMAIN = {
     results:   "results",
     requests:  "requests",
     media:     "media",
-    racing:    "racing"  
+    racing:    "racing",
+    users:     "users"  
 };
 
 // ===== Event Filters / Series metadata =====
