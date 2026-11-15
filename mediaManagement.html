@@ -346,6 +346,16 @@ function gv(row, ...keys) {
     return "";
 }
 
+function buildFacebookUrl(postID) {
+    if (!postID) return null;
+    const clean = String(postID).trim();
+    if (clean.includes("_")) {
+        const [pageId, postId] = clean.split("_");
+        return `https://www.facebook.com/permalink.php?story_fbid=${encodeURIComponent(postId)}&id=${encodeURIComponent(pageId)}`;
+    }
+    return `https://www.facebook.com/${encodeURIComponent(clean)}`;
+}
+
 async function loadAll() {
     const body = document.getElementById("queueBody");
     body.innerHTML = `<tr class="spinner-row"><td colspan="5" style="text-align:center;padding:24px;"><span class="spinner"></span> Loading media queue…</td></tr>`;
@@ -465,7 +475,10 @@ function renderTable() {
             : `<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.08); color:var(--foam-dim); margin-right:6px;">RESULTS</span>`;
 
         const postID = gv(p, "PostID");
-        const link = postID ? `<a href="https://facebook.com/${postID}" target="_blank" onclick="event.stopPropagation();" style="color:var(--glow);text-decoration:none;"><i data-lucide="external-link" size="14"></i> View</a>` : `<span style="color:var(--foam-dim)">—</span>`;
+        const fbUrl = buildFacebookUrl(postID);
+        const link = fbUrl 
+            ? `<a href="${fbUrl}" target="_blank" onclick="event.stopPropagation();" style="color:var(--glow);text-decoration:none;"><i data-lucide="external-link" size="14"></i> View</a>` 
+            : `<span style="color:var(--foam-dim)">—</span>`;
         const rowKey = gv(p, "HexKey", "QueueID", "Key", "PostID") || idx;
 
         return `<tr class="clickable" onclick="openModal('${escapeHtml(rowKey)}')">
@@ -529,8 +542,9 @@ async function openModal(keyOrIdx) {
         const bgSelect = document.getElementById("fBgImageSelect");
         bgSelect.innerHTML = `<option value="">Default Background</option>`;
         try {
-            const bgList = await apiGet("listBackgroundImages");
-            (bgList || []).forEach(img => {
+            const res = await apiGet("listBackgroundImages");
+            const bgList = res && res.files ? res.files : (Array.isArray(res) ? res : []);
+            bgList.forEach(img => {
                 const opt = document.createElement("option");
                 opt.value = img.id;
                 opt.textContent = img.name;
