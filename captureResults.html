@@ -1758,15 +1758,15 @@ function renderEventSelect(){
   const rows = list.map(e => {
     const st = loadState(e.id);
     const saved = !!st && ((st.entries?.length || 0) > 0 || (st.races?.length || 0) > 0);
-    const selectable = e.status !== 'Processing';
+    const selectable = !['Processing', 'Captured'].includes(e.status);
     let pill = '';  
     if(!selectable){
-      const cls = e.status === 'Processed' ? 'pill-sent' : 'pill-inprogress';
+      const cls = ['Processed', 'Captured'].includes(e.status) ? 'pill-sent' : 'pill-inprogress';
       pill = `<span class="event-status-pill ${cls}">${e.status}</span>`;
     } else if(e.status === 'In Progress' && !saved){
       pill = `<span class="event-status-pill pill-inprogress">In progress</span>`;
     } else if(saved){
-      if(st.sent)                    pill = `<span class="event-status-pill pill-sent">Processing</span>`;
+      if(st.sent)                    pill = `<span class="event-status-pill pill-sent">Captured</span>`;
       else if(st.races?.length > 0)  pill = `<span class="event-status-pill pill-inprogress">In progress</span>`;
       else                           pill = `<span class="event-status-pill pill-inprogress">Entries set</span>`;
     }
