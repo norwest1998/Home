@@ -21,7 +21,8 @@ const DOMAINS = [
     { label: "Results",      href: "resultsManagement.html" },
     { label: "Tracking",     href: "trackingManagement.html" },
     { label: "Documents",    href: "documentManagement.html" },
-    { label: "Racing",       href: "racingManagement.html" } 
+    { label: "Racing",       href: "racingManagement.html" },
+    { label: "Users",        href: "userManagement.html" }  
 ];
 
 const Nav = {
