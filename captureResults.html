@@ -2604,6 +2604,12 @@ async function saveAndSend(){
       mimeType: "application/json"
     }, FILE_GATEWAY_URL);
     
+    // Upload saved – mark calendar event as Captured
+    try {
+      const r = await gw({ action: 'setResults', hexKey: ev.id, results: 'Captured' }, CAL_WEBAPP_URL);
+      if (!r || !r.skipped) { const cev = EVENTS.find(x => x.id === ev.id); if (cev) cev.status = 'Captured'; }
+    } catch (err) { console.warn('Captured status update failed', err); }
+    
     showToast('Results uploaded successfully');
     state.sent = true;
     saveState();
@@ -2612,9 +2618,9 @@ async function saveAndSend(){
     console.error(e);
     showToast('Upload failed: ' + e.message + '.');
     // await downloadJSON();
-    // state.sent = true;
-    // saveState();
-    // setTimeout(() => changeEvent(), 800);
+    state.sent = true;
+    saveState();
+    setTimeout(() => changeEvent(), 800);
   } finally {
     if (sendBtn) {
       sendBtn.disabled = false;
