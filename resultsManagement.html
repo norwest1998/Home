@@ -38,7 +38,7 @@
     border-radius: 10px; cursor: pointer;
     transition: background 0.15s, border-color 0.15s, transform 0.12s;
 }
-.result-row[id^="evt-"] .row-actions { grid-column: 4 / -1; }
+
 .result-row:hover {
     background: var(--glass-fill-hi);
     border-color: rgba(94,234,212,0.3);
@@ -51,6 +51,19 @@
 .result-row .r-meta { font-size: 11.5px; color: var(--foam-dim); }
 .result-row .r-type { font-family: var(--font-data); font-size: 10.5px; color: var(--foam-dim); white-space: nowrap; }
 
+.badge-notstarted { background: rgba(255,106,61,0.15); border: 1px solid rgba(255,106,61,0.35); color: var(--signal); }
+.badge-postponed  { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.35); color: #fbbf24; }
+.badge-cancelled  { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.35);  color: #f87171; }
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+.status-badge .inline-icon {
+    width: 12px;
+    height: 12px;
+}
 /* ── Inline class insignia in rows ── */
 .row-insignia {
     width: 36px; height: 36px; flex-shrink: 0;
@@ -403,13 +416,13 @@ select.guest-inline-input option {
         </div>
     </div>
     <div class="panel" style="margin-bottom:16px;">
-        <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Not Started</h3></div></div>
-        <div class="tab-content active"><div id="outstandingRows" class="result-rows"></div></div>
-        <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Postponed</h3></div></div>
-        <div class="tab-content active"><div id="postponedRows" class="result-rows"></div></div>
-        <div class="panel-header"><div class="panel-title-left"><span class="dot"></span><h3>Cancelled</h3></div></div>
-        <div class="tab-content active"><div id="cancelledRows" class="result-rows"></div></div>
-        <div class="fn-message" id="outstandingMsg"></div>
+        <div class="panel-header">
+            <div class="panel-title-left"><span class="dot"></span><h3>Events Awaiting Results</h3></div>
+        </div>
+        <div class="tab-content active">
+            <div id="outstandingRows" class="result-rows"></div>
+            <div class="fn-message" id="outstandingMsg"></div>
+        </div>
     </div>
 
     <!-- Processed Results Files -->
@@ -1010,19 +1023,63 @@ async function loadOutstanding() {
     focusOutstandingFromUrl();
 }
 
-function evtRow(e, actions, showAge) {
+function getStatusBadge(status) {
+    const s = String(status || 'not started').trim().toLowerCase();
+    if (s === 'postponed') {
+        return `<span class="badge badge-postponed status-badge">
+            <i class="inline-icon" data-lucide="calendar-clock"></i> Postponed
+        </span>`;
+    }
+    if (s === 'cancelled') {
+        return `<span class="badge badge-cancelled status-badge">
+            <i class="inline-icon" data-lucide="x-circle"></i> Cancelled
+        </span>`;
+    }
+    if (s === 'not started' || !s) {
+        return `<span class="badge badge-notstarted status-badge">
+            <i class="inline-icon" data-lucide="alert-circle"></i> Not Started
+        </span>`;
+    }
+    const label = s.charAt(0).toUpperCase() + s.slice(1);
+    return `<span class="badge badge-default status-badge">
+        <i class="inline-icon" data-lucide="info"></i> ${escHtml(label)}
+    </span>`;
+}
+
+// Action button icons tailored per status
+function getEventActions(e) {
+    const s = (e.results || '').toLowerCase();
+    if (s === 'cancelled') {
+        // Cancelled: only Reschedule is relevant
+        return rowActions(e.hexKey, { capture: false, cancel: false });
+    } else if (s === 'postponed') {
+        // Postponed: Reschedule or Cancel
+        return rowActions(e.hexKey, { capture: false, cancel: true });
+    }
+    // Not Started: Capture Results, Reschedule, or Cancel
+    return rowActions(e.hexKey, { capture: true, cancel: true });
+}
+
+function evtRow(e) {
     const name = `${e.raceClass} ${e.regattaType}${e.round ? ' Rd ' + e.round : ''}`.trim();
     const img  = getClassImage(e.raceClass);
     const dmy  = formatDateYYYYMMDD(e.date).split('/').reverse().join('/');
-    const age  = showAge ? daysOverdue(e) : 0;
+    const isNotStarted = (e.results || '').toLowerCase() === 'not started';
+    const age  = isNotStarted ? daysOverdue(e) : 0;
     const col  = age > 14 ? '#f87171' : age > 7 ? '#fbbf24' : 'inherit';
-    const res = e.results ? e.results.charAt(0).toUpperCase() + e.results.slice(1) : 'Not Started';
+    const statusBadge = getStatusBadge(e.results);
+    const actions = getEventActions(e);
+
     return `<div class="result-row" id="evt-${escHtml(e.hexKey)}">
         ${img ? `<img class="row-insignia" src="${escHtml(img)}" alt="">` : '<div class="row-insignia-placeholder"></div>'}
-        <div><div class="r-name">${escHtml(name)}</div>
-        <div class="r-meta">${e.resched ? 'Rescheduled' : 'Scheduled'}: ${dmy}${showAge && e.coordinator ? ` · ${escHtml(e.coordinator)}` : ''}${showAge && e.reminders ? ` · ${e.reminders} reminder${e.reminders === 1 ? '' : 's'}` : ''}${showAge ? ` · <span style="color:${col}">${age}d overdue</span>` : ''}</div></div>
-        <div class="r-date">${escHtml(res)}</div>
-        <div class="row-actions">${actions}</div></div>`;
+        <div>
+            <div class="r-name">${escHtml(name)}</div>
+            <div class="r-meta">${e.resched ? 'Rescheduled' : 'Scheduled'}: ${dmy}${e.coordinator ? ` · ${escHtml(e.coordinator)}` : ''}${e.reminders ? ` · ${e.reminders} reminder${e.reminders === 1 ? '' : 's'}` : ''}${age > 0 ? ` · <span style="color:${col}">${age}d overdue</span>` : ''}</div>
+        </div>
+        <div class="r-date">${escHtml(dmy)}</div>
+        <div>${statusBadge}</div>
+        <div class="row-actions">${actions}</div>
+    </div>`;
 }
 
 // Deep link: resultsManagement.html?outstanding=<HexKey>
@@ -1054,19 +1111,14 @@ function renderOutstanding() {
     setStat('statPostponed', postponedEvents.length, 'is-folder');
     setStat('statCancelled', cancelledEvents.length, 'is-folder');
 
-    document.getElementById('outstandingRows').innerHTML = outstandingEvents.length
-        ? outstandingEvents.map(e => evtRow(e, rowActions(e.hexKey, true), true)).join('')
+    // Combine all outstanding events sorted by date
+    const allEvents = [...outstandingEvents, ...postponedEvents, ...cancelledEvents].sort((a, b) => a.date - b.date);
+
+    document.getElementById('outstandingRows').innerHTML = allEvents.length
+        ? allEvents.map(e => evtRow(e)).join('')
         : '<div class="empty-state">No outstanding results 🎉</div>';
 
-    document.getElementById('postponedRows').innerHTML = postponedEvents.length
-        ? postponedEvents.map(e => evtRow(e, rowActions(e.hexKey), false)).join('')
-        : '<div class="empty-state">No postponed events</div>';
-
-    document.getElementById('cancelledRows').innerHTML = cancelledEvents.length
-            ? cancelledEvents.map(e => evtRow(e, rowActions(e.hexKey, { cancel: false }), false)).join('')
-            : '<div class="empty-state">No cancelled events</div>';
-
-    applyRoles();                       // shared.js: hide data-min-role buttons rendered after page load
+    applyRoles();
     if (window.lucide) lucide.createIcons();
 }
 
@@ -1080,14 +1132,15 @@ function goCapture(hexKey) {
 }
 
 async function cancelEvent(hexKey, btn) {
-    const e = [...outstandingEvents, ...postponedEvents].find(x => x.hexKey === hexKey);
-    if (!e || !confirm(`Cancel "${e.raceClass} ${e.regattaType}"? It will move to the Cancelled list.`)) return;
+    const allEvents = [...outstandingEvents, ...postponedEvents, ...cancelledEvents];
+    const e = allEvents.find(x => x.hexKey === hexKey);
+    if (!e || !confirm(`Cancel "${e.raceClass} ${e.regattaType}"? Status will be updated to Cancelled.`)) return;
     const orig = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner" style="margin:0"></span>';
     try {
         await updateSheet(DOMAIN.calendar, "Event Data", hexKey, { "Results": "Cancelled" });
-        await loadOutstanding();                     // re-renders, so the spinner button is replaced
+        await loadOutstanding();
         showMsg('outstandingMsg', 'Event cancelled.', false);
     } catch (err) {
         btn.disabled = false; btn.innerHTML = orig;
