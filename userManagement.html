@@ -109,6 +109,7 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12px; }
                     <button class="tab active" data-tab="tabUsers">Users Directory</button>
                     <button class="tab" data-tab="tabLogins" id="tabLoginsBtn">Login Log</button>
                     <button class="tab" data-tab="tabTraffic" id="tabTrafficBtn">Page Traffic</button>
+                    <button class="tab" data-tab="tabAccess" id="tabAccessBtn">Access</button>
                 </div>
             </div>
         </div>
@@ -178,6 +179,7 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12px; }
                 <div class="traffic-pill"><span>Loading traffic…</span></div>
             </div>
         </div>
+        <div class="tab-content" id="tabAccess"></div>
     </div>
 
     <!-- ===================== SESSION PAGE VIEWS MODAL ===================== -->
@@ -274,7 +276,7 @@ table.users-table { width:100%; border-collapse:collapse; font-size:12px; }
                     <label><input type="checkbox" value="code"> Emailed code</label>
                     <label><input type="checkbox" value="password"> Password</label>
                 </div>
-                <span class="hint">Defaults: @gmail.com → google,code; otherwise code.</span>
+                <span class="hint">Defaults come from Access → Settings.</span>
             </div>
             <div class="modal-footer">
                 <span class="modal-status" id="createStatus"></span>
@@ -358,7 +360,17 @@ function mv(m, ...keys) {
     }
     return "";
 }
-const defaultLT = email => /@gmail\.com$/i.test(email) ? ["google", "code"] : ["code"];
+let DEFAULT_LOGIN = [{ domain: "gmail.com", types: ["google", "code"] }, { domain: "*", types: ["code"] }];   // replaced by Access > Settings
+const defaultLT = email => {
+    const d = String(email).split("@")[1]?.toLowerCase();
+    return (DEFAULT_LOGIN.find(x => x.domain === d) || DEFAULT_LOGIN.find(x => x.domain === "*") || { types: ["code"] }).types;
+};
+function setRoleOptions(rl) {
+    DEFAULT_LOGIN = rl.defaultLogin || DEFAULT_LOGIN;
+    const act = rl.roles.filter(r => r.active), opt = a => a.map(r => `<option value="${escapeHtml(r.role)}">${escapeHtml(r.label)}</option>`).join("");
+    $("filterRole").innerHTML = `<option value="">All Roles</option>` + opt(rl.roles);
+    $("cRole").innerHTML = opt(act); $("eRole").innerHTML = opt(act);
+}
 const fmtDT = v => {
     if (!v) return "—";
     const d = new Date(v);
@@ -384,6 +396,7 @@ document.querySelectorAll(".tab[data-tab]").forEach(tabBtn => {
         $(tabBtn.dataset.tab).classList.add("active");
         if (tabBtn.dataset.tab === "tabLogins" && !loginLogs.length) loadLogins();
         if (tabBtn.dataset.tab === "tabTraffic") loadTraffic();
+        if (tabBtn.dataset.tab === "tabAccess") Access.open();
     });
 });
 
@@ -392,10 +405,12 @@ async function loadAll() {
     $("usersBody").innerHTML = `<tr class="spinner-row"><td colspan="8"><span class="spinner"></span> Loading users…</td></tr>`;
     ["total","active30","admin","coord","viewer","locked","nologin"].forEach(k => $("stat-" + k).innerHTML = `<span class="spinner"></span>`);
     try {
-        const [u, m] = await Promise.all([
+        const [u, m, rl] = await Promise.all([
             apiGet("listUsers"),
-            fetchSheet(DOMAIN.members, "Members").catch(() => [])
+            fetchSheet(DOMAIN.members, "Members").catch(() => []),
+            apiGet("getRoles").catch(() => null)
         ]);
+        if (rl) setRoleOptions(rl);
         users = Array.isArray(u.values) ? u.values : null;
         if (!users) throw new Error("listUsers returned unexpected data: " + JSON.stringify(u).slice(0, 300));
         members = m || [];
@@ -594,6 +609,7 @@ function openEdit(email) {
     editing = u; clearLock = false;
     const self = lc(u.Email) === lc(me.email);
     $("editTitle").textContent = u.Name || "Maintain User";
+    if (![...$("eRole").options].some(o => o.value === u.Role)) $("eRole").add(new Option(u.Role, u.Role));
     $("eEmail").value = u.Email; $("eRole").value = u.Role;
     $("eEmail").disabled = self; $("eRole").disabled = self;
     $("eSelfNote").style.display = self ? "block" : "none";
@@ -654,10 +670,12 @@ if (isAdmin) {
         `<div class="glass" style="padding:24px;margin-bottom:24px;">Administrator access is required to view user management and access logs.</div>`);
     $("tabLoginsBtn").style.display = "none";
     $("tabTrafficBtn").style.display = "none";
+    $("tabAccessBtn").style.display = "none";
     $("newUserBtn").style.display = "none";
 }
 if (window.lucide) lucide.createIcons();
 </script>
+<script src="access.js"></script>
 <script>
 Promise.all([
     fetch('nav.html').then(r => r.text()),

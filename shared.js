@@ -345,7 +345,17 @@ function initPageTelemetry() {
 document.addEventListener("DOMContentLoaded", initPageTelemetry);
 
 // Utilities
-const ROLE_RANK = { viewer: 1, coord: 2,editor: 3, admin: 4 };
+const ROLE_RANK = JSON.parse(localStorage.getItem("SMMC_ROLES") || "null") || { viewer: 1, coord: 2, editor: 3, admin: 4 };
+async function refreshRoles() {          // ranks are configured in Users > Access > Roles
+  if (!localStorage.getItem(TOKEN_KEY) || Date.now() - Number(localStorage.getItem("SMMC_ROLES_AT") || 0) < 3600000) return;
+  try {
+    const d = await gw({ action: "getRoles" }), r = {};
+    d.roles.filter(x => x.active).forEach(x => r[x.role] = x.rank);
+    localStorage.setItem("SMMC_ROLES", JSON.stringify(r)); localStorage.setItem("SMMC_ROLES_AT", String(Date.now()));
+    Object.keys(ROLE_RANK).forEach(k => delete ROLE_RANK[k]); Object.assign(ROLE_RANK, r); applyRoles();
+  } catch (e) {}
+}
+document.addEventListener("DOMContentLoaded", refreshRoles);
 function applyRoles() {
   const r = ROLE_RANK[(JSON.parse(localStorage.getItem("SMMC_USER") || "{}")).role] || 0;
   document.querySelectorAll("[data-min-role]").forEach(el => { if (r < ROLE_RANK[el.dataset.minRole]) el.style.display = "none"; });
@@ -389,7 +399,7 @@ const Account = {
         <strong>${escapeHtml(u.name || "—")}</strong>
         <div><span>Email</span>${escapeHtml(u.email || "—")}</div>
         <div><span>Role</span>${escapeHtml(cap)}</div>
-        <div><span>Access</span>Level ${lvl} of 4</div>
+        <div><span>Access</span>Level ${lvl} of ${Math.max(...Object.values(ROLE_RANK))}</div>
         <a href="#" onclick="logout();return false;">Sign out</a>
       </div>`;
     hdr.appendChild(el);
