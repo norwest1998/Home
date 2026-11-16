@@ -703,7 +703,7 @@ const FUNCTIONS = [
         icon: '<i data-lucide="users" color="#257fb6"></i>',
         title: "User Management",
         description: "Manage portal users, roles and login methods.",
-        href: "users.html",
+        href: "userManagement.html",
         status: (data) => {
             const u = data.users;
             if (!u) return { pills: [{ label: "Admin only", value: "🔒", className: "badge-default" }] };
