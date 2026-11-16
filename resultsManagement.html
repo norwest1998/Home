@@ -886,21 +886,74 @@ function calcStarters(json) {
  * Parse a Drive file name into { date, class, type }
  * Expected format: "DF95 Handicap - 11/07/2026"
  */
-function parseFileName(name) {
-    const raw  = String(name || '').replace(/\.[^.]+$/, '');
-    const m    = raw.match(/^(.+?)\s+-\s+(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
-    if (!m) return { date: null, raceClass: '', raceType: '', raw };
-    let head = m[1].trim();
-    const rd = head.match(/\s+Rd\s*(\d+)$/i);
-    if (rd) head = head.slice(0, rd.index).trim();
-    const parts = head.split(/\s+/);
-    const raceType  = parts.length > 1 ? parts[parts.length - 1] : parts[0];
-    const raceClass = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
+function parseFileName(name, createdTime) {
+    const raw = String(name || '').replace(/\.[^.]+$/, '').trim();
+
+    // 1. Match date patterns (DD/MM/YYYY or YYYY-MM-DD)
+    const mDmy = raw.match(/\b(0?[1-9]|[12]\d|3[01])[-\/.](0?[1-9]|1[0-2])[-\/.](20\d\d)\b/);
+    const mIso = raw.match(/\b(20\d\d)[-\/.](0?[1-9]|1[0-2])[-\/.](0?[1-9]|[12]\d|3[01])\b/);
+
+    let d = null;
+    let dateStr = '';
+    let dateMatch = null;
+
+    if (mDmy) {
+        const dd = mDmy[1].padStart(2, '0');
+        const mm = mDmy[2].padStart(2, '0');
+        const yyyy = mDmy[3];
+        d = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
+        dateStr = `${dd}/${mm}/${yyyy}`;
+        dateMatch = mDmy;
+    } else if (mIso) {
+        const yyyy = mIso[1];
+        const mm = mIso[2].padStart(2, '0');
+        const dd = mIso[3].padStart(2, '0');
+        d = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
+        dateStr = `${dd}/${mm}/${yyyy}`;
+        dateMatch = mIso;
+    } else if (createdTime) {
+        const cd = new Date(createdTime);
+        if (!isNaN(cd.getTime())) {
+            d = cd;
+            const dd = String(cd.getDate()).padStart(2, '0');
+            const mm = String(cd.getMonth() + 1).padStart(2, '0');
+            dateStr = `${dd}/${mm}/${cd.getFullYear()}`;
+        }
+    }
+
+    // 2. Extract Round Number (e.g. "Rd 4", "Round 4", "R4")
+    let fileRound = null;
+    const rdMatch = raw.match(/\b(?:Round|Rd|R)\s*(\d+)\b/i);
+    if (rdMatch) fileRound = Number(rdMatch[1]);
+
+    // 3. Extract Class and Regatta Type from the name
+    const KNOWN_CLASSES = ['DF95', 'DF65', 'IOM', 'Soling', 'Marblehead', 'Laser', 'Twilight', 'Social', 'General'];
+    const KNOWN_TYPES   = ['Scratch', 'Handicap', 'Championship', 'Pennant', 'Cup', 'Regatta'];
+
+    let raceClass = KNOWN_CLASSES.find(kc => new RegExp('\\b' + kc + '\\b', 'i').test(raw)) || '';
+    let raceType  = KNOWN_TYPES.find(kt => new RegExp('\\b' + kt + '\\b', 'i').test(raw)) || '';
+
+    // Fallback if not matched against known keywords
+    if (!raceClass || !raceType) {
+        let clean = raw;
+        if (dateMatch) clean = clean.replace(dateMatch[0], '');
+        clean = clean.replace(/\b(?:Round|Rd|R)\s*\d+\b/gi, '')
+                     .replace(/^[\s\-_]+|[\s\-_]+$/g, '')
+                     .replace(/\s*-\s*/g, ' ')
+                     .trim();
+        const parts = clean.split(/\s+/).filter(Boolean);
+        if (!raceType && parts.length > 1) raceType = parts[parts.length - 1];
+        if (!raceClass && parts.length > 1) raceClass = parts.slice(0, -1).join(' ');
+        if (!raceClass && parts.length === 1) raceClass = parts[0];
+    }
+
     return {
-        date: new Date(`${m[4]}-${m[3].padStart(2,'0')}-${m[2].padStart(2,'0')}`),
-        dateStr: `${m[2]}/${m[3]}/${m[4]}`,
-        raceClass, raceType, raw,
-        fileRound: rd ? Number(rd[1]) : null
+        date: d,
+        dateStr,
+        raceClass,
+        raceType,
+        raw,
+        fileRound
     };
 }
 
@@ -1168,9 +1221,13 @@ async function loadProcessedFiles() {
     try {
         const files = await fetchDriveFolder("processed");
         allProcessedFiles = files.map(f => {
-            const parsed = parseFileName(f.name || '');
+            const parsed = parseFileName(f.name || '', f.createdTime);
             return { ...f, ...parsed };
-        }).sort((a, b) => (b.date || 0) - (a.date || 0));
+        }).sort((a, b) => {
+            const da = a.date ? a.date.getTime() : 0;
+            const db = b.date ? b.date.getTime() : 0;
+            return db - da; // Descending: latest first
+        });
         assignRoundNumbers(allProcessedFiles);
 
         populateFilters();

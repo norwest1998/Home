@@ -262,10 +262,11 @@ async function deleteRow(domain, sheetName, hexKey) {
 // RESTORED HTTP GET WRAPPER (Used strictly for external endpoints that don't support our POST structure)
 async function gwGet(payload, url) {
     const params = new URLSearchParams(payload);
+    params.append("_ts", String(Date.now())); // Cache buster
     const token = localStorage.getItem(TOKEN_KEY);
     if (token) params.append("token", token);
     
-    const res = await fetch(`${url}?${params.toString()}`);
+    const res = await fetch(`${url}?${params.toString()}`, { cache: "no-store" });
     const text = await res.text();
     let data; 
     try { 
