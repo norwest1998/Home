@@ -1235,6 +1235,13 @@ const SystemHealth = {
                 clearBtn.disabled = false;
             }
         });
+        const schemaBtn = document.getElementById('refreshSchemaBtn');
+        if (schemaBtn) schemaBtn.addEventListener('click', async () => {
+            schemaBtn.disabled = true;
+            try { await apiGet("refreshSchema"); this.load(); }
+            catch (err) { alert("Schema refresh failed: " + err.message); }
+            finally { schemaBtn.disabled = false; }
+        });
         if (refreshBtn) refreshBtn.addEventListener('click', () => this.load());
         if (document.getElementById('sysHealthBody')) this.load();
     },
