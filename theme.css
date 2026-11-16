@@ -1008,3 +1008,14 @@
 
   /* Loading spinner keyframe (used by .spinner) */
   @keyframes spin{ to{ transform:rotate(360deg); } }
+
+.search-wrap .search-input,
+.search-wrap input {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
