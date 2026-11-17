@@ -1015,7 +1015,7 @@ async function loadOutstanding() {
                      results: _t(o.Results).toLowerCase(), resched, date: resched || orig };
         }).filter(e => e.hexKey && e.type === 'Competition' && e.date && inSeason(e.season, e.date));
 
-        outstandingEvents = ev.filter(e => e.results === 'not started' && e.date < today).sort((a, b) => a.date - b.date);
+        outstandingEvents = ev.filter(e => (e.results === 'not started' && e.date < today) || e.results === 'in progress').sort((a, b) => a.date - b.date);
         postponedEvents   = ev.filter(e => e.results === 'postponed').sort((a, b) => a.date - b.date);
         cancelledEvents   = ev.filter(e => e.results === 'cancelled').sort((a, b) => a.date - b.date);
     } catch (err) {
@@ -1038,9 +1038,9 @@ function getStatusBadge(status) {
             <i class="inline-icon" data-lucide="x-circle"></i> Cancelled
         </span>`;
     }
-    if (s === 'not started' || !s) {
+    if (s === 'not started' || s === 'in progress' || !s) {          // In Progress shares Not Started's badge and icon
         return `<span class="badge badge-notstarted status-badge">
-            <i class="inline-icon" data-lucide="alert-circle"></i> Not Started
+            <i class="inline-icon" data-lucide="alert-circle"></i> ${s === 'in progress' ? 'In Progress' : 'Not Started'}
         </span>`;
     }
     const label = s.charAt(0).toUpperCase() + s.slice(1);
@@ -1059,7 +1059,7 @@ function getEventActions(e) {
         // Postponed: Reschedule or Cancel
         return rowActions(e.hexKey, { capture: false, cancel: true });
     }
-    // Not Started: Capture Results, Reschedule, or Cancel
+    // Not Started / In Progress: Capture Results, Reschedule, or Cancel
     return rowActions(e.hexKey, { capture: true, cancel: true });
 }
 
@@ -1067,7 +1067,7 @@ function evtRow(e) {
     const name = `${e.raceClass} ${e.regattaType}${e.round ? ' Rd ' + e.round : ''}`.trim();
     const img  = getClassImage(e.raceClass);
     const dmy  = formatDateYYYYMMDD(e.date).split('/').reverse().join('/');
-    const isNotStarted = (e.results || '').toLowerCase() === 'not started';
+    const isNotStarted = ['not started', 'in progress'].includes((e.results || '').toLowerCase());
     const age  = isNotStarted ? daysOverdue(e) : 0;
     const col  = age > 14 ? '#f87171' : age > 7 ? '#fbbf24' : 'inherit';
     const statusBadge = getStatusBadge(e.results);
