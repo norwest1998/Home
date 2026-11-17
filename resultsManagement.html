@@ -1197,7 +1197,7 @@ function formatProcessedDate(createdTime) {
  * read from the name. Class, type, round, date and season come from Event Data; series (and its overall
  * results spreadsheet) from Series via Event Data.RegattaID.
  */
-const hexFromName = name => ((String(name || '').match(/\[([A-F0-9]{8})\]\.json$/i) || [])[1] || '').toUpperCase();
+const hexFromName = name => ((String(name || '').match(/\[([A-F0-9]{8})\](?:\.json)?$/i) || [])[1] || '').toUpperCase();
 
 function resolveFile(f) {
     const ev = calByHex.get(hexFromName(f.name));
