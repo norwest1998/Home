@@ -885,23 +885,50 @@ function calcStarters(json) {
         (r.dnf || []).filter(p => p !== '' && p !== null).length));
 }
 
-let allClubClasses = [];
+let allClubClasses = []; // [{ id, name, insignia }]
 
 async function loadClubClasses() {
     if (allClubClasses.length) return allClubClasses;
     try {
         const rows = await fetchSheet(DOMAIN.members, "Classes");
         allClubClasses = rows
-            .filter(r => r.Active === undefined || String(r.Active).toUpperCase() === 'TRUE' || r.Active === true)
-            .map(r => String(r.ClassName || r.Class || '').trim())
-            .filter(Boolean)
-            .filter((v, i, arr) => arr.indexOf(v) === i)
-            .sort((a, b) => a.localeCompare(b));
+            .filter(r => r.ClassID || r.ClassName || r.Class)
+            .map(r => ({
+                id: String(r.ClassID || '').trim(),
+                name: String(r.ClassName || r.Class || r.ClassID || '').trim(),
+                insignia: String(r.Insignia || '').trim()
+            }));
     } catch (e) {
         console.warn("Failed to load Classes from Club Management sheet:", e);
         allClubClasses = [];
     }
     return allClubClasses;
+}
+
+// Helper: check if a string matches a verified club class
+function findClubClass(str) {
+    if (!str || !allClubClasses.length) return null;
+    const s = String(str).trim().toLowerCase();
+    return allClubClasses.find(c => 
+        (c.id && c.id.toLowerCase() === s) || 
+        (c.name && c.name.toLowerCase() === s)
+    ) || null;
+}
+
+// Helper: scan a text string (like a filename) for any verified club class
+function matchClubClassInText(text) {
+    if (!text || !allClubClasses.length) return null;
+    const sorted = [...allClubClasses].sort((a, b) => 
+        Math.max(b.name.length, b.id.length) - Math.max(a.name.length, a.id.length)
+    );
+    for (const c of sorted) {
+        const idRegex = c.id ? new RegExp('\\b' + c.id + '\\b', 'i') : null;
+        const nameRegex = c.name ? new RegExp('\\b' + c.name + '\\b', 'i') : null;
+        if ((idRegex && idRegex.test(text)) || (nameRegex && nameRegex.test(text))) {
+            return c;
+        }
+    }
+    return null;
 }
 
 let allRacingSeries = [];
@@ -928,7 +955,6 @@ async function loadRacingSeries() {
 function parseFileName(name, createdTime) {
     const raw = String(name || '').replace(/\.[^.]+$/, '').trim();
 
-    // Match DD/MM/YYYY or YYYY/MM/DD using hyphens, slashes, dots, or underscores
     const mDmy = raw.match(/\b(0?[1-9]|[12]\d|3[01])[-\/._](0?[1-9]|1[0-2])[-\/._](20\d\d)\b/);
     const mIso = raw.match(/\b(20\d\d)[-\/._](0?[1-9]|1[0-2])[-\/._](0?[1-9]|[12]\d|3[01])\b/);
 
@@ -964,25 +990,15 @@ function parseFileName(name, createdTime) {
     const rdMatch = raw.match(/\b(?:Round|Rd|R)\s*(\d+)\b/i);
     if (rdMatch) fileRound = Number(rdMatch[1]);
 
-    const KNOWN_CLASSES = ['DF95', 'DF65', 'IOM', 'Soling', 'Marblehead', 'Laser', 'Twilight', 'Social', 'General'];
-    const KNOWN_TYPES   = ['Scratch', 'Handicap', 'Championship', 'Pennant', 'Cup', 'Regatta'];
+    // Check against official Club Management classes
+    const matchedCls = matchClubClassInText(raw);
+    let raceClass = matchedCls ? (matchedCls.id || matchedCls.name) : '';
 
-    let raceClass = KNOWN_CLASSES.find(kc => new RegExp('\\b' + kc + '\\b', 'i').test(raw)) || '';
-    let raceType  = KNOWN_TYPES.find(kt => new RegExp('\\b' + kt + '\\b', 'i').test(raw)) || '';
+    const KNOWN_TYPES = ['Scratch', 'Handicap', 'Championship', 'Pennant', 'Cup', 'Regatta'];
+    let raceType = KNOWN_TYPES.find(kt => new RegExp('\\b' + kt + '\\b', 'i').test(raw)) || '';
 
-    if (!raceClass || !raceType) {
-        let clean = raw;
-        if (dateMatch) clean = clean.replace(dateMatch[0], '');
-        clean = clean.replace(/\b(?:Round|Rd|R)\s*\d+\b/gi, '')
-                     .replace(/^[\s\-_]+|[\s\-_]+$/g, '')
-                     .replace(/\s*-\s*/g, ' ')
-                     .trim();
-        const parts = clean.split(/\s+/).filter(Boolean);
-        if (!raceType && parts.length > 1) raceType = parts[parts.length - 1];
-        if (!raceClass && parts.length > 1) raceClass = parts.slice(0, -1).join(' ');
-        if (!raceClass && parts.length === 1) raceClass = parts[0];
-    }
-
+    // If not matched, leave raceClass and raceType empty ('') so resolveFileSeriesInfo 
+    // resolves them authoritatively from the Calendar / Series sheets.
     return {
         date: d,
         dateStr,
@@ -1018,10 +1034,26 @@ const CLASS_IMAGE_MAP = {
 
 function getClassImage(raceClass) {
     if (!raceClass) return '';
-    // Match on first word or full class name
-    const key = Object.keys(CLASS_IMAGE_MAP).find(k =>
-        String(raceClass).toLowerCase().includes(k.toLowerCase())
+    const norm = String(raceClass).trim().toLowerCase();
+
+    // 1. Look up from Club Management "Classes" sheet
+    const clubCls = allClubClasses.find(c => 
+        (c.id && c.id.toLowerCase() === norm) || 
+        (c.name && c.name.toLowerCase() === norm) ||
+        norm.includes(c.id.toLowerCase()) ||
+        norm.includes(c.name.toLowerCase())
     );
+
+    if (clubCls && clubCls.insignia) {
+        const ins = clubCls.insignia;
+        if (ins.startsWith('http') || ins.startsWith('/')) return ins;
+        if (!ins.startsWith('<svg') && /^[\w-]{20,}$/.test(ins)) {
+            return `https://lh3.googleusercontent.com/d/${encodeURIComponent(ins)}=w40`;
+        }
+    }
+
+    // 2. Fallback to local image map
+    const key = Object.keys(CLASS_IMAGE_MAP).find(k => norm.includes(k.toLowerCase()));
     return key ? CLASS_IMAGE_MAP[key] : '';
 }
 
@@ -1321,7 +1353,9 @@ function formatProcessedDate(createdTime) {
 function resolveFileSeriesInfo(f) {
     const raw = f.raw || '';
     let seriesName = '';
-    let raceClass  = f.raceClass || '';
+    // Only trust raceClass if it is a verified club class
+    let verifiedInitial = findClubClass(f.raceClass);
+    let raceClass = verifiedInitial ? (verifiedInitial.id || verifiedInitial.name) : '';
     let raceType   = f.raceType || '';
     let round      = f.fileRound || f.round || null;
     let eventDate  = f.date;
@@ -1340,18 +1374,22 @@ function resolveFileSeriesInfo(f) {
     }
 
     // 2. Fallback: match by Date + Class in Event Data
-    if (!calEvent && f.date && raceClass && allCalendarRows.length) {
+    if (!calEvent && f.date && allCalendarRows.length) {
         const fIso = formatDateYYYYMMDD(f.date);
         calEvent = allCalendarRows.find(r => {
             const rIso = formatDateYYYYMMDD(r.Date || r['Rescheduled Date']);
             const rCls = String(r.Class || '').trim().toLowerCase();
-            return rIso === fIso && rCls === raceClass.toLowerCase();
+            return rIso === fIso && (!raceClass || rCls === raceClass.toLowerCase());
         });
     }
 
     if (calEvent) {
-        if (!raceClass) raceClass = String(calEvent.Class || '').trim();
-        if (!raceType)  raceType  = String(calEvent['Regatta Type'] || '').trim();
+        // Authoritative class resolution from Calendar Event Data
+        const calCls = String(calEvent.Class || '').trim();
+        const vCal = findClubClass(calCls);
+        raceClass = vCal ? (vCal.id || vCal.name) : (calCls || raceClass);
+
+        if (!raceType) raceType = String(calEvent['Regatta Type'] || '').trim();
         if (!round && calEvent['Round no']) round = Number(calEvent['Round no']);
         if (!eventDateStr && calEvent.Date) {
             const cd = parseCalDate(calEvent.Date);
@@ -1369,61 +1407,38 @@ function resolveFileSeriesInfo(f) {
             if (sMatch && sMatch.SeriesName) seriesName = String(sMatch.SeriesName).trim();
         }
 
-        // Clean event name if it has round numbers like "DF95 Scratch Rd 1"
         if (!seriesName) {
             const rawEvName = String(calEvent.EventName || calEvent.Event || '').trim();
             if (rawEvName) {
-                const cleaned = rawEvName.replace(/\s*[-–—]?\s*(?:Round|Rd|R)\s*\d+.*$/i, '').trim();
-                seriesName = cleaned || rawEvName;
+                // Strip round numbers and time ranges like "11:00 - 13:00 "
+                seriesName = rawEvName
+                    .replace(/^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}\s*/, '')
+                    .replace(/\s*[-–—]?\s*(?:Round|Rd|R)\s*\d+.*$/i, '')
+                    .trim();
             }
         }
     }
 
-    // 3. Match from EventFilters if hex exists
-    if (!seriesName && hex) {
-        const s = EventFilters.get(hex);
-        if (s && s.name) seriesName = s.name;
+    // 3. Fallback to Series matching by Class and Type
+    if (!seriesName && raceClass && allRacingSeries.length) {
+        const match = allRacingSeries.find(s => {
+            const allowed = String(s.AllowedClasses || '').split(',').map(c => c.trim().toLowerCase()).filter(Boolean);
+            const hasClass = !allowed.length || allowed.includes(raceClass.toLowerCase());
+            const sName = String(s.SeriesName || '').toLowerCase();
+            const hasType = raceType ? sName.includes(raceType.toLowerCase()) : true;
+            return hasClass && hasType;
+        });
+        if (match && match.SeriesName) seriesName = String(match.SeriesName).trim();
     }
 
-    // 4. Match series by Class & Type from allRacingSeries or EventFilters
-    if (!seriesName && raceClass) {
-        if (allRacingSeries.length) {
-            const match = allRacingSeries.find(s => {
-                const allowed = String(s.AllowedClasses || '').split(',').map(c => c.trim().toLowerCase()).filter(Boolean);
-                const hasClass = !allowed.length || allowed.includes(raceClass.toLowerCase());
-                const sName = String(s.SeriesName || '').toLowerCase();
-                const hasType = raceType ? sName.includes(raceType.toLowerCase()) : true;
-                return hasClass && hasType;
-            });
-            if (match && match.SeriesName) seriesName = String(match.SeriesName).trim();
-        }
-        if (!seriesName) {
-            const serList = EventFilters.all();
-            const match = serList.find(s => {
-                const hasClass = (s.classes || []).some(c => c.toLowerCase() === raceClass.toLowerCase());
-                const hasType  = raceType ? s.name.toLowerCase().includes(raceType.toLowerCase()) : true;
-                return hasClass && hasType;
-            });
-            if (match) seriesName = match.name;
-        }
-    }
-
-    // 5. Fallback naming without round strings
     if (!seriesName) {
         if (raceClass && raceType) seriesName = `${raceClass} ${raceType}`;
         else if (raceClass) seriesName = raceClass;
-        else {
-            seriesName = raw.replace(/\s*[-–—]?\s*(?:Round|Rd|R)\s*\d+.*$/i, '')
-                            .replace(/\b(0?[1-9]|[12]\d|3[01])[-\/._](0?[1-9]|1[0-2])[-\/._](20\d\d)\b/, '')
-                            .trim();
-        }
+        else seriesName = raw;
     }
 
-    if (!eventDateStr && eventDate) {
-        const dd = String(eventDate.getDate()).padStart(2, '0');
-        const mm = String(eventDate.getMonth() + 1).padStart(2, '0');
-        eventDateStr = `${dd}/${mm}/${eventDate.getFullYear()}`;
-    }
+    // Clean any leading time format e.g. "11:00 - 13:00 "
+    seriesName = seriesName.replace(/^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}\s*/, '').trim();
 
     return {
         seriesName,
@@ -1534,7 +1549,7 @@ async function loadAvgRequests() {
 // ----------------------------------------------------------------
 function populateFilters() {
     const classes = allClubClasses.length
-        ? allClubClasses
+        ? allClubClasses.map(c => c.id || c.name)
         : [...new Set(allProcessedFiles.map(f => f.raceClass).filter(Boolean))].sort();
 
     const types = [...new Set(allProcessedFiles.map(f => f.raceType).filter(Boolean))].sort();
