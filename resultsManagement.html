@@ -882,6 +882,25 @@ function calcStarters(json) {
         (r.dnf || []).filter(p => p !== '' && p !== null).length));
 }
 
+let allClubClasses = [];
+
+async function loadClubClasses() {
+    if (allClubClasses.length) return allClubClasses;
+    try {
+        const rows = await fetchSheet(DOMAIN.members, "Classes");
+        allClubClasses = rows
+            .filter(r => r.Active === undefined || String(r.Active).toUpperCase() === 'TRUE' || r.Active === true)
+            .map(r => String(r.ClassName || r.Class || '').trim())
+            .filter(Boolean)
+            .filter((v, i, arr) => arr.indexOf(v) === i)
+            .sort((a, b) => a.localeCompare(b));
+    } catch (e) {
+        console.warn("Failed to load Classes from Club Management sheet:", e);
+        allClubClasses = [];
+    }
+    return allClubClasses;
+}
+
 /**
  * Parse a Drive file name into { date, class, type }
  * Expected format: "DF95 Handicap - 11/07/2026"
@@ -1323,7 +1342,8 @@ async function loadAll() {
     loadAvgRequests();
     await Promise.all([
         EventFilters.load().catch(() => {}),
-        loadCalendarEvents().catch(() => {})
+        loadCalendarEvents().catch(() => {}),
+        loadClubClasses().catch(() => {})
     ]);
     await loadProcessedFiles();
     await loadOutstanding();
@@ -1408,8 +1428,12 @@ async function loadAvgRequests() {
 // FILTER DROPDOWNS
 // ----------------------------------------------------------------
 function populateFilters() {
-    const classes = [...new Set(allProcessedFiles.map(f => f.raceClass).filter(Boolean))].sort();
-    const types   = [...new Set(allProcessedFiles.map(f => f.raceType).filter(Boolean))].sort();
+    // Source classes from the Classes sheet in Club Management worksheet
+    const classes = allClubClasses.length
+        ? allClubClasses
+        : [...new Set(allProcessedFiles.map(f => f.raceClass).filter(Boolean))].sort();
+
+    const types = [...new Set(allProcessedFiles.map(f => f.raceType).filter(Boolean))].sort();
 
     const cSel = document.getElementById('classFilter');
     const tSel = document.getElementById('typeFilter');
@@ -1421,7 +1445,9 @@ function populateFilters() {
     tSel.innerHTML = `<option value="all">All Regatta Types</option>` +
         types.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('');
 
-    cSel.value = cVal; tSel.value = tVal;
+    // Preserve previously selected value if still present
+    if (cVal && [...cSel.options].some(o => o.value === cVal)) cSel.value = cVal;
+    if (tVal && [...tSel.options].some(o => o.value === tVal)) tSel.value = tVal;
 }
 
 // ----------------------------------------------------------------
@@ -1433,11 +1459,27 @@ const filterResults = debounce(function() {
     const type  = document.getElementById('typeFilter').value;
 
     let list = allProcessedFiles;
-    if (cls  !== 'all') list = list.filter(f => f.raceClass === cls);
-    if (type !== 'all') list = list.filter(f => f.raceType  === type);
-    if (q) list = list.filter(f =>
-        [f.raceClass, f.raceType, f.dateStr, f.raw].some(v => String(v || '').toLowerCase().includes(q))
-    );
+    if (cls !== 'all') {
+        const clsNorm = cls.toLowerCase();
+        list = list.filter(f => 
+            String(f.raceClass || '').trim().toLowerCase() === clsNorm ||
+            String(f.seriesName || '').toLowerCase().includes(clsNorm) ||
+            String(f.name || '').toLowerCase().includes(clsNorm)
+        );
+    }
+    if (type !== 'all') {
+        const typeNorm = type.toLowerCase();
+        list = list.filter(f => 
+            String(f.raceType || '').trim().toLowerCase() === typeNorm ||
+            String(f.seriesName || '').toLowerCase().includes(typeNorm)
+        );
+    }
+    if (q) {
+        list = list.filter(f =>
+            [f.seriesName, f.raceClass, f.raceType, f.dateStr, f.eventDateStr, f.processedDateStr, f.name, f.raw]
+                .some(v => String(v || '').toLowerCase().includes(q))
+        );
+    }
 
     filteredResultsList = list;
     resultRowOffset = 0;
