@@ -1270,52 +1270,12 @@ async function cancelEvent(hexKey, btn) {
     }
 }
 
-function updateSeriesFilterOptions() {
-    const cSel = document.getElementById('classFilter');
-    const sSel = document.getElementById('seriesFilter');
-    if (!sSel) return;
-
-    const selectedClass = cSel ? cSel.value : 'all';
-    const prevVal = sSel.value;
-
-    const seriesSet = new Set();
-
-    // 1. Retrieve canonical series from allRacingSeries (Racing domain "Series" sheet)
-    //    Fall back to EventFilters if allRacingSeries hasn't populated yet
-    const sourceSeries = (allRacingSeries && allRacingSeries.length)
-        ? allRacingSeries.map(s => ({
-            id: String(s.ID || '').trim(),
-            name: String(s.SeriesName || s.ID || '').trim(),
-            classes: String(s.AllowedClasses || '').split(',').map(x => x.trim()).filter(Boolean)
-        }))
-        : EventFilters.all();
-
-    sourceSeries.forEach(s => {
-        if (!s.name) return;
-        if (selectedClass === 'all') {
-            seriesSet.add(s.name.trim());
-        } else {
-            const normSel = selectedClass.toLowerCase();
-            const matchesClass = !s.classes || !s.classes.length ||
-                s.classes.some(c => c.toLowerCase() === normSel) ||
-                s.name.toLowerCase().includes(normSel);
-            if (matchesClass) {
-                seriesSet.add(s.name.trim());
-            }
-        }
-    });
-
-    const seriesList = [...seriesSet].filter(Boolean).sort((a, b) => a.localeCompare(b));
-
-    sSel.innerHTML = `<option value="all">All Series</option>` +
-        seriesList.map(s => `<option value="${escHtml(s)}">${escHtml(s)}</option>`).join('');
-
-    // Retain previous selection if still applicable, otherwise reset to 'all'
-    if (prevVal && [...sSel.options].some(o => o.value === prevVal)) {
-        sSel.value = prevVal;
-    } else {
-        sSel.value = 'all';
-    }
+function updateSeriesFilterOptions() {                         // replaces the ~40-line version
+    const sSel = document.getElementById('seriesFilter'), prev = sSel.value;
+    const cls = document.getElementById('classFilter').value;
+    sSel.innerHTML = '<option value="all">All Series</option>' +
+        EventFilters.forClass(cls).map(s => `<option value="${escHtml(s.key)}">${escHtml(s.name)}</option>`).join('');
+    sSel.value = [...sSel.options].some(o => o.value === prev) ? prev : 'all';
 }
 
 function onClassFilterChange() {
@@ -1325,15 +1285,10 @@ function onClassFilterChange() {
 
 
 let allCalendarRows = [];
-
+let calByHex = new Map();
 async function loadCalendarEvents() {
-    if (allCalendarRows.length) return allCalendarRows;
-    try {
-        allCalendarRows = await fetchSheet(DOMAIN.calendar, "Event Data");
-    } catch (e) {
-        allCalendarRows = [];
-    }
-    return allCalendarRows;
+    allCalendarRows = await fetchSheet(DOMAIN.calendar, "Event Data");
+    calByHex = new Map(allCalendarRows.map(r => [_t(r.HexKey).toUpperCase(), r]));
 }
 
 function formatProcessedDate(createdTime) {
@@ -1350,105 +1305,26 @@ function formatProcessedDate(createdTime) {
  * Resolves the Series Name, Boat Class, Round, and Event Date
  * by cross-referencing EventFilters and Event Data (Calendar).
  */
-function resolveFileSeriesInfo(f) {
-    const raw = f.raw || '';
-    let seriesName = '';
-    // Only trust raceClass if it is a verified club class
-    let verifiedInitial = findClubClass(f.raceClass);
-    let raceClass = verifiedInitial ? (verifiedInitial.id || verifiedInitial.name) : '';
-    let raceType   = f.raceType || '';
-    let round      = f.fileRound || f.round || null;
-    let eventDate  = f.date;
-    let eventDateStr = f.dateStr || '';
 
-    // 1. Check for HexKey / RegattaID (e.g. A828F590, 04055C78)
-    const hexMatch = raw.match(/\b([A-Fa-f0-9]{8})\b/);
-    const hex = hexMatch ? hexMatch[1].toUpperCase() : null;
-
-    let calEvent = null;
-    if (hex && allCalendarRows.length) {
-        calEvent = allCalendarRows.find(r => 
-            String(r.HexKey || '').trim().toUpperCase() === hex ||
-            String(r.RegattaID || '').trim().toUpperCase() === hex
-        );
-    }
-
-    // 2. Fallback: match by Date + Class in Event Data
-    if (!calEvent && f.date && allCalendarRows.length) {
-        const fIso = formatDateYYYYMMDD(f.date);
-        calEvent = allCalendarRows.find(r => {
-            const rIso = formatDateYYYYMMDD(r.Date || r['Rescheduled Date']);
-            const rCls = String(r.Class || '').trim().toLowerCase();
-            return rIso === fIso && (!raceClass || rCls === raceClass.toLowerCase());
-        });
-    }
-
-    if (calEvent) {
-        // Authoritative class resolution from Calendar Event Data
-        const calCls = String(calEvent.Class || '').trim();
-        const vCal = findClubClass(calCls);
-        raceClass = vCal ? (vCal.id || vCal.name) : (calCls || raceClass);
-
-        if (!raceType) raceType = String(calEvent['Regatta Type'] || '').trim();
-        if (!round && calEvent['Round no']) round = Number(calEvent['Round no']);
-        if (!eventDateStr && calEvent.Date) {
-            const cd = parseCalDate(calEvent.Date);
-            if (cd) {
-                eventDate = cd;
-                const dmy = formatDateYYYYMMDD(cd).split('/');
-                eventDateStr = `${dmy[2]}/${dmy[1]}/${dmy[0]}`;
-            }
-        }
-
-        // Match to Series via RegattaID / SeriesID in allRacingSeries
-        const regId = String(calEvent.RegattaID || calEvent.SeriesID || '').trim().toLowerCase();
-        if (regId && allRacingSeries.length) {
-            const sMatch = allRacingSeries.find(s => String(s.ID || '').trim().toLowerCase() === regId);
-            if (sMatch && sMatch.SeriesName) seriesName = String(sMatch.SeriesName).trim();
-        }
-
-        if (!seriesName) {
-            const rawEvName = String(calEvent.EventName || calEvent.Event || '').trim();
-            if (rawEvName) {
-                // Strip round numbers and time ranges like "11:00 - 13:00 "
-                seriesName = rawEvName
-                    .replace(/^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}\s*/, '')
-                    .replace(/\s*[-–—]?\s*(?:Round|Rd|R)\s*\d+.*$/i, '')
-                    .trim();
-            }
-        }
-    }
-
-    // 3. Fallback to Series matching by Class and Type
-    if (!seriesName && raceClass && allRacingSeries.length) {
-        const match = allRacingSeries.find(s => {
-            const allowed = String(s.AllowedClasses || '').split(',').map(c => c.trim().toLowerCase()).filter(Boolean);
-            const hasClass = !allowed.length || allowed.includes(raceClass.toLowerCase());
-            const sName = String(s.SeriesName || '').toLowerCase();
-            const hasType = raceType ? sName.includes(raceType.toLowerCase()) : true;
-            return hasClass && hasType;
-        });
-        if (match && match.SeriesName) seriesName = String(match.SeriesName).trim();
-    }
-
-    if (!seriesName) {
-        if (raceClass && raceType) seriesName = `${raceClass} ${raceType}`;
-        else if (raceClass) seriesName = raceClass;
-        else seriesName = raw;
-    }
-
-    // Clean any leading time format e.g. "11:00 - 13:00 "
-    seriesName = seriesName.replace(/^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}\s*/, '').trim();
-
+function resolveFile(f) {
+    const hexOf = f => ((f.name.match(/\[([A-F0-9]{8})\]\.json$/i) || [])[1] || '').toUpperCase();
+    const ev = calByHex.get(hexOf(f));   // processor: setDescription(hexKey)
+    const s  = ev && EventFilters.get(ev.RegattaID || ev.SeriesID);
     return {
-        seriesName,
-        raceClass,
-        raceType,
-        round,
-        eventDate,
-        eventDateStr: eventDateStr || '—'
+        hexKey: ev ? _t(ev.HexKey) : '',
+        raceClass: ev ? _t(ev.Class) : '',
+        raceType:  ev ? _t(ev["Regatta Type"]) : '',
+        round:     ev ? _t(ev["Round no"]) : '',
+        eventDate: ev ? parseCalDate(ev["Rescheduled Date"] || ev.Date) : null,
+        seriesId:  s ? s.key : '',
+        seriesName: s ? s.name : '',
+        spreadsheetId: s ? s.spreadsheetId : ''
     };
-}
+}   
+
+allProcessedFiles = files.map(f => ({ ...f, ...resolveFile(f),
+        processedDateStr: formatProcessedDate(f.createdTime) }))
+    .sort((a, b) => (b.eventDate || 0) - (a.eventDate || 0));
 
 // ----------------------------------------------------------------
 // LOAD  (calls the CLB webapp for Drive folder listings)
@@ -1459,12 +1335,8 @@ async function loadAll() {
     loadOverallSheets();
     loadGuestData();
     loadAvgRequests();
-    await Promise.all([
-        EventFilters.load().catch(() => {}),
-        loadCalendarEvents().catch(() => {}),
-        loadClubClasses().catch(() => {}),
-        loadRacingSeries().catch(() => {})
-    ]);
+    await Promise.all([EventFilters.load(), loadCalendarEvents(), loadClubClasses()]); // Classes: keep, used for coordinators/insignia
+    await Promise.all([loadProcessedFiles(), loadOutstanding()]);
     await loadProcessedFiles();
     await loadOutstanding();
     loadLastReminder();
@@ -1548,11 +1420,8 @@ async function loadAvgRequests() {
 // FILTER DROPDOWNS
 // ----------------------------------------------------------------
 function populateFilters() {
-    const classes = allClubClasses.length
-        ? allClubClasses.map(c => c.id || c.name)
-        : [...new Set(allProcessedFiles.map(f => f.raceClass).filter(Boolean))].sort();
-
-    const types = [...new Set(allProcessedFiles.map(f => f.raceType).filter(Boolean))].sort();
+    const classes = EventFilters.classes;                      // Classes ∩ Series.AllowedClasses (existing)
+    const types = [...new Set(allCalendarRows.map(r => _t(r["Regatta Type"])).filter(Boolean))].sort();
 
     const cSel = document.getElementById('classFilter');
     const tSel = document.getElementById('typeFilter');
@@ -1585,34 +1454,9 @@ const filterResults = debounce(function() {
 
     let list = allProcessedFiles;
 
-    // Filter by Class
-    if (cls !== 'all') {
-        const clsNorm = cls.toLowerCase();
-        list = list.filter(f => 
-            String(f.raceClass || '').trim().toLowerCase() === clsNorm ||
-            String(f.seriesName || '').toLowerCase().includes(clsNorm) ||
-            String(f.name || '').toLowerCase().includes(clsNorm)
-        );
-    }
-
-    // Filter by Series
-    if (series !== 'all') {
-        const serNorm = series.toLowerCase();
-        list = list.filter(f => 
-            String(f.seriesName || '').trim().toLowerCase() === serNorm ||
-            String(f.name || '').toLowerCase().includes(serNorm) ||
-            String(f.raw || '').toLowerCase().includes(serNorm)
-        );
-    }
-
-    // Filter by Regatta Type
-    if (type !== 'all') {
-        const typeNorm = type.toLowerCase();
-        list = list.filter(f => 
-            String(f.raceType || '').trim().toLowerCase() === typeNorm ||
-            String(f.seriesName || '').toLowerCase().includes(typeNorm)
-        );
-    }
+    if (cls    !== 'all') list = list.filter(f => f.raceClass === cls);
+    if (series !== 'all') list = list.filter(f => f.seriesId  === series);
+    if (type   !== 'all') list = list.filter(f => f.raceType  === type);
 
     // Free-text Search
     if (q) {
@@ -1875,9 +1719,12 @@ function formatDateYYYYMMDD(dateVal) {
 }
 
 async function fetchFutureEvents() {
-  const res  = await fetch(`${CAL_WEBAPP_URL}?type=calendar`);
-  const data = await res.json();
-  return (data.months || []).flatMap(mo => {
+    const today = new Date(new Date().setHours(0,0,0,0));
+    allUpcomingEvents = allCalendarRows.map(r => ({
+        EventID: _t(r.HexKey), RaceClass: _t(r.Class), Title: `${_t(r.Class)} ${_t(r["Regatta Type"])}`,
+        date: parseCalDate(r["Rescheduled Date"] || r.Date), type: _t(r["Event Type"]), results: _t(r.Results).toLowerCase()
+        })).filter(e => e.type === 'Competition' && e.date >= today && !['cancelled','postponed'].includes(e.results));
+    return (data.months || []).flatMap(mo => {
     const year = (String(mo.monthLabel).match(/\d{4}/) || [new Date().getFullYear()])[0];
     return (mo.events || [])
       .filter(e => e.boatClass)                            // skip meetings
@@ -2369,13 +2216,10 @@ async function openRoundResults(fileId, fileName, round = 0) {
             `No Overall Results sheet found matching "${json.regattaName}". Load the Overall Sheets first.`
         );
 
-        rrSpreadsheetId = sheet.id;
+        rrSpreadsheetId = f.spreadsheetId;                 // replaces the allOverallSheets.find(regattaName.includes…)
+        if (!rrSpreadsheetId) throw new Error('Series has no SpreadsheetID');
+        const rn = Number(f.round) || 0;
 
-        // 3. Discover round tabs
-        rrSheets = await getOverallRounds(rrSpreadsheetId);
-        if (!rrSheets.length) throw new Error('No round sheets found in this spreadsheet.');
-
-        const rn = round || parsed.fileRound || 0;
         let matchIdx = rn ? rrSheets.findIndex(s =>
             new RegExp(`(round|rd|r)\\s*0*${rn}\\b`, 'i').test(s.name)) : -1;
         if (matchIdx < 0 && dateStr) matchIdx = rrSheets.findIndex(s => s.name.includes(dateStr));

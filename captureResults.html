@@ -2491,7 +2491,6 @@ async function generateAIReport(){
       discards: [...s.discardSet].map(rs => rs.points)
     }));
     
-    // Removed FILE_GATEWAY_URL to avoid CORS redirect issues.
     // Using default GATEWAY_URL but supplying the domain to fix the 'Forbidden' error.
     const res = await gw({ 
         action: "genReport", 
@@ -2591,15 +2590,18 @@ async function saveAndSend(){
         formattedDate = dateStr;
       }
     }
-    
-    // Construct the requested filename
-    const filename = `${ev.regattaName} - ${formattedDate}.json`;
+
+    const id = String(rawData.eventID).trim();
+    const [dd, mm, yyyy] = String(rawData.regattaDate).split('/');
+    const filename = `${yyyy}-${mm}-${dd} ${rawData.regattaName}` +
+                `${rawData.roundNo ? ' Rd' + rawData.roundNo : ''} [${id}].json`;
     
     // Push the file directly to the backend
     await gw({ 
       action: "uploadNew", 
       folder: "upload",                                   // was folderKey
       name: filename,                                     // was filename
+      id: id,                                             // was hexKey
       data: btoa(String.fromCharCode(...new Uint8Array(new TextEncoder().encode(json)))),     // Unicode-safe base64 encoding
       mimeType: "application/json"
     }, FILE_GATEWAY_URL);
