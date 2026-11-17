@@ -1739,8 +1739,21 @@ function renderEventSelect(){
   }))].sort();
 
   // Calendar only ever shows future/today events
-  let list = EVENTS.map(e => ({...e, _dt: parseDMY(e.date)}))
-  .filter(e => e._dt >= today && ['Not Started','In Progress'].includes(e.status));
+  let list = EVENTS.map(e => {
+    const st = loadState(e.id);
+    const hasSavedDraft = !!st && ((st.entries?.length || 0) > 0 || (st.races?.length || 0) > 0);
+    return {
+      ...e,
+      _dt: parseDMY(e.date),
+      _hasDraft: hasSavedDraft
+    };
+  }).filter(e => {
+    const isUnfinished = e.status === 'In Progress' || e._hasDraft;
+    const isRecentOrUpcoming = e._dt >= today;
+
+    // Show if it's upcoming/recent OR if it's an uncompleted past event waiting for attention
+    return (isRecentOrUpcoming || isUnfinished) && ['Not Started', 'In Progress'].includes(e.status);
+  });
 
   if(state.selectedClass !== 'ALL'){
     list = list.filter(e => (e.allowedClasses || '').includes(state.selectedClass));
