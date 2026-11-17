@@ -1354,20 +1354,30 @@ async function getEvents(data) {
         const sFormat = getVal(seriesConfig, ['formatid']) || getVal(e, ['formatid']) || '';
         const sHcap = getVal(seriesConfig, ['handicaptracking', 'handicaptype']) || e.handicapType || 'None';
 
+        const rawResults = getVal(e, ['results', 'status']) || e.results || e.Results;
+        const rawDate = getVal(e, ['date', 'eventdate', 'regattadate']) || e.date;
+
+        // Format date into DD/MM/YYYY if it came in as YYYY/MM/DD
+        let formattedDate = '';
+        if (rawDate && String(rawDate).includes('/')) {
+          const p = String(rawDate).split('/');
+          formattedDate = p[0].length === 4 ? `${p[2]}/${p[1]}/${p[0]}` : rawDate;
+        }
+
         return {
-          id: e.hexKey || e.id,
-          date: `${dd}/${String(mm).padStart(2, '0')}/${year}`,
-          start: e.startTime || '',
-          end: e.finishTime || '',
+          id: e.hexKey || e.id || getVal(e, ['hexkey', 'id']),
+          date: formattedDate || `${dd}/${String(mm).padStart(2, '0')}/${year}`,
+          start: e.startTime || getVal(e, ['starttime', 'start']) || '',
+          end: e.finishTime || getVal(e, ['finishtime', 'end']) || '',
           seriesId: seriesId || getVal(seriesConfig, ['id', 'seriesid', 'regattaid']) || '',
           seriesName: sName,
           allowedClasses: sClasses,
           formatId: sFormat,
           handicapType: sHcap,
           round: String(e.roundNum ?? e['Round no'] ?? e.round ?? ''),
-          season: e.season || '',
-          status: (e.results && e.results !== 'Not Started') ? e.results : 'Not Started'
-        };
+          season: e.season || getVal(e, ['season']) || '',
+          status: (rawResults && rawResults !== 'Not Started') ? rawResults : 'Not Started'
+        };  
       });
     });
     
@@ -1633,6 +1643,16 @@ function svgSave() { return `<i data-lucide="save"></i>`; }
 function svgExit() { return `<i data-lucide="power"></i>`; }
 function svgHelp() { return `<i data-lucide="help-circle" width="20" height="20"></i>`; }
 function svgFlask() { return `<i data-lucide="flask-conical"></i>`; }
+function parseDMY(d){ 
+  if (!d) return new Date(0);
+  const parts = String(d).split(/[\/\-]/).map(Number);
+  // If first number is a 4-digit year (YYYY/MM/DD)
+  if (parts[0] > 1000) {
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+  // Otherwise standard DD/MM/YYYY
+  return new Date(parts[2], parts[1] - 1, parts[0]);
+}
 
 function headerHTML(){
   const ev = state.event;
@@ -1739,21 +1759,13 @@ function renderEventSelect(){
   }))].sort();
 
   // Calendar only ever shows future/today events
-  let list = EVENTS.map(e => {
-    const st = loadState(e.id);
-    const hasSavedDraft = !!st && ((st.entries?.length || 0) > 0 || (st.races?.length || 0) > 0);
-    return {
-      ...e,
-      _dt: parseDMY(e.date),
-      _hasDraft: hasSavedDraft
-    };
-  }).filter(e => {
-    const isUnfinished = e.status === 'In Progress' || e._hasDraft;
-    const isRecentOrUpcoming = e._dt >= today;
-
-    // Show if it's upcoming/recent OR if it's an uncompleted past event waiting for attention
-    return (isRecentOrUpcoming || isUnfinished) && ['Not Started', 'In Progress'].includes(e.status);
-  });
+  let list = EVENTS.map(e => ({...e, _dt: parseDMY(e.date)}))
+    .filter(e => {
+      const isRecentOrUpcoming = e._dt >= today;
+      const isInProgress = e.status === 'In Progress';
+      // Always show if it's In Progress, or if it's recent/upcoming and Not Started
+      return (isRecentOrUpcoming || isInProgress) && ['Not Started','In Progress'].includes(e.status);
+    });
 
   if(state.selectedClass !== 'ALL'){
     list = list.filter(e => (e.allowedClasses || '').includes(state.selectedClass));
