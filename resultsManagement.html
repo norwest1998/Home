@@ -586,24 +586,9 @@ select.guest-inline-input option {
             <!-- Event Filters: Class Icons + Date Filter -->
             <div class="panel-toolbar" style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:16px;">
                 <!-- Class Icon Filter Pills -->
-                <div class="class-filter-group" id="guestClassFilterGroup" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <div class="class-filter-group" id="guestClassFilterGroup" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;"><!-- pills generated from Classes sheet -->
                     <button type="button" class="class-filter-pill active" onclick="setGuestClassFilter('all', this)" title="All Classes">
                         <span>All</span>
-                    </button>
-                    <button type="button" class="class-filter-pill" onclick="setGuestClassFilter('DF95', this)" title="DF95">
-                        <img src="/Home/images/classes/DF95.png" alt="DF95"> DF95
-                    </button>
-                    <button type="button" class="class-filter-pill" onclick="setGuestClassFilter('DF65', this)" title="DF65">
-                        <img src="/Home/images/classes/DF65.png" alt="DF65"> DF65
-                    </button>
-                    <button type="button" class="class-filter-pill" onclick="setGuestClassFilter('IOM', this)" title="IOM">
-                        <img src="/Home/images/classes/IOM.png" alt="IOM"> IOM
-                    </button>
-                    <button type="button" class="class-filter-pill" onclick="setGuestClassFilter('Soling', this)" title="Soling">
-                        <img src="/Home/images/classes/Soling.png" alt="Soling"> Soling
-                    </button>
-                    <button type="button" class="class-filter-pill" onclick="setGuestClassFilter('Twilight', this)" title="Twilight">
-                        <img src="/Home/images/classes/smmc-logo.png" alt="Twilight"> Twilight
                     </button>
                 </div>
 
@@ -880,23 +865,27 @@ function stripTZ(v) {
 }
 
 function calcStarters(json) {
+    if (json.competitorCount != null && json.competitorCount !== '') return json.competitorCount;
+    if (Array.isArray(json.entries) && json.entries.length) return json.entries.length;
     return Math.max(0, ...(json.races || []).map(r =>
         (r.positions || []).filter(p => p !== '' && p !== null).length +
         (r.dnf || []).filter(p => p !== '' && p !== null).length));
 }
 
-let allClubClasses = []; // [{ id, name, insignia }]
+// Classes sheet (Club Management). Event Data.Class holds ClassName.
+let allClubClasses = []; // [{ id, name, insignia, coordinator }]
 
 async function loadClubClasses() {
     if (allClubClasses.length) return allClubClasses;
     try {
         const rows = await fetchSheet(DOMAIN.members, "Classes");
         allClubClasses = rows
-            .filter(r => r.ClassID || r.ClassName || r.Class)
+            .filter(r => r.ClassID || r.ClassName)
             .map(r => ({
-                id: String(r.ClassID || '').trim(),
-                name: String(r.ClassName || r.Class || r.ClassID || '').trim(),
-                insignia: String(r.Insignia || '').trim()
+                id: _t(r.ClassID),
+                name: _t(r.ClassName || r.ClassID),
+                insignia: _t(r.Insignia),
+                coordinator: _t(r.Coordinator)
             }));
     } catch (e) {
         console.warn("Failed to load Classes from Club Management sheet:", e);
@@ -905,109 +894,11 @@ async function loadClubClasses() {
     return allClubClasses;
 }
 
-// Helper: check if a string matches a verified club class
-function findClubClass(str) {
-    if (!str || !allClubClasses.length) return null;
-    const s = String(str).trim().toLowerCase();
-    return allClubClasses.find(c => 
-        (c.id && c.id.toLowerCase() === s) || 
-        (c.name && c.name.toLowerCase() === s)
-    ) || null;
-}
+// Class names offered in filters: classes used by a Series, else every class on the Classes sheet
+const filterClassNames = () => EventFilters.classes.length ? EventFilters.classes : allClubClasses.map(c => c.name);
 
-// Helper: scan a text string (like a filename) for any verified club class
-function matchClubClassInText(text) {
-    if (!text || !allClubClasses.length) return null;
-    const sorted = [...allClubClasses].sort((a, b) => 
-        Math.max(b.name.length, b.id.length) - Math.max(a.name.length, a.id.length)
-    );
-    for (const c of sorted) {
-        const idRegex = c.id ? new RegExp('\\b' + c.id + '\\b', 'i') : null;
-        const nameRegex = c.name ? new RegExp('\\b' + c.name + '\\b', 'i') : null;
-        if ((idRegex && idRegex.test(text)) || (nameRegex && nameRegex.test(text))) {
-            return c;
-        }
-    }
-    return null;
-}
-
-let allRacingSeries = [];
-
-async function loadRacingSeries() {
-    if (allRacingSeries.length) return allRacingSeries;
-    try {
-        const rows = await fetchSheet(DOMAIN.racing, "Series");
-        allRacingSeries = rows.filter(r => 
-            (r.ID || r.SeriesName) && 
-            (r.Active === undefined || String(r.Active).toUpperCase() === 'TRUE' || r.Active === true)
-        );
-    } catch (e) {
-        console.warn("Failed to load Series from Racing domain:", e);
-        allRacingSeries = [];
-    }
-    return allRacingSeries;
-}
-
-/**
- * Parse a Drive file name into { date, class, type }
- * Expected format: "DF95 Handicap - 11/07/2026"
- */
-function parseFileName(name, createdTime) {
-    const raw = String(name || '').replace(/\.[^.]+$/, '').trim();
-
-    const mDmy = raw.match(/\b(0?[1-9]|[12]\d|3[01])[-\/._](0?[1-9]|1[0-2])[-\/._](20\d\d)\b/);
-    const mIso = raw.match(/\b(20\d\d)[-\/._](0?[1-9]|1[0-2])[-\/._](0?[1-9]|[12]\d|3[01])\b/);
-
-    let d = null;
-    let dateStr = '';
-    let dateMatch = null;
-
-    if (mDmy) {
-        const dd = mDmy[1].padStart(2, '0');
-        const mm = mDmy[2].padStart(2, '0');
-        const yyyy = mDmy[3];
-        d = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
-        dateStr = `${dd}/${mm}/${yyyy}`;
-        dateMatch = mDmy;
-    } else if (mIso) {
-        const yyyy = mIso[1];
-        const mm = mIso[2].padStart(2, '0');
-        const dd = mIso[3].padStart(2, '0');
-        d = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
-        dateStr = `${dd}/${mm}/${yyyy}`;
-        dateMatch = mIso;
-    } else if (createdTime) {
-        const cd = new Date(createdTime);
-        if (!isNaN(cd.getTime())) {
-            d = cd;
-            const dd = String(cd.getDate()).padStart(2, '0');
-            const mm = String(cd.getMonth() + 1).padStart(2, '0');
-            dateStr = `${dd}/${mm}/${cd.getFullYear()}`;
-        }
-    }
-
-    let fileRound = null;
-    const rdMatch = raw.match(/\b(?:Round|Rd|R)\s*(\d+)\b/i);
-    if (rdMatch) fileRound = Number(rdMatch[1]);
-
-    // Check against official Club Management classes
-    const matchedCls = matchClubClassInText(raw);
-    let raceClass = matchedCls ? (matchedCls.id || matchedCls.name) : '';
-
-    const KNOWN_TYPES = ['Scratch', 'Handicap', 'Championship', 'Pennant', 'Cup', 'Regatta'];
-    let raceType = KNOWN_TYPES.find(kt => new RegExp('\\b' + kt + '\\b', 'i').test(raw)) || '';
-
-    // If not matched, leave raceClass and raceType empty ('') so resolveFileSeriesInfo 
-    // resolves them authoritatively from the Calendar / Series sheets.
-    return {
-        date: d,
-        dateStr,
-        raceClass,
-        raceType,
-        raw,
-        fileRound
-    };
-}
+// Event dates are shown dd/mm/yyyy
+const fmtDMY = d => d ? formatDateYYYYMMDD(d).split('/').reverse().join('/') : '—';
 
 /**
  * Parse an Overall Results Sheet name into { class, type, season }
@@ -1020,41 +911,22 @@ function parseSheetName(name) {
 }
 
 // ----------------------------------------------------------------
-// CLASS INSIGNIA
+// CLASS INSIGNIA  (Classes.Insignia, then Series insignia, then default)
 // ----------------------------------------------------------------
-const CLASS_IMAGE_MAP = {
-    'DF95':    '/Home/images/classes/DF95.png',
-    'IOM':     '/Home/images/classes/IOM.png',
-    'Soling':  '/Home/images/classes/Soling.png',
-    'General': '/Home/images/classes/smmc-logo.png',
-    'DF65':    '/Home/images/classes/DF65.png',
-    'Social':  '/Home/images/classes/SmileyFace.png',
-    'Twilight':'/Home/images/classes/Twilight.png'
-};
+function insigniaUrl(ins) {
+    ins = _t(ins);
+    if (!ins) return '';
+    if (ins.startsWith('http') || ins.startsWith('/')) return ins;
+    if (!ins.startsWith('<svg') && /^[\w-]{20,}$/.test(ins))
+        return `https://lh3.googleusercontent.com/d/${encodeURIComponent(ins)}=w40`;
+    return '';
+}
 
 function getClassImage(raceClass) {
-    if (!raceClass) return '';
-    const norm = String(raceClass).trim().toLowerCase();
-
-    // 1. Look up from Club Management "Classes" sheet
-    const clubCls = allClubClasses.find(c => 
-        (c.id && c.id.toLowerCase() === norm) || 
-        (c.name && c.name.toLowerCase() === norm) ||
-        norm.includes(c.id.toLowerCase()) ||
-        norm.includes(c.name.toLowerCase())
-    );
-
-    if (clubCls && clubCls.insignia) {
-        const ins = clubCls.insignia;
-        if (ins.startsWith('http') || ins.startsWith('/')) return ins;
-        if (!ins.startsWith('<svg') && /^[\w-]{20,}$/.test(ins)) {
-            return `https://lh3.googleusercontent.com/d/${encodeURIComponent(ins)}=w40`;
-        }
-    }
-
-    // 2. Fallback to local image map
-    const key = Object.keys(CLASS_IMAGE_MAP).find(k => norm.includes(k.toLowerCase()));
-    return key ? CLASS_IMAGE_MAP[key] : '';
+    const n = _t(raceClass).toLowerCase();
+    if (!n) return '';
+    const c = allClubClasses.find(c => c.name.toLowerCase() === n || (c.id && c.id.toLowerCase() === n));
+    return insigniaUrl(c && c.insignia) || EventFilters.classImage(raceClass);
 }
 
 // ----------------------------------------------------------------
@@ -1067,12 +939,8 @@ function setStat(id, n, cls) {
 }
 
 function renderStats() {
-    const now   = new Date();
-    const year  = now.getFullYear();
-    // "This season" = files created after 1 July current or prev year
-    const seasonStart = new Date(now.getMonth() >= 6 ? year : year - 1, 6, 1);
-
-    const seasonFiles = allProcessedFiles.filter(f => f.date && f.date >= seasonStart);
+    const inSeason = seasonTest();
+    const seasonFiles = allProcessedFiles.filter(f => f.hexKey && inSeason(f.season, f.eventDate));
     setStat('statOutstanding', uploadFiles.length, 'is-signal');
     setStat('statAvgReqPending', allAvgRequests.filter(r => r.status === 'pending').length, 'is-signal');
     document.getElementById('cardAvg').classList.toggle('stat-alert', allAvgRequests.some(r => r.status === 'pending'));
@@ -1104,34 +972,48 @@ function parseCalDate(v) {
 
 const daysOverdue = e => Math.floor((new Date().setHours(0, 0, 0, 0) - e.date) / 86400000);
 
+// Current season label = Season of the latest Event Data row dated on/before today
+function currentSeason() {
+    const today = new Date(new Date().setHours(0, 0, 0, 0));
+    let best = null;
+    for (const r of allCalendarRows) {
+        const d = parseCalDate(r["Rescheduled Date"] || r.Date), sn = _t(r.Season);
+        if (sn && d && d <= today && (!best || d > best.d)) best = { d, sn };
+    }
+    return best ? best.sn : '';
+}
+
+// Season column first; only rows with a blank Season fall back to the 1 July window
+function seasonTest() {
+    const cur = currentSeason(), now = new Date(), y = now.getFullYear();
+    const start = new Date(now.getMonth() >= 6 ? y : y - 1, 6, 1);
+    const end   = new Date(start.getFullYear() + 1, 6, 1);
+    return (season, date) => (cur && season) ? season === cur : !!(date && date >= start && date < end);
+}
+
+let memberNameById = null;
+
 async function loadOutstanding() {
     try {
-        const [rows, classes, members] = await Promise.all([
-            fetchSheet(DOMAIN.calendar, "Event Data"),
-            fetchSheet(DOMAIN.members, "Classes").catch(() => []),
-            fetchSheet(DOMAIN.members, "Members").catch(() => [])
-        ]);
-        const nameById = Object.fromEntries(members.map(m =>
-            [_t(m.MemberID), `${_t(m.FirstName)} ${_t(m.LastName)}`.trim()]));
-        const coordByClass = Object.fromEntries(classes.map(c => {
-            const id = _t(c.Coordinator);
-            return [_t(c.ClassName).toLowerCase(), nameById[id] || id];   // falls back to raw value if not an ID
-        }));
-        const rawResultsKey = Object.keys(rows[0] || {}).find(k => k.trim().toLowerCase() === 'results');
+        if (!memberNameById) {
+            const members = await fetchSheet(DOMAIN.members, "Members").catch(() => []);
+            memberNameById = Object.fromEntries(members.map(m =>
+                [_t(m.MemberID), `${_t(m.FirstName)} ${_t(m.LastName)}`.trim()]));
+        }
+        const coordByClass = Object.fromEntries(allClubClasses.map(c =>
+            [c.name.toLowerCase(), memberNameById[c.coordinator] || c.coordinator]));   // raw value if not an ID
+        const rawResultsKey = Object.keys(allCalendarRows[0] || {}).find(k => k.toLowerCase() === 'results');
         if (rawResultsKey) window.RESULTS_COL = rawResultsKey;
-        const now = new Date(), y = now.getFullYear();
-        const seasonStart = new Date(now.getMonth() >= 6 ? y : y - 1, 6, 1);
-        const seasonEnd   = new Date(seasonStart.getFullYear() + 1, 6, 1);
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const today = new Date(new Date().setHours(0, 0, 0, 0));
+        const inSeason = seasonTest();
 
-        const ev = rows.map(r => {
-            const o = Object.fromEntries(Object.entries(r).map(([k, v]) => [k.trim(), v]));
-            const orig = parseCalDate(o["Date"]), resched = parseCalDate(o["Rescheduled Date"]);
+        const ev = allCalendarRows.map(o => {
+            const orig = parseCalDate(o.Date), resched = parseCalDate(o["Rescheduled Date"]);
             return { hexKey: _t(o.HexKey), raceClass: _t(o.Class), regattaType: _t(o["Regatta Type"]),
-                     round: _t(o["Round no"]), type: _t(o["Event Type"]),
+                     round: _t(o["Round no"]), type: _t(o["Event Type"]), season: _t(o.Season),
                      coordinator: coordByClass[_t(o.Class).toLowerCase()] || '',
                      results: _t(o.Results).toLowerCase(), resched, date: resched || orig };
-        }).filter(e => e.hexKey && e.type === 'Competition' && e.date && e.date >= seasonStart && e.date < seasonEnd);
+        }).filter(e => e.hexKey && e.type === 'Competition' && e.date && inSeason(e.season, e.date));
 
         outstandingEvents = ev.filter(e => e.results === 'not started' && e.date < today).sort((a, b) => a.date - b.date);
         postponedEvents   = ev.filter(e => e.results === 'postponed').sort((a, b) => a.date - b.date);
@@ -1261,6 +1143,7 @@ async function cancelEvent(hexKey, btn) {
     btn.innerHTML = '<span class="spinner" style="margin:0"></span>';
     try {
         await updateSheet(DOMAIN.calendar, "Event Data", hexKey, { "Results": "Cancelled" });
+        await loadCalendarEvents();                    // Event Data is cached in memory
         await loadOutstanding();
         showMsg('outstandingMsg', 'Event cancelled.', false);
     } catch (err) {
@@ -1270,7 +1153,7 @@ async function cancelEvent(hexKey, btn) {
     }
 }
 
-function updateSeriesFilterOptions() {                         // replaces the ~40-line version
+function updateSeriesFilterOptions() {
     const sSel = document.getElementById('seriesFilter'), prev = sSel.value;
     const cls = document.getElementById('classFilter').value;
     sSel.innerHTML = '<option value="all">All Series</option>' +
@@ -1284,10 +1167,17 @@ function onClassFilterChange() {
 }
 
 
+// Event Data, loaded once. Header names trimmed so downstream code can rely on them.
 let allCalendarRows = [];
 let calByHex = new Map();
 async function loadCalendarEvents() {
-    allCalendarRows = await fetchSheet(DOMAIN.calendar, "Event Data");
+    try {
+        const rows = await fetchSheet(DOMAIN.calendar, "Event Data");
+        allCalendarRows = rows.map(r => Object.fromEntries(Object.entries(r).map(([k, v]) => [k.trim(), v])));
+    } catch (e) {
+        allCalendarRows = [];
+        showMsg('outstandingMsg', 'Error loading Event Data: ' + e.message, true);
+    }
     calByHex = new Map(allCalendarRows.map(r => [_t(r.HexKey).toUpperCase(), r]));
 }
 
@@ -1302,33 +1192,45 @@ function formatProcessedDate(createdTime) {
 }
 
 /**
- * Resolves the Series Name, Boat Class, Round, and Event Date
- * by cross-referencing EventFilters and Event Data (Calendar).
+ * Link a processed file to its Event Data row.
+ * The processor names files "<yyyy-mm-dd> <name> Rd<n> [HEXKEY].json"; the HexKey token is the only thing
+ * read from the name. Class, type, round, date and season come from Event Data; series (and its overall
+ * results spreadsheet) from Series via Event Data.RegattaID.
  */
+const hexFromName = name => ((String(name || '').match(/\[([A-F0-9]{8})\]\.json$/i) || [])[1] || '').toUpperCase();
 
 function resolveFile(f) {
-    const hexOf = f => ((f.name.match(/\[([A-F0-9]{8})\]\.json$/i) || [])[1] || '').toUpperCase();
-    const ev = calByHex.get(hexOf(f));   // processor: setDescription(hexKey)
+    const ev = calByHex.get(hexFromName(f.name));
     const s  = ev && EventFilters.get(ev.RegattaID || ev.SeriesID);
     return {
-        hexKey: ev ? _t(ev.HexKey) : '',
-        raceClass: ev ? _t(ev.Class) : '',
-        raceType:  ev ? _t(ev["Regatta Type"]) : '',
-        round:     ev ? _t(ev["Round no"]) : '',
-        eventDate: ev ? parseCalDate(ev["Rescheduled Date"] || ev.Date) : null,
-        seriesId:  s ? s.key : '',
-        seriesName: s ? s.name : '',
+        hexKey:        ev ? _t(ev.HexKey) : '',
+        raceClass:     ev ? _t(ev.Class) : '',
+        raceType:      ev ? _t(ev["Regatta Type"]) : '',
+        round:         ev ? _t(ev["Round no"]) : '',
+        season:        ev ? _t(ev.Season) : '',
+        eventDate:     ev ? parseCalDate(ev["Rescheduled Date"] || ev.Date) : null,
+        seriesId:      s ? s.key : '',
+        seriesName:    s ? s.name : '',
         spreadsheetId: s ? s.spreadsheetId : ''
     };
-}   
+}
+
+const fileLabel = f => (f.seriesName || [f.raceClass, f.raceType].filter(Boolean).join(' ') || f.name || '');
 
 // ----------------------------------------------------------------
 // LOAD  (calls the CLB webapp for Drive folder listings)
 // ----------------------------------------------------------------
 async function loadAll() {
-    loadUploadFiles(); loadErrorFiles(); loadOverallSheets(); loadAvgRequests();
-    await Promise.all([EventFilters.load(), loadCalendarEvents(), loadClubClasses()]);
-    loadGuestData();                                   // needs allCalendarRows
+    loadUploadFiles();
+    loadErrorFiles();
+    loadOverallSheets();
+    loadAvgRequests();
+    await Promise.all([
+        EventFilters.load().catch(() => {}),     // Classes + Series
+        loadCalendarEvents(),                    // Event Data
+        loadClubClasses()                        // insignia + coordinator
+    ]);
+    loadGuestData();                             // needs Event Data and classes
     await Promise.all([loadProcessedFiles(), loadOutstanding()]);
     loadLastReminder();
 }
@@ -1337,9 +1239,9 @@ async function loadProcessedFiles() {
     document.getElementById('resultRows').innerHTML = '<div class="empty-state"><span class="spinner"></span></div>';
     try {
         const files = await fetchDriveFolder("processed");
-        allProcessedFiles = files.map(f => ({ ...f, ...resolveFile(f),
-                processedDateStr: formatProcessedDate(f.createdTime) }))
-            .sort((a, b) => (b.eventDate || 0) - (a.eventDate || 0));
+        allProcessedFiles = files
+            .map(f => ({ ...f, ...resolveFile(f), processedDateStr: formatProcessedDate(f.createdTime) }))
+            .sort((a, b) => (b.eventDate || 0) - (a.eventDate || 0));   // latest event first
         populateFilters();
         filterResults();
         renderStats();
@@ -1398,8 +1300,10 @@ async function loadAvgRequests() {
 // FILTER DROPDOWNS
 // ----------------------------------------------------------------
 function populateFilters() {
-    const classes = EventFilters.classes;                      // Classes ∩ Series.AllowedClasses (existing)
-    const types = [...new Set(allCalendarRows.map(r => _t(r["Regatta Type"])).filter(Boolean))].sort();
+    const classes = filterClassNames();
+    const types = [...new Set(allCalendarRows
+        .filter(r => _t(r["Event Type"]) === 'Competition')
+        .map(r => _t(r["Regatta Type"])).filter(Boolean))].sort();
 
     const cSel = document.getElementById('classFilter');
     const tSel = document.getElementById('typeFilter');
@@ -1439,7 +1343,7 @@ const filterResults = debounce(function() {
     // Free-text Search
     if (q) {
         list = list.filter(f =>
-            [f.seriesName, f.raceClass, f.raceType, f.dateStr, f.eventDateStr, f.processedDateStr, f.name, f.raw]
+            [f.seriesName, f.raceClass, f.raceType, f.round, fmtDMY(f.eventDate), f.processedDateStr, f.name]
                 .some(v => String(v || '').toLowerCase().includes(q))
         );
     }
@@ -1467,31 +1371,27 @@ function renderResultPage() {
             ? `<img class="row-insignia" src="${escHtml(imgSrc)}" alt="${escHtml(f.raceClass)}">`
             : `<div class="row-insignia-placeholder"></div>`;
 
-        // Main line: Series name and round number
-        const mainLabel = f.round
-            ? `${f.seriesName}`
-            : f.seriesName;
-
-        // Second line: File name and event date
-        const subLabel = f.round ? `${f.raw || f.name} ${f.raceClass}` : `${f.raw || f.name} ${f.raceClass} Rd${f.round}`;
-
-        // Date column: Processed date
+        const linked = !!f.hexKey;
+        const mainLabel = linked ? fileLabel(f) : f.name;
+        const subLabel = linked
+            ? [[f.raceClass, f.raceType].filter(Boolean).join(' '), f.round ? 'Rd ' + f.round : '', fmtDMY(f.eventDate)].filter(Boolean).join(' · ')
+            : 'Not linked to a calendar event';
         const processedDate = f.processedDateStr || '—';
 
         return `
-        <div class="result-row" onclick="openScoresheet('${escHtml(f.id)}', '${escHtml(f.name)}')">
+        <div class="result-row" onclick="openScoresheet('${escHtml(f.id)}')">
             ${imgEl}
             <div>
                 <div class="r-name">${escHtml(mainLabel)}</div>
                 <div class="r-meta">${escHtml(subLabel)}</div>
             </div>
             <div class="r-date" title="Processed Date">${escHtml(processedDate)}</div>
-            <span class="badge badge-approved">Processed</span>
+            ${linked ? '<span class="badge badge-approved">Processed</span>' : '<span class="badge badge-default">Unlinked</span>'}
             <div class="row-actions">
-                <button class="icon-btn" title="View Results" onclick="event.stopPropagation();openScoresheet('${escHtml(f.id)}','${escHtml(f.name)}')">
+                <button class="icon-btn" title="View Results" onclick="event.stopPropagation();openScoresheet('${escHtml(f.id)}')">
                     <i class="inline-icon" data-lucide="book-open-text"></i>
                 </button>
-                <button class="icon-btn" title="Open Round Results" onclick="event.stopPropagation();openRoundResults('${escHtml(f.id)}','${escHtml(f.name)}',${f.round || 0})">
+                <button class="icon-btn" title="Open Round Results" onclick="event.stopPropagation();openRoundResults('${escHtml(f.id)}')">
                     <i class="inline-icon" data-lucide="trophy"></i>
                 </button>
                 <button class="icon-btn" title="Open File in Drive" onclick="event.stopPropagation();openFileDrive('${escHtml(f.id)}')">
@@ -1663,9 +1563,6 @@ async function loadUploadFiles() {
     renderStats();
 }
 
-// renderStats(): replace the '—' line
-document.getElementById('statOutstanding').textContent = uploadFiles.length;
-
 
 // ----------------------------------------------------------------
 // GUEST REGISTRATION CONTROLLER
@@ -1674,8 +1571,6 @@ let allGuestRegistrations = [];
 let allUpcomingEvents     = [];
 let activeGuestEventId    = null;
 let activeGuestClassFilter = 'all';
-const CAL_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
-const MON_ABBR = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 /**
  * Helper to format date strings consistently as YYYY/MM/DD
  */
@@ -1696,21 +1591,34 @@ function formatDateYYYYMMDD(dateVal) {
     return `${yyyy}/${mm}/${dd}`;
 }
 
+// Upcoming competitions straight from Event Data (already in memory)
 function buildUpcomingEvents() {
-    const today = new Date(new Date().setHours(0,0,0,0));
+    const today = new Date(new Date().setHours(0, 0, 0, 0));
     return allCalendarRows.map(r => {
         const d = parseCalDate(r["Rescheduled Date"] || r.Date), rd = _t(r["Round no"]);
         return { EventID: _t(r.HexKey), RaceClass: _t(r.Class),
-                 Title: `${_t(r.Class)} ${_t(r["Regatta Type"])}${rd ? ' Rd ' + rd : ''}`,
+                 Title: `${_t(r.Class)} ${_t(r["Regatta Type"])}${rd ? ' Rd ' + rd : ''}`.trim(),
                  EventDate: d ? formatDateYYYYMMDD(d) : '', d,
                  type: _t(r["Event Type"]), results: _t(r.Results).toLowerCase() };
-    }).filter(e => e.type === 'Competition' && e.d >= today && !['cancelled','postponed'].includes(e.results));
+    }).filter(e => e.type === 'Competition' && e.d && e.d >= today && !['cancelled', 'postponed'].includes(e.results));
+}
+
+function renderGuestClassPills() {
+    activeGuestClassFilter = 'all';
+    document.getElementById('guestClassFilterGroup').innerHTML =
+        `<button type="button" class="class-filter-pill active" onclick="setGuestClassFilter('all', this)" title="All Classes"><span>All</span></button>` +
+        filterClassNames().map(n => {
+            const img = getClassImage(n);
+            return `<button type="button" class="class-filter-pill" data-cls="${escHtml(n)}" onclick="setGuestClassFilter(this.dataset.cls, this)" title="${escHtml(n)}">` +
+                   `${img ? `<img src="${escHtml(img)}" alt="${escHtml(n)}"> ` : ''}${escHtml(n)}</button>`;
+        }).join('');
 }
 
 async function loadGuestData() {
     try {
         allGuestRegistrations = await fetchSheet(DOMAIN.results, "GuestRegistrations");
         allUpcomingEvents = buildUpcomingEvents();
+        renderGuestClassPills();
         renderGuestEventsList();
     } catch (err) {
         showMsg('guestMsg', 'Error loading guest registrations: ' + err.message, true);
@@ -2001,10 +1909,10 @@ function renderAvgRequests(list = allAvgRequests) {
 // ----------------------------------------------------------------
 // SCORESHEET MODAL
 // ----------------------------------------------------------------
-async function openScoresheet(fileId, fileName) {
-    const parsed = parseFileName(fileName);
-    document.getElementById('modalTitle').textContent = `${parsed.raceClass} ${parsed.raceType} — Scoresheet`;
-    document.getElementById('modalMeta').textContent  = parsed.dateStr || fileName;
+async function openScoresheet(fileId) {
+    const f = allProcessedFiles.find(x => x.id === fileId) || {};
+    document.getElementById('modalTitle').textContent = `${fileLabel(f)} — Scoresheet`;
+    document.getElementById('modalMeta').textContent  = fmtDMY(f.eventDate) !== '—' ? fmtDMY(f.eventDate) : (f.name || '');
     document.getElementById('modalMetaGrid').innerHTML = '';
     document.getElementById('scoresheetHead').innerHTML = '';
     document.getElementById('scoresheetBody').innerHTML = '<tr><td colspan="99" style="text-align:center;padding:20px;"><span class="spinner"></span></td></tr>';
@@ -2012,32 +1920,20 @@ async function openScoresheet(fileId, fileName) {
 
     try {
         const json = await fetchDriveFile(fileId);
-        renderScoresheetModal(json, parsed);
+        renderScoresheetModal(json, f);
     } catch (err) {
         document.getElementById('scoresheetBody').innerHTML =
             `<tr><td colspan="99" style="color:var(--signal);padding:16px;">${escHtml(err.message)}</td></tr>`;
     }
 }
 
-function assignRoundNumbers(files) {
-    const seasonOf = d => (d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1);
-    const groups = {};
-    files.filter(f => f.date).forEach(f => {
-        const key = `${seasonOf(f.date)}|${f.raceClass}|${f.raceType}`;
-        (groups[key] = groups[key] || []).push(f);
-    });
-    Object.values(groups).forEach(g =>
-        g.sort((a, b) => a.date - b.date || String(a.name).localeCompare(String(b.name)))
-         .forEach((f, i) => { f.round = f.fileRound || i + 1; })
-    );
-}
-
-function renderScoresheetModal(json, parsed) {
-    // Meta grid
+function renderScoresheetModal(json, f) {
+    // Meta grid: Event Data first; the file's own fields only when the file is not linked to an event
     const metaItems = [
-        { label: 'Class',       value: json.className    || parsed.raceClass || '—' },
-        { label: 'Type',        value: json.regattaName  || parsed.raceType  || '—' },
-        { label: 'Date',        value: json.regattaDate  || parsed.dateStr   || '—' },
+        { label: 'Class',       value: f.raceClass || json.className   || '—' },
+        { label: 'Type',        value: f.raceType  || json.regattaName || '—' },
+        { label: 'Round',       value: f.round     || json.roundNo     || '—' },
+        { label: 'Date',        value: json.regattaDate || fmtDMY(f.eventDate) },
         { label: 'Start',       value: json.startTime    || '—' },
         { label: 'End',         value: json.endTime      || '—' },
         { label: 'Starters', value: calcStarters(json) },
@@ -2136,7 +2032,8 @@ let rrSheets         = [];   // [{name, gid}] for active spreadsheet
 let rrSpreadsheetId  = null;
 let rrFileJson       = null; // cached JSON from the processed file
 
-async function openRoundResults(fileId, fileName, round = 0) {
+async function openRoundResults(fileId) {
+    const f = allProcessedFiles.find(x => x.id === fileId) || {};
     // Reset modal
     document.getElementById('rrModalTitle').textContent   = 'Round Results';
     document.getElementById('rrModalMeta').textContent    = '';
@@ -2150,19 +2047,18 @@ async function openRoundResults(fileId, fileName, round = 0) {
     document.getElementById('roundResultsModal').classList.add('open');
 
     try {
-        // 1. Fetch the processed file JSON to get class/type/date
-        const json   = await fetchDriveFile(fileId);
-        rrFileJson   = json;
-        const parsed = parseFileName(fileName);
+        if (!f.hexKey) throw new Error('This file is not linked to a calendar event (no [HexKey] in the file name).');
+        const json = await fetchDriveFile(fileId);
+        rrFileJson = json;
 
-        document.getElementById('rrModalTitle').textContent = `${escHtml(json.regattaName || parsed.raceClass + ' ' + parsed.raceType)} — Round Results`;
-        document.getElementById('rrModalMeta').textContent  = json.regattaDate || parsed.dateStr || '';
+        document.getElementById('rrModalTitle').textContent = `${fileLabel(f)} — Round Results`;
+        document.getElementById('rrModalMeta').textContent  = json.regattaDate || fmtDMY(f.eventDate);
 
-        // Meta strip
         document.getElementById('rrModalMetaGrid').innerHTML = [
-            { label: 'Class',   value: json.className   || parsed.raceClass },
-            { label: 'Type',    value: json.regattaName || parsed.raceType  },
-            { label: 'Date',    value: json.regattaDate || parsed.dateStr   },
+            { label: 'Class',    value: f.raceClass },
+            { label: 'Type',     value: f.raceType },
+            { label: 'Round',    value: f.round || '—' },
+            { label: 'Date',     value: json.regattaDate || fmtDMY(f.eventDate) },
             { label: 'Starters', value: calcStarters(json) },
         ].map(m => `
             <div class="modal-meta-item">
@@ -2170,25 +2066,16 @@ async function openRoundResults(fileId, fileName, round = 0) {
                 <span class="modal-meta-value">${escHtml(m.value)}</span>
             </div>`).join('');
 
-        // 2. Match to an Overall Sheet by class + type
-        const regattaName = String(json.regattaName || '').toLowerCase();
-        const sheet = allOverallSheets.find(s => {
-            const nameMatch  = regattaName.includes(s.raceClass.toLowerCase());
-            const typeMatch  = regattaName.includes(s.raceType.toLowerCase());
-            return nameMatch && typeMatch;
-        });
+        // Overall results spreadsheet comes from Series.SpreadsheetID (via Event Data.RegattaID)
+        rrSpreadsheetId = f.spreadsheetId;
+        if (!rrSpreadsheetId) throw new Error('No overall results spreadsheet is set for this event\'s series.');
 
-        if (!sheet || !sheet.id) throw new Error(
-            `No Overall Results sheet found matching "${json.regattaName}". Load the Overall Sheets first.`
-        );
+        rrSheets = await getOverallRounds(rrSpreadsheetId);
+        if (!rrSheets.length) throw new Error('No round sheets found in this spreadsheet.');
 
-        rrSpreadsheetId = f.spreadsheetId;                 // replaces the allOverallSheets.find(regattaName.includes…)
-        if (!rrSpreadsheetId) throw new Error('Series has no SpreadsheetID');
         const rn = Number(f.round) || 0;
-
         let matchIdx = rn ? rrSheets.findIndex(s =>
             new RegExp(`(round|rd|r)\\s*0*${rn}\\b`, 'i').test(s.name)) : -1;
-        if (matchIdx < 0 && dateStr) matchIdx = rrSheets.findIndex(s => s.name.includes(dateStr));
         if (matchIdx < 0 && rn && rn <= rrSheets.length) matchIdx = rn - 1;
         rrActiveRoundIdx = matchIdx >= 0 ? matchIdx : rrSheets.length - 1;
 
