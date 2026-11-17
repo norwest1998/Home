@@ -449,7 +449,7 @@ select.guest-inline-input option {
                 <select id="seriesFilter" class="mm-select" onchange="filterResults()">
                     <option value="all">All Series</option>
                 </select>
-                <select id="classFilter" class="mm-select" onchange="filterResults()">
+               <select id="classFilter" class="mm-select" onchange="onClassFilterChange()">
                     <option value="all">All Classes</option>
                 </select>
                 <select id="typeFilter" class="mm-select" onchange="filterResults()">
@@ -904,6 +904,23 @@ async function loadClubClasses() {
     return allClubClasses;
 }
 
+let allRacingSeries = [];
+
+async function loadRacingSeries() {
+    if (allRacingSeries.length) return allRacingSeries;
+    try {
+        const rows = await fetchSheet(DOMAIN.racing, "Series");
+        allRacingSeries = rows.filter(r => 
+            (r.ID || r.SeriesName) && 
+            (r.Active === undefined || String(r.Active).toUpperCase() === 'TRUE' || r.Active === true)
+        );
+    } catch (e) {
+        console.warn("Failed to load Series from Racing domain:", e);
+        allRacingSeries = [];
+    }
+    return allRacingSeries;
+}
+
 /**
  * Parse a Drive file name into { date, class, type }
  * Expected format: "DF95 Handicap - 11/07/2026"
@@ -1231,19 +1248,28 @@ function updateSeriesFilterOptions() {
 
     const seriesSet = new Set();
 
-    // 1. Get canonical series from EventFilters (filtered by class if one is chosen)
-    const efSeries = (selectedClass === 'all')
-        ? EventFilters.all()
-        : EventFilters.forClass(selectedClass);
-    (efSeries || []).forEach(s => { if (s.name) seriesSet.add(s.name.trim()); });
+    // 1. Retrieve canonical series from allRacingSeries (Racing domain "Series" sheet)
+    //    Fall back to EventFilters if allRacingSeries hasn't populated yet
+    const sourceSeries = (allRacingSeries && allRacingSeries.length)
+        ? allRacingSeries.map(s => ({
+            id: String(s.ID || '').trim(),
+            name: String(s.SeriesName || s.ID || '').trim(),
+            classes: String(s.AllowedClasses || '').split(',').map(x => x.trim()).filter(Boolean)
+        }))
+        : EventFilters.all();
 
-    // 2. Also include any series names resolved from processed files matching the class
-    allProcessedFiles.forEach(f => {
-        if (!f.seriesName) return;
-        if (selectedClass === 'all' || 
-            String(f.raceClass || '').toLowerCase() === selectedClass.toLowerCase() ||
-            String(f.seriesName || '').toLowerCase().includes(selectedClass.toLowerCase())) {
-            seriesSet.add(f.seriesName.trim());
+    sourceSeries.forEach(s => {
+        if (!s.name) return;
+        if (selectedClass === 'all') {
+            seriesSet.add(s.name.trim());
+        } else {
+            const normSel = selectedClass.toLowerCase();
+            const matchesClass = !s.classes || !s.classes.length ||
+                s.classes.some(c => c.toLowerCase() === normSel) ||
+                s.name.toLowerCase().includes(normSel);
+            if (matchesClass) {
+                seriesSet.add(s.name.trim());
+            }
         }
     });
 
@@ -1335,8 +1361,22 @@ function resolveFileSeriesInfo(f) {
                 eventDateStr = `${dmy[2]}/${dmy[1]}/${dmy[0]}`;
             }
         }
-        if (calEvent.EventName) seriesName = String(calEvent.EventName).trim();
-        else if (calEvent.Event) seriesName = String(calEvent.Event).trim();
+
+        // Match to Series via RegattaID / SeriesID in allRacingSeries
+        const regId = String(calEvent.RegattaID || calEvent.SeriesID || '').trim().toLowerCase();
+        if (regId && allRacingSeries.length) {
+            const sMatch = allRacingSeries.find(s => String(s.ID || '').trim().toLowerCase() === regId);
+            if (sMatch && sMatch.SeriesName) seriesName = String(sMatch.SeriesName).trim();
+        }
+
+        // Clean event name if it has round numbers like "DF95 Scratch Rd 1"
+        if (!seriesName) {
+            const rawEvName = String(calEvent.EventName || calEvent.Event || '').trim();
+            if (rawEvName) {
+                const cleaned = rawEvName.replace(/\s*[-–—]?\s*(?:Round|Rd|R)\s*\d+.*$/i, '').trim();
+                seriesName = cleaned || rawEvName;
+            }
+        }
     }
 
     // 3. Match from EventFilters if hex exists
@@ -1345,22 +1385,38 @@ function resolveFileSeriesInfo(f) {
         if (s && s.name) seriesName = s.name;
     }
 
-    // 4. Match series by Class & Type from EventFilters
+    // 4. Match series by Class & Type from allRacingSeries or EventFilters
     if (!seriesName && raceClass) {
-        const serList = EventFilters.all();
-        const match = serList.find(s => {
-            const hasClass = (s.classes || []).some(c => c.toLowerCase() === raceClass.toLowerCase());
-            const hasType  = raceType ? s.name.toLowerCase().includes(raceType.toLowerCase()) : true;
-            return hasClass && hasType;
-        });
-        if (match) seriesName = match.name;
+        if (allRacingSeries.length) {
+            const match = allRacingSeries.find(s => {
+                const allowed = String(s.AllowedClasses || '').split(',').map(c => c.trim().toLowerCase()).filter(Boolean);
+                const hasClass = !allowed.length || allowed.includes(raceClass.toLowerCase());
+                const sName = String(s.SeriesName || '').toLowerCase();
+                const hasType = raceType ? sName.includes(raceType.toLowerCase()) : true;
+                return hasClass && hasType;
+            });
+            if (match && match.SeriesName) seriesName = String(match.SeriesName).trim();
+        }
+        if (!seriesName) {
+            const serList = EventFilters.all();
+            const match = serList.find(s => {
+                const hasClass = (s.classes || []).some(c => c.toLowerCase() === raceClass.toLowerCase());
+                const hasType  = raceType ? s.name.toLowerCase().includes(raceType.toLowerCase()) : true;
+                return hasClass && hasType;
+            });
+            if (match) seriesName = match.name;
+        }
     }
 
-    // 5. Fallback naming
+    // 5. Fallback naming without round strings
     if (!seriesName) {
         if (raceClass && raceType) seriesName = `${raceClass} ${raceType}`;
         else if (raceClass) seriesName = raceClass;
-        else seriesName = raw;
+        else {
+            seriesName = raw.replace(/\s*[-–—]?\s*(?:Round|Rd|R)\s*\d+.*$/i, '')
+                            .replace(/\b(0?[1-9]|[12]\d|3[01])[-\/._](0?[1-9]|1[0-2])[-\/._](20\d\d)\b/, '')
+                            .trim();
+        }
     }
 
     if (!eventDateStr && eventDate) {
@@ -1391,7 +1447,8 @@ async function loadAll() {
     await Promise.all([
         EventFilters.load().catch(() => {}),
         loadCalendarEvents().catch(() => {}),
-        loadClubClasses().catch(() => {})
+        loadClubClasses().catch(() => {}),
+        loadRacingSeries().catch(() => {})
     ]);
     await loadProcessedFiles();
     await loadOutstanding();
