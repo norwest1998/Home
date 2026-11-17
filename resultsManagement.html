@@ -889,9 +889,9 @@ function calcStarters(json) {
 function parseFileName(name, createdTime) {
     const raw = String(name || '').replace(/\.[^.]+$/, '').trim();
 
-    // 1. Match date patterns (DD/MM/YYYY or YYYY-MM-DD)
-    const mDmy = raw.match(/\b(0?[1-9]|[12]\d|3[01])[-\/.](0?[1-9]|1[0-2])[-\/.](20\d\d)\b/);
-    const mIso = raw.match(/\b(20\d\d)[-\/.](0?[1-9]|1[0-2])[-\/.](0?[1-9]|[12]\d|3[01])\b/);
+    // Match DD/MM/YYYY or YYYY/MM/DD using hyphens, slashes, dots, or underscores
+    const mDmy = raw.match(/\b(0?[1-9]|[12]\d|3[01])[-\/._](0?[1-9]|1[0-2])[-\/._](20\d\d)\b/);
+    const mIso = raw.match(/\b(20\d\d)[-\/._](0?[1-9]|1[0-2])[-\/._](0?[1-9]|[12]\d|3[01])\b/);
 
     let d = null;
     let dateStr = '';
@@ -921,19 +921,16 @@ function parseFileName(name, createdTime) {
         }
     }
 
-    // 2. Extract Round Number (e.g. "Rd 4", "Round 4", "R4")
     let fileRound = null;
     const rdMatch = raw.match(/\b(?:Round|Rd|R)\s*(\d+)\b/i);
     if (rdMatch) fileRound = Number(rdMatch[1]);
 
-    // 3. Extract Class and Regatta Type from the name
     const KNOWN_CLASSES = ['DF95', 'DF65', 'IOM', 'Soling', 'Marblehead', 'Laser', 'Twilight', 'Social', 'General'];
     const KNOWN_TYPES   = ['Scratch', 'Handicap', 'Championship', 'Pennant', 'Cup', 'Regatta'];
 
     let raceClass = KNOWN_CLASSES.find(kc => new RegExp('\\b' + kc + '\\b', 'i').test(raw)) || '';
     let raceType  = KNOWN_TYPES.find(kt => new RegExp('\\b' + kt + '\\b', 'i').test(raw)) || '';
 
-    // Fallback if not matched against known keywords
     if (!raceClass || !raceType) {
         let clean = raw;
         if (dateMatch) clean = clean.replace(dateMatch[0], '');
@@ -1202,16 +1199,133 @@ async function cancelEvent(hexKey, btn) {
     }
 }
 
+let allCalendarRows = [];
+
+async function loadCalendarEvents() {
+    if (allCalendarRows.length) return allCalendarRows;
+    try {
+        allCalendarRows = await fetchSheet(DOMAIN.calendar, "Event Data");
+    } catch (e) {
+        allCalendarRows = [];
+    }
+    return allCalendarRows;
+}
+
+function formatProcessedDate(createdTime) {
+    if (!createdTime) return '—';
+    const d = new Date(createdTime);
+    if (isNaN(d.getTime())) return String(createdTime);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+}
+
+/**
+ * Resolves the Series Name, Boat Class, Round, and Event Date
+ * by cross-referencing EventFilters and Event Data (Calendar).
+ */
+function resolveFileSeriesInfo(f) {
+    const raw = f.raw || '';
+    let seriesName = '';
+    let raceClass  = f.raceClass || '';
+    let raceType   = f.raceType || '';
+    let round      = f.fileRound || f.round || null;
+    let eventDate  = f.date;
+    let eventDateStr = f.dateStr || '';
+
+    // 1. Check for HexKey / RegattaID (e.g. A828F590, 04055C78)
+    const hexMatch = raw.match(/\b([A-Fa-f0-9]{8})\b/);
+    const hex = hexMatch ? hexMatch[1].toUpperCase() : null;
+
+    let calEvent = null;
+    if (hex && allCalendarRows.length) {
+        calEvent = allCalendarRows.find(r => 
+            String(r.HexKey || '').trim().toUpperCase() === hex ||
+            String(r.RegattaID || '').trim().toUpperCase() === hex
+        );
+    }
+
+    // 2. Fallback: match by Date + Class in Event Data
+    if (!calEvent && f.date && raceClass && allCalendarRows.length) {
+        const fIso = formatDateYYYYMMDD(f.date);
+        calEvent = allCalendarRows.find(r => {
+            const rIso = formatDateYYYYMMDD(r.Date || r['Rescheduled Date']);
+            const rCls = String(r.Class || '').trim().toLowerCase();
+            return rIso === fIso && rCls === raceClass.toLowerCase();
+        });
+    }
+
+    if (calEvent) {
+        if (!raceClass) raceClass = String(calEvent.Class || '').trim();
+        if (!raceType)  raceType  = String(calEvent['Regatta Type'] || '').trim();
+        if (!round && calEvent['Round no']) round = Number(calEvent['Round no']);
+        if (!eventDateStr && calEvent.Date) {
+            const cd = parseCalDate(calEvent.Date);
+            if (cd) {
+                eventDate = cd;
+                const dmy = formatDateYYYYMMDD(cd).split('/');
+                eventDateStr = `${dmy[2]}/${dmy[1]}/${dmy[0]}`;
+            }
+        }
+        if (calEvent.EventName) seriesName = String(calEvent.EventName).trim();
+        else if (calEvent.Event) seriesName = String(calEvent.Event).trim();
+    }
+
+    // 3. Match from EventFilters if hex exists
+    if (!seriesName && hex) {
+        const s = EventFilters.get(hex);
+        if (s && s.name) seriesName = s.name;
+    }
+
+    // 4. Match series by Class & Type from EventFilters
+    if (!seriesName && raceClass) {
+        const serList = EventFilters.all();
+        const match = serList.find(s => {
+            const hasClass = (s.classes || []).some(c => c.toLowerCase() === raceClass.toLowerCase());
+            const hasType  = raceType ? s.name.toLowerCase().includes(raceType.toLowerCase()) : true;
+            return hasClass && hasType;
+        });
+        if (match) seriesName = match.name;
+    }
+
+    // 5. Fallback naming
+    if (!seriesName) {
+        if (raceClass && raceType) seriesName = `${raceClass} ${raceType}`;
+        else if (raceClass) seriesName = raceClass;
+        else seriesName = raw;
+    }
+
+    if (!eventDateStr && eventDate) {
+        const dd = String(eventDate.getDate()).padStart(2, '0');
+        const mm = String(eventDate.getMonth() + 1).padStart(2, '0');
+        eventDateStr = `${dd}/${mm}/${eventDate.getFullYear()}`;
+    }
+
+    return {
+        seriesName,
+        raceClass,
+        raceType,
+        round,
+        eventDate,
+        eventDateStr: eventDateStr || '—'
+    };
+}
+
 // ----------------------------------------------------------------
 // LOAD  (calls the CLB webapp for Drive folder listings)
 // ----------------------------------------------------------------
 async function loadAll() {
     loadUploadFiles();
     loadErrorFiles();
-    loadProcessedFiles();
     loadOverallSheets();
     loadGuestData();
     loadAvgRequests();
+    await Promise.all([
+        EventFilters.load().catch(() => {}),
+        loadCalendarEvents().catch(() => {})
+    ]);
+    await loadProcessedFiles();
     await loadOutstanding();
     loadLastReminder();
 }
@@ -1222,14 +1336,20 @@ async function loadProcessedFiles() {
         const files = await fetchDriveFolder("processed");
         allProcessedFiles = files.map(f => {
             const parsed = parseFileName(f.name || '', f.createdTime);
-            return { ...f, ...parsed };
+            const resolved = resolveFileSeriesInfo({ ...f, ...parsed });
+            return {
+                ...f,
+                ...parsed,
+                ...resolved,
+                processedDateStr: formatProcessedDate(f.createdTime)
+            };
         }).sort((a, b) => {
-            const da = a.date ? a.date.getTime() : 0;
-            const db = b.date ? b.date.getTime() : 0;
-            return db - da; // Descending: latest first
+            const da = a.eventDate ? a.eventDate.getTime() : (a.date ? a.date.getTime() : 0);
+            const db = b.eventDate ? b.eventDate.getTime() : (b.date ? b.date.getTime() : 0);
+            return db - da; // Descending: latest event first
         });
-        assignRoundNumbers(allProcessedFiles);
 
+        assignRoundNumbers(allProcessedFiles);
         populateFilters();
         filterResults();
         renderStats();
@@ -1338,20 +1458,29 @@ function renderResultPage() {
 
     container.innerHTML = list.map(f => {
         const imgSrc = getClassImage(f.raceClass);
-        const label = f.raceClass
-            ? `${f.raceClass} ${f.raceType}${f.round ? ' Rd ' + f.round : ''}`
-            : f.raw;
-        const imgEl  = imgSrc
+        const imgEl = imgSrc
             ? `<img class="row-insignia" src="${escHtml(imgSrc)}" alt="${escHtml(f.raceClass)}">`
             : `<div class="row-insignia-placeholder"></div>`;
+
+        // Main line: Series name and round number
+        const mainLabel = f.round
+            ? `${f.seriesName} Rd ${f.round}`
+            : f.seriesName;
+
+        // Second line: File name and event date
+        const subLabel = `${f.raw || f.name} - ${f.eventDateStr}`;
+
+        // Date column: Processed date
+        const processedDate = f.processedDateStr || '—';
+
         return `
         <div class="result-row" onclick="openScoresheet('${escHtml(f.id)}', '${escHtml(f.name)}')">
             ${imgEl}
             <div>
-                <div class="r-name">${escHtml(label)}</div>
-                <div class="r-meta">${escHtml(label)} - ${escHtml(f.dateStr || '')}</div>
+                <div class="r-name">${escHtml(mainLabel)}</div>
+                <div class="r-meta">${escHtml(subLabel)}</div>
             </div>
-            <div class="r-date">${escHtml(f.dateStr || '—')}</div>
+            <div class="r-date" title="Processed Date">${escHtml(processedDate)}</div>
             <span class="badge badge-approved">Processed</span>
             <div class="row-actions">
                 <button class="icon-btn" title="View Results" onclick="event.stopPropagation();openScoresheet('${escHtml(f.id)}','${escHtml(f.name)}')">
@@ -1370,19 +1499,6 @@ function renderResultPage() {
     if (window.lucide) lucide.createIcons();
     scroller.scrollTop = 0;
     updateResultChevrons();
-
-    scroller.onscroll = () => updateResultChevrons();
-    if (!scroller._keyHandler) {
-    scroller._keyHandler = true;
-    window.addEventListener('keydown', e => {
-        if (e.key === 'PageDown' || e.key === 'PageUp') {
-            const scroller = document.getElementById('resultRowsScroll');
-            if (!scroller) return;
-            e.preventDefault();
-            scroller.scrollBy({ top: (e.key === 'PageDown' ? 1 : -1) * 10 * 54, behavior: 'smooth' });
-        }
-    });
-}
 }
 
 function updateResultChevrons() {
