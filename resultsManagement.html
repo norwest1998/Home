@@ -1322,23 +1322,14 @@ function resolveFile(f) {
     };
 }   
 
-allProcessedFiles = files.map(f => ({ ...f, ...resolveFile(f),
-        processedDateStr: formatProcessedDate(f.createdTime) }))
-    .sort((a, b) => (b.eventDate || 0) - (a.eventDate || 0));
-
 // ----------------------------------------------------------------
 // LOAD  (calls the CLB webapp for Drive folder listings)
 // ----------------------------------------------------------------
 async function loadAll() {
-    loadUploadFiles();
-    loadErrorFiles();
-    loadOverallSheets();
-    loadGuestData();
-    loadAvgRequests();
-    await Promise.all([EventFilters.load(), loadCalendarEvents(), loadClubClasses()]); // Classes: keep, used for coordinators/insignia
+    loadUploadFiles(); loadErrorFiles(); loadOverallSheets(); loadAvgRequests();
+    await Promise.all([EventFilters.load(), loadCalendarEvents(), loadClubClasses()]);
+    loadGuestData();                                   // needs allCalendarRows
     await Promise.all([loadProcessedFiles(), loadOutstanding()]);
-    await loadProcessedFiles();
-    await loadOutstanding();
     loadLastReminder();
 }
 
@@ -1346,22 +1337,9 @@ async function loadProcessedFiles() {
     document.getElementById('resultRows').innerHTML = '<div class="empty-state"><span class="spinner"></span></div>';
     try {
         const files = await fetchDriveFolder("processed");
-        allProcessedFiles = files.map(f => {
-            const parsed = parseFileName(f.name || '', f.createdTime);
-            const resolved = resolveFileSeriesInfo({ ...f, ...parsed });
-            return {
-                ...f,
-                ...parsed,
-                ...resolved,
-                processedDateStr: formatProcessedDate(f.createdTime)
-            };
-        }).sort((a, b) => {
-            const da = a.eventDate ? a.eventDate.getTime() : (a.date ? a.date.getTime() : 0);
-            const db = b.eventDate ? b.eventDate.getTime() : (b.date ? b.date.getTime() : 0);
-            return db - da; // Descending: latest event first
-        });
-
-        assignRoundNumbers(allProcessedFiles);
+        allProcessedFiles = files.map(f => ({ ...f, ...resolveFile(f),
+                processedDateStr: formatProcessedDate(f.createdTime) }))
+            .sort((a, b) => (b.eventDate || 0) - (a.eventDate || 0));
         populateFilters();
         filterResults();
         renderStats();
@@ -1718,33 +1696,21 @@ function formatDateYYYYMMDD(dateVal) {
     return `${yyyy}/${mm}/${dd}`;
 }
 
-async function fetchFutureEvents() {
+function buildUpcomingEvents() {
     const today = new Date(new Date().setHours(0,0,0,0));
-    allUpcomingEvents = allCalendarRows.map(r => ({
-        EventID: _t(r.HexKey), RaceClass: _t(r.Class), Title: `${_t(r.Class)} ${_t(r["Regatta Type"])}`,
-        date: parseCalDate(r["Rescheduled Date"] || r.Date), type: _t(r["Event Type"]), results: _t(r.Results).toLowerCase()
-        })).filter(e => e.type === 'Competition' && e.date >= today && !['cancelled','postponed'].includes(e.results));
-    return (data.months || []).flatMap(mo => {
-    const year = (String(mo.monthLabel).match(/\d{4}/) || [new Date().getFullYear()])[0];
-    return (mo.events || [])
-      .filter(e => e.boatClass)                            // skip meetings
-      .map(e => {
-        const [, dd, mon] = String(e.dateLabel).split(' ');  // "SAT 03 OCT"
-        const mm = String(MON_ABBR.indexOf(mon) + 1).padStart(2, '0');
-        return {
-          EventID:   e.hexKey,
-          Title:     e.eventName,
-          RaceClass: e.boatClass,
-          EventDate: `${year}/${mm}/${dd}`
-        };
-      });
-  });
+    return allCalendarRows.map(r => {
+        const d = parseCalDate(r["Rescheduled Date"] || r.Date), rd = _t(r["Round no"]);
+        return { EventID: _t(r.HexKey), RaceClass: _t(r.Class),
+                 Title: `${_t(r.Class)} ${_t(r["Regatta Type"])}${rd ? ' Rd ' + rd : ''}`,
+                 EventDate: d ? formatDateYYYYMMDD(d) : '', d,
+                 type: _t(r["Event Type"]), results: _t(r.Results).toLowerCase() };
+    }).filter(e => e.type === 'Competition' && e.d >= today && !['cancelled','postponed'].includes(e.results));
 }
 
 async function loadGuestData() {
     try {
         allGuestRegistrations = await fetchSheet(DOMAIN.results, "GuestRegistrations");
-        allUpcomingEvents = await fetchFutureEvents();
+        allUpcomingEvents = buildUpcomingEvents();
         renderGuestEventsList();
     } catch (err) {
         showMsg('guestMsg', 'Error loading guest registrations: ' + err.message, true);

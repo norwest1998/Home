@@ -2169,24 +2169,131 @@ function renderResultsTable(){
   <div class="helper-note">Low-point scoring: DNS/DNF score entries+1. RO (race officer) excludes a sailor from that race entirely. Drops: 1 after race 4, 2 after race 8, +1 every 8 races thereafter. Ties broken by countback (most bettered places, then most recent race).</div>`;
 }
 
-function renderExportPanel(){
+function renderExportPanel() {
+  const blockers = saveBlockers();
+  const isBlocked = blockers.length > 0;
+
   return `
   <div class="panel glass panel-pad">
     <div class="field-label">Race report</div>
-    <div class="section-hint" style="margin-bottom:8px">Written separately in the race-report module — paste it in here if you have it, or leave blank and add it later.</div>
+    <div class="section-hint" style="margin-bottom:8px">
+      ${isBlocked 
+        ? 'Please document why the regatta was abandoned (e.g., weather, insufficient fleet) in the report below.' 
+        : 'Written separately in the race-report module — paste it in here if you have it, or generate with AI.'}
+    </div>
     <textarea class="report-box" id="reportTextArea" placeholder="Paste or write the narrative race report here…">${escapeHTML(state.reportText)}</textarea>
   </div>
-  <button class="btn btn-block" id="genReportBtn" data-gen-report="1">Generate AI Race Report</button>
+  ${!isBlocked ? `<button class="btn btn-block" id="genReportBtn" data-gen-report="1">Generate AI Race Report</button>` : ''}
   <button class="btn btn-primary btn-block" data-save-report="1" style="margin-top:8px">Save report text</button>
+
   <div class="panel glass panel-pad" style="margin-top:16px">
-    <div class="field-label">Send for race processing</div>
-    ${state.practice ? `<div class="section-hint" style="color:var(--signal)">Practice mode: this will NOT download or send anything.</div>` : ''}
-    <div class="section-hint">Downloads the full regatta record — event details, entries and every race — in the standard SMMC results format, ready to hand off for processing.</div>
-    ${saveBlockers().length
-      ? `<div class="section-hint" style="color:var(--signal);font-weight:600">Regatta cannot be saved due to minimum ${saveBlockers().join(' and ')} not achieved (need ${MIN_RACES}+ races and ${MIN_COMPETITORS}+ competitors).</div>`
-      : `<button class="btn btn-primary btn-block" data-download-json="1">${svgSend()} Send for Race Processing</button>`}
+    <div class="field-label">Regatta Completion</div>
+
+    ${isBlocked ? `
+      <div class="section-hint" style="color:var(--signal);font-weight:600;margin-bottom:12px;">
+        Official scoring criteria not met: minimum ${blockers.join(' and ')} not achieved (requires ${MIN_RACES}+ races and ${MIN_COMPETITORS}+ competitors).
+      </div>
+      
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <!-- Option A: Official Abandonment -->
+        <button class="btn btn-primary btn-block" style="background:var(--signal);color:#fff;" data-abandon-event="1">
+          <i data-lucide="flag-off"></i> Mark Regatta as Abandoned
+        </button>
+        <div class="section-hint" style="font-size:11px;">
+          Archives captured races &amp; attendance record, saves your report, and updates the club calendar to "Abandoned".
+        </div>
+
+        <div style="margin:8px 0; border-top:1px solid var(--glass-border);"></div>
+
+        <!-- Option B: Discard / Reset -->
+        <button class="btn btn-ghost btn-block" style="color:#ff8b8b;border-color:rgba(255,106,61,0.3);" data-discard-draft="1">
+          <i data-lucide="trash-2"></i> Discard &amp; Reset Event
+        </button>
+        <div class="section-hint" style="font-size:11px;">
+          Wipes this session completely and reverts calendar status back to "Not Started".
+        </div>
+      </div>
+    ` : `
+      <div class="section-hint">Downloads the full regatta record and dispatches it for official series scoring.</div>
+      <button class="btn btn-primary btn-block" data-download-json="1">${svgSend()} Send for Race Processing</button>
+    `}
   </div>
   `;
+}
+
+async function abandonEvent() {
+  const ta = document.getElementById('reportTextArea');
+  if (ta) state.reportText = ta.value;
+
+  if (!state.reportText.trim()) {
+    alert("Please provide a short explanation in the Race Report box (e.g. 'Abandoned due to high winds after Race 2').");
+    document.getElementById('reportTextArea')?.focus();
+    return;
+  }
+
+  if (!confirm("Are you sure you want to officially mark this regatta as ABANDONED?")) return;
+
+  if (state.practice) {
+    showToast('Practice regatta abandoned');
+    setTimeout(() => changeEvent(), 800);
+    return;
+  }
+
+  const ev = state.event;
+  const payload = buildExportObject();
+  payload.status = 'Abandoned'; // Explicit flag for downstream processor / archive
+
+  try {
+    const json = JSON.stringify(payload, null, 2);
+    const [dd, mm, yyyy] = String(ev.regattaDate).split('/');
+    const filename = `${yyyy}-${mm}-${dd} ${ev.regattaName} [ABANDONED] [${ev.id}].json`;
+
+    // 1. Upload record to Drive so records & attendance are not lost
+    await gw({
+      action: "uploadNew",
+      folder: "upload",
+      name: filename,
+      id: ev.id,
+      data: btoa(String.fromCharCode(...new Uint8Array(new TextEncoder().encode(json)))),
+      mimeType: "application/json"
+    }, FILE_GATEWAY_URL);
+
+    // 2. Mark Calendar status as Abandoned
+    await gw({ action: 'setResults', hexKey: ev.id, results: 'Abandoned' }, CAL_WEBAPP_URL);
+    const cev = EVENTS.find(x => x.id === ev.id);
+    if (cev) cev.status = 'Abandoned';
+
+    // 3. Clear local session cache
+    localStorage.removeItem(storageKey(ev.id));
+    showToast('Regatta marked as Abandoned');
+    setTimeout(() => changeEvent(), 800);
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to abandon regatta: ' + err.message);
+  }
+}
+
+async function discardDraft() {
+  if (!confirm("Discard all captured races and entries? The event will return to 'Not Started'.")) return;
+
+  const ev = state.event;
+  if (!state.practice && ev) {
+    try {
+      // Revert calendar status
+      await gw({ action: 'setResults', hexKey: ev.id, results: 'Not Started' }, CAL_WEBAPP_URL);
+      const cev = EVENTS.find(x => x.id === ev.id);
+      if (cev) cev.status = 'Not Started';
+
+      // Clear server lock/draft state
+      await gw({ action: 'saveCapture', hexKey: ev.id, state: '', takeover: true }, CAL_WEBAPP_URL);
+    } catch (e) {
+      console.warn("Error resetting remote state:", e);
+    }
+  }
+
+  if (ev) localStorage.removeItem(storageKey(ev.id));
+  showToast('Draft discarded. Regatta reset.');
+  changeEvent();
 }
 
 /* ---------------- Long-press modal (DNS/DNF/RO) ---------------- */
@@ -2843,6 +2950,12 @@ function attachDynamicHandlers(){
       if(g) g.hcap = Number(el.value) || 0;
     });
   });
+  document.querySelectorAll('[data-abandon-event]').forEach(el => 
+    el.addEventListener('click', abandonEvent)
+  );
+  document.querySelectorAll('[data-discard-draft]').forEach(el => 
+    el.addEventListener('click', discardDraft)
+  );
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
