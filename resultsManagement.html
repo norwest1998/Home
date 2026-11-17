@@ -446,6 +446,9 @@ select.guest-inline-input option {
                         placeholder="Search by class, type or date…"
                         oninput="filterResults()">
                 </div>
+                <select id="seriesFilter" class="mm-select" onchange="filterResults()">
+                    <option value="all">All Series</option>
+                </select>
                 <select id="classFilter" class="mm-select" onchange="filterResults()">
                     <option value="all">All Classes</option>
                 </select>
@@ -1218,6 +1221,51 @@ async function cancelEvent(hexKey, btn) {
     }
 }
 
+function updateSeriesFilterOptions() {
+    const cSel = document.getElementById('classFilter');
+    const sSel = document.getElementById('seriesFilter');
+    if (!sSel) return;
+
+    const selectedClass = cSel ? cSel.value : 'all';
+    const prevVal = sSel.value;
+
+    const seriesSet = new Set();
+
+    // 1. Get canonical series from EventFilters (filtered by class if one is chosen)
+    const efSeries = (selectedClass === 'all')
+        ? EventFilters.all()
+        : EventFilters.forClass(selectedClass);
+    (efSeries || []).forEach(s => { if (s.name) seriesSet.add(s.name.trim()); });
+
+    // 2. Also include any series names resolved from processed files matching the class
+    allProcessedFiles.forEach(f => {
+        if (!f.seriesName) return;
+        if (selectedClass === 'all' || 
+            String(f.raceClass || '').toLowerCase() === selectedClass.toLowerCase() ||
+            String(f.seriesName || '').toLowerCase().includes(selectedClass.toLowerCase())) {
+            seriesSet.add(f.seriesName.trim());
+        }
+    });
+
+    const seriesList = [...seriesSet].filter(Boolean).sort((a, b) => a.localeCompare(b));
+
+    sSel.innerHTML = `<option value="all">All Series</option>` +
+        seriesList.map(s => `<option value="${escHtml(s)}">${escHtml(s)}</option>`).join('');
+
+    // Retain previous selection if still applicable, otherwise reset to 'all'
+    if (prevVal && [...sSel.options].some(o => o.value === prevVal)) {
+        sSel.value = prevVal;
+    } else {
+        sSel.value = 'all';
+    }
+}
+
+function onClassFilterChange() {
+    updateSeriesFilterOptions();
+    filterResults();
+}
+
+
 let allCalendarRows = [];
 
 async function loadCalendarEvents() {
@@ -1428,7 +1476,6 @@ async function loadAvgRequests() {
 // FILTER DROPDOWNS
 // ----------------------------------------------------------------
 function populateFilters() {
-    // Source classes from the Classes sheet in Club Management worksheet
     const classes = allClubClasses.length
         ? allClubClasses
         : [...new Set(allProcessedFiles.map(f => f.raceClass).filter(Boolean))].sort();
@@ -1437,28 +1484,36 @@ function populateFilters() {
 
     const cSel = document.getElementById('classFilter');
     const tSel = document.getElementById('typeFilter');
-    const cVal = cSel.value;
-    const tVal = tSel.value;
+    const cVal = cSel ? cSel.value : 'all';
+    const tVal = tSel ? tSel.value : 'all';
 
-    cSel.innerHTML = `<option value="all">All Classes</option>` +
-        classes.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
-    tSel.innerHTML = `<option value="all">All Regatta Types</option>` +
-        types.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('');
+    if (cSel) {
+        cSel.innerHTML = `<option value="all">All Classes</option>` +
+            classes.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
+        if (cVal && [...cSel.options].some(o => o.value === cVal)) cSel.value = cVal;
+    }
 
-    // Preserve previously selected value if still present
-    if (cVal && [...cSel.options].some(o => o.value === cVal)) cSel.value = cVal;
-    if (tVal && [...tSel.options].some(o => o.value === tVal)) tSel.value = tVal;
+    if (tSel) {
+        tSel.innerHTML = `<option value="all">All Regatta Types</option>` +
+            types.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('');
+        if (tVal && [...tSel.options].some(o => o.value === tVal)) tSel.value = tVal;
+    }
+
+    updateSeriesFilterOptions();
 }
 
 // ----------------------------------------------------------------
 // RENDER — Processed Files
 // ----------------------------------------------------------------
 const filterResults = debounce(function() {
-    const q     = document.getElementById('resultsSearch').value.toLowerCase();
-    const cls   = document.getElementById('classFilter').value;
-    const type  = document.getElementById('typeFilter').value;
+    const q      = document.getElementById('resultsSearch').value.toLowerCase();
+    const cls    = document.getElementById('classFilter').value;
+    const series = document.getElementById('seriesFilter') ? document.getElementById('seriesFilter').value : 'all';
+    const type   = document.getElementById('typeFilter').value;
 
     let list = allProcessedFiles;
+
+    // Filter by Class
     if (cls !== 'all') {
         const clsNorm = cls.toLowerCase();
         list = list.filter(f => 
@@ -1467,6 +1522,18 @@ const filterResults = debounce(function() {
             String(f.name || '').toLowerCase().includes(clsNorm)
         );
     }
+
+    // Filter by Series
+    if (series !== 'all') {
+        const serNorm = series.toLowerCase();
+        list = list.filter(f => 
+            String(f.seriesName || '').trim().toLowerCase() === serNorm ||
+            String(f.name || '').toLowerCase().includes(serNorm) ||
+            String(f.raw || '').toLowerCase().includes(serNorm)
+        );
+    }
+
+    // Filter by Regatta Type
     if (type !== 'all') {
         const typeNorm = type.toLowerCase();
         list = list.filter(f => 
@@ -1474,6 +1541,8 @@ const filterResults = debounce(function() {
             String(f.seriesName || '').toLowerCase().includes(typeNorm)
         );
     }
+
+    // Free-text Search
     if (q) {
         list = list.filter(f =>
             [f.seriesName, f.raceClass, f.raceType, f.dateStr, f.eventDateStr, f.processedDateStr, f.name, f.raw]
