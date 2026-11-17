@@ -1464,11 +1464,11 @@ function renderResultPage() {
 
         // Main line: Series name and round number
         const mainLabel = f.round
-            ? `${f.seriesName} Rd ${f.round}`
+            ? `${f.seriesName}`
             : f.seriesName;
 
         // Second line: File name and event date
-        const subLabel = `${f.raw || f.name} - ${f.eventDateStr}`;
+        const subLabel = f.round ? `${f.raw || f.name} ${f.raceClass}` : `${f.raw || f.name} ${f.raceClass} Rd${f.round}`;
 
         // Date column: Processed date
         const processedDate = f.processedDateStr || '—';
