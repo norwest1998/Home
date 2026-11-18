@@ -2272,7 +2272,11 @@ async function abandonEvent() {
     const json = JSON.stringify(payload, null, 2);
     const [dd, mm, yyyy] = String(ev.regattaDate).split('/');
     const filename = `${yyyy}-${mm}-${dd} ${ev.regattaName} [ABANDONED] [${ev.id}].json`;
-
+console.log(`action: 'uploadNew',
+      name: ${filename},
+      id: {ev.id},
+      data: btoa(String.fromCharCode(...new Uint8Array(new TextEncoder().encode(json)))),
+      mimeType: "application/json"`);
     // 1. Upload record to Drive so records & attendance are not lost
     await gw({
       action: "uploadNew",
@@ -2282,7 +2286,7 @@ async function abandonEvent() {
       data: btoa(String.fromCharCode(...new Uint8Array(new TextEncoder().encode(json)))),
       mimeType: "application/json"
     }, FILE_GATEWAY_URL);
-
+console.log(`action: 'setResults', hexKey: ${ev.id}, results: 'Abandoned'`);
     // 2. Mark Calendar status as Abandoned
     await gw({ action: 'setResults', hexKey: ev.id, results: 'Abandoned' }, CAL_WEBAPP_URL);
     const cev = EVENTS.find(x => x.id === ev.id);
