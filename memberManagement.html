@@ -188,6 +188,10 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
     color:var(--foam-dim);
     margin-top:4px;
 }
+
+.cm-in { padding:6px 8px; font-size:12px; border-radius:8px; min-width:0;
+         background-color:var(--ocean-mid,#0f2030); color:var(--foam,#eaf6ff); border:1px solid var(--glass-border); }
+select.cm-in { padding-right:28px; background-position:right 8px center; background-size:14px; }
 </style>
 </head>
 <body>
@@ -323,6 +327,22 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
             <button type="button" class="btn" onclick="sendBulkAction('sendRenewals', this)">Send to All Active Members</button>
             <div class="fn-message" id="msg-sendRenewals"></div>
         </div>
+    </div>
+
+    <!-- COMMITTEE -->
+    <div class="section-head" id="committee"><h2>Committee</h2><p>Roles, office bearers and term dates.</p></div>
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title-left"><span class="dot"></span><h3>Committee Members</h3></div>
+            <button type="button" class="btn btn-ghost" onclick="addCommitteeRow()"><i class="inline-icon" data-lucide="plus"></i> Add Role</button>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="boat-table" id="committeeTable">
+                <thead><tr><th>Role</th><th>Member</th><th>Email</th><th>Phone</th><th>Notify</th><th>Approve</th><th>Start</th><th>End</th><th>Office Bearer</th><th></th></tr></thead>
+                <tbody id="committeeBody"></tbody>
+            </table>
+        </div>
+        <div class="fn-message" id="committeeMsg"></div>
     </div>
 
     <!-- AUDIT LOG -->
@@ -1093,7 +1113,129 @@ if (cached?.members) {
     filterMemberDirectory();
 }
 
-loadMembers();
+let committee = [];
+const COMMITTEE_ROLES = ['President','Vice President','Secretary','Treasurer','Race Coordinator','Member','Admin (AI Bot)'];
+
+function toDateInput(v) {
+    if (!v) return '';
+    const m = String(v).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+    const d = new Date(v);
+    if (isNaN(d)) return '';
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+async function loadCommittee() {
+    try {
+        const rows = await fetchSheet(DOMAIN.members, 'Committee');
+        committee = rows.filter(r => r['Role']).map(r => ({
+            id: r['ID'] ?? '',
+            role: r['Role'],
+            member: r['Member'] ?? '',
+            email: r['Email'] ?? '',
+            phone: r['Phone #'] ?? '',
+            notify: parseBoolLike(r['Notify Member Application']),
+            approve: parseBoolLike(r['Approve Member Application']),
+            start: toDateInput(r['Start of Term']),
+            end: toDateInput(r['End of Term']),
+            officer: parseBoolLike(r['Constitutional Office Bearers'])
+        }));
+        renderCommittee();
+    } catch (err) {
+        showMsg('committeeMsg', 'Error loading committee: ' + err.message, true);
+    }
+}
+
+function renderCommittee() {
+    const active = allMembers.filter(m => isActiveStatus(m.status)).map(m => m.name);
+    const roles = [...new Set([...COMMITTEE_ROLES, ...committee.map(c => c.role)])];
+    const opts = (list, cur, blank) => (blank ? '<option value=""></option>' : '') +
+        list.map(v => `<option value="${escapeHtml(v)}"${v === cur ? ' selected' : ''}>${escapeHtml(v)}</option>`).join('');
+    const chk = (k, on) => `<input type="checkbox" class="cm-f" data-k="${k}"${on ? ' checked' : ''}>`;
+
+    document.getElementById('committeeBody').innerHTML = committee.map((c, i) => `
+        <tr data-i="${i}">
+            <td><select class="mm-select cm-in cm-f" data-k="role">${opts(roles, c.role)}</select></td>
+            <td><select class="mm-select cm-in cm-f" data-k="member" onchange="committeeMemberChanged(${i}, this)">
+                ${opts([...new Set([...active, c.member].filter(Boolean))].sort(), c.member, true)}</select></td>
+            <td><input class="cm-in cm-f" data-k="email" value="${escapeHtml(c.email)}"></td>
+            <td><input class="cm-in cm-f" data-k="phone" value="${escapeHtml(c.phone)}"></td>
+            <td style="text-align:center">${chk('notify', c.notify)}</td>
+            <td style="text-align:center">${chk('approve', c.approve)}</td>
+            <td><input type="date" class="cm-in cm-f" data-k="start" value="${c.start}"></td>
+            <td><input type="date" class="cm-in cm-f" data-k="end" value="${c.end}"></td>
+            <td style="text-align:center">${chk('officer', c.officer)}</td>
+            <td style="white-space:nowrap">
+                <button type="button" class="icon-btn" title="Save" onclick="saveCommitteeRow(${i})"><i class="inline-icon" data-lucide="save"></i></button>
+                <button type="button" class="icon-btn" title="Remove" onclick="deleteCommitteeRow(${i})"><i class="inline-icon" data-lucide="trash-2"></i></button>
+            </td>
+        </tr>`).join('') || '<tr><td colspan="10"><div class="empty-state">No committee roles.</div></td></tr>';
+    if (window.lucide) lucide.createIcons();
+}
+
+function committeeMemberChanged(i, sel) {
+    const m = allMembers.find(x => x.name === sel.value);
+    if (!m) return;
+    const tr = sel.closest('tr');
+    tr.querySelector('[data-k="email"]').value = m.email || '';
+    tr.querySelector('[data-k="phone"]').value = m.phone || '';
+}
+
+function addCommitteeRow() {
+    committee.push({ id: '', role: 'Member', member: '', email: '', phone: '', notify: false, approve: false, start: '', end: '', officer: false });
+    renderCommittee();
+}
+
+// Keeps Members.Committee flag in step with the Committee sheet
+async function syncCommitteeFlag(name) {
+    const m = allMembers.find(x => x.name === name);
+    if (!m) return false;
+    const on = committee.some(c => c.member === name);
+    if (parseBoolLike(m.committee) === on) return false;
+    await updateSheet(DOMAIN.members, 'Members', m.id, { Committee: on });
+    return true;
+}
+
+async function saveCommitteeRow(i) {
+    const c = committee[i], v = {};
+    document.querySelectorAll(`#committeeBody tr[data-i="${i}"] .cm-f`).forEach(el =>
+        v[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value.trim());
+    if (!v.role) return showMsg('committeeMsg', 'Role is required.', true);
+
+    const row = {
+        'Role': v.role, 'Member': v.member, 'Email': v.email, 'Phone #': v.phone,
+        'Notify Member Application': v.notify, 'Approve Member Application': v.approve,
+        'Start of Term': v.start, 'End of Term': v.end, 'Constitutional Office Bearers': v.officer
+    };
+    try {
+        if (c.id) await updateSheet(DOMAIN.members, 'Committee', c.id, row);
+        else await appendSheet(DOMAIN.members, 'Committee', { ID: 'CM' + Date.now().toString(36), ...row });
+
+        await loadCommittee();
+        const changed = await Promise.all([...new Set([c.member, v.member])].filter(Boolean).map(syncCommitteeFlag));
+        if (changed.some(Boolean)) await loadMembers();
+        showMsg('committeeMsg', `Saved ${v.role}.`, false);
+    } catch (err) {
+        showMsg('committeeMsg', 'Error saving: ' + err.message, true);
+    }
+}
+
+async function deleteCommitteeRow(i) {
+    const c = committee[i];
+    if (!c.id) { committee.splice(i, 1); return renderCommittee(); }
+    if (!confirm(`Remove ${c.role}${c.member ? ' – ' + c.member : ''}?`)) return;
+    try {
+        await deleteRow(DOMAIN.members, 'Committee', c.id);
+        await loadCommittee();
+        if (await syncCommitteeFlag(c.member)) await loadMembers();
+        showMsg('committeeMsg', 'Removed.', false);
+    } catch (err) {
+        showMsg('committeeMsg', 'Error removing: ' + err.message, true);
+    }
+}
+
+loadMembers().then(loadCommittee);
 if (window.lucide) lucide.createIcons();
 
 
