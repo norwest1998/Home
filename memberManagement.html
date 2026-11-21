@@ -189,9 +189,13 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
     margin-top:4px;
 }
 
-.cm-in { padding:6px 8px; font-size:12px; border-radius:8px; min-width:0;
-         background-color:var(--ocean-mid,#0f2030); color:var(--foam,#eaf6ff); border:1px solid var(--glass-border); }
-select.cm-in { padding-right:28px; background-position:right 8px center; background-size:14px; }
+#committeeTable { table-layout: fixed; width: 100%; }
+#committeeTable th, #committeeTable td { padding: 6px 4px; overflow: visible; }
+.cm-in { width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 12px; border-radius: 8px;
+         background-color: var(--ocean-mid,#0f2030); color: var(--foam,#eaf6ff);
+         border: 1px solid var(--glass-border); color-scheme: dark; }
+select.cm-in { padding-right: 24px; background-position: right 6px center; background-size: 12px; }
+#committeeTable input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--glow,#00c6ff); cursor: pointer; }
 </style>
 </head>
 <body>
@@ -338,7 +342,12 @@ select.cm-in { padding-right:28px; background-position:right 8px center; backgro
         </div>
         <div style="overflow-x:auto;">
             <table class="boat-table" id="committeeTable">
-                <thead><tr><th>Role</th><th>Member</th><th>Email</th><th>Phone</th><th>Notify</th><th>Approve</th><th>Start</th><th>End</th><th>Office Bearer</th><th></th></tr></thead>
+                <colgroup>
+                    <col style="width:11%"><col style="width:13%"><col style="width:15%"><col style="width:10%">
+                    <col style="width:5%"><col style="width:5%"><col style="width:11%"><col style="width:11%">
+                    <col style="width:6%"><col style="width:7%">
+                </colgroup>
+                <thead><tr><th>Role</th><th>Member</th><th>Email</th><th>Phone</th><th>Notify</th><th>Approve</th><th>Start</th><th>End</th><th>Officer</th><th></th></tr></thead>
                 <tbody id="committeeBody"></tbody>
             </table>
         </div>
