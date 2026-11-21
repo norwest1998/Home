@@ -196,6 +196,7 @@ table.boat-table td { padding: 6px 8px; border-bottom: 1px solid var(--glass-bor
          border: 1px solid var(--glass-border); color-scheme: dark; }
 select.cm-in { padding-right: 24px; background-position: right 6px center; background-size: 12px; }
 #committeeTable input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--glow,#00c6ff); cursor: pointer; }
+.cm-txt { font-size: 12px; color: var(--foam); line-height: 1.35; overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
@@ -335,6 +336,20 @@ select.cm-in { padding-right: 24px; background-position: right 6px center; backg
 
     <!-- COMMITTEE -->
     <div class="section-head" id="committee"><h2>Committee</h2><p>Roles, office bearers and term dates.</p></div>
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title-left"><span class="dot"></span><h3>Committee Roles</h3></div>
+            <button type="button" class="btn btn-ghost" onclick="addRoleRow()"><i class="inline-icon" data-lucide="plus"></i> Add Role</button>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="boat-table" id="rolesTable" style="table-layout:fixed;width:100%">
+<colgroup><col style="width:15%"><col style="width:17%"><col style="width:22%"><col style="width:6%"><col style="width:6%"><col style="width:13%"><col style="width:13%"><col style="width:8%"></colgroup>
+<thead><tr><th>Role</th><th>Member</th><th>Contact</th><th>Notify</th><th>Approve</th><th>Start</th><th>End</th><th></th></tr></thead>
+                <tbody id="rolesBody"></tbody>
+            </table>
+        </div>
+        <div class="fn-message" id="rolesMsg"></div>
+    </div>
     <div class="panel">
         <div class="panel-header">
             <div class="panel-title-left"><span class="dot"></span><h3>Committee Members</h3></div>
@@ -1122,8 +1137,96 @@ if (cached?.members) {
     filterMemberDirectory();
 }
 
+// Committee management
+
+// ---------- Committee Roles ----------
+let committeeRoles = [];
+const roleInfo = name => committeeRoles.find(r => r.role === name);
+
+async function loadCommitteeRoles() {
+    try {
+        const rows = await fetchSheet(DOMAIN.members, 'CommitteeRoles');
+        committeeRoles = rows.filter(r => r['ID'] || r['Role']).map(r => ({
+            id: r['ID'] ?? '',
+            role: r['Role'] ?? '',
+            desc: r['Description'] ?? '',
+            officer: parseBoolLike(r['Office Bearer']),
+            active: parseBoolLike(r['Active'])
+        }));
+        renderCommitteeRoles();
+    } catch (err) {
+        showMsg('rolesMsg', 'Error loading roles: ' + err.message, true);
+    }
+}
+
+function renderCommitteeRoles() {
+    const chk = (k, on) => `<input type="checkbox" class="cr-f" data-k="${k}"${on ? ' checked' : ''}>`;
+    document.getElementById('rolesBody').innerHTML = committeeRoles.map((r, i) => `
+        <tr data-i="${i}">
+            <td class="cm-txt">${escapeHtml(r.id) || '<em>new</em>'}</td>
+            <td><input class="cm-in cr-f" data-k="role" value="${escapeHtml(r.role)}"></td>
+            <td><input class="cm-in cr-f" data-k="desc" value="${escapeHtml(r.desc)}"></td>
+            <td style="text-align:center">${chk('officer', r.officer)}</td>
+            <td style="text-align:center">${chk('active', r.active)}</td>
+            <td style="white-space:nowrap">
+                <button type="button" class="icon-btn" title="Save" onclick="saveRoleRow(${i})"><i class="inline-icon" data-lucide="save"></i></button>
+                <button type="button" class="icon-btn" title="Remove" onclick="deleteRoleRow(${i})"><i class="inline-icon" data-lucide="trash-2"></i></button>
+            </td>
+        </tr>`).join('') || '<tr><td colspan="6"><div class="empty-state">No roles defined.</div></td></tr>';
+    if (window.lucide) lucide.createIcons();
+}
+
+function addRoleRow() {
+    committeeRoles.push({ id: '', role: '', desc: '', officer: false, active: true });
+    renderCommitteeRoles();
+}
+
+async function saveRoleRow(i) {
+    const r = committeeRoles[i], v = {};
+    document.querySelectorAll(`#rolesBody tr[data-i="${i}"] .cr-f`).forEach(el =>
+        v[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value.trim());
+    if (!v.role) return showMsg('rolesMsg', 'Role is required.', true);
+    if (committeeRoles.some((x, j) => j !== i && x.role.toLowerCase() === v.role.toLowerCase()))
+        return showMsg('rolesMsg', 'That role already exists.', true);
+
+    const row = { 'Role': v.role, 'Description': v.desc, 'Office Bearer': v.officer, 'Active': v.active };
+    try {
+        if (r.id) {
+            await updateSheet(DOMAIN.members, 'CommitteeRoles', r.id, row);
+            // keep Committee rows in step with a renamed role / changed office-bearer flag
+            if (r.role !== v.role || r.officer !== v.officer) {
+                for (const c of committee.filter(c => c.id && c.role === r.role))
+                    await updateSheet(DOMAIN.members, 'Committee', c.id,
+                        { 'Role': v.role, 'Constitutional Office Bearers': v.officer });
+            }
+        } else {
+            const n = Math.max(0, ...committeeRoles.map(x => parseInt(String(x.id).replace(/\D/g, '')) || 0)) + 1;
+            await appendSheet(DOMAIN.members, 'CommitteeRoles', { ID: 'CR' + n, ...row });
+        }
+        await loadCommitteeAll();
+        showMsg('rolesMsg', `Saved ${v.role}.`, false);
+    } catch (err) {
+        showMsg('rolesMsg', 'Error saving: ' + err.message, true);
+    }
+}
+
+async function deleteRoleRow(i) {
+    const r = committeeRoles[i];
+    if (!r.id) { committeeRoles.splice(i, 1); return renderCommitteeRoles(); }
+    if (committee.some(c => c.role === r.role))
+        return showMsg('rolesMsg', `${r.role} is assigned on the committee. Untick Active instead, or remove the assignment first.`, true);
+    if (!confirm(`Delete role ${r.role}?`)) return;
+    try {
+        await deleteRow(DOMAIN.members, 'CommitteeRoles', r.id);
+        await loadCommitteeRoles();
+        showMsg('rolesMsg', 'Removed.', false);
+    } catch (err) {
+        showMsg('rolesMsg', 'Error removing: ' + err.message, true);
+    }
+}
+
+// ---------- Committee Members ----------
 let committee = [];
-const COMMITTEE_ROLES = ['President','Vice President','Secretary','Treasurer','Race Coordinator','Member','Admin (AI Bot)'];
 
 function toDateInput(v) {
     if (!v) return '';
@@ -1133,6 +1236,11 @@ function toDateInput(v) {
     if (isNaN(d)) return '';
     const p = n => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+async function loadCommitteeAll() {
+    await loadCommitteeRoles();
+    await loadCommittee();
 }
 
 async function loadCommittee() {
@@ -1147,8 +1255,7 @@ async function loadCommittee() {
             notify: parseBoolLike(r['Notify Member Application']),
             approve: parseBoolLike(r['Approve Member Application']),
             start: toDateInput(r['Start of Term']),
-            end: toDateInput(r['End of Term']),
-            officer: parseBoolLike(r['Constitutional Office Bearers'])
+            end: toDateInput(r['End of Term'])
         }));
         renderCommittee();
     } catch (err) {
@@ -1158,41 +1265,41 @@ async function loadCommittee() {
 
 function renderCommittee() {
     const active = allMembers.filter(m => isActiveStatus(m.status)).map(m => m.name);
-    const roles = [...new Set([...COMMITTEE_ROLES, ...committee.map(c => c.role)])];
-    const opts = (list, cur, blank) => (blank ? '<option value=""></option>' : '') +
-        list.map(v => `<option value="${escapeHtml(v)}"${v === cur ? ' selected' : ''}>${escapeHtml(v)}</option>`).join('');
     const chk = (k, on) => `<input type="checkbox" class="cm-f" data-k="${k}"${on ? ' checked' : ''}>`;
+    const memberOpts = cur => '<option value=""></option>' +
+        [...new Set([...active, cur].filter(Boolean))].sort()
+            .map(v => `<option value="${escapeHtml(v)}"${v === cur ? ' selected' : ''}>${escapeHtml(v)}</option>`).join('');
+    const roleOpts = cur => [...new Set([...committeeRoles.filter(r => r.active).map(r => r.role), cur].filter(Boolean))]
+        .map(v => `<option value="${escapeHtml(v)}"${v === cur ? ' selected' : ''}>${escapeHtml(v)}${roleInfo(v)?.officer ? '*' : ''}</option>`).join('');
 
     document.getElementById('committeeBody').innerHTML = committee.map((c, i) => `
         <tr data-i="${i}">
-            <td><select class="mm-select cm-in cm-f" data-k="role">${opts(roles, c.role)}</select></td>
-            <td><select class="mm-select cm-in cm-f" data-k="member" onchange="committeeMemberChanged(${i}, this)">
-                ${opts([...new Set([...active, c.member].filter(Boolean))].sort(), c.member, true)}</select></td>
-            <td><input class="cm-in cm-f" data-k="email" value="${escapeHtml(c.email)}"></td>
-            <td><input class="cm-in cm-f" data-k="phone" value="${escapeHtml(c.phone)}"></td>
+            <td><select class="mm-select cm-in cm-f" data-k="role">${roleOpts(c.role)}</select></td>
+            <td><select class="mm-select cm-in cm-f" data-k="member" onchange="committeeMemberChanged(this)">${memberOpts(c.member)}</select></td>
+            <td class="cm-txt"><div data-k="email">${escapeHtml(c.email)}</div><div data-k="phone">${escapeHtml(c.phone)}</div></td>
             <td style="text-align:center">${chk('notify', c.notify)}</td>
             <td style="text-align:center">${chk('approve', c.approve)}</td>
             <td><input type="date" class="cm-in cm-f" data-k="start" value="${c.start}"></td>
             <td><input type="date" class="cm-in cm-f" data-k="end" value="${c.end}"></td>
-            <td style="text-align:center">${chk('officer', c.officer)}</td>
             <td style="white-space:nowrap">
                 <button type="button" class="icon-btn" title="Save" onclick="saveCommitteeRow(${i})"><i class="inline-icon" data-lucide="save"></i></button>
                 <button type="button" class="icon-btn" title="Remove" onclick="deleteCommitteeRow(${i})"><i class="inline-icon" data-lucide="trash-2"></i></button>
             </td>
-        </tr>`).join('') || '<tr><td colspan="10"><div class="empty-state">No committee roles.</div></td></tr>';
+        </tr>`).join('') || '<tr><td colspan="8"><div class="empty-state">No committee roles.</div></td></tr>';
     if (window.lucide) lucide.createIcons();
 }
 
-function committeeMemberChanged(i, sel) {
+function committeeMemberChanged(sel) {
     const m = allMembers.find(x => x.name === sel.value);
     if (!m) return;
     const tr = sel.closest('tr');
-    tr.querySelector('[data-k="email"]').value = m.email || '';
-    tr.querySelector('[data-k="phone"]').value = m.phone || '';
+    tr.querySelector('[data-k="email"]').textContent = m.email || '';
+    tr.querySelector('[data-k="phone"]').textContent = m.phone || '';
 }
 
 function addCommitteeRow() {
-    committee.push({ id: '', role: 'Member', member: '', email: '', phone: '', notify: false, approve: false, start: '', end: '', officer: false });
+    const first = committeeRoles.find(r => r.active);
+    committee.push({ id: '', role: first ? first.role : '', member: '', email: '', phone: '', notify: false, approve: false, start: '', end: '' });
     renderCommittee();
 }
 
@@ -1208,14 +1315,17 @@ async function syncCommitteeFlag(name) {
 
 async function saveCommitteeRow(i) {
     const c = committee[i], v = {};
-    document.querySelectorAll(`#committeeBody tr[data-i="${i}"] .cm-f`).forEach(el =>
-        v[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value.trim());
+    const tr = document.querySelector(`#committeeBody tr[data-i="${i}"]`);
+    tr.querySelectorAll('.cm-f').forEach(el => v[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value.trim());
+    v.email = tr.querySelector('[data-k="email"]').textContent.trim();
+    v.phone = tr.querySelector('[data-k="phone"]').textContent.trim();
     if (!v.role) return showMsg('committeeMsg', 'Role is required.', true);
 
     const row = {
         'Role': v.role, 'Member': v.member, 'Email': v.email, 'Phone #': v.phone,
         'Notify Member Application': v.notify, 'Approve Member Application': v.approve,
-        'Start of Term': v.start, 'End of Term': v.end, 'Constitutional Office Bearers': v.officer
+        'Start of Term': v.start, 'End of Term': v.end,
+        'Constitutional Office Bearers': !!roleInfo(v.role)?.officer
     };
     try {
         if (c.id) await updateSheet(DOMAIN.members, 'Committee', c.id, row);
@@ -1244,7 +1354,7 @@ async function deleteCommitteeRow(i) {
     }
 }
 
-loadMembers().then(loadCommittee);
+loadMembers().then(loadCommitteeAll).catch(err => showMsg('memberActionsMsg', 'Error loading members: ' + err.message, true))s;
 if (window.lucide) lucide.createIcons();
 
 
