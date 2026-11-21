@@ -1851,6 +1851,7 @@ function renderCompetitorSelect(){
     <div class="panel glass panel-pad">
       <div class="section-title">Regatta entries — ${escapeHTML(ev.regattaName)}</div>
       <div class="section-hint">Active members from the club roster. Tick everyone racing today. Entries stay editable until the first race is captured.</div>
+       <button class="btn btn-ghost btn-block" style="margin-bottom:10px" data-add-guest="1">+ Add guest</button>
       <div class="select-all-row">
         <span style="font-size:12.5px;color:var(--foam-dim)">${roster.length} active boats</span>
         <button data-select-all="1">${allChecked ? 'Clear all' : 'Select all'}</button>
@@ -2439,6 +2440,54 @@ function selectAllToggle(){
   else roster.forEach(m => state.pendingSelection.add(String(m.id)));
   render();
 }
+
+function openGuestModal(){
+  const ev = state.event;
+  const f = (id, ph, extra='') => `<input id="${id}" class="sail-tag" style="width:100%;margin-bottom:8px;text-align:left" placeholder="${ph}" ${extra}>`;
+  const el = document.createElement('div');
+  el.id = 'guestModal';
+  el.className = 'modal-backdrop open';
+  el.innerHTML = `<div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Add guest</div>
+    <div class="modal-sub">${escapeHTML(ev.regattaName)} • ${escapeHTML(String(ev.className || ''))}</div>
+    ${f('gName','Name *')}${f('gClub','Home club *')}${f('gSail','Sail #')}
+    ${f('gClass','Class', `value="${escapeHTML(String(ev.className||'').includes(',') ? '' : ev.className||'')}"`)}
+    ${f('gModel','Model')}${f('gHull','Hull colour')}
+    <button class="btn btn-primary btn-block" id="gSave">Add &amp; select</button>
+    <div class="modal-cancel" id="gCancel">Cancel</div>
+  </div>`;
+  document.body.appendChild(el);
+  document.getElementById('gCancel').onclick = () => el.remove();
+  document.getElementById('gSave').onclick = saveGuest;
+  document.getElementById('gName').focus();
+}
+
+async function saveGuest(){
+  const ev = state.event, v = id => document.getElementById(id).value.trim();
+  if(!v('gName') || !v('gClub')) return showToast('Name and home club required');
+  const btn = document.getElementById('gSave'); btn.disabled = true;
+
+  const rec = {
+    HexKey: 'GR' + Date.now().toString().slice(-6),
+    EventID: ev.id, EventTitle: ev.regattaName, EventDate: ev.date,
+    RaceClass: v('gClass') || ev.className, Model: v('gModel'), HullColour: v('gHull'),
+    SailNo: v('gSail') || '—', CompetitorName: v('gName'), HomeClub: v('gClub'),
+    Status: 'Confirmed', RegisteredAt: new Date().toISOString()
+  };
+  try {
+    if(!state.practice) await appendSheet(DOMAIN.results, 'GuestRegistrations', rec);
+  } catch(e){ btn.disabled = false; return showToast('Failed: ' + e.message); }
+
+  const g = { id:'G-'+rec.HexKey, member:rec.CompetitorName, sailNo:rec.SailNo, className:rec.RaceClass,
+              homeClub:rec.HomeClub, hull:rec.HullColour || 'white', isGuest:true, hcap:0 };
+  GUESTS.push(g);
+  state.pendingSelection.add(String(g.id));   // auto-select the new guest
+  document.getElementById('guestModal').remove();
+  render();
+  showToast('Guest added');
+}
+
 async function confirmEntries(){
   await refreshHcaps();
   const roster = getRoster();   // members AND guests
@@ -2903,6 +2952,7 @@ function attachDynamicHandlers(){
     el.addEventListener('click', ()=> toggleMember(el.getAttribute('data-toggle-member')));
   });
   document.querySelectorAll('[data-select-all]').forEach(el=> el.addEventListener('click', selectAllToggle));
+  document.querySelectorAll('[data-add-guest]').forEach(el=> el.addEventListener('click', openGuestModal));
   document.querySelectorAll('[data-confirm-entries]').forEach(el=> el.addEventListener('click', confirmEntries));
   document.querySelectorAll('[data-cancel-edit-entries]').forEach(el=> el.addEventListener('click', cancelEditEntries));
   document.querySelectorAll('[data-entries-pill]').forEach(el=> el.addEventListener('click', ()=> openOverlay('entries')));
