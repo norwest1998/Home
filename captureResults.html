@@ -2723,10 +2723,10 @@ async function saveAndSend(){
       }
     }
 
-    const id = String(rawData.eventID).trim();
-    const [dd, mm, yyyy] = String(rawData.regattaDate).split('/');
-    const filename = `${yyyy}-${mm}-${dd} ${rawData.regattaName}` +
-                `${rawData.roundNo ? ' Rd' + rawData.roundNo : ''} [${id}].json`;
+    const id = String(ev.eventID).trim();
+    const [dd, mm, yyyy] = String(formattedDate).split('/');
+    const filename = `${yyyy}-${mm}-${dd} ${ev.regattaName}` +
+                `${ev.roundNo ? ' Rd' + ev.roundNo : ''} [${id}].json`;
     
     // Push the file directly to the backend
     await gw({ 
