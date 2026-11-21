@@ -354,16 +354,15 @@ select.cm-in { padding-right: 24px; background-position: right 6px center; backg
 
         <div class="panel-header">
             <div class="panel-title-left"><span class="dot"></span><h3>Committee Members</h3></div>
-            <button type="button" class="btn btn-ghost" onclick="addCommitteeRow()"><i class="inline-icon" data-lucide="plus"></i> Add Role</button>
+            <button type="button" class="btn btn-ghost" onclick="addCommitteeRow()"><i class="inline-icon" data-lucide="plus"></i> Add Member</button>
         </div>
         <div style="overflow-x:auto;">
             <table class="boat-table" id="committeeTable">
                 <colgroup>
-                    <col style="width:11%"><col style="width:13%"><col style="width:15%"><col style="width:10%">
-                    <col style="width:5%"><col style="width:5%"><col style="width:11%"><col style="width:11%">
-                    <col style="width:6%"><col style="width:7%">
+                    <col style="width:20%"><col style="width:22%"><col style="width:22%"><col style="width:6%">
+                    <col style="width:6%"><col style="width:12%"><col style="width:12%">
                 </colgroup>
-                <thead><tr><th>Role</th><th>Member</th><th>Email</th><th>Phone</th><th>Notify</th><th>Approve</th><th>Start</th><th>End</th><th>Officer</th><th></th></tr></thead>
+                <thead><tr><th>Role</th><th>Member</th><th>Contact</th><th>Notify</th><th>Approve</th><th>Start</th><th>End</th><th></th></tr></thead>
                 <tbody id="committeeBody"></tbody>
             </table>
         </div>
