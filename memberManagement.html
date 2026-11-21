@@ -1354,7 +1354,7 @@ async function deleteCommitteeRow(i) {
     }
 }
 
-loadMembers().then(loadCommitteeAll).catch(err => showMsg('memberActionsMsg', 'Error loading members: ' + err.message, true))s;
+loadMembers().then(loadCommitteeAll).catch(err => showMsg('memberActionsMsg', 'Error loading members: ' + err.message, true));
 if (window.lucide) lucide.createIcons();
 
 
