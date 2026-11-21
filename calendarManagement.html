@@ -427,7 +427,6 @@ width: 16px; height: 16px; accent-color: var(--glow); cursor: pointer;
 }
 .select-all-label { font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--glow); }
 
-
 /* Bulk Actions Bar */
 .bulk-actions-bar {
 display: flex; align-items: center; gap: 10px; padding: 10px 14px;
@@ -547,7 +546,7 @@ color: var(--glow); cursor: pointer; transition: all 0.15s ease;
   border-radius:8px;padding:9px 12px;font:inherit;font-size:14px;outline:none;color-scheme:dark;
   transition:border-color .15s,background .15s,box-shadow .15s}
 .form-input:focus{border-color:var(--glow);background:var(--glass-fill-hi);box-shadow:0 0 0 3px rgba(94,234,212,.15)}
-select.form-input option{background:var(--ocean-mid);color:var(--foam)}   /* fixes unreadable dropdowns */
+select.form-input option{background:var(--ocean-mid);color:var(--foam)}
 .emblem-preview{height:38px;border:1px solid var(--glass-border);background:var(--glass-fill);justify-content:center}
 .emblem-img{max-height:32px;max-width:32px}
 .modal-footer{margin:0;padding:14px 24px;background:var(--glass-fill);border-top:1px solid var(--glass-border)}
@@ -616,9 +615,9 @@ select.form-input option{background:var(--ocean-mid);color:var(--foam)}   /* fix
     </div>
   </div>
 
-  <div class="section-head" id="audit-log">
+  <div class="section-head" id="events-section-head">
       <h2>Scheduled Events Management</h2>
-      <p>Events scheduled and synchronised with tne Class and Club calendar</p>
+      <p>Events scheduled and synchronised with the Class and Club calendar</p>
   </div>
   <!-- Main Events Table Queue -->
   <div class="panel" id="queue">
@@ -644,7 +643,7 @@ select.form-input option{background:var(--ocean-mid);color:var(--foam)}   /* fix
           <button class="filter-pill" id="rescheduledToggle">Rescheduled Only</button>
           <div class="class-pill-group" id="classPillGroup"></div>
         </div>
-        <!-- Right: Bulk icons + Select All — aligns with table Actions | Select columns -->
+        <!-- Right: Bulk icons + Select All -->
         <div class="bulk-align-group" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:auto;">
           <button class="bulk-icon-btn bulk-cal" id="bulkAddCalBtn" title="Add selected to Calendar">
             <i data-lucide="calendar-plus" size="15"></i>
@@ -680,7 +679,7 @@ select.form-input option{background:var(--ocean-mid);color:var(--foam)}   /* fix
     </div>
   </div>
 
-  <div class="section-head" id="audit-log">
+  <div class="section-head" id="season-section-head">
       <h2>Season Calendar Management</h2>
       <p>Functions maintaining and arranging the next Season, batch mode, single run.</p>
   </div>
@@ -751,7 +750,7 @@ select.form-input option{background:var(--ocean-mid);color:var(--foam)}   /* fix
     </div>
   </div>
 
-  <div class="section-head" id="audit-log">
+  <div class="section-head" id="reschedule-section-head">
       <h2>Events Reschedule Management</h2>
       <p>Rescheduling events when and where required.</p>
   </div>
@@ -917,22 +916,17 @@ select.form-input option{background:var(--ocean-mid);color:var(--foam)}   /* fix
       </div>
     </form>
   </div>
-
 </div>
-
 
 <footer>
   <div>© 2026 <strong>Sydney Maritime Modellers Club Inc.</strong> Internal Management Console.</div>
 </footer>
-
-<!-- GATEWAY_URL, DOMAIN, fetchSheet, etc -->
 
 <script src="shared.js"></script>
 <script src="nav.js"></script>   
 <script src="auditLog.js"></script>
 
 <script>
-
 
 /* =========================================================
    DATE & TIME HELPERS
@@ -1012,9 +1006,7 @@ let regattas = [];
 let classes = [];
 let selectedHex = null;
 let editingHex = null;
-// SMMC Annual Calendar
 const calWebAppUrl = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
-// Generate Season Generator  
 const ssnWebAppUrl = "https://script.google.com/macros/s/AKfycbwTRT7jtitejyoq2F8BDo6XleJSku6eqkTVTwdId2495AMjqP2JOCOI6NjbWTMfkwO2/exec";
 
 const INSIGNIA_OVERRIDES = { General: 'smmc-logo.png', Social: 'SmileyFace.png' };
@@ -1044,7 +1036,6 @@ const lastActionLabel = document.getElementById("lastActionLabel");
 const regionalConflictBtn = document.getElementById("regionalConflictBtn");
 const generateSeasonBtn = document.getElementById("generateSeasonBtn");
 
-const filterMonth = document.getElementById("filterMonth");
 const eventModal = document.getElementById("eventModal");
 const eventForm = document.getElementById("eventForm");
 const modalTitle = document.getElementById("modalTitle");
@@ -1083,7 +1074,7 @@ function logAction(msg) {
    ========================================================= */
 function seasonEvents() {
   return eventData.filter(e => {
-    if (e.Class === "M") return false; // Exclude Marblehead
+    if (e.Class === "M") return false;
     if (selectedMonth) {
       const eDate = parseLocalDate(e.Date);
       if (!eDate) return false;
@@ -1093,7 +1084,6 @@ function seasonEvents() {
     if (selectedSeason && !String(e.Season || "").startsWith(String(selectedSeason))) return false;
     if (selectedClass && e.Class !== selectedClass) return false;
     
-    // Check both 'Rescheduled Date' and 'Results' status
     if (rescheduledOnly) {
       const reschedVal = String(e["Rescheduled Date"] || "").trim();
       const isRescheduledResult = e.Results === "Rescheduled";
@@ -1154,7 +1144,6 @@ function renderStats() {
   document.getElementById("statSeason").textContent = selectedSeason;
   document.getElementById("statTotalEvents").textContent = activeEvents.length;
   
-  // Safe string coercion before calling .includes()
   const rescheduledCount = activeEvents.filter(e => {
     const reschedStr = String(e["Rescheduled Date"] || "");
     return reschedStr !== "" && !reschedStr.includes("Pending") || e.Results === "Rescheduled";
@@ -1165,7 +1154,6 @@ function renderStats() {
   document.getElementById("statRescheduled").textContent = rescheduledCount;
   document.getElementById("statPending").textContent = pendingCount;
 
-  // Calendar Health Calculation using robust helper
   const syncedCount = activeEvents.filter(e => isCalendarSynced(e)).length;
   const healthPercent = activeEvents.length ? Math.round((syncedCount / activeEvents.length) * 100) : 100;
   
@@ -1211,7 +1199,6 @@ function renderClassEventsPills() {
 
 function isCalendarSynced(e) {
   if (!e) return false;
-  // Check all possible sync status & calendar ID column headers
   const val = e.AddedStatus || e['Calendar Synced'] || e['Updated to Calendar'] || e['Calendar ID'];
   if (!val) return false;
   const str = String(val).trim().toUpperCase();
@@ -1227,13 +1214,10 @@ let modalSeasonsList = [];
 
 function openClassCalendarModal(className) {
   modalCurrentClass = className;
-
-  // 1. Filter scheduled events table on main console by class
   selectedClass = className;
   renderClassPills();
   renderTable();
 
-  // 2. Extract available seasons from season dropdown / Event Data (Sorted Chronologically)
   const seasonSelectElem = document.getElementById("seasonSelect");
   if (seasonSelectElem && seasonSelectElem.options.length > 0) {
     modalSeasonsList = Array.from(seasonSelectElem.options).map(opt => opt.value).reverse();
@@ -1245,7 +1229,6 @@ function openClassCalendarModal(className) {
     modalSeasonsList = ["2026-27"];
   }
 
-  // 3. Default to '2026-27' or currently active dropdown season
   const targetDefault = selectedSeason || "2026-27";
   const defaultIdx = modalSeasonsList.findIndex(s => String(s).startsWith(String(targetDefault)));
   modalSeasonIndex = defaultIdx !== -1 ? defaultIdx : 0;
@@ -1266,18 +1249,14 @@ function shiftModalSeason(direction) {
 
 function renderModalSeasonView() {
   const currentSeason = modalSeasonsList[modalSeasonIndex];
-
-  // Update Season display label
   document.getElementById("modalSeasonDisplay").textContent = currentSeason;
 
-  // Show/Hide Chevrons based on boundary conditions
   const prevBtn = document.getElementById("modalPrevSeason");
   const nextBtn = document.getElementById("modalNextSeason");
 
   if (prevBtn) prevBtn.style.visibility = modalSeasonIndex > 0 ? "visible" : "hidden";
   if (nextBtn) nextBtn.style.visibility = modalSeasonIndex < modalSeasonsList.length - 1 ? "visible" : "hidden";
 
-  // Filter events by selected Class AND active Modal Season
   const classEvs = eventData.filter(e => 
     e.Class === modalCurrentClass && 
     String(e.Season).startsWith(String(currentSeason))
@@ -1304,9 +1283,9 @@ function renderModalSeasonView() {
               <td>${formatDate(e.Date)}</td>
               <td>${e.Event || e.Competition || "—"}</td>
               <td>${e.Competition || e["Event Type"] || e["Regatta Type"] || "—"}</td>
-              <td>${formatTime(e.Start)} –${formatTime(e.Finish)}</td>
+              <td>${formatTime(e.Start)} – ${formatTime(e.Finish)}</td>
             </tr>
-          `).join('') : `<tr><td colspan="4" style="text-align:center;color:var(--foam-dim);">No events scheduled for ${modalCurrentClass} in season${currentSeason}.</td></tr>`}
+          `).join('') : `<tr><td colspan="4" style="text-align:center;color:var(--foam-dim);">No events scheduled for ${modalCurrentClass} in season ${currentSeason}.</td></tr>`}
         </tbody>
       </table>
     </div>
@@ -1323,12 +1302,10 @@ function renderTable() {
   const rows = seasonEvents();
   eventsBody.innerHTML = rows.length
     ? rows.map(e => {
-        // Fallbacks for Class and Regatta Type to prevent 'undefined'
         const cls = e.Class || "";
         const regType = e["Regatta Type"] || e.Competition || e["Event Type"] || "";
         const classRegLabel = (cls || regType) ? `${cls} ${regType}`.trim() : "—";
 
-        // Safe evaluation of Rescheduled Status
         const reschedStr = String(e["Rescheduled Date"] || "");
         const isPendingResched = reschedStr.includes("Pending");
         const isRescheduled = reschedStr !== "" || e.Results === "Rescheduled";
@@ -1381,22 +1358,18 @@ function renderTable() {
       }).join("")
     : `<tr><td colspan="8" style="text-align:center;color:var(--foam-dim);">No events found matching criteria.</td></tr>`;
   
-  // Attach checkbox listeners
   eventsBody.querySelectorAll(".row-check-input").forEach(chk => {
     chk.addEventListener("change", () => {
       const hex = String(chk.dataset.hex);
       if (chk.checked) {
-        // Automatically load into reschedule panel and scroll
         selectEvent(hex);
       } else {
         selectedRows.delete(hex);
-        // If unchecking the currently active reschedule event, clear the panel
         if (String(selectedHex) === hex) {
           selectedHex = null;
           renderSelectedEventDetails();
           renderNewEventPreview();
         }
-        // Defer renderTable to not break the checkbox unchecking animation natively
         setTimeout(() => renderTable(), 10);
       }
       updateSelectAllState();
@@ -1422,12 +1395,14 @@ function getAvailableDates() {
 
   const futureSaturdays = eventData.filter(e => {
     if (!e.Date) return false;
+    // Don't show the event itself as an available target slot
+    if (selectedHex && String(e.HexKey) === String(selectedHex)) return false;
     const d = parseLocalDate(e.Date);
     return d && d >= today && d.getDay() === 6;
   });
 
   const openSlots = futureSaturdays.filter(e => {
-    const evt = String(e.Event || "").trim().toLowerCase();
+    const evt = String(e.Event || e.EventName || "").trim().toLowerCase();
     const reg = String(e.Competition || e["Event Type"] || e["Regatta Type"] || "").trim().toLowerCase();
     return (
       evt === "" || reg === "" ||
@@ -1443,11 +1418,10 @@ function getAvailableDates() {
 function renderAvailableDates(extraSlotHex = null) {
   let slots = getAvailableDates();
 
-  // If there's a previously selected reschedule target, ensure it's included
   if (extraSlotHex) {
-    const already = slots.find(e => e.HexKey === extraSlotHex);
+    const already = slots.find(e => String(e.HexKey) === String(extraSlotHex));
     if (!already) {
-      const match = eventData.find(e => e.HexKey === extraSlotHex);
+      const match = eventData.find(e => String(e.HexKey) === String(extraSlotHex));
       if (match) slots = [match, ...slots];
     }
   }
@@ -1456,7 +1430,7 @@ function renderAvailableDates(extraSlotHex = null) {
 
   availableDates.innerHTML = slots.map(e => {
     const label = e.Class || "Open";
-    const title = e.Event || e.Competition || e["Event Type"] || e["Regatta Type"] || "Open Slot";
+    const title = e.Event || e.EventName || e.Competition || e["Event Type"] || e["Regatta Type"] || "Open Slot";
     return `<option value="${e.HexKey}">${formatDate(e.Date)} | ${label} | ${formatTime(e.Start)}–${formatTime(e.Finish)} | ${title}</option>`;
   }).join("");
 
@@ -1464,13 +1438,9 @@ function renderAvailableDates(extraSlotHex = null) {
 }
 
 function selectEvent(hex) {
-  // 1. Force to string to prevent Number vs String matching errors
   selectedHex = String(hex);
-  
-  // Ensure the row is also added to the selected checkboxes list
   selectedRows.add(selectedHex);
 
-  // 2. Use String() safely in the .find()
   const selectedEvent = eventData.find(e => String(e.HexKey) === selectedHex);
 
   let targetSlotHex = "";
@@ -1485,11 +1455,9 @@ function selectEvent(hex) {
   renderSelectedEventDetails();
   renderNewEventPreview();
 
-  // Scroll to panel and add a visual flash
   const panel = document.getElementById("reschedulePanel");
   if (panel) {
     panel.scrollIntoView({ behavior: "smooth", block: "center" });
-    
     panel.style.transition = "box-shadow 0.4s ease, border-color 0.4s ease";
     panel.style.boxShadow = "0 0 20px rgba(56, 189, 248, 0.4)";
     panel.style.borderColor = "var(--glow)";
@@ -1500,7 +1468,6 @@ function selectEvent(hex) {
     }, 1500);
   }
   
-  // 3. Defer renderTable so it doesn't destroy the checkbox instantly while clicking
   setTimeout(() => renderTable(), 10);
 }
 
@@ -1511,7 +1478,6 @@ function renderSelectedEventDetails() {
     return;
   }
 
-  // Force String comparison here
   const event = eventData.find(e => String(e.HexKey) === String(selectedHex));
   if (!event) {
     container.innerHTML = `<p style="color: #f87171; margin: 0;">Error: Event data could not be matched.</p>`;
@@ -1530,7 +1496,7 @@ function renderSelectedEventDetails() {
       </div>
       <div class="event-detail-item">
         <span class="lbl">Event Name</span>
-        <span class="val">${event.Event || event["Regatta Type"] || '—'}</span>
+        <span class="val">${event.Event || event.EventName || event["Regatta Type"] || '—'}</span>
       </div>
       <div class="event-detail-item">
         <span class="lbl">Time</span>
@@ -1543,7 +1509,6 @@ function renderSelectedEventDetails() {
 function renderNewEventPreview() {
   const container = document.getElementById("newEventPreviewCard");
   
-  // Force String comparisons here
   const selectedEvent = eventData.find(e => String(e.HexKey) === String(selectedHex));
   const slotHex = availableDates.value;
   const slot = eventData.find(e => String(e.HexKey) === String(slotHex));
@@ -1569,7 +1534,7 @@ function renderNewEventPreview() {
       </div>
       <div class="event-detail-item">
         <span class="lbl">Event</span>
-        <span class="val">${selectedEvent.Event || selectedEvent.Competition || selectedEvent["Event Type"] || '—'}</span>
+        <span class="val">${selectedEvent.Event || selectedEvent.EventName || selectedEvent.Competition || selectedEvent["Event Type"] || '—'}</span>
       </div>
     </div>
   `;
@@ -1586,8 +1551,6 @@ function updateModalVisibility() {
   const isCompOrSocial = ["Competition", "Social"].includes(eventType);
   const fullFields = document.querySelectorAll(".full-field-only");
 
-  // Rule: When adding an Event, if Event Type is NOT 'Competition' or 'Social':
-  // Only show Date, Start, Finish, Event (Name freehand)
   if (isAddMode && !isCompOrSocial) {
     fullFields.forEach(el => el.classList.add("hidden-field"));
     modalEvent.readOnly = false;
@@ -1609,7 +1572,6 @@ modalDate.addEventListener("change", () => {
   updateAutoEventName();
 });
 
-// --- 4. Class -> Emblem Update ---
 const fmtYMD = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}`;
 const parseYMD = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
 const classImg = c => `images/classes/${INSIGNIA_OVERRIDES[c] || c + ".png"}`;
@@ -1620,8 +1582,9 @@ function fillSeriesOptions(selectedName = "") {
   modalSeries.value = selectedName;
   applySeries();
 }
+
 function applySeries() {
-  const s = seriesList.find(r => gv(r,"SeriesName") === modalSeries.value);   // was ID
+  const s = seriesList.find(r => gv(r,"SeriesName") === modalSeries.value);
   const f = s && formatList.find(x => gv(x,"formatId") === gv(s,"FormatID"));
   modalSeriesID.value    = s ? gv(s,"ID") : "";
   modalClass.value       = s ? (gv(s,"AllowedClasses") || "ALL") : "";
@@ -1633,19 +1596,19 @@ function applySeries() {
   updateAutoEventName();
 }
 modalSeries.addEventListener("change", applySeries);
+
 function fillSeasons(selected = "") {
   const cur = `${CURRENT_SEASON_START}-${String(CURRENT_SEASON_START + 1).slice(-2)}`;
   const list = [...new Set([cur, ...eventData.map(e => e.Season).filter(Boolean)])]
-    .filter(s => parseInt(s) >= CURRENT_SEASON_START || s === selected).sort();   // current + future only
+    .filter(s => parseInt(s) >= CURRENT_SEASON_START || s === selected).sort();
   modalSeason.innerHTML = list.map(s => `<option>${s}</option>`).join("");
   modalSeason.value = selected || cur;
 }
 
 modalClass.addEventListener("change", () => {
   const c = modalClass.value;
-  document.getElementById("emblemGroup").classList.toggle("hidden", !c);   // emblem only once class chosen
+  document.getElementById("emblemGroup").classList.toggle("hidden", !c);
   if (c) modalEmblemImg.src = classImg(c);
-  fillRegattaTypes();
   updateAutoEventName();
 });
 
@@ -1682,7 +1645,7 @@ function buildDates() {
         d.setDate(d.getDate() - ((d.getDay() - dow + 7) % 7));
       } else {
         d = new Date(first.getFullYear(), first.getMonth(), 1 + ((dow - first.getDay() + 7) % 7) + (nth - 1) * 7);
-        if (d.getMonth() !== first.getMonth()) continue;   // no 5th weekday this month
+        if (d.getMonth() !== first.getMonth()) continue;
       }
       if (d > until) break;
       if (d >= start) out.push(d);
@@ -1727,7 +1690,7 @@ function openAddEventModal() {
   modalResults.value = "Not Started";
   document.getElementById("emblemGroup").classList.add("hidden");
   document.getElementById("repeatGroup").classList.remove("hidden");
-  fillSeriesOptions(); fillSeasons();  fillSeasons();
+  fillSeriesOptions(); fillSeasons();
   updateRepeatLabels();
   updateModalVisibility();
   eventModal.classList.remove("hidden");
@@ -1744,11 +1707,11 @@ function openEditEventModal(hexKey) {
   modalMode.value = "edit";
 
   modalHexKey.value = event.HexKey || "";
-  modalDate.value = fmtYMD(parseLocalDate(event.Date)).replace(/\//g, "-");   // also fixes UTC date-shift
+  modalDate.value = fmtYMD(parseLocalDate(event.Date)).replace(/\//g, "-");
   modalMonth.value = event.Month || "";
   modalStart.value  = toHHmm(event.Start);
   modalFinish.value = toHHmm(event.Finish);
-  modalEvent.value  = event["Display Name"] || "";
+  modalEvent.value  = event["Display Name"] || event.Event || "";
   const sid = String(gv(event, "SeriesID")).toLowerCase();
   const sr  = seriesList.find(r => gv(r,"ID").toLowerCase() === sid);
   fillSeriesOptions(sr ? gv(sr,"SeriesName") : "");
@@ -1756,7 +1719,7 @@ function openEditEventModal(hexKey) {
   modalRoundNo.value = event["Round no"] || "";
   modalResults.value = event.Results || "Not Started";
 
-  if (!event.SeriesID) {   // legacy events without a series
+  if (!event.SeriesID) {
     modalClass.value = event.Class || "";
     modalRegattaType.value = event["Regatta Type"] || event.Competition || "";
   }
@@ -1770,17 +1733,9 @@ function openEditEventModal(hexKey) {
 document.getElementById("closeModalBtn")?.addEventListener("click", () => eventModal.classList.add("hidden"));
 document.getElementById("cancelModalBtn")?.addEventListener("click", () => eventModal.classList.add("hidden"));
 
-function closeAddEventModal() {
-  eventModal.classList.remove("active");
-  eventModal.classList.add("hidden");
-}
-
 function generateUnique8DigitHex() {
-  // Create an array to hold 4 random bytes (which equals 8 hex digits)
   const bytes = new Uint8Array(4);
   window.crypto.getRandomValues(bytes);
-  
-  // Convert the byte array to a hex string
   return Array.from(bytes)
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
@@ -1805,18 +1760,16 @@ eventForm.addEventListener("submit", async (e) => {
       "EventName": modalEventName.value,
       "Event": modalEvent.value,
       "Class": modalClass.value,
-      "Regatta Type": modalRegattaType.value,   // now holds the Racing Format Name
+      "Regatta Type": modalRegattaType.value,
       "Season": modalSeason.value, 
       "Round no": modalRoundNo.value 
     });
 
-    // --- NEW: Look up and attach the Regatta ID ---
     if (modalClass.value && modalRegattaType.value) {
       const matchedRegatta = regattas.find(r => 
         r.Class === modalClass.value && r.RegattaType === modalRegattaType.value
       );
       if (matchedRegatta) {
-        // Fallbacks included just in case your Regattas sheet uses a different header name
         base["RegattaID"] = matchedRegatta.RegattaID || matchedRegatta["Regatta ID"] || matchedRegatta.HexKey || "";
       }
     }
@@ -1863,17 +1816,19 @@ async function addToCalendar(hexKey) {
     event.AddedStatus = targetCalName;
     event["Calendar Synced"] = targetCalName;
     
-    // 4. Just update the Calendar Synced status in the Event Data sheet
     await updateSheet(DOMAIN.calendar, "Event Data", hexKey, { "Calendar Synced": targetCalName });
 
-    // 5. Audit the changes
-    await appendSheet(DOMAIN.audit, "AuditLog", hexKey, {
-      name: event.Class,
-      detail: "AddedStatus",
-      before: `Exported to ${targetCalName}`,
-      after: targetCalName,
-      status: "success"
-    });
+    await appendSheet(DOMAIN.audit, "AuditLog", {
+      HexCode: hexKey,
+      Timestamp: new Date().toISOString(),
+      Action: "update",
+      Domain: "calendar",
+      Sheet: "Event Data",
+      Detail: "AddedStatus",
+      "Old Value": `Exported to ${targetCalName}`,
+      "New Value": targetCalName,
+      Success: "Success"
+    }).catch(e => console.warn("Audit log error:", e));
 
     logAction(`Successfully added event to "${targetCalName}"!`);
     renderStats();
@@ -1891,7 +1846,7 @@ btnBulkExport.addEventListener("click", () => {
     msgElem: msgElem,
     loadingMsg: "Syncing events with Google Calendar...",
     actionFn: async () => {
-      const data = await gw({ action: "exportToCalendar", hexKey: null },calWebAppUrl);
+      const data = await gw({ action: "exportToCalendar", hexKey: null }, calWebAppUrl);
       if (data.error) throw new Error(data.error);
       
       await loadData();
@@ -1906,15 +1861,16 @@ requestBtn.addEventListener("click", async () => {
   const slotHex = availableDates.value;
   if (!slotHex) { logAction("No slot selected."); return; }
 
-  // FIX: Force String comparison to find the current event
   const currentEvent = eventData.find(e => String(e.HexKey) === String(selectedHex));
   
   requestBtn.disabled = true;
   try {
     await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, { "Rescheduled Date": "Pending " + slotHex });
-    // Also added a fallback 'Event' string just in case Class is empty
     logAction(`Reschedule requested for ${currentEvent?.Class || 'Event'} → slot ${slotHex}`);
+    
+    const preservedHex = selectedHex;
     await loadData();
+    if (preservedHex) selectEvent(preservedHex);
   } catch (err) {
     logAction(`Error: ${err.message}`);
   } finally {
@@ -1924,45 +1880,75 @@ requestBtn.addEventListener("click", async () => {
 
 /* --- Approve Reschedule --- */
 approveBtn.addEventListener("click", async () => {
-  if (!selectedHex) { logAction("No event selected."); return; }
+  if (!selectedHex) { logAction("No event selected to reschedule."); return; }
   
-  // Force String comparison to find the original event
   const event = eventData.find(e => String(e.HexKey) === String(selectedHex));
+  if (!event) { logAction("Selected event not found."); return; }
+
+  // 1. Determine destination slot: user's dropdown choice takes precedence, fallback to pending value
+  let slotHex = availableDates.value;
+  if (!slotHex && event["Rescheduled Date"]) {
+    slotHex = String(event["Rescheduled Date"]).replace(/^Pending\s+/, "").trim();
+  }
   
-  if (!event || !(event["Rescheduled Date"] || "").includes("Pending")) {
-    logAction("Selected event has no pending reschedule.");
+  if (!slotHex) {
+    logAction("No destination date selected.");
     return;
   }
 
-  const slotHex = event["Rescheduled Date"].replace("Pending ", "").trim();
-  
-  // Force String comparison to find the destination slot
   const slot = eventData.find(e => String(e.HexKey) === String(slotHex));
-  
-  if (!slot) { logAction("Target slot not found."); return; }
+  if (!slot) {
+    logAction("Target destination slot not found in event data.");
+    return;
+  }
 
   approveBtn.disabled = true;
   try {
-    const d = parseLocalDate(slot.Date);
-    const newMonth = d ? d.toLocaleString("en-AU", { month: "short" }) : "";
-
-    // FIX: Use updateSheet (not appendSheet) to overwrite the target open slot!
-    await updateSheet(DOMAIN.calendar, "Event Data", slotHex, {
+    // 2. Overwrite the Social/Open slot on the new date with original event's details
+    const updatesForNewSlot = {
       "Class": event.Class || "",
       "Regatta Type": event['Regatta Type'] || "",
-      "Event Type": event["Event Type"] || "",
-      "Event": event.Event || "", // Ensure the Event Name/Title transfers over too
-      "Season": event.Season || "",
-      "SeriesID": event.SeriesID || ""
-    });
+      "Event Type": event["Event Type"] || "Competition",
+      "Event": event.Event || event.EventName || "",
+      "EventName": event.EventName || event.Event || "",
+      "Season": event.Season || slot.Season || "",
+      "Round no": event["Round no"] || "",
+      "RegattaID": event.RegattaID || "",
+      "Results": "Not Started",
+      "Rescheduled Date": "",
+      "Calendar Synced": ""
+    };
+    if (event.Start) updatesForNewSlot["Start"] = event.Start;
+    if (event.Finish) updatesForNewSlot["Finish"] = event.Finish;
+    if (event.Emblem) updatesForNewSlot["Emblem"] = event.Emblem;
 
-    // Update the original event to finalize the "Rescheduled" state
+    await updateSheet(DOMAIN.calendar, "Event Data", slotHex, updatesForNewSlot);
+
+    // 3. Mark the original event as Rescheduled with destination details
+    const newDateStr = formatDate(slot.Date);
+    const newTimeStr = `${formatTime(slot.Start || event.Start)}–${formatTime(slot.Finish || event.Finish)}`;
     await updateSheet(DOMAIN.calendar, "Event Data", selectedHex, {
-      "Rescheduled Date": `${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`,
+      "Rescheduled Date": `${newDateStr} ${newTimeStr}`,
       "Results": "Rescheduled" 
     });
-      
-    logAction(`Reschedule approved: ${event.Class || 'Event'} → ${formatDate(slot.Date)} ${formatTime(slot.Start)}–${formatTime(slot.Finish)}`);
+
+    // 4. Audit Log
+    await appendSheet(DOMAIN.audit, "AuditLog", {
+      HexCode: selectedHex,
+      Timestamp: new Date().toISOString(),
+      Action: "update",
+      Domain: "calendar",
+      Sheet: "Event Data",
+      Detail: "Reschedule Approved",
+      "Old Value": `Original Date: ${formatDate(event.Date)}, Class: ${event.Class || ''}`,
+      "New Value": `Moved to ${newDateStr} ${newTimeStr} (Slot: ${slotHex})`,
+      Success: "Success"
+    }).catch(e => console.warn("Audit logging error:", e));
+
+    logAction(`Reschedule approved: ${event.Class || 'Event'} → ${newDateStr} ${newTimeStr}`);
+    
+    selectedHex = null;
+    selectedRows.delete(String(event.HexKey));
     await loadData();
   } catch (err) {
     logAction(`Error: ${err.message}`);
@@ -1982,7 +1968,6 @@ document.getElementById("selectAllChk").addEventListener("change", function() {
   const rows = seasonEvents();
   if (this.checked) {
     rows.forEach(e => selectedRows.add(String(e.HexKey)));
-    // Auto-select the first one for rescheduling
     if (rows.length > 0) selectEvent(rows[0].HexKey);
   } else {
     selectedRows.clear();
@@ -2111,8 +2096,8 @@ function inferSeason(dateStr) {
   const d = parseLocalDate(dateStr);
   if (!d) return "";
   const y = d.getFullYear();
-  const m = d.getMonth(); // 0-indexed
-  const start = m >= 6 ? y : y - 1; // season starts July
+  const m = d.getMonth();
+  const start = m >= 6 ? y : y - 1;
   return `${start}-${String(start + 1).slice(-2)}`;
 }
 
@@ -2120,7 +2105,6 @@ function inferSeason(dateStr) {
    INITIAL DATA LOAD
 ========================================================= */
 async function loadData() {
-  // Show loading state in all relevant sections
   eventsBody.innerHTML = `<tr class="table-loading-row"><td colspan="7"><div class="section-loading"><span class="spinner"></span> Loading events…</div></td></tr>`;
   const classEventsContainer = document.getElementById("classEventsPills");
 
@@ -2140,7 +2124,9 @@ async function loadData() {
     eventData.forEach(e => {
       if (!e.HexKey) e.HexKey = `${e.Date}|${e.Start || ""}|${e.Class || ""}`;
       if (!e.Season) e.Season = inferSeason(e.Date);
-      if (e["Event Name"] !== undefined) e.Event = e["Event Name"];
+      if (e["Event Name"] !== undefined && !e.Event) e.Event = e["Event Name"];
+      if (!e.Event && e.EventName) e.Event = e.EventName;
+      if (!e.EventName && e.Event) e.EventName = e.Event;
     });
 
     classes  = await fetchSheet(DOMAIN.members, "Classes");
@@ -2157,11 +2143,9 @@ async function loadData() {
     renderAvailableDates();
     renderSelectedEventDetails();
 
-
-    // Deep link from Results Management: ?reschedule=<HexKey> preselects the event
     const pre = new URLSearchParams(location.search).get("reschedule");
     if (pre) {
-      history.replaceState(null, "", location.pathname);   // one-shot, so later reloads don't re-select
+      history.replaceState(null, "", location.pathname);
       if (eventData.some(e => e.HexKey === pre)) selectEvent(pre);
       else logAction("Event to reschedule was not found.");
     }
@@ -2171,11 +2155,8 @@ async function loadData() {
   }
 }
 
-
-/* Add Event button */
 document.getElementById('addEventBtn')?.addEventListener('click', openAddEventModal);
 
-/* Ellipsis row menu helpers */
 function toggleRowMenu(evt, hex) {
   evt.stopPropagation();
   const menu = document.getElementById(`menu-${hex}`);
@@ -2188,23 +2169,20 @@ function closeAllRowMenus() {
 }
 document.addEventListener('click', closeAllRowMenus);
 
-
-  loadData();
-  if (window.lucide) lucide.createIcons();
-
-
+loadData();
+if (window.lucide) lucide.createIcons();
 
 </script>
 <script>
     Promise.all([
         fetch('nav.html').then(r => r.text()),
         fetch('auditLog.html').then(r => r.text()),
-    ]).then(([navHtml, auditHtml, healthHtml]) => {
+    ]).then(([navHtml, auditHtml]) => {
         document.getElementById('nav-placeholder').innerHTML = navHtml;
         document.getElementById('auditLog-placeholder').innerHTML = auditHtml;
 
         AuditLog.init();
-        Nav.init();  // scans after all panels are in the DOM
+        Nav.init();
 
         if (window.lucide) lucide.createIcons();
     });
