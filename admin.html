@@ -91,6 +91,127 @@
 .fn-message.error { color: #ff6b6b; }
 
 /* ============================================================
+   FUNCTIONS LOADING MODAL (COLD START)
+   ============================================================ */
+.fn-loader-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(7, 27, 44, 0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 1;
+    transition: opacity 0.35s ease;
+}
+
+.fn-loader-modal {
+    background: linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 24px 64px rgba(2, 10, 18, 0.65);
+    width: 100%;
+    max-width: 440px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.fn-loader-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 14px;
+}
+
+.fn-loader-header h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--foam);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fn-loader-header p {
+    font-size: 12px;
+    color: var(--foam-dim);
+}
+
+.fn-loader-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.fn-loader-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    user-select: none;
+}
+
+.fn-loader-item-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--foam);
+}
+
+.fn-loader-item-icon {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.fn-loader-item-icon svg,
+.fn-loader-item-icon i {
+    width: 18px;
+    height: 18px;
+}
+
+.fn-loader-item-status {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.fn-loader-item.loaded {
+    cursor: pointer;
+    border-color: rgba(94, 234, 212, 0.3);
+}
+
+.fn-loader-item.loaded:hover {
+    background: var(--glass-fill-hi);
+    border-color: var(--glow);
+    transform: translateX(3px);
+}
+
+.fn-loader-item.loaded:hover .fn-loader-item-left {
+    color: var(--glow);
+}
+
+/* ============================================================
    MEMBER MAP SECTION STYLES
    ============================================================ */
 .map-panel {
@@ -311,7 +432,7 @@
 
     <section class="fn-grid" id="fnGrid"></section>
 
-        <!-- NEW SECTION: MEMBER GEOGRAPHICAL DISTRIBUTION MAP (EDITOR ROLE) -->
+    <!-- MEMBER GEOGRAPHICAL DISTRIBUTION MAP (EDITOR ROLE) -->
     <div class="section-head" data-min-role="editor">
         <h2><i data-lucide="map-pin" class="inline-icon" style="color:var(--glow);"></i> Member Geographic Distribution</h2>
         <p>Spatial analysis of membership, active fleet, and catchment radius around Norwest Lake.</p>
@@ -398,9 +519,98 @@ function getRowVal(row, possibleKeys) {
     return "";
 }
 
+/* ============================================================
+   FUNCTIONS PROGRESSIVE LOADING MODAL
+   ============================================================ */
+const FunctionsLoader = {
+    overlay: null,
+    itemsMap: new Map(),
+
+    create(functions) {
+        if (!functions || functions.length === 0) return;
+        const overlay = document.createElement("div");
+        overlay.id = "fnLoaderOverlay";
+        overlay.className = "fn-loader-overlay";
+        overlay.innerHTML = `
+            <div class="fn-loader-modal">
+                <div class="fn-loader-header">
+                    <h3>
+                        <span class="dot"></span>
+                        Initialising Admin Functions
+                    </h3>
+                    <p>Fetching workspace modules. Click any ticked item to jump directly to it.</p>
+                </div>
+                <div class="fn-loader-list" id="fnLoaderList"></div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        this.overlay = overlay;
+
+        const list = overlay.querySelector("#fnLoaderList");
+        functions.forEach(fn => {
+            const item = document.createElement("div");
+            item.className = "fn-loader-item";
+            item.id = `fn-loader-${fn.id}`;
+            item.innerHTML = `
+                <div class="fn-loader-item-left">
+                    <div class="fn-loader-item-icon">${fn.icon}</div>
+                    <span>${escapeHtml(fn.title)}</span>
+                </div>
+                <div class="fn-loader-item-status">
+                    <span class="spinner" style="width:14px;height:14px;margin:0;border-width:2px;"></span>
+                </div>
+            `;
+            list.appendChild(item);
+            this.itemsMap.set(fn.id, { element: item, fn });
+        });
+
+        if (window.lucide) lucide.createIcons();
+    },
+
+    async tickAllProgressive(delayMs = 110) {
+        if (!this.overlay) return;
+        const entries = Array.from(this.itemsMap.values());
+        for (const { element, fn } of entries) {
+            await new Promise(r => setTimeout(r, delayMs));
+            element.classList.add("loaded");
+            const statusBox = element.querySelector(".fn-loader-item-status");
+            if (statusBox) {
+                statusBox.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--glow)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                `;
+            }
+            if (fn.href) {
+                element.title = `Open ${fn.title}`;
+                element.onclick = () => {
+                    window.location.href = fn.href;
+                };
+            }
+        }
+
+        // Brief delay before dismissal
+        await new Promise(r => setTimeout(r, 500));
+        this.dismiss();
+    },
+
+    dismiss() {
+        if (!this.overlay) return;
+        this.overlay.style.opacity = "0";
+        setTimeout(() => {
+            if (this.overlay && this.overlay.parentNode) {
+                this.overlay.parentNode.removeChild(this.overlay);
+                this.overlay = null;
+            }
+        }, 350);
+    }
+};
+
 async function initAdmin() {
     // 1. Instant Cache Load
     const cachedRaw = localStorage.getItem(ADMIN_CACHE_KEY);
+    const isColdStart = !cachedRaw;
+
     if (cachedRaw) {
         try {
             const cachedData = JSON.parse(cachedRaw);
@@ -408,6 +618,20 @@ async function initAdmin() {
         } catch (e) {
             console.warn("Admin cache parse error", e);
         }
+    }
+
+    // Prepare role-filtered modal on cold start
+    let allowedFns = [];
+    if (isColdStart) {
+        const user = JSON.parse(localStorage.getItem("SMMC_USER") || "{}");
+        const userRole = user.role || "viewer";
+        const userRank = ROLE_RANK[userRole] || 0;
+        allowedFns = FUNCTIONS.filter(fn => {
+            if (fn.placeholder) return false;
+            const requiredRank = ROLE_RANK[fn.minRole || "editor"] || 3;
+            return userRank >= requiredRank;
+        });
+        FunctionsLoader.create(allowedFns);
     }
 
     // 2. Fetch all required tables in a single HTTP request
@@ -453,8 +677,16 @@ async function initAdmin() {
         localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(freshData));
         renderAll(freshData);
 
+        // Progressive ticks on cold start
+        if (isColdStart) {
+            await FunctionsLoader.tickAllProgressive();
+        }
+
     } catch (err) {
         console.error("Failed to bootstrap fresh admin data", err);
+        if (isColdStart) {
+            FunctionsLoader.dismiss();
+        }
         if (!cachedRaw) {
             document.querySelectorAll('.spinner').forEach(s => {
                 s.parentElement.innerHTML = '<span class="badge badge-expired">Error loading</span>';
@@ -916,7 +1148,6 @@ const MemberMap = {
     data: null,
     clubCoords: [-33.7335, 150.9634], // SMMC Sailing Venue: Norwest Lake, Baulkham Hills
 
-    // Pre-indexed coordinate lookup for Sydney and NSW suburbs/postcodes
     suburbCoords: {
         "north rocks": [-33.7667, 151.0250],
         "wahroonga": [-33.7192, 151.1167],
@@ -980,14 +1211,12 @@ const MemberMap = {
         const container = document.getElementById("memberMap");
         if (!container) return;
 
-        // Leaflet base setup
         this.map = L.map('memberMap', {
             center: this.clubCoords,
             zoom: 10,
             zoomControl: true
         });
 
-        // Dark Matter / Oceanic Tile layer
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_4jl4_1_74dd73f838df6080f26d1f30', {
             attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
             maxZoom: 19
@@ -995,7 +1224,6 @@ const MemberMap = {
 
         this.memberLayerGroup = L.layerGroup().addTo(this.map);
 
-        // Norwest Lake club base marker
         const clubIcon = L.divIcon({
             className: 'custom-club-icon',
             html: '<div class="map-club-pin" title="SMMC Venue - Norwest Lake">⛵</div>',
@@ -1014,7 +1242,6 @@ const MemberMap = {
             </div>
         `);
 
-        // Radius circle
         this.radiusCircle = L.circle(this.clubCoords, {
             radius: 50 * 1000,
             color: '#5eead4',
@@ -1083,17 +1310,14 @@ const MemberMap = {
         const suburb = getRowVal(member, ["Suburb", "Address Line", "City"]).toLowerCase().trim();
         const pcode = getRowVal(member, ["PCode", "Postcode", "Post Code"]).trim();
 
-        // Check suburb index
         for (const [sub, coords] of Object.entries(this.suburbCoords)) {
             if (suburb.includes(sub) || sub.includes(suburb && suburb.length > 3 ? suburb : "###")) {
-                // Slight jitter for multiple members in the exact same suburb
                 const jitterLat = (Math.random() - 0.5) * 0.007;
                 const jitterLng = (Math.random() - 0.5) * 0.007;
                 return [coords[0] + jitterLat, coords[1] + jitterLng];
             }
         }
 
-        // Postcode fallback approximations for NSW
         if (pcode.startsWith("21")) return [-33.76 + (Math.random() - 0.5) * 0.06, 151.01 + (Math.random() - 0.5) * 0.06];
         if (pcode.startsWith("20")) return [-33.82 + (Math.random() - 0.5) * 0.06, 151.15 + (Math.random() - 0.5) * 0.06];
         if (pcode.startsWith("27")) return [-33.72 + (Math.random() - 0.5) * 0.08, 150.80 + (Math.random() - 0.5) * 0.08];
@@ -1117,7 +1341,6 @@ const MemberMap = {
         const members = this.data.members || [];
         const boats = this.data.boats || [];
 
-        // Build member boats map
         const boatsByMember = {};
         boats.forEach(b => {
             const owner = getRowVal(b, ["Member", "MemberName", "Owner"]).toLowerCase().trim();
@@ -1134,14 +1357,12 @@ const MemberMap = {
             const rawActive = getRowVal(m, ["Active", "Membership Status"]).toLowerCase();
             const isActive = ["true", "yes", "paid"].includes(rawActive);
 
-            // 1. Active Filter
             if (activeMode === "active" && !isActive) return;
             if (activeMode === "inactive" && isActive) return;
 
             const memberBoats = boatsByMember[name.toLowerCase()] || [];
             const hasActiveBoat = memberBoats.some(b => ["true", "yes", "active"].includes(getRowVal(b, ["Active"]).toLowerCase()));
 
-            // 2. Class Filter
             if (selectedClass !== "all") {
                 const ownsClass = memberBoats.some(b => {
                     const cls = getRowVal(b, ["Class", "ClassId", "Model"]);
@@ -1150,11 +1371,9 @@ const MemberMap = {
                 if (!ownsClass) return;
             }
 
-            // 3. Active Boats Filter
             if (boatFilter === "has_active_boat" && !hasActiveBoat) return;
             if (boatFilter === "has_any_boat" && memberBoats.length === 0) return;
 
-            // 4. Address & Radius filter
             const coords = this.resolveCoords(m);
             if (!coords) return;
 
@@ -1164,7 +1383,6 @@ const MemberMap = {
             matchedCount++;
             plottedCount++;
 
-            // Create Member Pin
             const isMemberActive = isActive;
             const pinClass = isMemberActive ? 'map-marker-pin' : 'map-marker-pin inactive';
             const markerIcon = L.divIcon({
@@ -1176,7 +1394,6 @@ const MemberMap = {
 
             const marker = L.marker(coords, { icon: markerIcon });
 
-            // Popup details
             const membershipType = getRowVal(m, ["Membership", "Membership Type", "Type"]) || "Member";
             const suburb = getRowVal(m, ["Suburb"]);
             const pcode = getRowVal(m, ["PCode"]);
@@ -1209,7 +1426,6 @@ const MemberMap = {
             this.memberLayerGroup.addLayer(marker);
         });
 
-        // Update Counter badge
         const badge = document.getElementById("mapMatchBadge");
         if (badge) {
             badge.textContent = `${matchedCount} Member${matchedCount === 1 ? '' : 's'} within ${maxRadiusKm} km`;
@@ -1225,23 +1441,36 @@ const SystemHealth = {
         const refreshBtn = document.getElementById('refreshHealthBtn');
         const clearBtn = document.getElementById('clearCacheBtn');
         if (clearBtn) clearBtn.addEventListener('click', async () => {
+            const origHtml = clearBtn.innerHTML;
             clearBtn.disabled = true;
+            clearBtn.innerHTML = '<span class="spinner" style="width:12px;height:12px;margin:0 6px 0 0;border-width:2px;vertical-align:-1px;display:inline-block;"></span> Clearing...';
             try {
                 await apiGet("refreshCache");
                 this.load();
             } catch (err) {
                 alert("Cache clear failed: " + err.message);
             } finally {
+                clearBtn.innerHTML = origHtml;
                 clearBtn.disabled = false;
             }
         });
+
         const schemaBtn = document.getElementById('refreshSchemaBtn');
         if (schemaBtn) schemaBtn.addEventListener('click', async () => {
+            const origHtml = schemaBtn.innerHTML;
             schemaBtn.disabled = true;
-            try { await apiGet("refreshSchema"); this.load(); }
-            catch (err) { alert("Schema refresh failed: " + err.message); }
-            finally { schemaBtn.disabled = false; }
+            schemaBtn.innerHTML = '<span class="spinner" style="width:12px;height:12px;margin:0 6px 0 0;border-width:2px;vertical-align:-1px;display:inline-block;"></span> Refreshing...';
+            try {
+                await apiGet("refreshSchema");
+                this.load();
+            } catch (err) {
+                alert("Schema refresh failed: " + err.message);
+            } finally {
+                schemaBtn.innerHTML = origHtml;
+                schemaBtn.disabled = false;
+            }
         });
+
         if (refreshBtn) refreshBtn.addEventListener('click', () => this.load());
         if (document.getElementById('sysHealthBody')) this.load();
     },
