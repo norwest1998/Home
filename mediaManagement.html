@@ -329,12 +329,13 @@ const QUEUE_SHEET  = "Queue";
 
 let posts = [];
 let editingPostKey = null;
+let classNames = [];
 
 function parseRobustDate(dStr) {
     if (!dStr) return new Date(NaN);
     const s = String(dStr).trim();
-    let m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-    if (m) return new Date(`${m[3]}-${m[2]}-${m[1]}T12:00:00Z`);
+    let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m) return new Date(`${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}T12:00:00Z`);
     return new Date(s);
 }
 function fmtDate(dStr) {
@@ -356,7 +357,7 @@ function buildFacebookUrl(postID) {
         const [pageId, postId] = clean.split("_");
         return `https://www.facebook.com/permalink.php?story_fbid=${encodeURIComponent(postId)}&id=${encodeURIComponent(pageId)}`;
     }
-    return `https://www.facebook.com/${encodeURIComponent(clean)}`;
+    return `https://www.facebook.com/photo/?fbid=${encodeURIComponent(clean)}`;
 }
 
 async function loadAll() {
@@ -369,7 +370,12 @@ async function loadAll() {
     });
 
     try {
-        posts = await fetchSheet(QUEUE_DOMAIN, QUEUE_SHEET);
+        const [q, cls] = await Promise.all([
+            fetchSheet(QUEUE_DOMAIN, QUEUE_SHEET),
+            fetchSheet(DOMAIN.members, "Classes").catch(() => [])
+        ]);
+        posts = q;
+        classNames = cls.map(c => gv(c, "ClassName")).filter(Boolean).sort();
     } catch(e) {
         console.error(e);
         body.innerHTML = `<tr><td colspan="5" style="color:#ff6b6b;padding:24px;text-align:center;">Failed to load queue. ${e.message}</td></tr>`;
@@ -422,7 +428,7 @@ function renderDropdowns() {
 
     const fClass = document.getElementById("filterClass");
     const prevC = fClass.value;
-    fClass.innerHTML = `<option value="">All Classes</option>` + [...classSet].sort().map(c => `<option value="${c}">${c}</option>`).join("");
+    fClass.innerHTML = `<option value="">All Classes</option>` + classNames.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
     fClass.value = prevC;
 
     const fMonth = document.getElementById("filterMonth");
@@ -451,7 +457,7 @@ function renderTable() {
     );
     if (typeF) rows = rows.filter(p => (gv(p,"PostType") || "RESULTS").toUpperCase() === typeF);
     if (statF) rows = rows.filter(p => gv(p,"Status").toUpperCase() === statF || (statF==='PENDING' && gv(p,"Status").toUpperCase() === 'PROCESSING'));
-    if (clsF) rows = rows.filter(p => gv(p,"RegattaName") === clsF);
+    if (clsF) rows = rows.filter(p => [gv(p,"SheetName"), gv(p,"RegattaName"), gv(p,"SpreadsheetName")].join(" ").toLowerCase().includes(clsF.toLowerCase()));
     if (monF) rows = rows.filter(p => {
         const d = parseRobustDate(gv(p, "Created", "RaceDate"));
         if (isNaN(d)) return false;
