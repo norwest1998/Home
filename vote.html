@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Committee Ballot — Sydney Maritime Modellers Club</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+  body { margin:0; min-height:100vh; color:var(--foam); font-family:var(--font-body);
+         background:radial-gradient(1100px 560px at 50% -12%, var(--sea-teal), var(--ocean-deep) 70%); }
+  main { max-width:640px; margin:0 auto; padding:40px 16px 72px; }
+  .eyebrow { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--signal); font-weight:600; }
+  h1 { font-size:28px; margin:6px 0 4px; letter-spacing:-.01em; }
+  #sub { color:var(--foam-dim); font-size:14px; margin-bottom:28px; }
+  .pos { padding:20px; margin-bottom:18px; border-radius:16px; }
+  .pos h2 { margin:0 0 2px; font-size:18px; }
+  .hint { color:var(--foam-dim); font-size:13px; margin-bottom:6px; }
+  .cand { display:flex; gap:14px; align-items:center; padding:13px 14px; margin-top:8px; cursor:pointer;
+          border:1px solid var(--glass-border); border-radius:12px; font-size:15px; transition:border-color .15s, background .15s; }
+  .cand:hover { background:var(--glass-fill); }
+  .cand.on { border-color:var(--glow); background:var(--glass-fill-hi); }
+  .cand input { accent-color:var(--glow); width:18px; height:18px; margin:0; flex:none; }
+  #msg { padding:16px 18px; border-radius:12px; border:1px solid var(--glass-border); margin-bottom:18px; }
+  #msg.bad { border-color:var(--signal); background:var(--alert); }
+  #msg:empty { display:none; }
+  #submit { width:100%; justify-content:center; padding:14px; font-size:15px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">SMMC Committee Election</div>
+  <h1>Cast your vote</h1>
+  <div id="sub">Loading your ballot…</div>
+  <div id="msg"></div>
+  <div id="ballot"></div>
+  <button id="submit" class="btn btn-primary" hidden>Submit my vote</button>
+  <p class="hint" style="margin-top:18px">Your link is personal and works once. Votes are stored without your name.</p>
+</main>
+
+<script>
+const ELECTION_URL = "PASTE_NOMINATIONS_WEBAPP_URL";
+let TOKEN = new URLSearchParams(location.search).get("t");
+history.replaceState(null, "", location.pathname);          // keep the token out of history / referrers
+
+const $ = s => document.querySelector(s);
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text) n.textContent = text; return n; };
+const show = (msg, bad) => { const m = $("#msg"); m.textContent = msg; m.className = bad ? "bad" : ""; };
+
+async function call(payload) {
+  const r = await fetch(ELECTION_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error);
+  return d;
+}
+
+function render(b) {
+  $("#sub").textContent = "Voting closes " + new Date(b.closeAt).toLocaleString([], { dateStyle: "full", timeStyle: "short" });
+  b.positions.forEach(p => {
+    const multi = p.seats > 1, box = el("section", "pos glass");
+    box.append(el("h2", "", p.position),
+      el("div", "hint", (multi ? "Choose up to " + p.seats : "Choose one") + " — or leave blank to abstain"));
+    p.candidates.forEach(c => {
+      const lab = el("label", "cand"), inp = el("input");
+      inp.type = multi ? "checkbox" : "radio"; inp.name = p.position; inp.value = c.id;
+      inp.onchange = () => {
+        if (multi && box.querySelectorAll("input:checked").length > p.seats) { inp.checked = false; return; }
+        box.querySelectorAll(".cand").forEach(l => l.classList.toggle("on", l.firstChild.checked));
+      };
+      lab.append(inp, el("span", "", c.name));
+      box.append(lab);
+    });
+    $("#ballot").append(box);
+  });
+  $("#submit").hidden = false;
+}
+
+$("#submit").onclick = async () => {
+  const picks = {};
+  document.querySelectorAll("#ballot section").forEach(s => {
+    const ids = [...s.querySelectorAll("input:checked")].map(i => i.value);
+    if (ids.length) picks[s.querySelector("h2").textContent] = ids;
+  });
+  if (!confirm("Submit your vote? It can't be changed afterwards.")) return;
+  $("#submit").disabled = true;
+  try {
+    await call({ action: "castVote", t: TOKEN, picks });
+    TOKEN = null; $("#ballot").hidden = true; $("#submit").hidden = true;
+    $("#sub").textContent = ""; show("Thank you. Your vote has been recorded.");
+  } catch (e) { show(e.message, true); $("#submit").disabled = false; }
+};
+
+(async () => {
+  if (!TOKEN) { $("#sub").textContent = ""; return show("This link is missing its ballot code. Please use the link in your email.", true); }
+  try { render(await call({ action: "getBallot", t: TOKEN })); }
+  catch (e) { $("#sub").textContent = ""; show(e.message, true); }
+})();
+</script>
+</body>
+</html>
