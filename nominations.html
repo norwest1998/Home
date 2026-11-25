@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Committee Nominations — Sydney Maritime Modellers Club</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+  body { margin:0; min-height:100vh; color:var(--foam); font-family:var(--font-body);
+         background:radial-gradient(1100px 560px at 50% -12%, var(--sea-teal), var(--ocean-deep) 70%); }
+  main { max-width:1040px; margin:0 auto; padding:40px 16px 72px; }
+  .eyebrow { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--signal); font-weight:600; }
+  h1 { font-size:28px; margin:6px 0 4px; letter-spacing:-.01em; }
+  #sub { color:var(--foam-dim); font-size:14px; }
+  .bar { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin:22px 0 16px; }
+  #todo { font-size:14px; color:var(--glow); }
+  #msg { padding:14px 18px; border-radius:12px; border:1px solid var(--glass-border); margin-bottom:16px; }
+  #msg.bad { border-color:var(--signal); } #msg:empty { display:none; }
+  .log-table-wrap { max-height:none; }
+  table.log-table { font-size:13.5px; } .log-table td, .log-table th { white-space:nowrap; }
+  tr.mine td { background:var(--glass-fill-hi); }
+  .btn-sm { padding:6px 12px; font-size:12px; margin-right:6px; }
+  .muted { color:var(--foam-dim); }
+  .drawer h4 { margin:0; } .drawer-body { padding:20px 24px 24px; }
+  .x { background:none; border:0; color:var(--foam-dim); font-size:22px; cursor:pointer; }
+  label.f { display:block; font-size:12px; color:var(--foam-dim); margin:14px 0 6px; letter-spacing:.04em; }
+  select.f, .drawer-body select { width:100%; padding:11px 12px; border-radius:10px; font:inherit; color:var(--foam);
+         background:var(--glass-fill); border:1px solid var(--glass-border); }
+  select option { background:var(--ocean-mid); color:var(--foam); }
+  .sum { padding:14px; border-radius:12px; border:1px solid var(--glass-border); background:var(--glass-fill); line-height:1.5; }
+  .agree { display:flex; gap:10px; align-items:flex-start; margin-top:16px; font-size:13px; color:var(--foam-dim); cursor:pointer; }
+  .agree input { accent-color:var(--glow); width:18px; height:18px; margin:1px 0 0; flex:none; }
+  .acts { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; flex-wrap:wrap; }
+  #merr { color:var(--signal); font-size:13px; margin-top:12px; min-height:1em; }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">SMMC Committee Election</div>
+  <h1>Committee nominations</h1>
+  <div id="sub">Loading…</div>
+  <div class="bar"><div id="todo"></div><button id="nominate" class="btn btn-primary" disabled>Nominate a member</button></div>
+  <div id="msg"></div>
+  <div class="log-table-wrap">
+    <table class="log-table">
+      <thead><tr><th>ID</th><th>Position</th><th>Nominee</th><th>Nominator</th><th>Seconder</th><th>Seconded?</th>
+        <th>Accepted?</th><th>Votes For</th><th>Status</th><th>Actions?</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</main>
+
+<div id="ov" class="drawer-overlay">
+  <div class="drawer">
+    <div class="drawer-header"><h4 id="mt"></h4><button class="x" id="mx" aria-label="Close">×</button></div>
+    <div class="drawer-body"><div id="mb"></div><div id="merr"></div><div class="acts" id="ma"></div></div>
+  </div>
+</div>
+
+<script>
+const API = "PASTE_NOMINATIONS_WEBAPP_URL";
+const Q = new URLSearchParams(location.search), T = Q.get("t");
+let DEEP = Q.get("n"), C = null;
+
+const $ = s => document.querySelector(s);
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+const fmt = iso => new Date(iso).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+const show = (m, bad) => { const n = $("#msg"); n.textContent = m; n.className = bad ? "bad" : ""; };
+
+async function call(payload) {
+  const r = await fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error);
+  return d;
+}
+
+/* ---------- modal ---------- */
+function modal(title, nodes, buttons) {
+  $("#mt").textContent = title; $("#merr").textContent = "";
+  $("#mb").replaceChildren(...nodes);
+  $("#ma").replaceChildren(...buttons.map(b => { const x = el("button", "btn " + (b.cls || "btn-ghost"), b.label); x.onclick = () => b.run(x); return x; }));
+  $("#ov").classList.add("open");
+}
+const closeModal = () => $("#ov").classList.remove("open");
+$("#mx").onclick = closeModal;
+$("#ov").onclick = e => { if (e.target.id === "ov") closeModal(); };
+
+function agree(text) {
+  const box = el("input"); box.type = "checkbox";
+  const lab = el("label", "agree"); lab.append(box, el("span", "", text));
+  return { node: lab, ok: () => box.checked };
+}
+async function submit(btn, payload, done) {
+  if (payload.agree === false) { $("#merr").textContent = "Please tick the confirmation box."; return; }
+  btn.disabled = true; $("#merr").textContent = "";
+  try { await call(payload); closeModal(); show(done); await load(); }
+  catch (e) { $("#merr").textContent = e.message; btn.disabled = false; }
+}
+
+/* ---------- the three former forms ---------- */
+function openNominate() {
+  const pos = el("select"), who = el("select");
+  C.positions.forEach(p => pos.append(new Option(p.name + (p.seats > 1 ? " (" + p.seats + " seats)" : ""), p.name)));
+  C.members.filter(m => m !== C.me).forEach(m => who.append(new Option(m, m)));
+  const ag = agree("I confirm I am a financial member authorized to nominate and accept this as my online signature.");
+  const l1 = el("label", "f", "POSITION"), l2 = el("label", "f", "NOMINATED MEMBER");
+  modal("Nominate a member", [l1, pos, l2, who, el("div", "muted", "You are nominating as " + C.me + ". The nominee will be emailed to accept."), ag.node],
+    [{ label: "Cancel", run: closeModal },
+     { label: "Submit nomination", cls: "btn-primary", run: b => submit(b, { action: "nominate", t: T, position: pos.value, nominee: who.value, agree: ag.ok() },
+        "Nomination submitted. " + who.value + " has been emailed to accept.") }]);
+}
+
+function openRespond(r, mode) {
+  const s = r.summary, accept = mode === "accept";
+  const text = accept ? "I, " + s.nominee + ", hereby accept the nomination for the position of " + s.position + " (Nominated by " + s.nominator + ")."
+                      : "You are seconding the nomination of " + s.nominee + " for the position of " + s.position + " (Nominated by " + s.nominator + ").";
+  const ag = agree(accept ? "I, the nominated, accept this nomination and accept this as my online signature."
+    : "I second this nomination and confirm I am a financial member authorized to second it and accept this as my online signature.");
+  const btns = [{ label: "Cancel", run: closeModal },
+    { label: accept ? "Accept nomination" : "Second this nomination", cls: "btn-primary",
+      run: b => submit(b, { action: accept ? "accept" : "second", t: T, id: r.id, agree: ag.ok() }, accept ? "Nomination accepted." : "Nomination seconded.") }];
+  if (accept) btns.splice(1, 0, { label: "Decline", run: b => { if (confirm("Decline this nomination?")) submit(b, { action: "decline", t: T, id: r.id }, "Nomination declined."); } });
+  modal(accept ? "Accept nomination " + r.id : "Second nomination " + r.id, [el("div", "sum", text), ag.node], btns);
+}
+
+/* ---------- board ---------- */
+function badge(status) {
+  const s = String(status || ""), b = el("span", "badge " + (/VALID|APPOINTED|ELECTED/.test(s) && !/NOT|INVALID/.test(s) ? "badge-full"
+    : /INVALID|DECLINED|LAPSED|NOT ELECTED|TIE/.test(s) ? "badge-expired" : "badge-default"), s);
+  return b;
+}
+function render() {
+  $("#sub").textContent = "Signed in as " + C.me + " · " + (C.open ? "Nominations close " + fmt(C.closeAt) : "Nominations are closed");
+  $("#nominate").disabled = !C.open;
+  const todo = C.board.filter(r => r.canAccept || r.canSecond).length;
+  $("#todo").textContent = todo ? todo + (todo === 1 ? " nomination needs" : " nominations need") + " your action" : "";
+  const body = $("#rows"); body.replaceChildren();
+  if (!C.board.length) { const tr = el("tr"), td = el("td", "muted", "No nominations yet."); td.colSpan = 10; tr.append(td); body.append(tr); return; }
+  C.board.forEach(r => {
+    const tr = el("tr", r.canAccept || r.canSecond ? "mine" : "");
+    [r.id, r.position, r.nominee, r.nominator, r.seconder || "", r.seconded, r.accepted, r.votes === "" || r.votes == null ? "—" : r.votes]
+      .forEach(v => tr.append(el("td", "", v)));
+    const st = el("td"); st.append(badge(r.status)); tr.append(st);
+    const act = el("td");
+    if (r.canAccept) { const b = el("button", "btn btn-primary btn-sm", "Accept"); b.onclick = () => openRespond(r, "accept"); act.append(b); }
+    if (r.canSecond) { const b = el("button", "btn btn-primary btn-sm", "Second"); b.onclick = () => openRespond(r, "second"); act.append(b); }
+    if (!act.childNodes.length) act.append(el("span", "muted", r.action || ""));
+    tr.append(act); body.append(tr);
+  });
+}
+async function load() {
+  C = await call({ action: "nomCtx", t: T }); render();
+  if (DEEP) {                                           // link from the "you have been nominated" email
+    const r = C.board.find(x => x.id === DEEP); DEEP = null;
+    if (r && r.canAccept) openRespond(r, "accept");
+  }
+}
+$("#nominate").onclick = openNominate;
+(async () => {
+  if (!T) { $("#sub").textContent = ""; return show("This link is missing its member code. Please use the link in your email.", true); }
+  try { await load(); } catch (e) { $("#sub").textContent = ""; show(e.message, true); }
+})();
+</script>
+</body>
+</html>
