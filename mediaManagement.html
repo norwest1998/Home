@@ -151,8 +151,7 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
         <div class="glass stat-card"><div class="stat-val draft" id="stat-draft">—</div><div class="stat-label">Draft Reviews</div></div>
         <div class="glass stat-card"><div class="stat-val warn" id="stat-pending">—</div><div class="stat-label">Pending / Queue</div></div>
         <div class="glass stat-card"><div class="stat-val" id="stat-posted">—</div><div class="stat-label">Successfully Posted</div></div>
-        <div class="glass stat-card"><div class="stat-val accent" id="stat-failed">—</div><div class="stat-label">Failed</div></div>
-    </section>
+        <div class="stat-val" id="stat-failed">—</div>
 
     <!-- Queue Table -->
     <div class="section-head">
@@ -233,7 +232,7 @@ table.media-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
                         <option value="PENDING">PENDING</option>
                         <option value="PROCESSING">PROCESSING</option>
                         <option value="POSTED">POSTED</option>
-                        <option value="FAILED">FAILED</option>
+                        <option value="VIEWED-FAILED">VIEWED-FAILED</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -387,16 +386,21 @@ async function loadAll() {
     renderTable();
 }
 
+const isFailedStatus = s => s === "FAILED" || s === "VIEWED-FAILED";
 function renderStats() {
-    let posted = 0, pending = 0, failed = 0, draft = 0;
+    let posted = 0, pending = 0, failed = 0, unviewedFailed = 0, draft = 0;
 
     posts.forEach(p => {
         const st = gv(p, "Status").toUpperCase();
         if (st === "POSTED") posted++;
-        else if (st === "FAILED") failed++;
+        else if (isFailedStatus(st)) { failed++; if (st === "FAILED") unviewedFailed++; }
         else if (st === "DRAFT") draft++;
         else if (st === "PENDING" || st === "PROCESSING") pending++;
     });
+
+    const failedEl = document.getElementById("stat-failed");
+    failedEl.textContent = failed;
+    failedEl.classList.toggle("accent", unviewedFailed > 0);
 
     document.getElementById("stat-total").textContent = posts.length;
     document.getElementById("stat-draft").textContent = draft;
@@ -456,7 +460,10 @@ function renderTable() {
         gv(p,"Status").toLowerCase().includes(q)
     );
     if (typeF) rows = rows.filter(p => (gv(p,"PostType") || "RESULTS").toUpperCase() === typeF);
-    if (statF) rows = rows.filter(p => gv(p,"Status").toUpperCase() === statF || (statF==='PENDING' && gv(p,"Status").toUpperCase() === 'PROCESSING'));
+    if (statF) rows = rows.filter(p => {
+       const s = gv(p,"Status").toUpperCase();
+        return s === statF || (statF==='PENDING' && s==='PROCESSING') || (statF==='FAILED' && s==='VIEWED-FAILED');
+        });
     if (clsF) rows = rows.filter(p => [gv(p,"SheetName"), gv(p,"RegattaName"), gv(p,"SpreadsheetName")].join(" ").toLowerCase().includes(clsF.toLowerCase()));
     if (monF) rows = rows.filter(p => {
         const d = parseRobustDate(gv(p, "Created", "RaceDate"));
@@ -508,7 +515,13 @@ async function openModal(keyOrIdx) {
     const post = posts.find(p => gv(p, "HexKey", "QueueID", "Key", "PostID") === keyOrIdx) || posts[keyOrIdx];
     if (!post) return;
 
-    const currentStatus = gv(post, "Status").toUpperCase();
+    let currentStatus = gv(post, "Status").toUpperCase();
+    if (currentStatus === "FAILED") {
+        updateSheet(QUEUE_DOMAIN, QUEUE_SHEET, keyOrIdx, { Status: "VIEWED-FAILED" })
+            .then(() => { post.Status = "VIEWED-FAILED"; renderStats(); renderTable(); })
+            .catch(e => console.warn("Could not mark as viewed:", e));
+    }
+    const wasFailed = isFailedStatus(currentStatus);
     const isNotice = (gv(post, "PostType") || "RESULTS").toUpperCase() === "EVENT_NOTICE";
 
     document.getElementById("modalHeading").textContent = isNotice ? "Review Event Notice" : "Edit Results Post";
@@ -522,7 +535,7 @@ async function openModal(keyOrIdx) {
 
     const errBox = document.getElementById("modalErrorBox");
     const errMsg = gv(post, "Error");
-    if (errMsg && currentStatus === "FAILED") {
+    if (errMsg && wasFailed) {
         errBox.textContent = `Failure Reason: ${errMsg}`;
         errBox.style.display = "block";
     } else {
@@ -634,7 +647,7 @@ async function savePost(isQueueAction) {
 
             await updateSheet(QUEUE_DOMAIN, QUEUE_SHEET, editingPostKey, updates);
 
-            if (currentStatus === "FAILED") {
+            if (isFailedStatus(currentStatus)) {
                 await apiGet("processFacebookQueue");
             }
 

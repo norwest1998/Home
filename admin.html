@@ -957,14 +957,15 @@ const FUNCTIONS = [
         status: (data) => {
             const queue = data.media || [];
             const posted = queue.filter(r => r.Status === 'POSTED').length;
-            const failed = queue.filter(r => r.Status === 'FAILED').length;
+            const failed = queue.filter(r => r.Status === 'FAILED' || r.Status === 'VIEWED-FAILED').length;
+            const unviewedFailed = queue.filter(r => r.Status === 'FAILED').length;
             const pending = queue.filter(r => r.Status === 'PENDING' || r.Status === 'PROCESSING').length;
             
             return {
                 pills: [
                     { label: "Pending", value: pending, className: pending > 0 ? "badge-renewal" : "badge-default" },
                     { label: "Posted", value: posted, className: "badge-full" },
-                    { label: "Failed", value: failed, className: failed > 0 ? "badge-expired" : "badge-default" }
+                    { label: "Failed", value: failed, className: unviewedFailed > 0 ? "badge-expired" : "badge-default" }
                 ]
             };
         }
