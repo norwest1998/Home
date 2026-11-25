@@ -472,6 +472,16 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                     <label>Sub Topic</label>
                     <input type="text" id="fSubTopic" placeholder="Optional">
                 </div>
+                <div class="form-row triple">
+                    <div class="form-group"><label>Type</label><select id="fType"><option>Note</option><option>Notice</option></select></div>
+                    <div class="form-group"><label>Publish Date</label><input type="date" id="fPubDate"></div>
+                    <div class="form-group"><label>Publish Days</label><input type="number" min="1" id="fPubDays" placeholder="blank = no expiry"></div>
+                </div>
+                <div class="form-row full">
+                    <div class="form-group"><label>Links (Label|https://url, one per line)</label>
+                        <textarea id="fLinks" style="min-height:50px;"></textarea>
+                    </div>
+                </div>
             </div>
 
             <!-- Note body -->
@@ -895,6 +905,11 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
             document.getElementById("fSubTopic").value  = "";
             document.getElementById("fNote").value      = "";
             document.getElementById("fAttachments").value = "";
+            document.getElementById("fType").value    = "Note";
+            document.getElementById("fPubDate").value = "";
+            document.getElementById("fPubDays").value = "";
+            document.getElementById("fLinks").value   = "";
+            
         } else {
             const n = notes.find(n => gv(n,"NoteID") === nid);
             if (!n) return;
@@ -903,6 +918,10 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
             document.getElementById("fSubTopic").value    = gv(n,"SubTopic","Sub Topic");
             document.getElementById("fNote").value        = gv(n,"Note");
             document.getElementById("fAttachments").value = gv(n,"Attachments");
+            document.getElementById("fType").value    = gv(n,"Type") || "Note";
+            document.getElementById("fPubDate").value = gv(n,"PublishDate").slice(0,10);
+            document.getElementById("fPubDays").value = gv(n,"PublishDays");
+            document.getElementById("fLinks").value   = gv(n,"Links");
             const ci = gv(n,"CopyIn","Copy In");
             copyInEmails = ci ? ci.split(",").map(s=>s.trim()).filter(Boolean) : [];
             actionRows = actions.filter(a => gv(a,"NoteID") === nid).map(a => ({
@@ -1135,7 +1154,11 @@ table.actions-table { width: 100%; border-collapse: collapse; font-size: 12.5px;
                 Note:        note,
                 Attachments: document.getElementById("fAttachments").value.trim(),
                 CopyIn:      copyInEmails.join(", "),
-                LastUpdated: new Date().toISOString()
+                LastUpdated: new Date().toISOString(),
+                Type:        document.getElementById("fType").value,
+                PublishDate: document.getElementById("fPubDate").value,
+                PublishDays: document.getElementById("fPubDays").value,
+                Links:       document.getElementById("fLinks").value.trim()
             };
 
             if (editingNoteId) {
