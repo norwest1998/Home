@@ -1,0 +1,76 @@
+<!-- SMMC Noticeboard widget: paste into the website's embed/HTML block -->
+<div id="smmc-noticeboard"></div>
+<script>
+(function () {
+  var GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
+  var host = document.getElementById("smmc-noticeboard");
+  var root = host.attachShadow({ mode: "open" });   // isolates widget CSS from the site
+
+  root.innerHTML =
+    '<style>' +
+    ':host{display:block;font-family:Caveat,"Segoe Print","Bradley Hand","Comic Sans MS",cursive;color:#2b2b2b}' +
+    '.board{padding:18px;border:10px solid #6b4423;border-radius:6px;box-shadow:inset 0 0 18px rgba(0,0,0,.45),0 4px 12px rgba(0,0,0,.3);' +
+      'background-color:#c9a06a;background-image:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'220\' height=\'220\'%3E%3Cfilter id=\'f\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'.9\' numOctaves=\'3\' seed=\'4\'/%3E%3CfeColorMatrix values=\'0 0 0 0 .35  0 0 0 0 .2  0 0 0 0 .08  0 0 0 1.1 -.35\'/%3E%3C/filter%3E%3Crect width=\'220\' height=\'220\' filter=\'url(%23f)\'/%3E%3C/svg%3E")}' +
+    'h3{margin:0 0 18px;text-align:center;text-transform:uppercase;letter-spacing:.2em;font:700 26px Georgia,"Times New Roman",serif;letter-spacing:.2em;color:rgba(50,25,8,.8);text-shadow:0 1px 0 rgba(255,235,200,.35)}' +
+    '.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:22px}' +
+    '.n{position:relative;padding:22px 14px 14px;box-shadow:2px 6px 10px rgba(0,0,0,.35);transition:transform .15s}' +
+    '.n:hover{transform:rotate(0) scale(1.03)!important;z-index:2}' +
+    '.n:before{content:"";position:absolute;top:6px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ff7a7a,#b01212);box-shadow:1px 2px 3px rgba(0,0,0,.5)}' +
+    '.t{font-weight:700;font-size:24px;line-height:1.1;margin:0 0 2px}' +
+    '.d{font-size:15px;opacity:.7;margin-bottom:6px}' +
+    '.b{font-size:19px;line-height:1.25;white-space:pre-line}' +
+    '.l{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}' +
+    '.l a{font:inherit;font-size:17px;color:#2b2b2b;background:rgba(255,255,255,.55);border:1px dashed rgba(0,0,0,.45);text-decoration:none;padding:1px 10px;border-radius:4px}' +
+    '.l a:hover{background:#2b2b2b;color:#fff}' +
+    '</style><div class="board"><h3>Noticeboard</h3><div id="list" class="grid"></div></div>';
+
+  if (!document.getElementById("smmc-nb-font")) {
+    var f = document.createElement("link");
+    f.id = "smmc-nb-font"; f.rel = "stylesheet";
+    f.href = "https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=swap";
+    document.head.appendChild(f);
+  }
+  var COLOURS = ["#fff176", "#ff9ecb", "#8fd3ff", "#b6f28a", "#ffbf6b", "#d7b8ff"];
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
+  function postit(inner) {
+    return '<div class="n" style="background:' + COLOURS[Math.floor(Math.random() * COLOURS.length)] +
+      ';transform:rotate(' + rnd(-2.5, 2.5).toFixed(1) + 'deg)">' + inner + '</div>';
+  }
+  function status(msg) { return postit('<div class="b">' + msg + '</div>'); }
+
+  var list = root.getElementById("list");
+  list.innerHTML = status("Loading…");
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function fmt(ymd) {
+    var d = new Date(ymd + "T12:00:00");
+    return isNaN(d) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  fetch(GATEWAY_URL + "?action=getNotices")
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (!Array.isArray(res.values)) throw new Error(res.error || "bad response");
+      var rows = res.values;
+      if (!rows.length) { list.innerHTML = status("No current notices."); return; }
+      list.innerHTML = rows.map(function (n) {
+        var links = (n.links || [])
+          .filter(function (l) { return /^https?:\/\//i.test(l.url); })
+          .map(function (l) {
+            return '<a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.label || l.url) + '</a>';
+          }).join("");
+        return postit(
+          '<div class="t">' + esc(n.title) + '</div>' +
+          '<div class="d">Posted ' + fmt(n.published) + (n.expires ? ' · until ' + fmt(n.expires) : '') + '</div>' +
+          '<div class="b">' + esc(n.text) + '</div>' +
+          (links ? '<div class="l">' + links + '</div>' : ''));
+      }).join("");
+    })
+    .catch(function () { list.innerHTML = status("Notices are currently unavailable."); });
+})();
+</script>
