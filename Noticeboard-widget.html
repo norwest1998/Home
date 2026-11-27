@@ -1,76 +1,475 @@
-<!-- SMMC Noticeboard widget: paste into the website's embed/HTML block -->
-<div id="smmc-noticeboard"></div>
-<script>
-(function () {
-  var GATEWAY_URL = "https://script.google.com/macros/s/AKfycbzXQNKK6rbWr7MerjKjQMrF0-LUJzKij0sxTxRGehGAp3GoM7q6GXc0yMMmLVInHSR_/exec";
-  var host = document.getElementById("smmc-noticeboard");
-  var root = host.attachShadow({ mode: "open" });   // isolates widget CSS from the site
+<!-- SMMC Results & Live Widget -->
+<div id="smmc-widget-container">
+  <style>
+    #smmc-widget-container {
+      --ocean-deep: #071b2c;
+      --ocean-mid: #0f3550;
+      --glass-fill: rgba(15, 53, 80, 0.7);
+      --glass-fill-live: rgba(255, 106, 61, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --glass-border-live: rgba(255, 106, 61, 0.35);
+      --foam: #ffffff;
+      --foam-dim: #94a3b8;
+      --glow: #5eead4;
+      --signal: #ff6a3d;
 
-  root.innerHTML =
-    '<style>' +
-    ':host{display:block;font-family:Caveat,"Segoe Print","Bradley Hand","Comic Sans MS",cursive;color:#2b2b2b}' +
-    '.board{padding:18px;border:10px solid #6b4423;border-radius:6px;box-shadow:inset 0 0 18px rgba(0,0,0,.45),0 4px 12px rgba(0,0,0,.3);' +
-      'background-color:#c9a06a;background-image:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'220\' height=\'220\'%3E%3Cfilter id=\'f\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'.9\' numOctaves=\'3\' seed=\'4\'/%3E%3CfeColorMatrix values=\'0 0 0 0 .35  0 0 0 0 .2  0 0 0 0 .08  0 0 0 1.1 -.35\'/%3E%3C/filter%3E%3Crect width=\'220\' height=\'220\' filter=\'url(%23f)\'/%3E%3C/svg%3E")}' +
-    'h3{margin:0 0 18px;text-align:center;text-transform:uppercase;letter-spacing:.2em;font:700 26px Georgia,"Times New Roman",serif;letter-spacing:.2em;color:rgba(50,25,8,.8);text-shadow:0 1px 0 rgba(255,235,200,.35)}' +
-    '.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:22px}' +
-    '.n{position:relative;padding:22px 14px 14px;box-shadow:2px 6px 10px rgba(0,0,0,.35);transition:transform .15s}' +
-    '.n:hover{transform:rotate(0) scale(1.03)!important;z-index:2}' +
-    '.n:before{content:"";position:absolute;top:6px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ff7a7a,#b01212);box-shadow:1px 2px 3px rgba(0,0,0,.5)}' +
-    '.t{font-weight:700;font-size:24px;line-height:1.1;margin:0 0 2px}' +
-    '.d{font-size:15px;opacity:.7;margin-bottom:6px}' +
-    '.b{font-size:19px;line-height:1.25;white-space:pre-line}' +
-    '.l{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}' +
-    '.l a{font:inherit;font-size:17px;color:#2b2b2b;background:rgba(255,255,255,.55);border:1px dashed rgba(0,0,0,.45);text-decoration:none;padding:1px 10px;border-radius:4px}' +
-    '.l a:hover{background:#2b2b2b;color:#fff}' +
-    '</style><div class="board"><h3>Noticeboard</h3><div id="list" class="grid"></div></div>';
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      
+      /* DEFAULT: 1-Column wide, centered */
+      display: grid;
+      grid-template-columns: 1fr;
+      width: 100%;
+      max-width: 360px;
+      margin: 0 auto;
+      gap: 16px;
+      box-sizing: border-box;
+      line-height: 1.4;
+      transition: max-width 0.25s ease;
+    }
 
-  if (!document.getElementById("smmc-nb-font")) {
-    var f = document.createElement("link");
-    f.id = "smmc-nb-font"; f.rel = "stylesheet";
-    f.href = "https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=swap";
-    document.head.appendChild(f);
-  }
-  var COLOURS = ["#fff176", "#ff9ecb", "#8fd3ff", "#b6f28a", "#ffbf6b", "#d7b8ff"];
-  function rnd(a, b) { return a + Math.random() * (b - a); }
+    /* 2-CARDS ACTIVE: Expands to 2-columns wide */
+    #smmc-widget-container.has-live {
+      grid-template-columns: repeat(2, 1fr);
+      max-width: 736px;
+    }
 
-  function postit(inner) {
-    return '<div class="n" style="background:' + COLOURS[Math.floor(Math.random() * COLOURS.length)] +
-      ';transform:rotate(' + rnd(-2.5, 2.5).toFixed(1) + 'deg)">' + inner + '</div>';
-  }
-  function status(msg) { return postit('<div class="b">' + msg + '</div>'); }
+    /* Mobile: Stack cleanly if screen is narrow */
+    @media (max-width: 680px) {
+      #smmc-widget-container.has-live {
+        grid-template-columns: 1fr;
+        max-width: 360px;
+      }
+    }
 
-  var list = root.getElementById("list");
-  list.innerHTML = status("Loading…");
+    #smmc-widget-container * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
-  function fmt(ymd) {
-    var d = new Date(ymd + "T12:00:00");
-    return isNaN(d) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-  }
+    .smmc-card {
+      background: linear-gradient(135deg, var(--ocean-deep), #0a253c);
+      color: var(--foam);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 20px;
+      width: 100%;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+    }
 
-  fetch(GATEWAY_URL + "?action=getNotices")
-    .then(function (r) { return r.json(); })
-    .then(function (res) {
-      if (!Array.isArray(res.values)) throw new Error(res.error || "bad response");
-      var rows = res.values;
-      if (!rows.length) { list.innerHTML = status("No current notices."); return; }
-      list.innerHTML = rows.map(function (n) {
-        var links = (n.links || [])
-          .filter(function (l) { return /^https?:\/\//i.test(l.url); })
-          .map(function (l) {
-            return '<a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.label || l.url) + '</a>';
-          }).join("");
-        return postit(
-          '<div class="t">' + esc(n.title) + '</div>' +
-          '<div class="d">Posted ' + fmt(n.published) + (n.expires ? ' · until ' + fmt(n.expires) : '') + '</div>' +
-          '<div class="b">' + esc(n.text) + '</div>' +
-          (links ? '<div class="l">' + links + '</div>' : ''));
-      }).join("");
-    })
-    .catch(function () { list.innerHTML = status("Notices are currently unavailable."); });
-})();
-</script>
+    .smmc-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 12px;
+    }
+
+    .smmc-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--foam);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .smmc-sub-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      background: rgba(94, 234, 212, 0.12);
+      border: 1px solid rgba(94, 234, 212, 0.3);
+      color: var(--glow);
+    }
+
+    .smmc-meta {
+      font-size: 12.5px;
+      color: var(--glow);
+      margin-bottom: 14px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .smmc-chip {
+      display: flex;
+      align-items: center;
+      background: var(--glass-fill);
+      border: 1px solid var(--glass-border);
+      padding: 9px 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .smmc-pos {
+      font-size: 18px;
+      font-weight: 800;
+      width: 28px;
+      text-align: center;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .smmc-sailor {
+      flex: 1;
+      font-size: 13.5px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .smmc-pts {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--foam-dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .smmc-p1 { color: #ffd166; }
+    .smmc-p2 { color: #dbe6ea; }
+    .smmc-p3 { color: var(--signal); }
+
+    .smmc-live-card {
+      display: none;
+      border-color: var(--glass-border-live);
+      background: linear-gradient(135deg, var(--ocean-deep) 60%, rgba(255, 106, 61, 0.1));
+      box-shadow: 0 8px 24px rgba(255, 106, 61, 0.15);
+    }
+
+    .smmc-live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--signal);
+      background: rgba(255, 106, 61, 0.18);
+      border: 1px solid var(--signal);
+      padding: 3px 8px;
+      border-radius: 100px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .smmc-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--signal);
+      box-shadow: 0 0 8px var(--signal);
+      animation: smmc-pulse-anim 1.8s infinite;
+    }
+
+    @keyframes smmc-pulse-anim {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.85); }
+    }
+
+    .smmc-live-body {
+      background: var(--glass-fill-live);
+      border: 1px dashed var(--glass-border-live);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 4px;
+      margin-bottom: 14px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .smmc-live-event-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--foam);
+    }
+
+    .smmc-live-status {
+      font-size: 12px;
+      color: var(--signal);
+      font-weight: 600;
+    }
+
+    .smmc-btn-live {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--signal), #e05327);
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 11px 16px;
+      border-radius: 8px;
+      text-align: center;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 4px 14px rgba(255, 106, 61, 0.3);
+    }
+
+    .smmc-btn-live:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(255, 106, 61, 0.45);
+    }
+
+    .smmc-loader {
+      font-size: 13px;
+      color: var(--foam-dim);
+      text-align: center;
+      padding: 24px 0;
+    }
+  </style>
+
+  <!-- CARD 1: LATEST RESULTS -->
+  <div class="smmc-card" id="smmc-card-latest">
+    <div class="smmc-card-header">
+      <span class="smmc-card-title">Latest Results</span>
+      <span class="smmc-sub-badge">Official</span>
+    </div>
+    <div id="smmc-meta" class="smmc-meta"></div>
+    <div id="smmc-podium">
+      <div class="smmc-loader">Loading club results...</div>
+    </div>
+  </div>
+
+  <!-- CARD 2: LIVE RACING -->
+  <div class="smmc-card smmc-live-card" id="smmc-card-live">
+    <div class="smmc-card-header">
+      <span class="smmc-card-title">Live Racing</span>
+      <span class="smmc-live-badge"><span class="smmc-pulse"></span> In Progress</span>
+    </div>
+    <div class="smmc-live-body">
+      <div id="smmc-live-name" class="smmc-live-event-title">Club Regatta</div>
+      <div id="smmc-live-info" class="smmc-live-status">Races currently underway</div>
+    </div>
+    <a href="https://norwest1998.github.io/Home/liveResults.html" id="smmc-live-link" class="smmc-btn-live" target="_blank" rel="noopener noreferrer">
+      View Live Scoresheet →
+    </a>
+  </div>
+
+  <script>
+    (function initSmmcWidget() {
+      var HOME_API = "https://script.google.com/macros/s/AKfycbzGgNMh8KNWYquGuOoGvmrasDR5npiPoNXTouuzVeY9sRwrhDo29BVDbWGrh_FfgoieXQ/exec?action=bootstrap";
+      var LIVE_API = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec?action=liveData";
+      var CAL_BASE = "https://script.google.com/macros/s/AKfycbxh7FmiPU34XJy6hnP-uR3AMfEuApD0fqBDs9fXnkRPYFKgQ-6gv8hapY1aOdeuLuO6ZA/exec";
+
+      function escapeHTML(str) {
+        return String(str || '').replace(/[&<>"']/g, function(m) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+        });
+      }
+
+      function getVal(obj, keys) {
+        if (!obj || typeof obj !== 'object') return '';
+        var objKeys = Object.keys(obj);
+        for (var i = 0; i < keys.length; i++) {
+          var target = String(keys[i]).toLowerCase().replace(/[^a-z0-9]/g, '');
+          for (var j = 0; j < objKeys.length; j++) {
+            var k = String(objKeys[j]).toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (k === target) {
+              var val = obj[objKeys[j]];
+              if (val !== undefined && val !== null && String(val).trim() !== '') {
+                return val;
+              }
+            }
+          }
+        }
+        return '';
+      }
+
+      function collectAllEvents(data) {
+        var list = [];
+        function walk(node) {
+          if (!node || typeof node !== 'object') return;
+          if (Array.isArray(node)) {
+            for (var i = 0; i < node.length; i++) walk(node[i]);
+            return;
+          }
+          if (node.hexKey || node.HexKey || node.id || node.seriesName || node.eventName || node.regattaName || node.date || node.dateLabel) {
+            list.push(node);
+            return;
+          }
+          var keys = Object.keys(node);
+          for (var k = 0; k < keys.length; k++) {
+            if (typeof node[keys[k]] === 'object') walk(node[keys[k]]);
+          }
+        }
+        walk(data);
+        return list;
+      }
+
+      function isEventInProgress(ev) {
+        if (!ev || typeof ev !== 'object') return false;
+        try {
+          var json = JSON.stringify(ev).toLowerCase();
+          return json.indexOf('in progress') !== -1 ||
+                 json.indexOf('inprogress') !== -1 ||
+                 json.indexOf('in-progress') !== -1 ||
+                 json.indexOf('"live"') !== -1;
+        } catch(e) {
+          return false;
+        }
+      }
+
+      async function run() {
+        var root = document.getElementById('smmc-widget-container');
+        if (!root) {
+          setTimeout(run, 100);
+          return;
+        }
+
+        var metaDiv = root.querySelector('#smmc-meta');
+        var podiumDiv = root.querySelector('#smmc-podium');
+        var liveCard = root.querySelector('#smmc-card-live');
+        var liveName = root.querySelector('#smmc-live-name');
+        var liveInfo = root.querySelector('#smmc-live-info');
+        var liveLink = root.querySelector('#smmc-live-link');
+
+        var bootRes = null;
+
+        // 1. Latest Official Results (Card 1)
+        try {
+          bootRes = await fetch(HOME_API + "&_t=" + Date.now(), { cache: "no-store" }).then(function(r) { return r.json(); });
+
+          if (bootRes && bootRes.latestResults && bootRes.latestResults.ok) {
+            var ev = bootRes.latestResults.event || {};
+            var results = bootRes.latestResults.results || [];
+
+            var fullRegattaName = ev.regattaName || ev.seriesName || ev.title || ev.eventName || ev.regattaType || ev.className || ev.boatClass || "Club Regatta";
+            var round = String(ev.roundLabel || ev.round || '').trim();
+            var heading = round && !round.toLowerCase().includes(fullRegattaName.toLowerCase())
+              ? (round + " • " + fullRegattaName)
+              : (round || fullRegattaName);
+
+            if (metaDiv) {
+              metaDiv.innerHTML = escapeHTML(heading) + '<br><span style="color:var(--foam-dim);font-weight:400;font-size:11.5px;">Completed: ' + escapeHTML(ev.racedOn || ev.date || '') + '</span>';
+            }
+
+            if (podiumDiv) {
+              var topResults = results.slice(0, 3);
+              if (topResults.length === 0) {
+                podiumDiv.innerHTML = '<div class="smmc-loader">No finishes recorded.</div>';
+              } else {
+                var html = '';
+                for (var i = 0; i < topResults.length; i++) {
+                  var r = topResults[i];
+                  html += '<div class="smmc-chip">' +
+                    '<div class="smmc-pos smmc-p' + (i + 1) + '">' + escapeHTML(r.pos) + '</div>' +
+                    '<div class="smmc-sailor">' + escapeHTML(r.sailor) + '</div>' +
+                    '<div class="smmc-pts">' + escapeHTML(r.points) + ' pts</div>' +
+                  '</div>';
+                }
+                podiumDiv.innerHTML = html;
+              }
+            }
+          }
+        } catch (err) {
+          console.warn("Latest results load failed:", err);
+          if (podiumDiv) podiumDiv.innerHTML = '<div class="smmc-loader">Temporarily unavailable.</div>';
+        }
+
+        // 2. Live In Progress Detection (Card 2)
+        try {
+          var liveEvent = null;
+
+          // Attempt A: liveData broadcast
+          try {
+            var liveRes = await fetch(LIVE_API + "&_t=" + Date.now(), { cache: "no-store", redirect: "follow" }).then(function(r) { return r.json(); });
+            var liveEventsList = collectAllEvents(liveRes);
+            for (var a = 0; a < liveEventsList.length; a++) {
+              if (isEventInProgress(liveEventsList[a])) {
+                liveEvent = liveEventsList[a];
+                break;
+              }
+            }
+          } catch (e) {
+            console.warn("liveData check failed:", e);
+          }
+
+          // Attempt B: Calendar database with parameters that request recent/all events
+          if (!liveEvent) {
+            var testEndpoints = [
+              CAL_BASE + "?type=calendar&includePast=true",
+              CAL_BASE + "?type=calendar&all=true",
+              CAL_BASE + "?type=calendar&days=30",
+              CAL_BASE + "?type=calendar"
+            ];
+
+            for (var ep = 0; ep < testEndpoints.length; ep++) {
+              try {
+                var calRes = await fetch(testEndpoints[ep] + "&_t=" + Date.now(), { cache: "no-store", redirect: "follow" }).then(function(r) { return r.json(); });
+                var allEvents = collectAllEvents(calRes);
+
+                for (var b = 0; b < allEvents.length; b++) {
+                  if (isEventInProgress(allEvents[b])) {
+                    liveEvent = allEvents[b];
+                    break;
+                  }
+                }
+
+                if (liveEvent) break;
+              } catch (calErr) {}
+            }
+
+            // Attempt C: Check bootstrap payload
+            if (!liveEvent && bootRes) {
+              var bootEvents = collectAllEvents(bootRes);
+              for (var c = 0; c < bootEvents.length; c++) {
+                if (isEventInProgress(bootEvents[c])) {
+                  liveEvent = bootEvents[c];
+                  break;
+                }
+              }
+            }
+          }
+
+          // LAYOUT TOGGLE:
+          // If a live event is found -> add .has-live (2-grid wide)
+          // If only Latest is found  -> remove .has-live (1-grid wide & centered)
+          if (liveEvent && liveCard) {
+            root.classList.add('has-live');
+
+            var title = getVal(liveEvent, ['seriesname', 'regattaname', 'eventname', 'title', 'regattatype', 'event']) || "Club Championship";
+            var roundVal = getVal(liveEvent, ['roundnum', 'roundno', 'round', 'roundnumber']);
+            var roundTxt = roundVal ? ('Round ' + roundVal + ' • ') : '';
+            var raceCount = getVal(liveEvent, ['races', 'racecount', 'capturedraces']);
+            var races = raceCount ? ('Race ' + raceCount + ' in progress') : 'Races currently underway';
+            var key = getVal(liveEvent, ['hexkey', 'id', 'eventid', 'key']);
+
+            if (liveName) liveName.textContent = roundTxt ? (roundTxt + title) : title;
+            if (liveInfo) liveInfo.textContent = races;
+            if (liveLink) {
+              liveLink.href = key
+                ? ("https://norwest1998.github.io/Home/liveResults.html?event=" + encodeURIComponent(key))
+                : "https://norwest1998.github.io/Home/liveResults.html";
+            }
+
+            liveCard.style.display = 'flex';
+          } else {
+            root.classList.remove('has-live');
+            if (liveCard) liveCard.style.display = 'none';
+          }
+        } catch (err) {
+          console.warn("Live check general error:", err);
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', run);
+      } else {
+        run();
+      }
+    })();
+  </script>
+</div>
+<!-- End SMMC Results & Live Widget -->
